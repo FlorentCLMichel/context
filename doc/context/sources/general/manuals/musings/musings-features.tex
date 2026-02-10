@@ -1,0 +1,599 @@
+% language=us runpath=texruns:manuals/musings
+
+\startcomponent musings-features
+
+\environment musings-style
+
+\startchapter[title={(Ab)use of font features}]
+
+\startsection[title={Introduction}]
+
+In early May 2024 Karl Berry forwarded me a mail by Nelson Beebe referring to a
+discussion on a font forum where surprising ligature replacement in \OPENTYPE\
+fonts was mentioned in the perspective of abuse: fonts as programs. Anyone
+familiar with this technology will surely confirm that ligatures are a feature
+that can be abused, but also that in practice it seldom happens. So let's explore
+this a bit. Before I show some examples I'll summarize how \TEX\ deals with
+ligatures. I'll also make clear that it is unlikely that ligatures are used for
+unexpected replacements.
+
+{\em This article appeared in a 2024 \TUGBOAT. As usual, thanks to Karl for
+making it better!}
+
+\stopsection
+
+\startsection[title={Ligatures}]
+
+When \TEX\ adds characters to the horizontal list it can replace successive
+character pairs into a single character, a so|-|called ligature. We end up with a
+mix of character and ligature nodes. When the paragraph is broken into lines
+hyphenation is applied when it makes sense which in turn means that these
+ligatures (and kerns) are temporarily discarded for the word being checked. For
+that purpose the node that stores a ligature keeps track of the characters that
+made the ligature. Although it is not that relevant for what we discuss here, it
+is good to keep in mind that whatever sequence of characters we convert to
+another sequence of characters, hyphenation can be an influence and whatever we
+intend might not work well at a line break.
+
+In \LUATEX\ we don't have character and ligature nodes but only glyph nodes that
+can be either a normal character or a ligature. We (can) still provide the
+components that made the ligature but in \LUAMETATEX\ we don't have these. If
+needed, the subtype can be used to distinguish between a character and ligature.
+We don't need the components because hyphenation has already happened before
+ligatures and kerns are applied. \footnote {An exception is Arabic where marks
+are anchored to shape ligatures.}
+
+Although there are these differences between engines in how and when they
+construct (and in traditional \TEX\ deconstruct) ligatures, in both cases they
+are the same: a multiple to singular mapping. The \TEX\ engine looks at two
+characters. For example, an \quote {f} and \quote {i} become an \quote {fi} and
+an \quote {f} followed by a \quote {f} becomes \quote {ff}. Of course that only
+happens when a font has such a ligature. The new character \quote {ff} itself can
+combine with a following \quote {i} into a \quote {ffi}. So, even for a three
+character ligature we go via dual replacement, so for more complex ligatures we
+need intermediate ligatures or bogus characters.
+
+Deep down \TEX\ has several kinds of ligatures (the following description is
+taken from the \LUATEX\ manual). When \TEX\ inserts a new ligature, it puts the
+new glyph in the middle of the left and right glyphs. The original left and right
+glyphs can optionally be retained, and when at least one of them is kept, it is
+also possible to move the new \quote {insertion point} forward one or two places.
+The glyph that ends up to the right of the insertion point will become the next
+\quote {left}. In this table the~\type {|} indicates the final insertion point.
+
+\def\Fake#1{\ruledhbox{\type{#1}}}
+
+\starttabulate[|c|c|c|c|]
+\BC case \BC characters               \BC ligature \BC outcome                          \NC\NR
+\ML
+\NC 0    \NC \Fake{a}\type{|}\Fake{b} \NC \Fake{c} \NC \type{|}\Fake{c}                 \NC\NR
+\NC 1    \NC \Fake{a}\type{|}\Fake{b} \NC \Fake{c} \NC \type{|}\Fake{c}\Fake{b}         \NC\NR
+\NC 2    \NC \Fake{a}\type{|}\Fake{b} \NC \Fake{c} \NC \type{|}\Fake{a}\Fake{c}         \NC\NR
+\NC 3    \NC \Fake{a}\type{|}\Fake{b} \NC \Fake{c} \NC \type{|}\Fake{a}\Fake{c}\Fake{b} \NC\NR
+\NC 4    \NC \Fake{a}\type{|}\Fake{b} \NC \Fake{c} \NC \Fake{c}\type{|}\Fake{b}         \NC\NR
+\NC 5    \NC \Fake{a}\type{|}\Fake{b} \NC \Fake{c} \NC \Fake{a}\type{|}\Fake{c}         \NC\NR
+\NC 6    \NC \Fake{a}\type{|}\Fake{b} \NC \Fake{c} \NC \Fake{a}\type{|}\Fake{b}\Fake{c} \NC\NR
+\NC 7    \NC \Fake{a}\type{|}\Fake{b} \NC \Fake{c} \NC \Fake{a}\Fake{b}\type{|}\Fake{c} \NC\NR
+\stoptabulate
+
+In the first four cases the current position (pointer in the node list) moves to
+the front, and in the last four to somewhere in the middle. This means that a
+ligature can combine with the next character into a new ligature. In practice
+only the first variant is used and all of these work on pairs. There are very few
+fonts in the \TEX\ distributions that use the others. In general, the number of
+ligatures in traditional \TEX\ fonts is small, simply because the 256 slots we
+have there are easily exhausted. But it shows that in principle complex
+replacements are possible.
+
+In \OPENTYPE\ fonts we also have ligatures but here they are part of several
+substitution features.
+
+\starttabulate[|||]
+\BC substitute \NC replace one character by one other character \NC \NR
+\BC alternate  \NC replace one character by one taken from a set of alternatives \NC \NR
+\BC ligature   \NC replace multiple characters by a single character \NC \NR
+\BC multiple   \NC replace a single character by multiple characters \NC \NR
+\stoptabulate
+
+In addition to simple replacements like these there are also contextual lookups
+that look at (a range of) characters, and are optionally triggered by what comes
+before and what comes after and then perform one of the above substitutions. It's
+a bit off-topic but \TEX\ was written with Latin scripts in mind, so imagine what
+is needed to handle for instance Arabic with its much more complex ligatures.
+Fortunately hyphenation is not commonly used there so we don't need to deal with
+ligatures crossing the pre-, post- and replacement parts of a discretionary.
+
+In the table above we have a ligature substitution feature but that name is
+misleading. For instance an \quote {ff} ligature can indeed be a single glyph but
+quite often in \OPENTYPE\ it is implemented as two glyphs with some kerning, or
+with the second glyph being replaced by one that can blend with the first, which
+means that we end up with two glyphs with some negative kerning in between. The
+construction of ligatures can even be script|-| and language|-|dependent. But
+still this combination of single replacement and positioning is called
+``ligature'' and put under the \type {liga} feature. In \TEX\ on the other hand
+ligatures are just multiple to single replacements.
+
+As mentioned, the reason for this article is that there are users who fear that
+this ligature mechanism can be abused for malicious purposes. For instance, that
+we can replace one word by another word. A natural question for \TEX{}ies is
+then: does \OPENTYPE\ make users more vulnerable than when they'd use traditional
+fonts? As we explained before, it will be clear that even with simple fonts one
+can do unexpected replacements but in both cases a multiple to single replacement
+is not what achieves this: {\em we need a multiple to multiple replacement}.
+
+\stopsection
+
+\startsection[title=How it can be done in \OPENTYPE]
+
+Let's start with \OPENTYPE. Here we can do a multiple to multiple replacement
+using a chain substitution. We use the \CONTEXT\ (font loader) \LUA\ interface to
+define a new feature.
+
+\startbuffer[mytesta]
+\startluacode
+fonts.handlers.otf.addfeature {
+  name    = "mytesta",
+  type    = "chainsubstitution",
+  lookups = {
+    {
+      type = "multiple",
+      data = {
+        ["g"] = { "b", "a", "d" },
+        ["b"] = { "g", "o", "o", "d" }
+      },
+    },
+  },
+  data = {
+    rules = {
+      {
+        current = { { "g" }, { "o" }, { "o" }, { "d" } },
+        lookups = { 1 },
+      },
+      {
+        current = { { "b" }, { "a" }, { "d" } },
+        lookups = { 1 },
+      },
+    },
+  },
+}
+\stopluacode
+\stopbuffer
+
+\typebuffer[mytesta] \getbuffer[mytesta]
+
+Here \type {current} is a list of characters to match and every position can have
+multiple matches. When there is a match the lookup sequence points back to the
+lookups table where one of the mentioned substitutions can take place. This newly
+created feature can now be applied:
+
+\startbuffer[demo]
+\definefontfeature[mytesta][default][mytesta=yes]
+\definedfont[SerifBold*mytesta sa 1.2] good or bad
+\stopbuffer
+
+\typebuffer[demo]
+
+Here the default feature sets enable ligature building (\type {liga}), kerning
+(\type {kern}) and other features considered standard. We also default to
+so|-|called node mode because instead of using the \TEX\ engine, we delegate
+feature handling to \LUA. The output is:
+
+\start \getbuffer[demo] \stop
+
+Indeed the words \type {good} and \type {bad} get swapped. We can add a \type
+{before} and \type {after} sequence too and you can imagine that when this logic
+is translated into a binary \OPENTYPE\ format a regular user will not know that
+this can happen. So, indeed a font designer or someone who can intercept and
+replace a font can hide replacements like this. If we replace \type {mytesta} by
+\type {liga} it becomes part of the regular everyday ligature feature and because
+that one is often enabled by default it could go unnoticed for a long time.
+Because \OPENTYPE\ fonts can be huge and have lots of rules like these this cheat
+can be hidden very well. To some extent \TEX\ users are somewhat better protected
+because they can always turn features on and off, while in less configurable
+situations defaults are used.
+
+So, to summarize, in \OPENTYPE\ we do this: as we run over the list, at every
+character we check for the sequences \type {good} and \type {bad}. When we have a
+match we replace the matched characters by something else. The next variant shows
+a bit more complex setup with more lookups and different substitutions.
+
+\startbuffer[mytex]
+\startluacode
+fonts.handlers.otf.addfeature {
+  name    = "mytex",
+  type    = "chainsubstitution",
+  lookups = {
+    {
+      type = "substitution",
+      data = {
+        ["T"] = "t",
+        ["E"] = "e",
+        ["X"] = "x",
+      },
+    },
+    {
+      type = "multiple",
+      data = {
+        ["L"] = { "c", "o", "n", "t", "e", "x", "t" },
+        ["l"] = { "c", "o", "n", "t", "e", "x", "t" },
+      },
+    },
+  },
+  data = {
+    rules = {
+      {
+        current = {
+            { "t", "T" }, { "e", "E" }, { "x", "X" }
+        },
+        lookups = { 1, 1, 1 },
+      },
+      {
+        current = {
+            { "l", "L" }, { "a", "A" },
+            { "t", "T" }, { "e", "E" }, { "x", "X" }
+        },
+        lookups = { 2 },
+      },
+    },
+  },
+}
+\stopluacode
+\stopbuffer
+
+\typebuffer[mytex] \getbuffer[mytex]
+
+This might look a bit intimidating but it's just a way to enhance (or fix) a font
+and is in fact used in practice. This newly defined feature can now be applied:
+
+\startbuffer[demo]
+\definefontfeature[mytex][default][mytex=yes]
+\definedfont[SerifBold*mytex sa 1.2]
+Using TeX (or TEX) logos, like LaTeX or (LaTEX), sometimes can look
+a bit silly.
+\stopbuffer
+
+\typebuffer[demo] \start \getbuffer[demo] \stop
+
+Because we have control over the engine we can add more substitution features,
+not present in \OPENTYPE, because after all, control is what users love \TEX\
+for.
+
+\stopsection
+
+\startsection[title=How it can be done in traditional \TEX]
+
+In traditional \TEX\ we don't have such a repertoire of replacements available
+but we can use a different trick. Again we use \LUA\ to emulate it.
+
+\startbuffer[mytestb]
+\startluacode
+local function initialize(tfmdata,value)
+  if value then
+    local characters = tfmdata.characters
+    local y = utf.byte("y")
+    local e = utf.byte("e")
+    local s = utf.byte("s")
+    local n = utf.byte("n")
+    local o = utf.byte("o")
+    local cy = characters[y]
+    local ce = characters[e]
+    local cs = characters[s]
+    local cn = characters[n]
+    local co = characters[o]
+    characters[y].ligatures = {
+      [e] = { char = 255 }
+    }
+    characters[255] = {
+      ligatures = {
+        [s] = { char = 254 }
+      },
+    }
+    characters[n].ligatures = {
+      [o] = { char = 253 }
+    }
+    characters[254] = {
+      width    = cn.width + co.width,
+      height   = math.max(cn.height, co.height),
+      depth    = math.max(cn.depth, co.depth),
+      commands = {
+        { "char", n },
+        { "char", o },
+      },
+    }
+    characters[253] = {
+      width    = cy.width + ce.width + cs.width,
+      height   = math.max(cy.height, ce.height, cs.height),
+      depth    = math.max(cy.depth, ce.depth, cs.depth),
+      commands = {
+        { "char", y },
+        { "char", e },
+        { "char", s },
+      },
+    }
+    tfmdata.properties.hasligatures = true
+    tfmdata.properties.virtualized = true
+  end
+end
+
+local specification = {
+  name        = "myhacka",
+  description = "myhacka",
+  manipulators = {
+    base = initialize,
+  }
+}
+
+fonts.handlers.otf.features.register(specification)
+\stopluacode
+\stopbuffer
+
+\typebuffer[mytestb] \getbuffer[mytestb]
+
+Because in the end we need multiple characters we create a virtual font where a
+single slot (character) renders multiple characters. Of course one should also
+add proper kerning between the characters that make \type {no} and \type {yes};
+copy the rightmost characters to the \type {kerns} table, and patch the ones that
+kern with the left character but we leave that as an exercise.
+
+\startbuffer[demo]
+\definefontfeature[myhacka][mode=base,myhacka=yes,liga=yes,kern=yes]
+\definedfont[SerifBold*myhacka sa 1.2] yes or no
+\stopbuffer
+
+\typebuffer[demo]
+
+Where in the \OPENTYPE\ example we delegated processing to \LUA, here we let the
+\TEX\ engine do the job. This is called base mode. Node mode picks up the data it
+needs for ligaturing and kerning from the font via \LUA; in base mode it is part
+of the font definition that gets passed to the engine (like the \type {ligatures}
+tables here).
+
+\start \getbuffer[demo] \stop
+
+In the previous example we do this at runtime but if you use for instance \PDFTEX\
+you need to make a real virtual font file (a \type {vf} file alongside the \type
+{tfm} file). Here the \type {commands} entry provides the recipe for the virtual
+character where we draw from the same font.
+
+So, to summarize this approach: we check each character for being the start of a
+ligature. When we have a match we replace the pair by a new character, in the
+case of \type {no} this is the final one, and in the case of \type {yes} an
+intermediate one that gets a follow|-|up check. Do you see the problem? If we
+enter this:
+
+\startbuffer[demo]
+\definefontfeature[myhacka][mode=base,myhacka=yes,liga=yes,kern=yes]
+\definedfont[SerifBold*myhacka sa 1.2] yes or no or yep
+\stopbuffer
+
+\typebuffer[demo] \start \getbuffer[demo] \stop
+
+We get an unexpected replacement, because character 255 is already taken. The
+solution is to add this:
+
+\startbuffer[mytestc]
+\startluacode
+local function initialize(tfmdata,value)
+  if value then
+    local characters = tfmdata.characters
+    local y = utf.byte("y")
+    local e = utf.byte("e")
+    local s = utf.byte("s")
+    local n = utf.byte("n")
+    local o = utf.byte("o")
+    local cy = characters[y]
+    local ce = characters[e]
+    local cs = characters[s]
+    local cn = characters[n]
+    local co = characters[o]
+    characters[y].ligatures = {
+      [e] = { char = 255 }
+    }
+    characters[255] = {
+      ligatures = {
+        [s] = { char = 254 }
+      },
+      width    = cy.width + ce.width,
+      height   = math.max(cy.height, ce.height),
+      depth    = math.max(cy.depth, ce.depth),
+      commands = {
+        { "char", y },
+        { "char", e },
+      },
+    }
+    characters[n].ligatures = {
+      [o] = { char = 253 }
+    }
+    characters[254] = {
+      width    = cn.width + co.width,
+      height   = math.max(cn.height, co.height),
+      depth    = math.max(cn.depth, co.depth),
+      commands = {
+        { "char", n },
+        { "char", o },
+      },
+    }
+    characters[253] = {
+      width    = cy.width + ce.width + cs.width,
+      height   = math.max(cy.height, ce.height, cs.height),
+      depth    = math.max(cy.depth, ce.depth, cs.depth),
+      commands = {
+        { "char", y },
+        { "char", e },
+        { "char", s },
+      },
+    }
+    tfmdata.properties.hasligatures = true
+    tfmdata.properties.virtualized = true
+  end
+end
+
+local specification = {
+  name        = "myhackb",
+  description = "myhackb",
+  manipulators = {
+    base = initialize,
+  }
+}
+
+fonts.handlers.otf.features.register(specification)
+\stopluacode
+\stopbuffer
+
+\getbuffer[mytestc]
+
+\starttyping
+characters[255] = {
+  ligatures = {
+    [s] = { char = 254 }
+  },
+  width    = cy.width + ce.width,
+  height   = math.max(cy.height, ce.height),
+  depth    = math.max(cy.depth, ce.depth),
+  commands = {
+    { "char", y },
+    { "char", e },
+  },
+}
+\stoptyping
+
+\startbuffer[demo]
+\definefontfeature[myhackb][mode=base,myhackb=yes,liga=yes,kern=yes]
+\definedfont[SerifBold*myhackb sa 1.2] yes or no or yep
+\stopbuffer
+
+\typebuffer[demo] \start \getbuffer[demo] \stop
+
+\stopsection
+
+\startsection[title=It's trickier than this]
+
+It's clear that where in \OPENTYPE\ one can use different means than ligatures,
+in traditional \TEX\ where we only have ligatures as a tool we have to combine
+them with another (powerful) magic: virtual fonts. In the end there is not much
+to worry about: access to the font and the user's machine is needed in order to
+achieve this. In fact, the previous examples are not even right.
+
+There is one aspect that we didn't mention yet that makes an \OPENTYPE\ font more
+suitable. If we only want to replace words we need to add a boundary check so
+let's give an example of that.
+
+\startbuffer[myteste]
+\startluacode
+local punctuation = { { " ", ".", ",", ":", ";" } }
+
+fonts.handlers.otf.addfeature {
+  name    = "myteste",
+  type    = "chainsubstitution",
+  lookups = {
+    {
+      type = "multiple",
+      data = {
+        ["g"] = { "b", "a", "d" },
+        ["b"] = { "g", "o", "o", "d" }
+      },
+    },
+  },
+  data = {
+    rules = {
+      {
+        before  = punctuation,
+        current = { { "g" }, { "o" }, { "o" }, { "d" } },
+        after   = punctuation,
+        lookups = { 1 },
+      },
+      {
+        before  = punctuation,
+        current = { { "b" }, { "a" }, { "d" } },
+        after   = punctuation,
+        lookups = { 1 },
+      },
+    },
+  },
+}
+\stopluacode
+\stopbuffer
+
+\typebuffer[myteste] \getbuffer[myteste]
+
+\noindent This can now be applied:
+
+\startbuffer[demo]
+\definefontfeature[myteste][default][myteste=yes]
+\definedfont[SerifBold*myteste sa 1.2] goody or badass and good or bad
+\stopbuffer
+
+\typebuffer[demo] \start \getbuffer[demo] \stop
+
+Getting this to work in \TEX\ is hard because we run out of slots and because
+\TEX\ in base mode (traditional) has no space. And even in \OPENTYPE\ we probably
+need to do more to get it right all times: punctuation, digits, all kinds of
+quotes, etc. So with the given \TEX\ example we get even more unexpected changes
+because every work that contains the lookup replacement happens.
+
+\stopsection
+
+\startsection[title=Unexpected ligatures in practice]
+
+Of course in practice fonts don't get hacked this way. But you can have surprises
+in some fonts. An example is Font Awesome Brands:
+
+\startbuffer
+\definedfont[FontAwesome5Brands-Regular-400*default]
+dropbox windows android apple linux wikipedia
+\stopbuffer
+
+\typebuffer \start \getbuffer \stop
+
+Sometimes fonts have such goodies built in and as long as stylistic features are
+used for this it is just a handy feature (or you might call it a gimmick). Emoji
+fonts are good candidates for combining emoji into new ones, but changes in
+shapes (this could be driven by social or political influences) can also make for
+surprises. It demonstrates that it is always good to proofread what you typeset.
+The problem with such features is that when you decide to use another font, it is
+unlikely to work there so maybe it's best not to rely on it and use similar
+features that the macro package (might) provide instead.
+
+A recent trend is to let monospaced fonts perform ligaturing, so we get for
+instance a \quote {less equal} symbol instead of a \quote {less} plus an \quote
+{equal}. And it can be highly annoying if that can't be turned off. Feature creep
+is probably more troublesome than an occasional nasty font, one that probably
+isn't worth using anyway.
+
+\stopsection
+
+\startsection[title=Some final words]
+
+The suggestion in the post that fonts are programs is not entirely true because
+we're only dealing with lookups: it's data that we're talking about. That is not
+to say that fonts can't become programs. As explained in Niklaus Wirth's
+\quotation {Algorithms + Data Structures = Programs}, one needs the algorithms
+too and that's what the \OPENTYPE\ composition code does, with specific features
+either supported or not by a user interface or hard|-|coded assumptions. And
+although the descriptions of \OPENTYPE\ have improved over time, occasionally one
+has to ponder how to deal with complex combinations. And as usual bugs can become
+features. In that sense, the limitations of the \TEX\ model are a protection
+against unexpected (but intended) side effects. If you nevertheless consider an
+\OPENTYPE\ font to be a program, you also should expect it to come with a manual
+explaining the reasoning behind the way it handles all this as well as showing
+the user what to expect, but I doubt that this is on the mind of a font
+developer.
+
+So, while it is for instance no big deal in \LUATEX\ to add functions to the
+repertoire of features we can go further. At Bacho\TEX\ 2024 I was told that
+there are (premature) ideas about adding Web Assembly to fonts, which for sure
+will give some users the creeps, but then we're talking application|-|specific
+trickery which is outside our scope. The most recent color extensions are an
+example of undesired complexity and the question is if we want more of that.
+Maybe it makes sense on the web but on paper (and with \TEX) we can often achieve
+the same independent of fonts that then need to have these programs embedded in
+every instance (one can wonder how updating and bug fixes works out then). Once
+we lock our workflows into libraries that themselves have dependencies we also
+enter the realm of programs with potential back doors, leaks, insecurity,
+compatibility issues, etc. But that's for another article. I only mention this in
+order to stress that the currently provided \OPENTYPE\ features are the least of
+our worries.
+
+\stopchapter
+
+\stopcomponent

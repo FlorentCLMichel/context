@@ -553,7 +553,7 @@ local function definelabcolor(name,str,global,freeze) -- still inconsistent colo
             end
         else
             local x = settings.x
-            local y = settings.z
+            local y = settings.y
             local z = settings.z
             if x and y and z then
                 local r, g, b = colors.xyztorgb(tonumber(x) or 0, tonumber(y) or 0, tonumber(z) or 0)

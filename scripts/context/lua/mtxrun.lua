@@ -9374,7 +9374,7 @@ do -- create closure to overcome 200 locals limit
 
 package.loaded["util-prs"] = package.loaded["util-prs"] or true
 
--- original size: 26298, stripped down to: 17137
+-- original size: 26449, stripped down to: 17244
 
 if not modules then modules={} end modules ['util-prs']={
  version=1.001,
@@ -9661,7 +9661,9 @@ function parsers.array_to_string(a,separator)
   return ""
  end
 end
-local pattern=Cf(Ct("")*Cg(C((1-S(", "))^1)*S(", ")^0*Cc(true))^1,rawset)
+local spacing=whitespace^0
+local separator=P(",")*spacing+whitespace*P(-1)
+local pattern=spacing*Cf(Ct("")*Cg(C((1-separator)^1)*separator^0*Cc(true))^1,rawset)
 function parsers.settings_to_set(str)
  return str and lpegmatch(pattern,str) or {}
 end
@@ -9673,7 +9675,7 @@ end)
 function parsers.settings_to_set(str)
  return str and lpegmatch(pattern,str) or {}
 end
-local pattern=Ct((C((1-S(", "))^1)*S(", ")^0)^1)
+local pattern=spacing*Ct((C((1-separator)^1)*separator^0)^1)
 hashes.settings_to_list=table.setmetatableindex(function(t,k) 
  local v=k and lpegmatch(pattern,k) or {}
  t[k]=v
@@ -9858,8 +9860,8 @@ end
 local cardinal=(lpegpatterns.hexadecimal+lpegpatterns.cardinal)/tonumber
 local spacers=lpegpatterns.spacer^0
 local endofstring=lpegpatterns.endofstring
-local stepper=spacers*(cardinal*(spacers*S(":-")*spacers*(cardinal+Cc(true) )+Cc(false) )*Carg(1)*Carg(2)/ranger*S(", ")^0 )^1
-local stepper=spacers*(cardinal*(spacers*S(":-")*spacers*(cardinal+(P("*")+endofstring)*Cc(true) )+Cc(false) )*Carg(1)*Carg(2)/ranger*S(", ")^0 )^1*endofstring 
+local stepper=spacers*(cardinal*(spacers*S(":-")*spacers*(cardinal+Cc(true) )+Cc(false) )*Carg(1)*Carg(2)/ranger*separator^0 )^1
+local stepper=spacers*(cardinal*(spacers*S(":-")*spacers*(cardinal+(P("*")+endofstring)*Cc(true) )+Cc(false) )*Carg(1)*Carg(2)/ranger*separator^0 )^1*endofstring 
 function parsers.stepper(str,n,action)
  local ts=type(str)
  if type(n)=="function" then
@@ -9936,8 +9938,8 @@ local function process(result,more)
  end
  return result
 end
-local name=C((1-S(", "))^1)
-local parser=(Carg(1)*name/initialize)*(S(", ")^1*(Carg(1)*name/fetch))^0
+local name=C((1-separator)^1)
+local parser=(Carg(1)*name/initialize)*(separator^1*(Carg(1)*name/fetch))^0
 local merge=Cf(parser,process)
 function parsers.mergehashes(hash,list)
  return lpegmatch(merge,list,1,hash)
@@ -26859,8 +26861,8 @@ end -- of closure
 
 -- used libraries    : l-bit32.lua l-lua.lua l-macro.lua l-sandbox.lua l-package.lua l-lpeg.lua l-function.lua l-string.lua l-table.lua l-io.lua l-number.lua l-set.lua l-os.lua l-file.lua l-gzip.lua l-md5.lua l-sha.lua l-url.lua l-dir.lua l-boolean.lua l-unicode.lua l-math.lua util-str.lua util-tab.lua util-fil.lua util-sac.lua util-sto.lua util-prs.lua util-fmt.lua util-soc-imp-reset.lua util-soc-imp-socket.lua util-soc-imp-copas.lua util-soc-imp-ltn12.lua util-soc-imp-mime.lua util-soc-imp-url.lua util-soc-imp-headers.lua util-soc-imp-tp.lua util-soc-imp-http.lua util-soc-imp-ftp.lua util-soc-imp-smtp.lua trac-set.lua trac-log.lua trac-inf.lua trac-pro.lua util-lua.lua util-deb.lua util-tpl.lua util-sbx.lua util-mrg.lua util-env.lua luat-env.lua util-zip.lua util-sig.lua lxml-tab.lua lxml-lpt.lua lxml-mis.lua lxml-aux.lua lxml-xml.lua trac-xml.lua data-ini.lua data-exp.lua data-env.lua data-tmp.lua data-met.lua data-res.lua data-pre.lua data-inp.lua data-out.lua data-fil.lua data-con.lua data-use.lua data-zip.lua data-tre.lua data-sch.lua data-lua.lua data-aux.lua data-tmf.lua data-lst.lua libs-ini.lua luat-sta.lua luat-fmt.lua util-jsn.lua
 -- skipped libraries : -
--- original bytes    : 1076705
--- stripped bytes    : 429837
+-- original bytes    : 1076856
+-- stripped bytes    : 429881
 
 -- end library merge
 

@@ -741,6 +741,7 @@ typedef enum box_property_codes {
     box_limit_code,
     box_stretch_code,
     box_shrink_code,
+    box_snapping_code,
     box_subtype_code,
     /* we actually need set_box_int_cmd, or set_box_property */
     box_attribute_code,
@@ -1189,9 +1190,11 @@ typedef enum local_box_codes {
 # define last_local_box_code  local_middle_box_code
 
 typedef enum local_box_options {
-    local_box_par_option   = 0x1,
-    local_box_local_option = 0x2,
-    local_box_keep_option  = 0x4,
+    local_box_par_option    = 0x01,
+    local_box_local_option  = 0x02,
+    local_box_keep_option   = 0x04,
+    local_box_always_option = 0x08,
+    local_box_move_option   = 0x10,
 } local_box_options;
 
 typedef enum skip_codes {

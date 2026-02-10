@@ -2977,7 +2977,7 @@ do
         end
     end
 
-    local function readlocals(f,data,dictionary,cff2)
+    local function readlocals(f,data,dictionary,version)
         local header  = data.header
         local private = dictionary.private
         if private then
@@ -3066,7 +3066,7 @@ do
                     for i=1,nofdictionaries do
                         dictionaries[i] = readstring(f,dictionaries[i])
                     end
-                    parsedictionaries(data,dictionaries)
+                    parsedictionaries(data,dictionaries,version)
                     dictionary.private = dictionaries[1].private
                     if nofdictionaries > 1 then
                         report("ignoring dictionaries > 1 in cid font")
@@ -3139,7 +3139,7 @@ do
                     for i=1,#dictionaries do
                         dictionaries[i] = readstring(f,dictionaries[i])
                     end
-                    parsedictionaries(data,dictionaries)
+                    parsedictionaries(data,dictionaries,version)
                     cid.dictionaries = dictionaries
                     readcidprivates(f,data)
                     for i=1,#dictionaries do

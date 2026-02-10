@@ -58,6 +58,7 @@
                     <cd:constant type="middle"/>
                     <cd:constant type="right"/>
                     <cd:constant type="packed"/>
+                    <cd:constant type="unpacked"/>
                     <cd:constant type="formula" default="yes"/>
                 </cd:parameter>
                 <!--
@@ -106,6 +107,18 @@
                     <cd:constant type="cd:text"/>
                 </cd:parameter>
                 <cd:parameter name="numberthreshold">
+                    <cd:constant type="cd:dimension"/>
+                </cd:parameter>
+                <cd:parameter name="rulethickness">
+                    <cd:constant type="cd:dimension"/>
+                </cd:parameter>
+                <cd:parameter name="rulecolor">
+                    <cd:constant type="cd:color"/>
+                </cd:parameter>
+                <cd:parameter name="toffset">
+                    <cd:constant type="cd:dimension"/>
+                </cd:parameter>
+                <cd:parameter name="boffset">
                     <cd:constant type="cd:dimension"/>
                 </cd:parameter>
             </cd:assignments>

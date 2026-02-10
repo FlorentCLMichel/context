@@ -169,7 +169,7 @@
    \c!spacing=\v!packed,
    \c!default=\s!de]
 
-%D And some alternative (but very real) english patterns:
+%D And some alternative (but very real) english patterns.
 
 \installlanguage
   [en-gb]
@@ -190,11 +190,45 @@
    \c!default=\s!en,
    \s!patterns=\s!us]
 
+\installlanguage
+  [en-gb]
+  [\c!define=\v!no,
+   \c!default=\s!en,
+   \s!patterns=\s!gb,
+   \s!lefthyphenmin=3,
+   \s!righthyphenmin=3,
+   % the reverse of american (or maybe the american did it the reverse)
+   \c!leftquote=\upperleftdoublesixquote,
+   \c!rightquote=\upperrightdoubleninequote,
+   \c!leftquotation=\upperleftsinglesixquote,
+   \c!rightquotation=\upperrightsingleninequote]
+
+%D In 2026 we also added Canadian English due to the desintegration of its
+%D neighbouring country and as preparation for whatever further drastic changes
+%D might happen as the result of that.
+
+\installlanguage
+  [en-ca]
+  [\c!define=\v!no,
+   \c!default=\s!gb,
+   \s!patterns=\s!gb,
+   % to be decided
+   \s!lefthyphenmin=3,
+   \s!righthyphenmin=3,
+   % to be decided
+   \c!leftquote=\upperleftsinglesixquote,
+   \c!rightquote=\upperrightsingleninequote,
+   \c!leftquotation=\upperleftdoublesixquote,
+   \c!rightquotation=\upperrightdoubleninequote]
+
 \installlanguage [\s!uk] [\s!en-\s!gb]
 \installlanguage [\s!us] [\s!en-\s!us]
+%installlanguage [\s!ca] [\s!en-\s!ca] % 'ca' is already taken by catalan
 
 \installlanguage [usenglish]   [\s!en-\s!us]
 \installlanguage [ukenglish]   [\s!en-\s!gb]
+\installlanguage [caenglish]   [\s!en-\s!ca]
+
 \installlanguage [english]     [\s!en]
 \installlanguage [dutch]       [\s!nl]
 \installlanguage [german]      [\s!de]
@@ -723,6 +757,22 @@
 \installlanguage [\s!japanese] [\s!ja]
 \installlanguage [\s!korean]   [\s!kr]
 
+% Tibeto-Burman languages
+
+\installlanguage
+  [\s!my]
+  [\c!leftsentence=\emdash,
+   \c!rightsentence=\emdash,
+   \c!leftsubsentence=\emdash,
+   \c!rightsubsentence=\emdash,
+   \c!leftquote=‘,
+   \c!rightquote=’,
+   \c!leftquotation=၊,   % U+104a
+   \c!rightquotation=။,  % U+104b
+   \c!date={\v!day,\space,ရက်,\space,\v!month,\space,\v!year,\space,ခုနှစ်}]
+
+\installlanguage [\s!burmese]   [\s!my]
+
 % Greek
 
 \installlanguage
@@ -876,7 +926,8 @@
 \installlanguage [\s!latin]       [\s!la]
 \installlanguage [\s!portuguese]  [\s!pt]
 \installlanguage [\s!romanian]    [\s!ro]
-\installlanguage [\s!moldavian]   [\s!mo]
+\installlanguage [\s!moldovan]    [\s!mo]
+%installlanguage [\s!moldavian]   [\s!mo]
 
 % Vietnamese Language
 

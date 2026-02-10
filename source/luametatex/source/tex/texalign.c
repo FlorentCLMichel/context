@@ -389,7 +389,7 @@ void tex_alignment_scan_options(void)
 {
     halfword options = lmt_alignment_state.align_ptr ? lmt_alignment_state.options : 0;
     while (1) {
-        switch (tex_scan_character("flFL", 1, 1, 1)) {
+        switch (tex_scan_character("flnFLN", 1, 1, 1)) {
             case 0:
                 goto DONE;
             case 'n': case 'N':
@@ -925,7 +925,7 @@ static void tex_aux_trace_no_align(const char *s)
 {
     if (tracing_alignments_par > 0) {
         tex_begin_diagnostic();
-        tex_print_format("[alignment: %s noalign, level %i]", s, lmt_alignment_state.no_align_level);
+        tex_print_format("%l[alignment: %s noalign, level %i]", s, lmt_alignment_state.no_align_level);
         tex_end_diagnostic();
     }
 }
@@ -1299,6 +1299,7 @@ void tex_run_alignment_initialize(void)
     }
     if (tracing_alignments_par > 1) {
         tex_begin_diagnostic();
+        tex_print_levels();
         tex_print_str(lmt_alignment_state.cur_loop ? "<alignment preamble: initial>" : "<alignment preamble>");
         tex_show_node_list(preamble, max_integer, max_integer);
         tex_end_diagnostic();
@@ -1641,7 +1642,7 @@ static int tex_aux_finish_column(void)
                     chr = cr_code;
                     align_record_chr(lmt_alignment_state.cur_align) = chr;
                     tex_handle_error(
-                        normal_error_type,
+                        alignment_tab_error_type,
                         "Extra alignment tab has been changed to \\cr",
                         "You have given more \\span or & marks than there were in the preamble to the\n"
                         "\\halign or \\valign now in progress. So I'll assume that you meant to type \\cr\n"
@@ -1798,6 +1799,10 @@ static void tex_aux_finish_row(void)
     if (cur_list.mode == restricted_hmode) {
         row = tex_filtered_hpack(cur_list.head, cur_list.tail, 0, packing_additional, finish_row_group, direction_unknown, 0, null, 0, 0);
         tex_pop_nest();
+        if (align_snapping_par) {
+            /* before or after popping */
+            tex_snapping_line(row, align_snapping_par);
+        }
         if (lmt_alignment_state.cur_pre_adjust_head != lmt_alignment_state.cur_pre_adjust_tail) {
             tex_inject_adjust_list(lmt_alignment_state.cur_pre_adjust_head, pre_append_adjust_context, 0, null, NULL);
         }
@@ -2096,6 +2101,8 @@ static void tex_aux_prune_align_two(void)
 typedef struct alignment_split_state {
     halfword glueamount;
     int      glueused;
+    halfword penalty;
+    halfword padding;
 } alignment_split_state;
 
 static int tex_aux_get_maxlines(alignment_split_state *state, halfword rowptr)
@@ -2150,6 +2157,14 @@ static halfword tex_aux_get_line(alignment_split_state *state, halfword *head, i
             case vlist_node:
                 if (n == 1) {
                     state->glueused = 0;
+{
+    halfword nxt = node_next(current);
+    if (nxt && node_type(nxt) == penalty_node) {
+        if (penalty_amount(nxt) > 0) {
+            state->penalty = penalty_amount(nxt);
+        }
+    }
+}
                     goto DONE;
                 } else {
                     --n;
@@ -2350,10 +2365,21 @@ static void tex_aux_split_align(void)
             if (maxlines > 1) {
                 halfword curptr = rowptr;
                 halfword amount = 0;
+                halfword prvptr = node_prev(rowptr);
+                if (prvptr && node_type(prvptr) == glue_node) {
+                    switch (node_subtype(prvptr)) {
+                        case line_skip_glue:
+                        case baseline_skip_glue:
+                            /* todo: tracing */
+                            tex_reset_glue_to_zero(prvptr);
+                            break;
+                    }
+                }
                 while (--maxlines > 0) {
                     halfword line, glue;
                     state.glueamount = 0;
                     state.glueused = 1;
+                    state.penalty = 0;
                     line = tex_aux_get_rowline(&state, curptr);
                     glue = tex_aux_get_rowglue(&state, curptr, amount);
                     tex_couple_nodes(rowptr, glue);
@@ -2388,12 +2414,25 @@ static void tex_aux_split_align(void)
                         rowptr = line;
                         amount = 0;
                     }
+                    /*tex Here we deal with widow, club and whatever penalties. */
+                    if (state.penalty > 0) {
+                        if (state.glueused && gluemode == 2 && node_type(rowptr) == penalty_node) {
+                            if (penalty_amount(rowptr) < state.penalty) {
+                                penalty_amount(rowptr) = state.penalty;
+                            }
+                        } else {
+                            halfword penalty = tex_aux_get_rowpenalty(&state, curptr, state.penalty);
+                            tex_couple_nodes(rowptr, penalty);
+                            rowptr = penalty;
+                        }
+                    }
                 }
+                /* todo: tracing */
                 tex_aux_fix_topline(&state, curptr);
                 tex_aux_fix_rowline(&state, rowptr);
                 tex_aux_fix_rowline(&state, curptr);
             }
-            tex_couple_nodes(rowptr, nxtptr);
+            tex_try_couple_nodes(rowptr, nxtptr);
         }
         rowptr = nxtptr;
     }
@@ -2439,6 +2478,7 @@ static void tex_aux_finish_align(void)
     */
     if (tracing_alignments_par > 1 && lmt_alignment_state.cur_loop) {
         tex_begin_diagnostic();
+        tex_print_levels();
         tex_print_str("<alignment preamble: extended>");
         tex_show_node_list(preamble, max_integer, max_integer);
         tex_end_diagnostic();
@@ -2857,6 +2897,9 @@ static void tex_aux_finish_align(void)
     }
     if ((lmt_alignment_state.options & align_option_split) && (lmt_alignment_state.min_height || lmt_alignment_state.min_depth)) {
         tex_aux_split_align();
+// if (node_type(cur_list.tail) == hlist_node) {
+//     cur_list.prev_depth = box_depth(cur_list.tail);
+// }
     }
     if (callback) {
         lmt_alignment_callback(cur_list.head, wrapup_pass_alignment_context, lmt_alignment_state.callback, lmt_alignment_state.attr_list, preamble);

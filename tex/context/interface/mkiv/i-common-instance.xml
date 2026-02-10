@@ -114,10 +114,17 @@
         <cd:constant value="Rightleftarrowtext"/>
     </cd:define>
 
+    <cd:define name="instance-framedmath">
+        <cd:constant value="framedmath"/>
+        <cd:constant value="mathstrikeout"/>
+        <cd:constant value="mathcrossout"/>
+    </cd:define>
+
     <cd:define name="instance-mathframed">
         <cd:constant value="mframed"/>
         <cd:constant value="inmframed"/>
         <cd:constant value="mcframed"/>
+        <cd:constant value="mtframed"/>
     </cd:define>
 
     <cd:define name="instance-framedtext">
@@ -127,6 +134,7 @@
     <cd:define name="instance-framed">
         <cd:constant value="unframed"/>
         <cd:constant value="fitfieldframed"/>
+        <cd:constant value="potracebitmap"/>
     </cd:define>
 
     <cd:define name="instance-help">
@@ -249,6 +257,8 @@
     <cd:define name="instance-note">
         <cd:constant value="footnote"/>
         <cd:constant value="endnote"/>
+        <cd:constant value="mathnote"/>
+        <cd:constant value="publicationnote"/>
     </cd:define>
 
     <cd:define name="instance-linenote">
@@ -515,6 +525,28 @@
         <cd:constant value="underbrackettext"/>
     </cd:define>
 
+    <cd:define name="instance-mathfiller">
+        <cd:constant value="relfill"/>
+        <cd:constant value="equalfill"/>
+        <cd:constant value="leftarrowfill"/>
+        <cd:constant value="rightarrowfill"/>
+        <cd:constant value="twoheadleftarrowfill"/>
+        <cd:constant value="twoheadrightarrowfill"/>
+        <cd:constant value="mapstofill"/>
+        <cd:constant value="leftharpoondownfill"/>
+        <cd:constant value="leftharpoonupfill"/>
+        <cd:constant value="rightharpoondownfill"/>
+        <cd:constant value="rightharpoonupfill"/>
+        <cd:constant value="rightoverleftarrowfill"/>
+        <cd:constant value="leftoverrightarrowfill"/>
+        <cd:constant value="triplerelfill"/>
+        <cd:constant value="leftrightarrowfill"/>
+        <cd:constant value="Leftarrowfill"/>
+        <cd:constant value="Rightarrowfill"/>
+        <cd:constant value="Leftrightarrowfill"/>
+        <cd:constant value="Rightleftarrowfill"/>
+    </cd:define>
+
     <cd:define name="instance-synchronize">
         <cd:constant value="paralleltext"/>
     </cd:define>
@@ -750,6 +782,63 @@
         <cd:constant value="fourthderivative"/>
         <cd:constant value="preimage"/>
         <cd:constant value="inverse"/>
+    </cd:define>
+
+    <cd:define name="instance-mathtext">
+        <cd:constant value="mathtext"/>
+        <cd:constant value="mathtexttf"/>
+        <cd:constant value="mathtextit"/>
+        <cd:constant value="mathtextsl"/>
+        <cd:constant value="mathtextbf"/>
+        <cd:constant value="mathtextbi"/>
+        <cd:constant value="mathtextbs"/>
+        <cd:constant value="mathword"/>
+        <cd:constant value="mathwordtf"/>
+        <cd:constant value="mathwordit"/>
+        <cd:constant value="mathwordsl"/>
+        <cd:constant value="mathwordbf"/>
+        <cd:constant value="mathwordbi"/>
+        <cd:constant value="mathwordbs"/>
+        <cd:constant value="mathsplit"/>
+        <cd:constant value="mathsplittf"/>
+        <cd:constant value="mathsplitit"/>
+        <cd:constant value="mathsplitsl"/>
+        <cd:constant value="mathsplitbf"/>
+        <cd:constant value="mathsplitbi"/>
+        <cd:constant value="mathsplitbs"/>
+    </cd:define>
+
+    <cd:define name="instance-mathannotation">
+        <cd:constant value="mathannotation"/>
+    </cd:define>
+
+    <cd:define name="instance-parinsert">
+        <cd:constant value="leftparinsert"/>
+        <cd:constant value="rightparinsert"/>
+    </cd:define>
+
+    <cd:define name="instance-mathfence">
+        <cd:constant value="parenthesis"/>
+        <cd:constant value="bracket"/>
+        <cd:constant value="brace"/>
+        <cd:constant value="ceiling"/>
+        <cd:constant value="floor"/>
+        <cd:constant value="interval"/>
+        <cd:constant value="openinterval"/>
+        <cd:constant value="closedinterval"/>
+        <cd:constant value="leftopeninterval"/>
+        <cd:constant value="rightopeninterval"/>
+        <cd:constant value="varopeninterval"/>
+        <cd:constant value="varleftopeninterval"/>
+        <cd:constant value="varrightopeninterval"/>
+        <cd:constant value="integerinterval"/>
+        <cd:constant value="abs"/>
+        <cd:constant value="innerproduct"/>
+        <cd:constant value="integerpart"/>
+        <cd:constant value="norm"/>
+        <cd:constant value="set"/>
+        <cd:constant value="sequence"/>
+        <cd:constant value="tuple"/>
     </cd:define>
 
 </cd:interface>

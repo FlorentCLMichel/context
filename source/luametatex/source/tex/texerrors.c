@@ -560,7 +560,7 @@ int tex_emergency_exit(void)
     return tex_aux_final_exit(EXIT_FAILURE);
 }
 
-/*tex A prelude to more abstraction and maybe using sprint etc.*/
+/*tex A prelude to more abstraction and maybe using sprint etc. */
 
 static void tex_aux_do_handle_error_type(
     int type
@@ -571,18 +571,26 @@ static void tex_aux_do_handle_error_type(
         case condition_error_type:
         case runaway_error_type:
         case warning_error_type:
-            tex_aux_error(type);
             break;
         case back_error_type:
             tex_aux_back_error();
-            break;
+            return;
         case insert_error_type:
             tex_aux_insert_error();
-            break;
+            return;
         case succumb_error_type:
             tex_aux_succumb_error();
+            return;
+        case infinite_shrink_error_type:
+            type = (error_recovery_mode_par & infinite_shrink_recovery_type) ? warning_error_type : normal_error_type;
             break;
+        case alignment_tab_error_type:
+            type = (error_recovery_mode_par & alignment_tab_recovery_type) ? warning_error_type : normal_error_type;
+            break;
+        default:
+            return;
     }
+    tex_aux_error(type);
 }
 
 void tex_handle_error_message_only(

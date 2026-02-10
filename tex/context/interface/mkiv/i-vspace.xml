@@ -89,6 +89,10 @@
 
     <cd:command name="inhibitblank" level="system" category="whitespace" file="spac-ver.mkxl"/>
 
+    <cd:command name="inhibitwhitespace" level="system" category="whitespace" file="spac-ver.mkxl"/>
+
+    <cd:command name="inhibitallspacing" level="system" category="whitespace" file="spac-ver.mkxl"/>
+
     <cd:command name="synchronizeblank" level="system" category="whitespace" file="spac-ver.mkxl"/>
 
     <cd:command name="definevspace" level="style" category="whitespace" file="spac-ver.mkxl">
@@ -135,6 +139,36 @@
     <cd:command name="medskip" level="system" category="whitespace" file="spac-ver.mkxl"/>
 
     <cd:command name="bigskip" level="system" category="whitespace" file="spac-ver.mkxl"/>
+
+    <cd:command name="smallbreak" level="system" category="whitespace" file="spac-ver.mkxl"/>
+
+    <cd:command name="medbreak" level="system" category="whitespace" file="spac-ver.mkxl"/>
+
+    <cd:command name="bigbreak" level="system" category="whitespace" file="spac-ver.mkxl"/>
+
+    <cd:command name="break" level="system" category="whitespace" file="spac-ver.mkxl"/>
+
+    <cd:command name="nobreak" level="system" category="whitespace" file="spac-ver.mkxl"/>
+
+    <cd:command name="allowbreak" level="system" category="whitespace" file="spac-ver.mkxl"/>
+
+    <cd:command name="vbreak" level="system" category="whitespace" file="spac-ver.mkxl"/>
+
+    <cd:command name="novbreak" level="system" category="whitespace" file="spac-ver.mkxl"/>
+
+    <cd:command name="allowvbreak" level="system" category="whitespace" file="spac-ver.mkxl"/>
+
+    <cd:command name="hbreak" level="system" category="whitespace" file="spac-ver.mkxl"/>
+
+    <cd:command name="nohbreak" level="system" category="whitespace" file="spac-ver.mkxl"/>
+
+    <cd:command name="allowhbreak" level="system" category="whitespace" file="spac-ver.mkxl"/>
+
+    <cd:command name="goodbreak" level="system" category="whitespace" file="spac-ver.mkxl"/>
+
+    <cd:command name="filbreak" level="system" category="whitespace" file="spac-ver.mkxl"/>
+
+    <cd:command name="parbreak" level="system" category="whitespace" file="spac-ver.mkxl"/>
 
     <cd:command name="checkedblank" level="system" category="whitespace" file="spac-ver.mkxl">
         <cd:arguments>

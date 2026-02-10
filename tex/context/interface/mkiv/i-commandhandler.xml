@@ -347,6 +347,10 @@
         <cd:arguments>
             <cd:csname/>
             <cd:resolve name="argument-name"/>
+            <cd:resolve name="string-true"/>
+            <cd:delimiter name="else"/>
+            <cd:resolve name="string-false"/>
+            <cd:delimiter name="fi"/>
         </cd:arguments>
     </cd:command>
 
@@ -418,13 +422,13 @@
         </cd:arguments>
     </cd:command>
 
-    <cd:command name="installmacrostack" level="system" category="system" file="mult-aux.mkxl">
+    <cd:command name="installmacrostack" level="system" category="system" file="syst-aux.mkxl">
         <cd:arguments>
             <cd:csname/>
         </cd:arguments>
     </cd:command>
 
-    <cd:command name="installglobalmacrostack" level="system" category="system" file="mult-aux.mkxl">
+    <cd:command name="installglobalmacrostack" level="system" category="system" file="syst-aux.mkxl">
         <cd:arguments>
             <cd:csname/>
         </cd:arguments>
@@ -762,6 +766,12 @@
         <cd:arguments>
             <cd:resolve name="argument-text"/>
             <cd:resolve name="string-box"/>
+        </cd:arguments>
+    </cd:command>
+
+    <cd:command name="installcommalistprocessor" file="mult-aux.mkxl">
+        <cd:arguments>
+        
         </cd:arguments>
     </cd:command>
 

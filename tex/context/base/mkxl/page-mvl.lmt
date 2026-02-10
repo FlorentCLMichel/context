@@ -174,18 +174,18 @@ local function setstate(dataset,flushing)
     else
         dataset.spread  = 1
         dataset.sheet   = 1
-if dataset.doublesided then
-        if odd(realpage) then
-            dataset.initial = "right"
-            dataset.count   = 2
+        if dataset.doublesided then
+            if odd(realpage) then
+                dataset.initial = "right"
+                dataset.count   = 2
+            else
+                dataset.initial = "left"
+                dataset.count   = 1
+            end
         else
             dataset.initial = "left"
             dataset.count   = 1
         end
-else
-    dataset.initial = "left"
-    dataset.count   = 1
-end
         dataset.state = dataset.initial
     end
     if odd(dataset.count) then
@@ -824,30 +824,30 @@ do
         local nofcolumns = dataset.nofcolumns
         local nofrows    = dataset.nofrows
         -- see later (will become helper)
-local nextsheet  = not dataset.doublesided and
-                   not dataset.byspread    and
-                   not odd(dataset.sheet)
+        local nextsheet  = not dataset.doublesided and
+                           not dataset.byspread    and
+                           not odd(dataset.sheet)
         --
         local c = t.c or 0
         local r = t.r or 0
 
-local lastcolumn = dataset.nofleft + dataset.nofright
+        local lastcolumn = dataset.nofleft + dataset.nofright
 
-if nextsheet and t.c <= dataset.nofleft then
-    local tc = t.c
-    if tc == 0 then
-        t.c = tc + dataset.nofleft + 1
-    else
-        t.c = tc + dataset.nofleft
-    end
-end
+        if nextsheet and t.c <= dataset.nofleft then
+            local tc = t.c
+            if tc == 0 then
+                t.c = tc + dataset.nofleft + 1
+            else
+                t.c = tc + dataset.nofleft
+            end
+        end
 
-if t.c and t.c >= 1 and t.c <= lastcolumn then
-    c = t.c
-end
-if t.r and t.r >= 1 and t.r <= nofrows then
-    r = t.r
-end
+        if t.c and t.c >= 1 and t.c <= lastcolumn then
+            c = t.c
+        end
+        if t.r and t.r >= 1 and t.r <= nofrows then
+            r = t.r
+        end
 
         if c == 0 or r == 0 or c > nofcolumns or r > nofrows then
             return
@@ -2108,11 +2108,11 @@ do
         if dataset then
             local saved        = savedstate(dataset)
             local spreadsheets = dataset.spreadsheets
-setstate(dataset,false)
-dataset.byspread = true
-dataset.spread = 1
-dataset.count  = 1
-dataset.sheet  = 1
+            setstate(dataset,false)
+            dataset.byspread = true
+            dataset.spread = 1
+            dataset.count  = 1
+            dataset.sheet  = 1
             for n=1,dataset.nofspreadsheets do
                 dataset.cells = futurecells(dataset)
                 local list = rawget(spreadsheets,n)
@@ -2134,17 +2134,17 @@ dataset.sheet  = 1
 -- inspect(dataset.future)
 --                 setstate(dataset,true)
 
-    dataset.spread        = dataset.spread + 1
-    dataset.count         = dataset.spread * 2 - 1
-    dataset.sheet         = dataset.spread * 2 - 1
-    dataset.state         = "left"
-    dataset.firstcolumn   = 1
-    dataset.lastcolumn    = dataset.firstcolumn + dataset.nofright
-    dataset.currentcolumn = dataset.firstcolumn
-    dataset.currentrow    = 1
+                dataset.spread        = dataset.spread + 1
+                dataset.count         = dataset.spread * 2 - 1
+                dataset.sheet         = dataset.spread * 2 - 1
+                dataset.state         = "left"
+                dataset.firstcolumn   = 1
+                dataset.lastcolumn    = dataset.firstcolumn + dataset.nofright
+                dataset.currentcolumn = dataset.firstcolumn
+                dataset.currentrow    = 1
 
             end
-dataset.byspread = false
+            dataset.byspread = false
             texsetcount(c_page_mvl_current_spreadsheet,0)
             restorestate(dataset,saved)
             setstate(dataset,false)
@@ -2362,30 +2362,30 @@ do
         --
         -- cleaner as separate loop
         --
-local cnt = #shape
-local nor = dataset.nofrows
+        local cnt = #shape
+        local nor = dataset.nofrows
 
--- local function isfirst(t,n)
---     for i=1,n-1 do
---         if not t[n] then
---             return false
---         end
---     end
---     return true
--- end
-for i=1,cnt do
-    local s = shape[i]
-    local r = s.row
-    if r == 1 then -- or isfirst(future[s.spread][s.column],r) then
--- print(s.spread,s.column,r,"TTT")
-        s.options = 1
-    end
---     if (r + s.lines - 1) == nor then
---         s.options = (s.options or 0) + 2
---     end
-end
--- shape[cnt].options = 3
-shape[cnt].options = 1
+     -- local function isfirst(t,n)
+     --     for i=1,n-1 do
+     --         if not t[n] then
+     --             return false
+     --         end
+     --     end
+     --     return true
+     -- end
+        for i=1,cnt do
+            local s = shape[i]
+            local r = s.row
+            if r == 1 then -- or isfirst(future[s.spread][s.column],r) then
+             -- print(s.spread,s.column,r,"TTT")
+                s.options = 1
+            end
+        --     if (r + s.lines - 1) == nor then
+        --         s.options = (s.options or 0) + 2
+        --     end
+        end
+        -- shape[cnt].options = 3
+        shape[cnt].options = 1
         --
         setbalanceshape(shape)
     end

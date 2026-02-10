@@ -16,6 +16,9 @@
                 <cd:constant type="keep"/>
                 <cd:constant type="empty"/>
             </cd:parameter>
+            <cd:parameter name="label">
+                <cd:constant type="cd:text"/>
+            </cd:parameter>
             <cd:inherit name="setupcounter"/>
         </cd:assignments>
     </cd:define>

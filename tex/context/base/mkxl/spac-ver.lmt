@@ -32,7 +32,6 @@ if not modules then modules = { } end modules ['spac-ver'] = {
 
 local next, type, tonumber = next, type, tonumber
 local gmatch = string.gmatch
-local unpack = unpack or table.unpack
 local allocate = utilities.storage.allocate
 local todimen = string.todimen
 local formatters = string.formatters
@@ -92,7 +91,7 @@ local trace_vspacing         = false  trackers.register("vspacing.spacing",  fun
 local trace_vsnapping        = false  trackers.register("vspacing.snapping", function(v) trace_vsnapping        = v end)
 local trace_specials         = false  trackers.register("vspacing.specials", function(v) trace_specials         = v end)
 
-local remove_math_skips      = true   directives.register("vspacing.removemathskips", function(v) remnove_math_skips = v end)
+----- remove_math_skips      = true   directives.register("vspacing.removemathskips", function(v) remnove_math_skips = v end)
 
 local report_vspacing  = logs.reporter("vspacing","spacing")
 local report_collapser = logs.reporter("vspacing","collapsing")
@@ -148,6 +147,9 @@ local setnext             = nuts.setnext
 local setprev             = nuts.setprev
 local setoptions          = nuts.setoptions
 local hasidsubtype        = nuts.hasidsubtype
+
+local issnapped           = nuts.issnapped
+local setsnapped          = nuts.setsnapped
 
 local find_node_tail      = nuts.tail
 local flushnode           = nuts.flushnode
@@ -484,25 +486,24 @@ local snap_hlist  do
                 t[#t+1] = formatters["auto: snapht %p snapdp %p"](snapht,snapdp)
             end
         end
-
-local range = getattr(current,a_snaprange)
-if range then
-    local oldht   = getheight(current)
-    local olddp   = getdepth (current)
-    local extraht = rangesnap(range,snapht,oldht)
-    local extradp = rangesnap(range,snapdp,olddp)
-    local newht   = oldht + extraht
-    local newdp   = olddp + extradp
-    if newht < 0  or newdp < 0 then
-        report_snapper("ignoring snaprange %i: old (%p,%p) new (%p,%p)",range,oldht,olddp,newht,newdp)
-    else
-        setheight(current,newht)
-        setdepth (current,newdp)
-    end
-end
-
+        --
+        local range = getattr(current,a_snaprange)
+        if range then
+            local oldht   = getheight(current)
+            local olddp   = getdepth (current)
+            local extraht = rangesnap(range,snapht,oldht)
+            local extradp = rangesnap(range,snapdp,olddp)
+            local newht   = oldht + extraht
+            local newdp   = olddp + extradp
+            if newht < 0  or newdp < 0 then
+                report_snapper("ignoring snaprange %i: old (%p,%p) new (%p,%p)",range,oldht,olddp,newht,newdp)
+            else
+                setheight(current,newht)
+                setdepth (current,newdp)
+            end
+        end
         local wd, ht, dp = getwhd(current)
-
+        --
         local h        = (method[v_noheight] and 0) or height or ht
         local d        = (method[v_nodepth]  and 0) or depth  or dp
         local hr       = method[v_hfraction] or 1
@@ -819,6 +820,8 @@ vspacingdata.skip = vspacingdata.skip or { } -- allocate ?
 storage.register("builders/vspacing/data/map",  vspacingdata.map,  "builders.vspacing.data.map")
 storage.register("builders/vspacing/data/skip", vspacingdata.skip, "builders.vspacing.data.skip")
 
+local delay = false  experiments.register("vspacing.delay", function(v) delay = v end)
+
 -- todo: also isspecification
 
 local setspecification, getspecification
@@ -993,7 +996,6 @@ elseif method == 5 then
     local id <const> = 0x01
 
     setspecification = function(n,category,penalty,order)
--- print("set",category,penalty,order)
         if not category or category > 0xF then
             category = 0x0F00
         else
@@ -1023,7 +1025,6 @@ elseif method == 5 then
             if penaltyflag ~= 0xF then
                 penalty = false
             end
--- print("get",category,penalty,order)
             return category, penalty, order
         else
             return nil, nil, nil
@@ -1091,8 +1092,8 @@ do
 
     local pattern    = nil
 
-    local packed     = categories.packed
-    local keep       = categories.keep
+    local packed     <const> = categories.packed
+    local keep       <const> = categories.keep
 
     local gluefactor = .25
 
@@ -1121,15 +1122,30 @@ do
 
     -- use a cache for predefined ones
 
-    local function inject()
-        local n = new_glue(b_amount,b_stretch,b_shrink)
-        setspecification(n,b_category,b_penalty,b_order or 1)
-        setvisual(n)
-        if b_limit then
-            setoptions(n,tex.glueoptioncodes.limit)
+    local inject  do
+
+        local limit_code <const> = tex.glueoptioncodes.limit
+        local delay_code <const> = tex.glueoptioncodes.delay
+
+        inject = function()
+            local n = new_glue(b_amount,b_stretch,b_shrink)
+            setspecification(n,b_category,b_penalty,b_order or 1)
+            setvisual(n)
+            if delay then
+                if b_limit then
+                    setoptions(n,limit_code | delay_code)
+                else
+                    setoptions(n,delay_code)
+                end
+            else
+                if b_limit then
+                    setoptions(n,limit_code)
+                end
+            end
+            write_node(n)
+            -- todo: inject via value
         end
-        write_node(n)
-        -- todo: inject via value
+
     end
 
     local function flush()
@@ -1141,10 +1157,6 @@ do
         before()
     end
 
- -- local cmd = token.create("vspacingfromtempstring")
- -- local cmd = token.create("vspacingpredefinedvalue") -- not yet known
-
-    ----- s_predefined = "s_spac_vspacing_predefined"
     local s_predefined = tex.isskip("s_spac_vspacing_predefined")
 
     local function handler(multiplier, keyword, detail)
@@ -1157,7 +1169,7 @@ do
             elseif keyword == k_fixed then
                 b_fixed = true
             elseif keyword == k_flexible then
-                b_flexible = false
+                b_fixed = false
             elseif keyword == k_category then
                 local category = tonumber(detail)
                 if category == packed then
@@ -1273,34 +1285,18 @@ do
 
     function vspacing.injectpenalty(penalty)
         inject(c_penalty,0,penalty)
-     -- local n = new_glue()
-     -- setspecification(n,c_penalty,penalty,1)
-     -- setvisual(k)
-     -- write_node(n)
     end
 
     function vspacing.injectskip(amount)
         inject(c_largest,amount,false)
-     -- local n = new_glue(amount)
-     -- setspecification(n,c_largest,false,1)
-     -- setvisual(k)
-     -- write_node(n)
     end
 
     function vspacing.injectdisable()
         inject(c_disable,0,false)
-     -- local n = new_glue()
-     -- setspecification(n,c_disable,false,1)
-     -- setvisual(k)
-     -- write_node(n)
     end
 
     function vspacing.injectnowhite()
         inject(c_nowhite,0,false)
-     -- local n = new_glue()
-     -- setspecification(n,c_nowhite,false,1)
-     -- setvisual(k)
-     -- write_node(n)
     end
 
 end
@@ -1364,17 +1360,16 @@ end
 
 do
 
+    local unpack = unpack or table.unpack
     local concat = table.concat
 
     local insertnodeafter  = nuts.insertafter
     local insertnodebefore = nuts.insertbefore
 
-    -- these four can to: we never have them
-
-    local abovedisplayskip_code      <const> = gluecodes.abovedisplayskip
-    local belowdisplayskip_code      <const> = gluecodes.belowdisplayskip
-    local abovedisplayshortskip_code <const> = gluecodes.abovedisplayshortskip
-    local belowdisplayshortskip_code <const> = gluecodes.belowdisplayshortskip
+    ----- abovedisplayskip_code      <const> = gluecodes.abovedisplayskip
+    ----- belowdisplayskip_code      <const> = gluecodes.belowdisplayskip
+    ----- abovedisplayshortskip_code <const> = gluecodes.abovedisplayshortskip
+    ----- belowdisplayshortskip_code <const> = gluecodes.belowdisplayshortskip
 
     local w, h, d = 0, 0, 0
     ----- w, h, d = 100*65536, 65536, 65536
@@ -1747,6 +1742,9 @@ do
         end
     end)
 
+    local setdiscardable   <const> = tex.glueoptioncodes.setdiscardable
+    local resetdiscardable <const> = tex.glueoptioncodes.resetdiscardable
+
     local function collapser(head,where,what,trace,snap,a_snapmethod) -- maybe also pass tail
         if trace then
             reset_tracing(head)
@@ -1778,19 +1776,16 @@ do
             end
         end
         --
-        local setdiscardable   <const> = tex.glueoptioncodes.setdiscardable
-        local resetdiscardable <const> = tex.glueoptioncodes.resetdiscardable
-        --
         local function checkoptions(n,where)
             if getid(n) ~= glue_code then
                 -- something is wrong
             -- print("IGNORE OPTION",where)
             elseif dont_discard then
             -- print("SET OPTION")
-                setoptions(n,tex.glueoptioncodes.setdiscardable)
+                setoptions(n,setdiscardable)
             else
             -- print("RESET OPTION")
-                setoptions(n,tex.glueoptioncodes.resetdiscardable)
+                setoptions(n,resetdiscardable)
             end
         end
         --
@@ -1853,7 +1848,7 @@ do
         local function getavailable()
             getpagelist()
             if pagehead then
--- What if mvl's
+             -- What if mvl's?
                 local t = texget("pagetotal")
                 if t > 0 then
                     local g = texget("pagegoal")
@@ -1955,78 +1950,13 @@ do
             checkslide(head,where,what)
         end
 
+        -- In the case of delay we only have glue nodes with a user or parskip subtype
+        -- so prioritize these. We could have a stripped down variant but that doesn't
+        -- save much.
+
         while current do
             local id = getid(current)
-            if id == hlist_code or id == vlist_code then
--- don't snap due to attr
-                -- needs checking, why so many calls
-                if snap then
-                    lastsnap = nil
-                    local list = getlist(current)
-                    local s = getattr(current,a_snapmethod)
-                    if not s then
-                    --  if trace_vsnapping then
-                    --      report_snapper("mvl list not snapped")
-                    --  end
-                    elseif s == 0 then
-                        if trace_vsnapping then
-                            report_snapper("mvl %a not snapped, already done: %s",nodecodes[id],listtoutf(list))
-                        end
-                    else
-                        local sv = snapmethods[s]
-                        if sv then
-                            -- check if already snapped
-                            local done = list and already_done(id,list,a_snapmethod)
-                            if done then
-                                -- assume that the box is already snapped
-                                if trace_vsnapping then
-                                    local w, h, d = getwhd(current)
-                                    report_snapper("mvl list already snapped at (%p,%p): %s",h,d,listtoutf(list))
-                                end
-                            else
-                                local h, d, ch, cd, lines, extra = snap_hlist("mvl",current,sv,false,false)
-                                lastsnap = {
-                                    ht = h,
-                                    dp = d,
-                                    ch = ch,
-                                    cd = cd,
-                                    extra = extra,
-                                    current = current,
-                                }
-                                setprop(current,"snapper",lastsnap)
-                                if trace_vsnapping then
-                                    report_snapper("mvl %a snapped from (%p,%p) to (%p,%p) using method %a (%s) for %a (%s lines): %s",
-                                        nodecodes[id],h,d,ch,cd,sv.name,sv.specification,where,lines,listtoutf(list))
-                                end
-                            end
-                        elseif trace_vsnapping then
-                            report_snapper("mvl %a not snapped due to unknown snap specification: %s",nodecodes[id],listtoutf(list))
-                        end
-                        setattr(current,a_snapmethod,0)
-                    end
-                else
-                    --
-                end
-            --  tex.prevdepth = 0
-                flush("list")
-                current = getnext(current)
-            elseif id == penalty_code then
-             -- natural_penalty = getpenalty(current)
-             -- if trace then
-             --     trace_done("removed penalty",current)
-             -- end
-             -- head, current = remove_node(head,current,true)
-                if trace then
-                    trace_done("kept penalty",current)
-                end
-                current = getnext(current)
-            elseif id == kern_code then
-                if snap and trace_vsnapping and getkern(current) ~= 0 then
-                    report_snapper("kern of %p kept",getkern(current))
-                end
-                flush("kern")
-                current = getnext(current)
-            elseif id == glue_code then
+            if id == glue_code then
                 local subtype = getsubtype(current)
                 if subtype == userskip_code then
                  -- local sc, so, sp = getattrs(current,a_skipcategory,a_skiporder,a_skippenalty)
@@ -2035,6 +1965,7 @@ do
                         so = 1 -- the others have no default value
                     end
                     if sp and sc == penalty then
+                        -- what with delay ...
                         if where == "page" then
                             getpagelist()
                             local p = specialmethods[specialmethod](pagehead,pagetail,current,sp)
@@ -2185,12 +2116,6 @@ do
                                 end
                                 head, current = remove_node(head,current,true)
                             end
--- if sc == keep then
---     if trace then
---         trace_skip("keep 3",sc,so,sp,current)
---     end
---     dont_discard = true
--- end
                         elseif sc == goback then
                             if trace then
                                 trace_skip("goback",sc,so,sp,current)
@@ -2226,12 +2151,12 @@ do
                                 trace_skip("unknown 1",sc,so,sp,current)
                             end
                             head, current = remove_node(head,current,true)
-if sc == keep then
-    if trace then
-        trace_skip("keep 4",sc,so,sp,current)
-    end
-    dont_discard = true
-end
+                            if sc == keep then
+                                if trace then
+                                    trace_skip("keep 4",sc,so,sp,current)
+                                end
+                                dont_discard = true
+                            end
                         end
                     else
                         if trace then
@@ -2242,50 +2167,6 @@ end
                     if sc == force then
                         force_glue = true
                     end
-                elseif subtype == lineskip_code then
-                    if snap then
-                        local s = getattr(current,a_snapmethod)
-                        if s and s ~= 0 then
-                            setattr(current,a_snapmethod,0)
-                            setwidth(current,0)
-                            if trace_vsnapping then
-                                report_snapper("lineskip set to zero")
-                            end
-                        else
-                            if trace then
-                                trace_skip("lineskip",sc,so,sp,current)
-                            end
-                            flush("lineskip")
-                        end
-                    else
-                        if trace then
-                            trace_skip("lineskip",sc,so,sp,current)
-                        end
-                        flush("lineskip")
-                    end
-                    current = getnext(current)
-                elseif subtype == baselineskip_code then
-                    if snap then
-                        local s = getattr(current,a_snapmethod)
-                        if s and s ~= 0 then
-                            setattr(current,a_snapmethod,0)
-                            setwidth(current,0)
-                            if trace_vsnapping then
-                                report_snapper("baselineskip set to zero")
-                            end
-                        else
-                            if trace then
-                                trace_skip("baselineskip",sc,so,sp,current)
-                            end
-                            flush("baselineskip")
-                        end
-                    else
-                        if trace then
-                            trace_skip("baselineskip",sc,so,sp,current)
-                        end
-                        flush("baselineskip")
-                    end
-                    current = getnext(current)
                 elseif subtype == parskip_code then
                     -- parskip always comes later
                     if ignore_whitespace then
@@ -2314,6 +2195,50 @@ end
                         end
                         head, current, glue_data = remove_node(head,current)
                     end
+                elseif subtype == baselineskip_code then
+                    if snap then
+                        local s = getattr(current,a_snapmethod)
+                        if s and s ~= 0 then
+                            setattr(current,a_snapmethod,0)
+                            setwidth(current,0)
+                            if trace_vsnapping then
+                                report_snapper("baselineskip set to zero")
+                            end
+                        else
+                            if trace then
+                                trace_skip("baselineskip",sc,so,sp,current)
+                            end
+                            flush("baselineskip")
+                        end
+                    else
+                        if trace then
+                            trace_skip("baselineskip",sc,so,sp,current)
+                        end
+                        flush("baselineskip")
+                    end
+                    current = getnext(current)
+                elseif subtype == lineskip_code then
+                    if snap then
+                        local s = getattr(current,a_snapmethod)
+                        if s and s ~= 0 then
+                            setattr(current,a_snapmethod,0)
+                            setwidth(current,0)
+                            if trace_vsnapping then
+                                report_snapper("lineskip set to zero")
+                            end
+                        else
+                            if trace then
+                                trace_skip("lineskip",sc,so,sp,current)
+                            end
+                            flush("lineskip")
+                        end
+                    else
+                        if trace then
+                            trace_skip("lineskip",sc,so,sp,current)
+                        end
+                        flush("lineskip")
+                    end
+                    current = getnext(current)
                 elseif subtype == topskip_code or subtype == splittopskip_code then
                     local next = getnext(current)
                  -- if next and getattr(next,a_skipcategory) == notopskip then
@@ -2342,40 +2267,37 @@ end
                         flush("topskip")
                     end
                     current = getnext(current)
--- we can comment this
-                elseif subtype == abovedisplayskip_code and remove_math_skips then
-                    --
-                    if trace then
-                        trace_skip("above display skip (normal)",sc,so,sp,current)
-                    end
-                    flush("above display skip (normal)")
-                    current = getnext(current)
-                    --
-                elseif subtype == belowdisplayskip_code and remove_math_skips then
-                    --
-                    if trace then
-                        trace_skip("below display skip (normal)",sc,so,sp,current)
-                    end
-                    flush("below display skip (normal)")
-                    current = getnext(current)
-                   --
-                elseif subtype == abovedisplayshortskip_code and remove_math_skips then
-                    --
-                    if trace then
-                        trace_skip("above display skip (short)",sc,so,sp,current)
-                    end
-                    flush("above display skip (short)")
-                    current = getnext(current)
-                    --
-                elseif subtype == belowdisplayshortskip_code and remove_math_skips then
-                    --
-                    if trace then
-                        trace_skip("below display skip (short)",sc,so,sp,current)
-                    end
-                    flush("below display skip (short)")
-                    current = getnext(current)
-                    --
--- till here
+             -- elseif subtype == abovedisplayskip_code and remove_math_skips then
+             --     --
+             --     if trace then
+             --         trace_skip("above display skip (normal)",sc,so,sp,current)
+             --     end
+             --     flush("above display skip (normal)")
+             --     current = getnext(current)
+             --     --
+             -- elseif subtype == belowdisplayskip_code and remove_math_skips then
+             --     --
+             --     if trace then
+             --         trace_skip("below display skip (normal)",sc,so,sp,current)
+             --     end
+             --     flush("below display skip (normal)")
+             --     current = getnext(current)
+             --    --
+             -- elseif subtype == abovedisplayshortskip_code and remove_math_skips then
+             --     --
+             --     if trace then
+             --         trace_skip("above display skip (short)",sc,so,sp,current)
+             --     end
+             --     flush("above display skip (short)")
+             --     current = getnext(current)
+             --     --
+             -- elseif subtype == belowdisplayshortskip_code and remove_math_skips then
+             --     --
+             --     if trace then
+             --         trace_skip("below display skip (short)",sc,so,sp,current)
+             --     end
+             --     flush("below display skip (short)")
+             --     current = getnext(current)
                 else -- other glue
                     if snap and trace_vsnapping then
                         local w = getwidth(current)
@@ -2389,6 +2311,74 @@ end
                     flush("some glue")
                     current = getnext(current)
                 end
+            elseif id == hlist_code or id == vlist_code then
+                -- don't snap due to attr
+                -- needs checking, why so many calls
+                if snap then
+                    lastsnap = nil
+                    local list = getlist(current)
+                    local s = getattr(current,a_snapmethod)
+                    if not s then
+                    --  if trace_vsnapping then
+                    --      report_snapper("mvl list not snapped")
+                    --  end
+                    elseif s == 0 then
+                        if trace_vsnapping then
+                            report_snapper("mvl %a not snapped, already done: %s",nodecodes[id],listtoutf(list))
+                        end
+                    else
+                        local sv = snapmethods[s]
+                        if sv then
+                            -- check if already snapped
+                            local done = list and already_done(id,list,a_snapmethod)
+                            if done then
+                                -- assume that the box is already snapped
+                                if trace_vsnapping then
+                                    local w, h, d = getwhd(current)
+                                    report_snapper("mvl list already snapped at (%p,%p): %s",h,d,listtoutf(list))
+                                end
+                            else
+                                local h, d, ch, cd, lines, extra = snap_hlist("mvl",current,sv,false,false)
+                                lastsnap = {
+                                    ht = h,
+                                    dp = d,
+                                    ch = ch,
+                                    cd = cd,
+                                    extra = extra,
+                                    current = current,
+                                }
+                                setprop(current,"snapper",lastsnap)
+                                if trace_vsnapping then
+                                    report_snapper("mvl %a snapped from (%p,%p) to (%p,%p) using method %a (%s) for %a (%s lines): %s",
+                                        nodecodes[id],h,d,ch,cd,sv.name,sv.specification,where,lines,listtoutf(list))
+                                end
+                            end
+                        elseif trace_vsnapping then
+                            report_snapper("mvl %a not snapped due to unknown snap specification: %s",nodecodes[id],listtoutf(list))
+                        end
+                        setattr(current,a_snapmethod,0)
+                    end
+                else
+                    --
+                end
+                flush("list")
+                current = getnext(current)
+            elseif id == penalty_code then
+             -- natural_penalty = getpenalty(current)
+             -- if trace then
+             --     trace_done("removed penalty",current)
+             -- end
+             -- head, current = remove_node(head,current,true)
+                if trace then
+                    trace_done("kept penalty",current)
+                end
+                current = getnext(current)
+            elseif id == kern_code then
+                if snap and trace_vsnapping and getkern(current) ~= 0 then
+                    report_snapper("kern of %p kept",getkern(current))
+                end
+                flush("kern")
+                current = getnext(current)
             else
                 flush(trace and formatters["node with id %a"](id) or "other node")
                 current = getnext(current)
@@ -2441,8 +2431,10 @@ end
                 head = glue_data
                 checkoptions(glue_data,6)
             end
-            -- appending to the list bypasses tex's prevdepth handler
-            texnest[texnest.ptr].prevdepth = 0
+            if not delay then
+                -- appending to the list bypasses tex's prevdepth handler
+                texnest[texnest.ptr].prevdepth = 0
+            end
         end
         if trace then
             if glue_data or penalty_data then
@@ -2455,22 +2447,6 @@ end
         end
         return head
     end
-
---     local function collapser(head,...)
---         local current = head
---         while current do
---             local id = getid(current)
---             if id == glue_code then
---                 if getsubtype(current) == userskip_code then
---                     local glue_data
---                     head, current, glue_data = remove_node(head,current)
---                     head, current = insertnodebefore(head,current,glue_data)
---                 end
---             end
---             current = getnext(current)
---         end
---         return head
---     end
 
     -- This really need a rework. although, it has now been stable for 15 years so why
     -- mess with it. We get sequences like these where penalties come from the par
@@ -2505,11 +2481,11 @@ end
                 if stackhead[stackmvl] then
                     report_vspacing("pending stack entries for mvl %i, changing to %i",stackmvl,mvl)
                 end
--- if stackmvl == 0 then
---     stackhack[0] = false
---     stackhead[0] = false
---     stacktail[0] = false
--- end
+             -- if stackmvl == 0 then
+             --     stackhack[0] = false
+             --     stackhead[0] = false
+             --     stacktail[0] = false
+             -- end
                 stackmvl = mvl
             end
             --
@@ -2536,12 +2512,10 @@ end
                 end
             end
             texsetcount(c_spac_vspacing_ignore_parskip,0)
-
             if forceflush then
                 forceflush = false
                 flush      = true
             end
-
             if flush then
                 if stackhead[stackmvl] then
                     if trace_collect_vspacing then report("%s > appending %s nodes to stack (final): %s",where,newhead) end
@@ -2745,7 +2719,7 @@ do
                 end
                 nest.prevdepth = depth
             elseif id == temp_code and texgetnest("ptr") == 0 then
--- TODO
+             -- This has to be done better:
                 local head = texgetlist("pagehead")
                 if head then
                     tail = getnodetail(head)
@@ -2912,11 +2886,7 @@ do
                     elseif id == insert_code or id == mark_code then
                         -- prev
                     else
--- if id == glue_code then
---     print(gluecodes[subtype],nuts.getwidth(n))
--- else
                         break
--- end
                     end
                 end
             end
@@ -2945,8 +2915,7 @@ do
     function vspacing.interceptsamepagecontent(box)
         if vspacing.flushcontributions() then
             -- now we consult the last line (if present)
---             local head, tail = getspeciallist("pagehead")
-local head, tail = getmvllist()
+            local head, tail = getmvllist()
             if tail and getid(tail) == glue_code then
                 local prev = getprev(tail)
                 if prev and getid(prev) == penalty_code then
@@ -3141,21 +3110,6 @@ do
         arguments = "2 strings",
     }
 
- -- local remove_node    = nodes.remove
- -- local find_node_tail = nodes.tail
- --
- -- interfaces.implement {
- --     name    = "fakenextstrutline",
- --     actions = function()
- --         local head = texgetlist("pagehead")
- --         if head then
- --             local head = remove_node(head,find_node_tail(head),true)
- --             texgetlist("pagehead") = head
- --             buildpage()
- --         end
- --     end
- -- }
-
     local buildpage = tex.triggerbuildpage
 
     implement {
@@ -3203,6 +3157,80 @@ do
         protected = true,
         public    = true,
         actions   = { nodes.pool.baselineskip, context },
+    }
+
+end
+
+do
+
+    local vboxhandler = builders.vspacing.vboxhandler
+
+ -- inspect(tex.getdelayedgluetargetvalues())
+ -- inspect(tex.getdelayedgluelocationvalues())
+
+ -- local trace = false
+
+    local function delayed_glue_callback(target,location,head,tail)
+     -- if not trace then
+     --     --
+     -- elseif location == 1 then
+     --     print("delayed glue: parskip")
+     -- end
+        head = vboxhandler(head,"vbox") -- not page
+        return head
+    end
+
+    callbacks.register {
+        name    = "delayed_glue",
+        action  = delayed_glue_callback,
+        comment = "vspace processing",
+        frozen  = true,
+    }
+
+    local enableaction  = nodes.tasks.enableaction
+    local disableaction = nodes.tasks.disableaction
+
+    experiments.register("vspacing.delay",function(v)
+        if v then
+            disableaction("vboxbuilders", "builders.vspacing.vboxhandler")
+            disableaction("mvlbuilders",  "builders.vspacing.pagehandler")
+context.sprint(tex.prtcatcodes,"\\global\\c_spac_delay\\conditionaltrue")
+        else
+            enableaction("vboxbuilders", "builders.vspacing.vboxhandler")
+            enableaction("mvlbuilders",  "builders.vspacing.pagehandler")
+context.sprint(tex.prtcatcodes,"\\global\\c_spac_delay\\conditionalfalse")
+        end
+    end)
+
+    local checkdelayedglue = tex.checkdelayedglue
+    local triggerbuildpage = tex.triggerbuildpage
+
+    interfaces.implement {
+        name      = "checkspacingbeforepar",
+        public    = true,
+        protected = true,
+        actions   = function()
+            if delay then
+                checkdelayedglue(0, true)
+            else
+            end
+            triggerbuildpage()
+        end
+    }
+
+    local d_spac_total <const> = tex.isdimen("d_spac_total")
+
+    interfaces.implement {
+        name      = "checkspacingavailable",
+        public    = true,
+        protected = true,
+        actions   = function()
+            if delay then
+                checkdelayedglue(0, true)
+            end
+            triggerbuildpage()
+            texsetdimen(d_spac_total,(delay and 0 or texget("parskip",true)) + texget("pagetotal"))
+        end
     }
 
 end

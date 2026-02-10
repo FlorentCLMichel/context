@@ -10,11 +10,11 @@ return {
     copyright   = "ConTeXt development team",
     mathematics = {
         parameters = {
-            PrimeShiftUpCramped            = "SuperscriptShiftUp",
-            -- RadicalKernBeforeExtensible     = 100,
-            -- RadicalDisplayStyleVerticalGap  = 0,
-            RadicalDegreeBottomRaisePercent = 55,
-            RadicalKernAfterDegree          = -300,
+            PrimeShiftUpCramped               = "SuperscriptShiftUp",
+            -- RadicalKernBeforeExtensible    = 100,
+            -- RadicalDisplayStyleVerticalGap = 0,
+            RadicalDegreeBottomRaisePercent   = 60,
+            RadicalKernAfterDegree            = -300,
         },
         tweaks = {
             aftercopying = {
@@ -99,10 +99,10 @@ return {
                 },
             },
         },
-        scales = {
-            feature            = "pennstanderscale",
-            scriptweight       =  80,
-            scriptscriptweight = 140,
-        },
-    },
+     -- scales = {
+     --     feature            = "pennstanderscale",
+     --     scriptweight       =  80,
+     --     scriptscriptweight = 140,
+     -- },    
+     },
 }

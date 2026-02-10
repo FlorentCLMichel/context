@@ -699,6 +699,7 @@ void tex_begin_token_list(halfword t, quarterword kind)
         lmt_input_state.cur_input.loc = token_link(t);
         if (tracing_macros_par > 0) {
             tex_begin_diagnostic();
+            tex_print_levels();
             if (kind < n_of_token_types && token_types_verbose[kind]) {
                 tex_print_str(token_types_texts[kind]);
             } else { 

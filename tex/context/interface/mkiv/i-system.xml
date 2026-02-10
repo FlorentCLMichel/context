@@ -4,11 +4,11 @@
 
 <cd:interface xmlns:cd="http://www.pragma-ade.com/commands">
 
-    <!-- cd:command name="expanded" level="system" category="system" file="syst-aux.mkxl">
+    <cd:command name="expanded" level="system" category="system" file="syst-aux.mkxl">
         <cd:arguments>
             <cd:content/>
         </cd:arguments>
-    </cd:command --> <!-- we use the primitive now -->
+    </cd:command>
 
     <cd:command name="expanded" type="environment" level="system" category="system" file="syst-aux.mkxl"/>
 
@@ -3580,7 +3580,18 @@
         </cd:arguments>
     </cd:command>
 
-    <cd:command name="processranges" level="system" category="system" file="syst-aux.mkxl">
+    <cd:command name="dowithminmaxrangeslice" level="system" category="system" file="syst-aux.mkxl">
+        <cd:arguments>
+            <cd:resolve name="argument-number"/>
+            <cd:resolve name="argument-number"/>
+            <cd:resolve name="argument-number"/>
+            <cd:resolve name="argument-number"/>
+            <cd:resolve name="argument-number-list"/>
+            <cd:resolve name="cd:csname"/>
+        </cd:arguments>
+    </cd:command>
+
+        <cd:command name="processranges" level="system" category="system" file="syst-aux.mkxl">
         <cd:arguments>
             <cd:keywords list="yes">
                 <cd:constant type="cd:number"/>

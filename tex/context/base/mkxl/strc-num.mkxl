@@ -386,8 +386,7 @@
 \protected\def\strc_counters_register_component#1#2#3#4#5#6#7[#8][#9]% maybe also nolist
   {\begingroup
    %
-   #2[\s!haslevel=1,#8]%
-   \edef\p_haslevel  {#3\s!haslevel}%
+   #2[\s!level=1,#8]%
    \edef\p_hascaption{#3\s!hascaption}%
    \edef\p_hastitle  {#3\s!hastitle}%
    \edef\p_hasnumber {#3\s!hasnumber}%

@@ -124,6 +124,41 @@
                 <cd:parameter name="location">
                     <cd:resolve name="value-boxpreset"/>
                 </cd:parameter>
+                <cd:parameter name="distance">
+                    <cd:constant type="cd:dimension"/>
+                </cd:parameter>
+                <cd:parameter name="dash">
+                    <cd:constant type="cd:number"/>
+                </cd:parameter>
+                <cd:parameter name="arrow">
+                    <cd:constant type="yes"/>
+                    <cd:constant type="no"/>
+                    <cd:constant type="reverse"/>
+                    <cd:constant type="both"/>
+                </cd:parameter>
+                <cd:parameter name="alternative">
+                    <cd:constant type="left"/>
+                    <cd:constant type="middle"/>
+                    <cd:constant type="right"/>
+                    <cd:constant type="top"/>
+                    <cd:constant type="bottom"/>
+                </cd:parameter>
+                <cd:parameter name="text">
+                    <cd:constant type="cd:text"/>
+                </cd:parameter>
+                <cd:parameter name="rulethickness">
+                    <cd:constant type="cd:dimension"/>
+                </cd:parameter>
+                <cd:parameter name="rulecolor">
+                    <cd:constant type="cd:color"/>
+                </cd:parameter>
+                <cd:parameter name="mp">
+                    <cd:constant type="cd:name"/>
+                </cd:parameter>
+                <cd:parameter name="page">
+                    <cd:constant type="yes"/>
+                    <cd:constant type="no" default="yes"/>
+                </cd:parameter>
             </cd:assignments>
         </cd:arguments>
     </cd:command>
@@ -134,6 +169,17 @@
             <cd:assignments list="yes" optional="yes">
                 <cd:inherit name="setupboxanchorcontent"/>
             </cd:assignments>
+        </cd:arguments>
+    </cd:command>
+
+    <cd:command name="setboxanchor" file="pack-box.mkxl">
+        <cd:arguments>
+            <cd:resolve name="keyword-name"/>
+            <cd:resolve name="keyword-name-optional"/>
+            <cd:assignments list="yes" optional="yes">
+                <cd:inherit name="setupboxanchorcontent"/>
+            </cd:assignments>
+            <cd:content/>
         </cd:arguments>
     </cd:command>
 
@@ -167,5 +213,37 @@
             </cd:keywords>
         </cd:arguments>
     </cd:command>
+
+    <cd:command name="connectboxanchors" file="anch-box.mkxl">
+        <cd:arguments>
+            <cd:resolve name="keyword-name"/>
+            <cd:resolve name="keyword-name"/>
+            <cd:assignments list="yes" optional="yes">
+                <cd:inherit name="setupboxanchorcontent"/>
+            </cd:assignments>
+            <cd:assignments list="yes" optional="yes">
+                <cd:inherit name="setupboxanchorcontent"/>
+            </cd:assignments>
+            <cd:resolve name="argument-name"/>
+            <cd:resolve name="argument-name"/>
+        </cd:arguments>
+    </cd:command>
+
+    <cd:command name="connectmatrixanchors" file="anch-box.mkxl">
+        <cd:arguments>
+            <cd:resolve name="keyword-name"/>
+            <cd:resolve name="keyword-name"/>
+            <cd:assignments list="yes" optional="yes">
+                <cd:inherit name="setupboxanchorcontent"/>
+            </cd:assignments>
+            <cd:assignments list="yes" optional="yes">
+                <cd:inherit name="setupboxanchorcontent"/>
+            </cd:assignments>
+            <cd:resolve name="argument-name"/>
+            <cd:resolve name="argument-name"/>
+        </cd:arguments>
+    </cd:command>
+
+    <cd:command name="matrixanchors" type="environment" file="anch-box.mkxl"/>
 
 </cd:interface>

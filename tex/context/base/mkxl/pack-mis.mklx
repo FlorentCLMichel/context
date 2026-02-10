@@ -67,8 +67,11 @@
   %\ifinsidefloat \else
   %  \page_backgrounds_add_local_to_box\nextbox
   %\fi
-\flushnotes % new per 2014-05-29 : todo: move them up in the mvl
-   \ifgridsnapping
+   \flushnotes % new per 2014-05-29 : todo: move them up in the mvl
+   \ifgridlinesnapping
+     % gridlinesnapping: to be decided
+     \pack_placement_flush_grid_snapping
+   \orelse\ifgridsnapping
      \pack_placement_flush_grid_yes
    \else
      \pack_placement_flush_grid_nop
@@ -84,6 +87,10 @@
    \fi
    \pack_placement_flush_grid_noindent
    \snaptogrid[\p_grid]\hbox{\box\nextbox}}
+
+% For now:
+
+\aliased\let\pack_placement_flush_grid_snapping\pack_placement_flush_grid_yes
 
 \def\pack_placement_flush_grid_nop
   {\edef\p_linecorrection {\placementparameter\c!linecorrection}%

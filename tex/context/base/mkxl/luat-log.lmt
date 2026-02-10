@@ -459,7 +459,6 @@ local function setblocked(category,value) -- v.state == value == true : disable
             v.state = value
         end
     else
-        alllocked = false
         states = settings_to_hash(category,type(states)=="table" and states or nil)
         for c in next, states do
             local v = data[c]

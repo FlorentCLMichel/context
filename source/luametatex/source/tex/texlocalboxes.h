@@ -43,7 +43,9 @@ extern void       tex_set_local_hang_after        (halfword p, halfword amount);
 
 extern void       tex_aux_scan_local_box          (int code);
 extern void       tex_aux_finish_local_box        (void);
+extern int        tex_aux_inject_local_always_box (halfword linebox, halfword head, halfword tail);
 
 extern int        tex_show_localbox_record        (void);
+extern int        tex_is_localbox_always          (halfword p);
 
 # endif

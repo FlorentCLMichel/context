@@ -353,6 +353,7 @@ do
 
     local baselineskip_code <const> = nodes.gluecodes.baselineskip
     local lineskip_code     <const> = nodes.gluecodes.lineskip
+    local userskip_code     <const> = nodes.gluecodes.userskip
 
     local alignrecord_code  <const> = nodecodes.alignrecord
     local hlist_code        <const> = nodecodes.hlist
@@ -382,6 +383,7 @@ do
         local inbetween = specification.inbetween or 0
         local height    = specification.height or 0
         local depth     = specification.depth or 0
+        local snapped   = specification.snapped
         local lines     = { }
         for n, id, subtype, list in nextlist, head do
             lines[#lines+1] = { n, subtype, getwhd(n) }
@@ -390,37 +392,25 @@ do
         if noflines > 0 then
             local currentline = 1
             for n, subtype in nextglue, head do
--- print(currentline,height/65536,depth/65536)
                 -- one day we can decide what to do with intertext stuff based on the
                 -- subtype but not now ... on our agenda (intertext etc)
                 if subtype == baselineskip_code or subtype == lineskip_code then
                     local nextline = currentline + 1
                     local amount, stretch, shrink = getglue(n)
--- todo: safeguard for no nextline
                     local prevdp = lines[currentline][5]
                     local nextht = lines[nextline][4]
--- todo: add catch for no line here ^^^
                     local delta  = 0
                     if prevdp < depth then
                         setdepth(lines[currentline][1],depth)
                         delta = delta + (depth - prevdp)
--- lines[currentline][5] = depth
                     end
                     if nextht < height then
                         setheight(lines[nextline][1],height)
--- lines[nextline][4] = height
                         delta = delta + (height - nextht)
                     end
---                     if subtype == lineskip_code then
---                         setglue(n,inbetween,stretch,shrink)
-                        setsubtype(n,baselineskip_code)
---                     else
-                        setglue(n,amount+inbetween-delta,stretch,shrink)
---                     end
+                    setsubtype(n,snapped and userskip_code or baselineskip_code)
+                    setglue(n,amount+inbetween-delta,stretch,shrink)
                     currentline = nextline -- was curline
--- if currentline > noflines then
---     break
--- end
                 end
             end
             local firstht = lines[1][4]

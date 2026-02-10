@@ -66,39 +66,123 @@
    \c!option=,
    \c!lines=3]
 
-\permanent\tolerant\protected\def\typo_parinsert_handle#1#*[#2]#*#:#3%
+% \permanent\tolerant\protected\def\typo_parinsert_handle#1#*[#2]#*#:#3%
+%   {\begingroup
+%    \cdef\currentparinsert{#1}%
+%    \ifparameter#2\or
+%       \setupcurrentparinsert[#2]%
+%    \fi
+%    \setbox\scratchbox\hbox
+%       \s!xoffset {\parinsertparameter\c!xoffset}%
+%       \s!yoffset {\parinsertparameter\c!yoffset}%
+%    \bgroup
+%       \useparinsertstyleandcolor\c!style\c!color
+%       #3%
+%    \egroup
+%    \scratchdistance{\parinsertparameter\c!distance}%
+%    \scratchwidth{\wd\scratchbox+\scratchdistance}%
+%    \scratchcounter{\parinsertparameter\c!lines}%
+%    \ifzero\scratchcounter
+%      \getnoflines{\htdp\scratchbox}%
+%      \scratchcounter\noflines
+%    \fi
+%    \ifcstok{\parinsertparameter\c!location}\v!right
+%      \atrightmargin{\llap{\box\scratchbox}}%
+%      \scratchwidth-\scratchwidth
+%    \else
+%      \atleftmargin{\rlap{\box\scratchbox}}%
+%    \fi
+%    \localhangindent\scratchwidth
+%    \localhangafter \scratchcounter
+%    \typo_par_insert_trace
+%    \ifcstok{\parinsertparameter\c!option}\v!depth
+%      \paroptions\plusone % todo: symbolic
+%    \fi
+%    \endgroup}
+
+% \permanent\tolerant\protected\def\typo_parinsert_handle#1#*[#2]%
+%   {\begingroup
+%    \cdef\currentparinsert{#1}%
+%    \ifparameter#2\or
+%       \setupcurrentparinsert[#2]%
+%    \fi
+%    \dowithnextboxcontent
+%      {\useparinsertstyleandcolor\c!style\c!color}%
+%      {\scratchxoffset{\parinsertparameter\c!xoffset}%
+%       \scratchyoffset{\parinsertparameter\c!yoffset}%
+%       \scratchdistance{\parinsertparameter\c!distance}%
+%       \scratchwidth{\wd\nextbox+\scratchdistance}%
+%       \scratchcounter{\parinsertparameter\c!lines}%
+%       %
+%       \advance\scratchxoffset\ifnum\hangindent<\zeropoint-\fi\hangindent
+%       \boxxoffset\nextbox\scratchxoffset
+%       \boxyoffset\nextbox\scratchyoffset
+%       %
+%       \ifzero\scratchcounter
+%         \getnoflines{\htdp\nextbox}%
+%         \scratchcounter\noflines
+%       \fi
+%       \ifcstok{\parinsertparameter\c!location}\v!right
+%         \scratchwidth-\scratchwidth
+%         \atrightmargin{\llap{\box\nextbox}}%
+%       \else
+%         \atleftmargin {\rlap{\box\nextbox}}%
+%       \fi
+%       \localhangindent\scratchwidth
+%       \localhangafter \scratchcounter
+%       \typo_par_insert_trace
+%       \ifcstok{\parinsertparameter\c!option}\v!depth
+%         \paroptions\plusone % todo: symbolic
+%       \fi
+%       \endgroup}\hbox}
+
+\permanent\tolerant\protected\def\typo_parinsert_handle#1#*[#2]%
   {\begingroup
    \cdef\currentparinsert{#1}%
    \ifparameter#2\or
       \setupcurrentparinsert[#2]%
    \fi
-   \setbox\scratchbox\hbox
-      \s!xoffset {\parinsertparameter\c!xoffset}%
-      \s!yoffset {\parinsertparameter\c!yoffset}%
-   \bgroup
-      \useparinsertstyleandcolor\c!style\c!color
-      #3%
-   \egroup
-   \scratchdistance{\parinsertparameter\c!distance}%
-   \scratchwidth\wd\scratchbox
-   \scratchcounter{\parinsertparameter\c!lines}%
-   \ifzero\scratchcounter
-     \getnoflines{\htdp\scratchbox}%
-     \scratchcounter\noflines
-   \fi
-   \ifcstok{\parinsertparameter\c!location}\v!right
-     \atrightmargin{\llap{\box\scratchbox}}%
-     \scratchcounter-\scratchcounter
-   \else
-     \atleftmargin{\rlap{\box\scratchbox}}%
-   \fi
-   \localhangindent{\scratchwidth+\scratchdistance}%
-   \localhangafter \scratchcounter
-   \typo_par_insert_trace
-   \ifcstok{\parinsertparameter\c!option}\v!depth
-     \paroptions\plusone % todo: symbolic
-   \fi
-   \endgroup}
+   \dowithnextboxcontent
+     {\useparinsertstyleandcolor\c!style\c!color}%
+     {\scratchxoffset{\parinsertparameter\c!xoffset}%
+      \scratchyoffset{\parinsertparameter\c!yoffset}%
+      \scratchdistance{\parinsertparameter\c!distance}%
+      \scratchwidth{\wd\nextbox+\scratchdistance}%
+      \scratchcounter{\parinsertparameter\c!lines}%
+      \ifzero\scratchcounter
+        \getnoflines{\htdp\nextbox}%
+        \scratchcounter\noflines
+      \fi
+      \setbox\nextbox\hpack{\box\nextbox}% keep inner dimensions
+      \ht\nextbox\strutht
+      \dp\nextbox\strutdp
+      %
+      \ifcstok{\parinsertparameter\c!location}\v!right
+        \donefalse
+        \advance\scratchxoffset\scratchdistance
+        \scratchwidth-\scratchwidth
+      \else
+        \donetrue
+        \advance\scratchxoffset-\scratchwidth
+      \fi
+      \boxxoffset\nextbox\scratchxoffset
+      \boxyoffset\nextbox\scratchyoffset
+      \localhangindent\scratchwidth
+      \localhangafter \scratchcounter
+      \typo_par_insert_trace
+      \ifcstok{\parinsertparameter\c!option}\v!depth
+        \paroptions\plusone % todo: symbolic
+      \fi
+      % We use an "always" local par node that gets injected after and before
+      % the hang related anchors. Par nodes flagged as such are ignored by the
+      % par builder and only seen in the (wrapup) packager.
+      \dontleavehmode
+      \ifdone\localleftbox\else\localrightbox\fi \s!always
+        \bgroup \hpack to \zeropoint \bgroup
+          \box\nextbox
+        \egroup \egroup
+      \endgroup
+     }\hbox}
 
 \def\typo_par_insert_trace_indeed
   {\begingroup
@@ -131,8 +215,8 @@
          \localhangafter \the\breaklasthangleftslack
        \fi
        \ifcase\breaklasthangrightslack\else
-         \localhangindent  \the\breaklasthangrightindent
-         \localhangafter  -\the\breaklasthangrightslack
+         \localhangindent -\the\breaklasthangrightindent
+         \localhangafter   \the\breaklasthangrightslack
        \fi
      \fi}}
 

@@ -121,4 +121,22 @@ extern halfword tex_flush_mvl            (halfword n);
 extern int      tex_appended_mvl         (halfword context, halfword boundary);
 extern int      tex_current_mvl          (halfword *head, halfword *tail);
 
+typedef enum delayed_glue_targets {
+    delayed_glue_target_unknown = 0x0,
+    delayed_glue_target_current = 0x1,
+    delayed_glue_target_mvl     = 0x2,
+} delayed_glue_targets;
+
+typedef enum delayed_glue_locations {
+    delayed_glue_location_build     = 0x0,
+    delayed_glue_location_parskip   = 0x1,
+    delayed_glue_location_paragraph = 0x2,
+    delayed_glue_location_rule      = 0x3,
+    delayed_glue_location_lua       = 0x4,
+} delayed_glue_locations;
+
+extern void tex_delayed_glue_check       (int target, int location);
+extern int  tex_delayed_glue_par_skipped (void);
+
+
 # endif

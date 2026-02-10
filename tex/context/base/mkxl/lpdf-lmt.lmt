@@ -1158,7 +1158,7 @@ do
                         tx, ty = tx * r_x + ty * s_y, tx * s_x + ty * r_y
                     end
                     nofmatrices = nofmatrices + 1
-                    matrices[nofmatrices] = { rx, sx, sy, ry, tx, ty }
+                    matrices[nofmatrices] = { rx, sx, sy, ry, tx, ty, pos_h, pos_v }
                 end
                 --
                 pdf_goto_pagemode()
@@ -1182,7 +1182,7 @@ do
         if nofmatrices > 0 then
             return unpack(matrices[nofmatrices])
         else
-            return 1, 0, 0, 1, 0, 0
+            return 1, 0, 0, 1, 0, 0, 0, 0
         end
     end
 

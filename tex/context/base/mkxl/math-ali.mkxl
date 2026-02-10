@@ -75,7 +75,7 @@
    \mathalignmentparameter\c!separator
    \relax}
 
-%D Really needed when we grid snap (an dpackage):
+%D Really needed when we grid snap (and package):
 
 \appendtoks
     \parindent\zeropoint
@@ -586,6 +586,11 @@
 
 \def\math_halign_checked
   {\enablemathalignrelocate
+   \ifgridlinesnapping
+     \ifcsname\??snapping\mathalignmentparameter\c!snapping\endcsname
+       \alignsnapping\lastnamedcs
+     \fi
+   \fi
    \halign
      \ifconditional\c_math_align_overflow_mode
        \s!callback
@@ -818,6 +823,8 @@
    \edef\v_spac_whitespace_current{#1\c!spaceinbetween}%
    \ifempty\v_spac_whitespace_current
      \global\s_strc_math_alignment_inbetween\zeroskip
+   \orelse\ifgridlinesnapping
+     \global\s_strc_math_alignment_inbetween\zeroskip
    \orelse\ifgridsnapping
      \global\s_strc_math_alignment_inbetween\zeroskip
    \else
@@ -897,8 +904,11 @@
      \math_alignment_packed_start
    \fi
  % \everycr{\ifcase\c_math_eqalign_row\else\noalign{\penalty\interdisplaylinepenalty}\fi}%
-   \math_alignment_location_box \bgroup
+   \math_alignment_location_box
+   \ifgridlinesnapping \s!linesnapping \linesnapping \fi
+   \bgroup
    \math_halign_checked\expandafter\bgroup\the\scratchtoks\crcr}
+
 
 \def\math_alignment_stop % can be protected
   {\crcr
@@ -2947,6 +2957,7 @@
    \lineskiplimit\lineskip
    \mathsurround\zeropoint
    \mathsurroundskip\zeroskip
+%    \tabskip\zeropoint
    \everycr\emptytoks
    \enforced\let\NC\relax
    \enforced\let\MC\relax
@@ -3088,9 +3099,9 @@
   {\ifvoid\b_strc_formulas_number\else
      \setbox\b_strc_formulas_number\hbox to \d_strc_formulas_display_width\bgroup
        \hss
-% \ifcase#1\orelse\ifdim\dimexpr\d_strc_math_max_left-\d_strc_math_first_left\relax>\zeropoint
-%    \raise\htdp\b_strc_formulas_number % horrible hack
-% \fi
+     % \ifcase#1\orelse\ifdim\dimexpr\d_strc_math_max_left-\d_strc_math_first_left\relax>\zeropoint
+     %    \raise\htdp\b_strc_formulas_number % horrible hack
+     % \fi
        \hbox{\strc_math_flush_number_box}%
      \egroup
      \ifcase\c_strc_math_number_location\or
@@ -3101,27 +3112,13 @@
      \fi
    \fi}
 
-% \def\strc_math_flush_aligned_right_number_indeed
-%   {\ifvoid\b_strc_formulas_number\else
-%      \setbox\b_strc_formulas_number\hbox to \d_strc_formulas_display_width\bgroup
-%        \hss
-%        \hbox{\strc_math_flush_number_box}%
-%      \egroup
-%      \ifcase\c_strc_math_number_location\or\else
-%        \boxxoffset\b_strc_formulas_number{-\s_strc_formulas_margin_right}% brrrrr
-%        \boxyoffset\b_strc_formulas_number\d_strc_math_last_depth
-%        \htdp\b_strc_formulas_number\zeropoint
-%        \strc_math_flush_number_box % right
-%      \fi
-%    \fi}
-
 \def\strc_math_flush_aligned_right_number_indeed#1%
   {\ifvoid\b_strc_formulas_number\else
      \setbox\b_strc_formulas_number\hbox to \d_strc_formulas_display_width\bgroup
        \hss
-\ifcase#1\orelse\ifdim{\d_strc_math_max_right-\d_strc_math_last_right}>\zeropoint
-   \lower\htdp\b_strc_formulas_number % horrible hack
-\fi
+       \ifcase#1\orelse\ifdim{\d_strc_math_max_right-\d_strc_math_last_right}>\zeropoint
+          \lower\htdp\b_strc_formulas_number % horrible hack
+       \fi
        \hbox{\strc_math_flush_number_box}%
      \egroup
      \ifcase\c_strc_math_number_location\or\else
@@ -3187,19 +3184,32 @@
 
 \def\strc_math_flush_result_normal_begin
   {\ifconditional\c_strc_math_pack_mode
-     \ifgridsnapping\setbox\scratchbox\fi
+     \ifgridlinesnapping
+       \setbox\scratchbox
+     \orelse\ifgridsnapping
+       \setbox\scratchbox
+     \fi
      \vpack\bgroup
    \fi}
 
 \def\strc_math_flush_result_normal_end
   {\ifconditional\c_strc_math_pack_mode
      \egroup
-     \ifgridsnapping\strc_math_grid_snapped_box\zerocount\fi
+     % We just use the math snapper for both cases.
+     \ifgridlinesnapping
+       \strc_math_grid_snapped_box\zerocount
+     \orelse\ifgridsnapping
+       \strc_math_grid_snapped_box\zerocount
+     \fi
    \fi}
 
 \def\strc_math_flush_result_traced_begin
   {\ifconditional\c_strc_math_pack_mode
-     \ifgridsnapping\setbox\scratchbox\fi
+     \ifgridlinesnapping
+       \setbox\scratchbox
+     \orelse\ifgridsnapping
+       \setbox\scratchbox
+     \fi
      \ruledvpack\bgroup
     %\ruledvpack\bgroup
     %\ruleddpack\bgroup
@@ -3221,7 +3231,11 @@
      \egroup
      \egroup
      \egroup
-     \ifgridsnapping\strc_math_grid_snapped_box\plusone\fi
+     \ifgridlinesnapping
+       \strc_math_grid_snapped_box\plusone
+     \orelse\ifgridsnapping
+       \strc_math_grid_snapped_box\plusone
+     \fi
    \fi}
 
 \let\strc_math_flush_result_begin\strc_math_flush_result_normal_begin
@@ -4109,7 +4123,9 @@
    \mathsimplealignparameter\c!left\relax
    \math_fenced_start_wrap{\mathsimplealignparameter\c!fences}%
    \mathatom \s!class \mathconstructcode \bgroup
-   \math_alignment_location_box \bgroup
+   \math_alignment_location_box
+   \ifgridlinesnapping \s!linesnapping \linesnapping \fi
+   \bgroup
    \math_simple_halign_checked\expandafter\bgroup\math_simplealign_preamble\crcr}
 
 \noaligned\permanent\protected\def\math_simplealign_stop

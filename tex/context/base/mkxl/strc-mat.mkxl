@@ -56,6 +56,10 @@
    \c!numberthreshold=\emwidth,
    \c!numberdistance=2\emwidth]
 
+\appendtoks
+    \linesnapping \zerocount
+\to \everybeforedisplayformula
+
 % Kind of special: balanced (columnsets method=mvl)
 %
 % \setupformula
@@ -213,7 +217,7 @@
       \s!hascaption=\v!yes,%
       \s!hastitle=\v!yes,% maybe also a check
       \s!hasnumber=\ifempty\namedformulaentry\v!yes\else\v!no\fi,%
-      \s!haslevel=#6,%
+      \s!level=#6,%
       \c!reference=#1,%
       \c!title=\namedformulaentry,
       \c!list=\currentplaceformulalist,
@@ -719,7 +723,10 @@
        \ifdim\prevdepth<\zeropoint\else
          \ifdim\prevdepth<\strutdp
            % maybe add a tracing option here
-           \ifgridsnapping
+           \ifgridlinesnapping
+             % gridlinesnapping: to be decided
+             \checkprevdepth
+           \orelse\ifgridsnapping
             %\let\m_spacebefore\v!depth
              \checkprevdepth
            \else
@@ -971,22 +978,34 @@
   {\c_strc_formulas_depth\conditionaltrue}
 
 \defcsname\??formulaoption\v!line\endcsname
-  {\ifgridsnapping
+  {\ifgridlinesnapping
+     % gridlinesnapping: to be decided
+     \setformulaparameter\c!snapping{1}%
+   \orelse\ifgridsnapping
      \setformulaparameter\c!grid{\v!math:\v!line}%
    \fi}
 
 \defcsname\??formulaoption\v!halfline\endcsname
-  {\ifgridsnapping
+  {\ifgridlinesnapping
+     % gridlinesnapping: to be decided
+     \setformulaparameter\c!snapping{2}%
+   \orelse\ifgridsnapping
      \setformulaparameter\c!grid{\v!math:\v!halfline}%
    \fi}
 
 \defcsname\??formulaoption-\v!line\endcsname
-  {\ifgridsnapping
+  {\ifgridlinesnapping
+     % gridlinesnapping: to be decided
+     \setformulaparameter\c!snapping{2:10}% 1:10
+   \orelse\ifgridsnapping
      \setformulaparameter\c!grid{\v!math:-\v!line}%
    \fi}
 
 \defcsname\??formulaoption-\v!halfline\endcsname
-  {\ifgridsnapping
+  {\ifgridlinesnapping
+     % gridlinesnapping: to be decided
+     \setformulaparameter\c!snapping{2:10}%
+   \orelse\ifgridsnapping
      \setformulaparameter\c!grid{\v!math:-\v!halfline}%
    \fi}
 
@@ -1019,12 +1038,20 @@
      \c_math_align_overflow_mode\conditionalfalse
    \fi}
 
+\permanent\protected\def\formulainterlinespace
+  {\ifgridlinesnapping
+     \zeropoint
+   \orelse\ifgridsnapping
+     \zeropoint
+   \else
+     1.125\lineheight
+   \fi}
+
 \setupformula
   [\c!split=\v!yes, % \v!yes | \v!no | \v!line | whatever
    \c!numberlocation=,
    \c!textdistance=\zeropoint,
-  %\c!interlinespace=1.125\lineheight, % back again, to be tuned
-   \c!interlinespace=\ifgridsnapping\zeropoint\else1.125\lineheight\fi, % back again, to be tuned
+   \c!interlinespace=\formulainterlinespace,
    \c!textmargin=2\emwidth,
    \c!numbermethod=\v!down]
 
@@ -1527,9 +1554,17 @@
      \spac_whitespace_setup
      \clf_handlemathhang
        stage     \plusfour
-       inbetween 1\parskip
        height    \strutht
        depth     \strutdp
+       inbetween
+         \ifgridlinesnapping
+           \ifempty\v_spac_whitespace_current        \zeropoint  \orelse
+           \ifx    \v_spac_whitespace_current\v!none \zeropoint  \else
+                                                     \lineheight \fi
+       snapped   true
+         \else
+           1\parskip
+         \fi
      \relax
    \endgroup}
 
@@ -1625,7 +1660,12 @@
      \let\strc_formulas_begstrut\relax
      \let\strc_formulas_endstrut\relax
    \fi
-   \ifgridsnapping
+   \ifgridlinesnapping
+     % gridlinesnapping: to be decided
+     \ifempty{\formulaparameter\c!gridcorrection}\else
+       \expanded{\setgridcorrection[\lastnamedcs]}%
+     \fi
+   \orelse\ifgridsnapping
      \ifempty{\formulaparameter\c!gridcorrection}\else
        \expanded{\setgridcorrection[\lastnamedcs]}%
      \fi
@@ -1676,7 +1716,10 @@
    \fi}
 
 \appendtoks
-    \ifgridsnapping
+    \ifgridlinesnapping
+        % gridlinesnapping: to be decided
+        \strc_formulas_set_grid_snapping
+    \orelse\ifgridsnapping
         \strc_formulas_set_grid_snapping
     \fi
 \to \everybeforedisplayformula
@@ -2200,18 +2243,23 @@
    \usebodyfontparameter\formulaparameter
 \to \everymathematics
 
-\protect \endinput
+%D Snapping:
 
-% \abovedisplayshortskip0pt \belowdisplayshortskip0pt \abovedisplayskip0pt \belowdisplayskip0pt \forgetall
-%
-% test       \par                      $$xxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxx$$ \par test \par
-% test       \par                      $$xxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxx$$ \par test \par
-% test plus  \par \prevdepth \maxdimen $$xxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxx$$ \par test \par
-% test minus \par \prevdepth-\maxdimen $$xxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxx$$ \par test \par
-%
-% \parskip\baselineskip
-%
-% test       \par                      $$xxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxx$$ \par test \par
-% test       \par                      $$xxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxx$$ \par test \par
-% test plus  \par \prevdepth \maxdimen $$xxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxx$$ \par test \par
-% test minus \par \prevdepth-\maxdimen $$xxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxx$$ \par test \par
+\newconditional\c_strc_math_in_construct
+
+\appendtoks
+  % only inline not in align
+  \ifconditional\c_strc_math_in_construct
+    % no
+  \orelse\ifgridlinesnapping
+    \ifcsname\??snapping\mathematicsparameter\c!snapping\endcsname
+      \mathsnapping\lastnamedcs
+    \fi
+  \fi
+\to \everyinsidemathematics
+
+\appendtoks
+    \c_strc_math_in_construct\conditionaltrue
+\to \everybeforedisplayformula
+
+\protect \endinput

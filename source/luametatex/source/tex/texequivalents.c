@@ -111,6 +111,7 @@ static void tex_aux_show_eqtb(halfword n);
 static void tex_aux_diagnostic_trace(halfword p, const char *s)
 {
     tex_begin_diagnostic();
+    tex_print_levels();
     tex_print_format("{%s ", s);
     tex_aux_show_eqtb(p);
     tex_print_char('}');
@@ -528,6 +529,7 @@ void tex_save_halfword_on_stack(quarterword t, halfword v) /* todo: also value_2
 static void tex_aux_group_trace(int g)
 {
     tex_begin_diagnostic();
+    tex_print_levels();
     tex_print_format(g ? "{leaving %G}" : "{entering %G}", g);
     tex_end_diagnostic();
 }
@@ -595,7 +597,7 @@ static void tex_aux_group_warning(void)
     }
     if (warning) {
         tex_begin_diagnostic();
-        tex_print_format("[warning: end of %G of a different file]", 1);
+        tex_print_format("%l[warning: end of %G of a different file]", 1);
         tex_end_diagnostic();
         if (tracing_nesting_par > 1) {
             tex_show_context();
@@ -2206,7 +2208,7 @@ void tex_show_cmd_chr(halfword cmd, halfword chr)
     if (cur_list.mode != lmt_nest_state.shown_mode) {
         if (tracing_commands_par >= 4) {
             /*tex So, larger than \ETEX's extra info 3 value. We might just always do this. */
-            tex_print_format("[mode: entering %M]", cur_list.mode);
+            tex_print_format("%l[mode: entering %M]", cur_list.mode);
             tex_print_nlp();
             tex_print_levels();
             tex_print_str("{");

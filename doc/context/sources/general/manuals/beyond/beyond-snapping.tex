@@ -1,0 +1,309 @@
+% language=us runpath=texruns:manuals/beyond
+
+\environment beyond-style
+
+\startcomponent beyond-snapping
+
+\startchapter[title={Snapping},author={Hans Hagen & Mikael Sundqvist}]
+
+When we were wrapping up the new hanging feature(s) we realized that a hang
+specification is very much related to lines and not always does the right thing
+when we have to deal with a specific height. This is a recurring problem with
+side floats where in the end one needs to think in lines. We also ran into a
+situation where multiple (foot)note classes were used, each with their own rule
+upfront and spacing in-between, in grid mode. Especially this mixed grid (running
+text) and non-grid (various inserts) made us wonder if it made sense to accompany
+the \CONTEXT\ grid snapper with some engine support. So we started exploring that
+and as follow up here discuss some of the considerations.
+
+Snapping boils down to making sure that all components on a page align on a
+vertical grid. In \TEX\ the \type {\baselineskip} handles this quiet well for
+paragraphs but as soon as we have rules, kerns, glue, penalties and whatever we
+can get off the grid. However, when we are in \CONTEXT\ grid mode, we make sure
+that for instance spacing is line based. Also, rules never end up uncontrolled so
+those we can also deal with. Adding boxes needs some care but we can make sure
+that their dimensions are ok. So in the end, paragraphs are the main challenge
+here. \footnote {The fact that \CONTEXT\ can do grid snapping, something that
+dates from \MKII\ times, but was kept-up with in \MKIV\ and \MKXL, seems to
+attract \TEX\ users.}
+
+Because we already deal with snapping in \CONTEXT\ one can wonder what engine
+support adds to it. In principle the answer is: little. However, we can do it a
+bit more efficiently and we can also, if we decide to do so, look at the
+paragraph as a whole without the interference of the page builder, but here
+we will focus on the simple cases.
+
+We jump straight into a new feature that got added because of testing the waters.
+Of course we didn't start fresh: after all we had years of experience with
+snapping and its implications. Keep in mind that we not only have to deal with
+text but also with for instance math, rules, and alignments.
+
+\startbuffer
+\specificationdef \LineSnappingA \linesnapping 1
+    height 1sh % \strutht
+    depth  1sd % \strutdp
+    step   1
+\relax
+
+\specificationdef \LineSnappingB \linesnapping 1
+    height 1.5sh
+    depth  1.5sd
+    step   1
+\relax
+\stopbuffer
+
+\typebuffer \getbuffer
+
+Above we define two snapping specifications. If you are familiar with \LUAMETATEX\
+you will see how that fits into similar mechanisms like paragraph and balancing
+passes. We could use \type {\strut..} but instead use some plugged in units, just
+because we can. Let us define a few more:
+
+\startbuffer
+\specificationdef \LineSnappingC \linesnapping 1
+    height 1sh
+    depth  1sd
+    step   2
+\relax
+
+\specificationdef \LineSnappingD \linesnapping 1
+    height      1sh
+    depth       1sd
+    step        2
+    httolerance 2pt % .1pt
+    dptolerance 1pt % .1pt
+\relax
+\stopbuffer
+
+\typebuffer \getbuffer
+
+We will now apply these to boxes. Welcome to some low level box construction,
+where we also use the opportunity to demonstrate that with the \type {pair}
+keyword we define height and depth of a rule in one go:
+
+\startbuffer
+\dontleavehmode \ruledhbox to 12cm \bgroup
+\start
+    \lightgray
+    \vrule pair {1lh + 1sh} {1lh + 1sd} width 12cm \relax
+    \hskip-12cm
+    \middlegray
+    \vrule pair        1sh         1sd  width 12cm \relax
+    \hskip-12cm
+\stop
+\setbox0\ruledhbox{\white snapping}\relax
+                                    \box0
+\setbox0\ruledhbox{\white \strut snapping}
+    \boxsnapping 0 \LineSnappingA   \box0
+\setbox0\ruledhbox{\white snapping}
+    \boxsnapping 0 \LineSnappingA   \box0
+\setbox0\ruledhbox{\im{x^{x^2}_2}}
+                                    \box0
+\setbox0\ruledhbox{\im{x^{x^2}_2}}
+    \boxsnapping 0 \LineSnappingA   \box0
+\setbox0\ruledhbox{\im{x^{x^2}_2}}
+    \boxsnapping 0 \LineSnappingB   \box0
+\setbox0\ruledhbox{\im{x^{x^2}_2}}
+    \boxsnapping 0 \LineSnappingC   \box0
+\setbox0\ruledhbox{\im{x^{x^2}_2}}
+    \boxsnapping 0 \LineSnappingD   \box0
+\setbox0\ruledhbox{\blackrule[height=1.1sh,depth=0pt]}
+    \boxsnapping 0 \LineSnappingB   \box0
+\setbox0\ruledhbox{\blackrule[height=0pt,depth=1.1sd]}
+    \boxsnapping 0 \LineSnappingB   \box0
+\setbox0\ruledhbox{\blackrule[height=sh,depth=sd]}
+    \boxsnapping 0 \LineSnappingB   \box0
+\egroup
+
+\stopbuffer
+
+\typebuffer
+
+You can zoom in to see the boxes. The \type {height} and \type {depth} are the
+snap values. When the box dimensions are below these one or both will be used.
+When the dimensions exceed (one of) them, we stepwise go up till we snap. When we
+set \type {step} to two, we step half-lines. The two tolerance values are used to
+give some slack to the test. Of course that can eventually lead to overlap but
+the likelyhood is small. Here we used rather excessive tolerances.
+
+\startlinecorrection
+\getbuffer
+\stoplinecorrection
+
+We can enable tracing with \type {\tracingsnapping} and a positive value
+will report something like this:
+
+\starttyping
+4:7: [snapping: old (12.47624pt,4.85185pt), new (12.47624pt,4.85185pt), line (12.47624pt,4.85185pt)]
+4:7: [snapping: old (8.94708pt,2.5426pt), new (12.47624pt,4.85185pt), line (12.47624pt,4.85185pt)]
+4:7: [snapping: old (14.00291pt,3.59802pt), new (29.80434pt,4.85185pt), line (12.47624pt,4.85185pt), tolerance (0.0pt,0.0pt), step 1, applied (1,0)]
+4:7: [snapping: old (14.00291pt,3.59802pt), new (18.71436pt,7.27777pt), line (18.71436pt,7.27777pt)]
+4:7: [snapping: old (14.00291pt,3.59802pt), new (21.14029pt,13.5159pt), line (12.47624pt,4.85185pt), tolerance (0.0pt,0.0pt), step 2, applied (1,1)]
+4:7: [snapping: old (14.00291pt,3.59802pt), new (12.47624pt,4.85185pt), line (12.47624pt,4.85185pt), tolerance (2.0pt,1.0pt)]
+4:7: [snapping: old (13.72394pt,0.0pt), new (18.71436pt,7.27777pt), line (18.71436pt,7.27777pt)]
+4:7: [snapping: old (0.0pt,5.33707pt), new (18.71436pt,7.27777pt), line (18.71436pt,7.27777pt)]
+4:7: [snapping: old (12.47624pt,4.85185pt), new (18.71436pt,7.27777pt), line (18.71436pt,7.27777pt)]
+\stoptyping
+
+We mentioned that in the end this feature will deal with lines in paragraphs so
+how is that done then?
+
+\startbuffer
+\startnarrower
+    \showmakeup[line]
+    \linesnapping \LineSnappingA
+    \samplefile{tufte}
+\stopnarrower
+\stopbuffer
+
+\typebuffer
+
+This \type {\linesnapping} command can be used to specify a current setup but of
+course it makes more sense to use a predefined one. As with other paragraph
+determining properties the current value is bound to a paragraph. In \CONTEXT, as
+with other settings, we reset this parameter when there is no need, for instance
+when a page is wrapped up, or in for instance \type {\framed}. You'd get weird
+affects otherwise, especially when a non-standard height and depth are used.
+
+\getbuffer
+
+Just snapping lines is not enough. Look at this:
+
+% \setbox0 \ruledvtop {\showboxes\samplefile{tufte}} \boxsnapping 0 \MyL \box0
+
+\startbuffer
+\ruledhbox {\darkred   \vrule pair 1.0sh 1.0sd width 10cm}\par
+\ruledhbox {\darkgreen \vrule pair 1.0sh 1.0sd width 10cm}\par
+\ruledhbox {\darkblue  \vrule pair 1.5sh 1.5sd width 10cm}\par
+\stopbuffer
+
+\typebuffer
+
+\startpacked
+    \getbuffer
+\stoppacked
+
+Between the second and third line we see a gap and that is the \typ {\lineskip}
+inserted instead of a \typ {\baselineskip} and this is not what we want. This is
+why, when snapping is enabled, a \typ {\baselineskip} of zero is inserted.
+Snapping also works best when we set \type {\lineskip} to zero points and set
+\type {\topskip} to the height of the line (strut height).
+
+When we had some basics in place it was time to experiment with real documents
+and as we're still testing balancing Mikaels lecture notes again became the
+torture test. In order to hook into the \CONTEXT\ spacing model we decided to
+enhance the snapping definitions:
+
+\starttyping
+\linesnappinghtfactor 720
+\linesnappingdpfactor 280
+
+\specificationdef \LineSnappingA \linesnapping 1 factors global
+    step           2
+    height      1000
+    depth       1000
+    httolerance  100
+    dptolerance  100
+\relax
+\stoptyping
+
+Here the used dimensions are:
+
+\starttyping
+ht = (\linesnappinghtfactor / 1000) * (height / 1000) * \baselineskip
+dp = (\linesnappingdpfactor / 1000) * (depth  / 1000) * \baselineskip
+\stoptyping
+
+and here the tolerance on both is 10 percent. To these tolerances we add \typ
+{\linesnappingtolerance} which by default is \type {2sp} so that we compensate
+for rounding errors. Here we show the current font size and smaller ones:
+
+\startbuffer
+\number{\dimexpr .5\baselineskip  }\hss
+\number{\dimexpr   \baselineskip/2}\hss
+\number{\dimexpr   \baselineskip:2}\hss
+\stopbuffer
+
+\typebuffer
+
+\startlinecorrection
+\hbox to 1tw\bgroup
+    \getbuffer\hss
+    {\small\getbuffer}\hss
+    {\small\small\getbuffer}\hss
+    {\small\small\small\getbuffer}
+    \removeunwantedspaces
+\egroup
+\stoplinecorrection
+
+So with 2 scaled points we're probably fine. With that out of the way we also
+added the snapping option as key to a box creator, like:
+
+\starttyping
+\hbox linesnapping \LineSnappingA { }
+\stoptyping
+
+The \type {\linesnapping}, when set, is applied to lines of paragraphs. Other
+elements have to be done explicitly on boxes. However, we do have two more
+snappers: \typ {\mathsnapping}, applied to inline math, and \typ
+{\alignsnapping}, applied to table rows.
+
+In this introduction we will not discuss the \CONTEXT\ interface but those who
+like to test the current state can do this:
+
+\starttyping
+\setuplayout[grid=snapping] % \showgrid
+\stoptyping
+
+Some commands, like \typ {\setuphead} and \typ {\setupmathalignment}, \typ
+{\setupblackrules}, \typ {\setupformula}, and \typ {\setupmathematics} accept a
+\type {snapping} key that can be used to control snapping. We have several
+predefined snapping vectors: the equivalent defaults: \type {yes} and \type
+{normal}; various snappers with steps and tolerance: \type {0}, \type {1}, \type
+{2}, \type {0:10}, \type {1:10}, \type {2:10} and \type {2:20}; and a few top and
+bottom line snappers: \type {1:top}, \type {1:bottom}, \type {2:top} and \type
+{2:bottom}; more might be added in due time. The \type {2:10} gives good average
+results. You can experiment with snappers easily and independent of the grid
+because the alignment mechanisms also accept snapping options:
+
+\starttyping
+\setupalign[snapping:2:10]
+\showmakeup[line]
+Some example text ...
+\stoptyping
+
+Inside constructs, like \type {\framed}, snapping is disabled but you can enable
+it with the \type {align} key and one of the mentioned vectors. Where the \type
+{snapping} keyword on a command doesn't need the \type {snapping:} prefix, the
+\type {align} keyword does!
+
+In retrospect it didn't take much effort to add this, given that we already were
+familiar with the demands, complications and possible solutions. That said, early
+2026 we're still playing with it so it might evolve. Eventually the \typ
+{grid=snapping} layout option will be preferred over \typ {grid=yes}. This also
+means that instead of explicit snappers like \typ {\snaptogrid} and \typ
+{\startgridsnapping} one has to use \typ {\snaptogridline} and \typ
+{\startgridlinesnapping} with different options passed. For those who want to
+install a snapper, here is how \typ {2:20} is defined:
+
+\starttyping
+\specificationdef \linesnappingtwotwenty \linesnapping 1
+    factors global constant
+    step           2
+    height      1000
+    depth       1000
+    httolerance  100
+    dptolerance  100
+\relax
+
+\installsnapping{2:20}{\linesnappingtwotwenty}
+\stoptyping
+
+Here the constant directive makes assigning the vector a bit more efficient
+because it is assumed not to change. The \type {1} is mandate and future variants
+might support multiple entries (separated by \type {next} as in other \typ
+{specifications}) if we find that useful.
+
+\stopchapter
+
+\stopcomponent

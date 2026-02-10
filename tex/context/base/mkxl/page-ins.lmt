@@ -70,7 +70,7 @@ function inserts.getdata(name) -- or number
 end
 
 function inserts.getname(number)
-    return data[name].name
+    return data[tonumber(number)].name
 end
 
 function inserts.getnumber(name)
@@ -320,6 +320,87 @@ do
         name    = "handle_uinsert",
         action  = handle_uinsert_callback,
         comment = "process user inserts in balancer",
+        frozen  = true,
+    }
+
+end
+
+-- It makes sense to have these here instead of some note module.
+
+do
+
+    local getnormalizedline = nuts.getnormalizedline
+    local insertafter       = nuts.insertafter
+    local insertbefore      = nuts.insertbefore
+ -- local setoffsets         = nuts.setoffsets
+
+    local takebox           = nuts.takebox
+
+    local expandmacro       = token.expandmacro
+
+    local enabled           = false
+
+    trackers.register("inserts.split", function(v) enabled = v end)
+
+    local last_code  = tex.insertsplitcodes.last  -- ignore dummy_last
+    local first_code = tex.insertsplitcodes.first -- ignore dummy_first
+
+    local function insert_check_split_callback(where,index,box)
+        if enabled and (where == last_code or where == first_code) then
+            local line = getnormalizedline(box)
+            if not line then
+                -- do nothing
+            elseif where == last_code then
+                expandmacro("insertchecksplitlast",true,tostring(index))
+                local signal = takebox("scratchbox")
+             -- local right  = line.parinitrightskip + line.parfillrightskip
+             --              + line.righthangskip + line.rightskip
+             -- setoffsets(signal,right)
+                insertbefore(line.head,line.last,signal)
+            elseif where == first_code then
+                expandmacro("insertchecksplitfirst",true,tostring(index))
+                local signal = takebox("scratchbox")
+             -- local left   = line.parinitleftskip + line.parfillleftskip + line.indent
+             --              + line.lefthangskip + line.leftskip
+             -- setoffsets(signal,left)
+                insertafter(line.head,line.first,signal)
+            end
+        end
+    end
+
+    callbacks.register {
+        name    = "insert_check_split",
+        action  = insert_check_split_callback,
+        comment = "process insert split state tracer",
+        frozen  = true,
+    }
+
+end
+
+do
+
+    local maxdimen   <const> = tex.magicconstants.maxdimen
+
+    local setinsertlimit     = tex.setinsertlimit
+    local setinsertmaxplaced = tex.setinsertmaxplaced
+
+    -- these are private numbers
+
+    local function insert_boundary_callback(what,index)
+        if what == 1 then
+            setinsertlimit(index,maxdimen)
+        elseif what == 2 then
+            setinsertmaxplaced(index,0)
+        elseif what == 3 then
+            setinsertlimit(index,maxdimen)
+            setinsertmaxplaced(index,0)
+        end
+    end
+
+    callbacks.register {
+        name    = "insert_boundary",
+        action  = insert_boundary_callback,
+        comment = "process insert specific boundary",
         frozen  = true,
     }
 

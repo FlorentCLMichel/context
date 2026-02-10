@@ -293,7 +293,7 @@
         </cd:arguments>
     </cd:command>
 
-    <cd:command name="readjobfile" level="system" category="structure" keywords="conditional" file="file-res.mkvi">
+    <cd:command name="readjobfile" level="system" category="structure" keywords="conditional" file="file-res.mklx">
         <cd:arguments>
             <cd:resolve name="argument-file"/>
             <cd:resolve name="argument-true"/>
@@ -301,7 +301,7 @@
         </cd:arguments>
     </cd:command>
 
-    <cd:command name="readlocfile" level="system" category="structure" keywords="conditional" file="file-res.mkvi">
+    <cd:command name="readlocfile" level="system" category="structure" keywords="conditional" file="file-res.mklx">
         <cd:arguments>
             <cd:resolve name="argument-file"/>
             <cd:resolve name="argument-true"/>
@@ -309,7 +309,7 @@
         </cd:arguments>
     </cd:command>
 
-    <cd:command name="readsysfile" level="system" category="structure" keywords="conditional" file="file-res.mkvi">
+    <cd:command name="readsysfile" level="system" category="structure" keywords="conditional" file="file-res.mklx">
         <cd:arguments>
             <cd:resolve name="argument-file"/>
             <cd:resolve name="argument-true"/>
@@ -317,7 +317,7 @@
         </cd:arguments>
     </cd:command>
 
-    <cd:command name="readfixfile" level="system" category="structure" keywords="conditional" file="file-res.mkvi">
+    <cd:command name="readfixfile" level="system" category="structure" keywords="conditional" file="file-res.mklx">
         <cd:arguments>
             <cd:resolve name="argument-path"/>
             <cd:resolve name="argument-file"/>
@@ -326,7 +326,7 @@
         </cd:arguments>
     </cd:command>
 
-    <cd:command name="readsetfile" level="system" category="structure" keywords="conditional" file="file-res.mkvi">
+    <cd:command name="readsetfile" level="system" category="structure" keywords="conditional" file="file-res.mklx">
         <cd:arguments>
             <cd:resolve name="argument-path"/>
             <cd:resolve name="argument-file"/>
@@ -335,7 +335,7 @@
         </cd:arguments>
     </cd:command>
 
-    <cd:command name="readfile" level="system" category="structure" keywords="conditional" file="file-res.mkvi">
+    <cd:command name="readfile" level="system" category="structure" keywords="conditional" file="file-res.mklx">
         <cd:arguments>
             <cd:resolve name="argument-file"/>
             <cd:resolve name="argument-true"/>
@@ -343,21 +343,13 @@
         </cd:arguments>
     </cd:command>
 
-    <cd:command name="ReadFile" level="system" category="structure" file="file-res.mkvi">
+    <cd:command name="ReadFile" level="system" category="structure" file="file-res.mklx">
         <cd:arguments>
             <cd:resolve name="argument-file"/>
         </cd:arguments>
     </cd:command>
 
-    <cd:command name="readtexfile" level="system" category="structure" keywords="conditional" file="file-res.mkvi">
-        <cd:arguments>
-            <cd:resolve name="argument-file"/>
-            <cd:resolve name="argument-true"/>
-            <cd:resolve name="argument-false"/>
-        </cd:arguments>
-    </cd:command>
-
-    <cd:command name="readxmlfile" level="system" category="structure" keywords="conditional xml" file="file-res.mkvi">
+    <cd:command name="readtexfile" level="system" category="structure" keywords="conditional" file="file-res.mklx">
         <cd:arguments>
             <cd:resolve name="argument-file"/>
             <cd:resolve name="argument-true"/>
@@ -365,7 +357,7 @@
         </cd:arguments>
     </cd:command>
 
-    <cd:command name="doifelselocfile" level="system" category="structure" keywords="conditional" file="file-res.mkvi">
+    <cd:command name="doifelselocfile" level="system" category="structure" keywords="conditional" file="file-res.mklx">
         <cd:arguments>
             <cd:resolve name="argument-file"/>
             <cd:resolve name="argument-true"/>
@@ -373,7 +365,7 @@
         </cd:arguments>
     </cd:command>
 
-    <cd:command name="doiflocfileelse" level="system" category="structure" keywords="conditional" file="file-res.mkvi">
+    <cd:command name="doiflocfileelse" level="system" category="structure" keywords="conditional" file="file-res.mklx">
         <cd:arguments>
             <cd:resolve name="argument-file"/>
             <cd:resolve name="argument-true"/>
@@ -381,7 +373,7 @@
         </cd:arguments>
     </cd:command>
 
-    <cd:command name="locfilename" level="system" category="structure" file="file-res.mkvi">
+    <cd:command name="locfilename" level="system" category="structure" file="file-res.mklx">
         <cd:arguments>
             <cd:resolve name="argument-file"/>
         </cd:arguments>

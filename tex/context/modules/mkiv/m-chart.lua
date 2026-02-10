@@ -975,6 +975,10 @@ local function makechart_indeed(chart)
     local exitoffset    = chartsettings.exitoffset
     local commentoffset = chartsettings.commentoffset
     local clipoffset    = chartsettings.clipoffset
+    local leftoffset    = chartsettings.leftoffset
+    local rightoffset   = chartsettings.rightoffset
+    local topoffset     = chartsettings.topoffset
+    local bottomoffset  = chartsettings.bottomoffset
     ctx_tographic(g,"flow_grid_width     := %p ;", gridwidth)
     ctx_tographic(g,"flow_grid_height    := %p ;", gridheight)
     ctx_tographic(g,"flow_shape_width    := %p ;", shapewidth)
@@ -1010,6 +1014,10 @@ local function makechart_indeed(chart)
     end
     ctx_tographic(g,"flow_chart_offset := %p ;",offset)
     ctx_tographic(g,"flow_chart_clip_offset := %p ;",clipoffset)
+    ctx_tographic(g,"flow_chart_left_offset := %p ;",leftoffset)
+    ctx_tographic(g,"flow_chart_right_offset := %p ;",rightoffset)
+    ctx_tographic(g,"flow_chart_top_offset := %p ;",topoffset)
+    ctx_tographic(g,"flow_chart_bottom_offset := %p ;",bottomoffset)
     --
     ctx_tographic(g,"flow_reverse_y := true ;")
     if chartsettings.option == v_test then
@@ -1141,6 +1149,10 @@ implement {
                     { "x", "integer" },
                     { "y", "integer" },
                     { "clipoffset", "dimension" },
+                    { "leftoffset", "dimension" },
+                    { "rightoffset", "dimension" },
+                    { "topoffset", "dimension" },
+                    { "bottomoffset", "dimension" },
                     { "labeloffset", "dimension" },
                     { "commentoffset", "dimension" },
                     { "exitoffset", "dimension" },

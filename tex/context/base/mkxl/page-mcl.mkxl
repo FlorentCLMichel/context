@@ -93,7 +93,6 @@
 
 \c_page_mcl_balance_tries_max 250 % 100 is too small when floats are involved
 
-%def\m_page_mcl_overshoot_ratio{\ifgridsnapping0\else.5\fi}
 \def\m_page_mcl_overshoot_ratio{.5}
 
 \fi
@@ -196,7 +195,9 @@
    \ht\b_page_mcl_page{%
      \noflines\openlineheight
      -\openstrutdepth
-     \ifgridsnapping
+     \ifgridlinesnapping
+        % gridlinesnapping: to be decided
+     \orelse\ifgridsnapping
         % quick hack (at least it works with itemize)
      \else
        -\openlineheight
@@ -233,7 +234,10 @@
          \hskip\ifconditional\c_page_mcl_reverse\d_page_mcl_leftskip\else\d_page_mcl_rightskip\fi}}%
    \ifconditional\c_page_mcl_preceding_present
      \c_page_mcl_preceding_present\conditionaltrue
-     \ifgridsnapping
+     \ifgridlinesnapping
+        % gridlinesnapping: to be decided
+       \page_mcl_flush_preceding_ongrid
+     \orelse\ifgridsnapping
        \page_mcl_flush_preceding_ongrid % obey grid settings, force on grid
      \else
        \page_mcl_flush_preceding_normal % ignore grid settings, not on grid
@@ -242,11 +246,13 @@
    \global\d_page_mcl_preceding_height\zeropoint
    \page_otr_command_set_vsize
    \dosomebreak\nobreak % hm, only needed when topstuff
-   \ifgridsnapping \else
-     \ifconditional\c_page_mcl_preceding_present
-       \nointerlineskip
-       \vskip{\openstrutheight-\topskip}%
-     \fi
+   \ifgridlinesnapping
+     % gridlinesnapping: to be decided
+   \orelse\ifgridsnapping
+     % nothing
+   \orelse\ifconditional\c_page_mcl_preceding_present
+     \nointerlineskip
+     \vskip{\openstrutheight-\topskip}%
    \fi
    \prevdepth\openstrutdepth
    \nointerlineskip
@@ -322,7 +328,9 @@
    \vbadness\plustenthousand
    \c_page_mcl_balance_tries\zerocount
    \bgroup
-   \ifgridsnapping
+   \ifgridlinesnapping
+     \d_page_mcl_balance_step\lineheight
+   \orelse\ifgridsnapping
      \d_page_mcl_balance_step\lineheight
    \else
      \d_page_mcl_balance_step\spacingfactor\onepoint % rubish

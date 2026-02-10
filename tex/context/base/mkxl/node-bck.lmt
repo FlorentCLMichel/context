@@ -36,6 +36,7 @@ local getlist            = nuts.getlist
 local getattr            = nuts.getattr
 local getsubtype         = nuts.getsubtype
 local getwhd             = nuts.getwhd
+local getnaturalwhd      = nuts.getnaturalwhd
 local getwidth           = nuts.getwidth
 local getprop            = nuts.getprop
 local getoptions         = nuts.getoptions
@@ -88,7 +89,8 @@ trackers.register("backgrounds.alignments",function(v) trace_alignment = v end)
 local overshoot = math.floor(65781/5) -- could be an option per table (just also store it)
 
 local function colored_a(current,list,template,id)
-    local width, height, depth = getwhd(current)
+ -- local width, height, depth = getwhd(current,true)
+    local width, height, depth = getnaturalwhd(current,true)
     local total = height + depth
     if width > 0 and total > 0 then
         local rule = nil
@@ -111,7 +113,8 @@ local function colored_a(current,list,template,id)
 end
 
 local function colored_b(current,list,template,id,indent)
-    local width, height, depth = getwhd(current)
+ -- local width, height, depth = getwhd(current)
+    local width, height, depth = getnaturalwhd(current,true)
     local total = height + depth
     if width > 0 and total > 0 then
         local fore = indent ~= 0 and new_kern(indent) or nil

@@ -1,0 +1,614 @@
+% language=us runpath=texruns:manuals/musings
+
+\logo[LEGO] {LEGO}
+
+\useMPlibrary[dum]
+
+\startcomponent musings-units
+
+\environment musings-style
+
+\startchapter[title={It's about time}]
+
+\startlines
+Edith Sundqvist
+Mikael Sundqvist
+Hans Hagen
+Willi Egger
+\stoplines
+
+\startsubject[title={Male dominance}]
+
+When you start using \TEX\ you can't get around the fact that it uses dimensions.
+You have to set up a paper size, configure a line width, tell it what font size to
+use, etc. As with many techniques that evolved in different countries the way to
+express a dimension can be done differently. In Europe we like to talk in
+centimeters (\type {cm}) or millimeters (\type {mm}) and in the United States it's
+all about inches (\type {in}). Typographers all over the world speak in terms of
+points (\type {pt}), didots (\type {dd}), ciceros (\type {cc}) and picas (\type
+{pc}) while those messing around with digital typography prefer
+\quotation {big} (PostScript) points
+(\type {bp}). \TEX ies sometimes like scaled points (\type {sp}) as 1 \type{sp}
+is the smallest internal representation of a unit. When someone
+talks \quotation {points} you can't be sure if it is big points or \TEX\ points because the
+\type {pt} unit is often used for both.
+
+There are also font|-|related units, like the popular em width (\type {em}) and
+ex height (\type {ex}) and there is even a pixel unit (\type {px}) that can be set
+to some resolution but that one is rarely used. There is also a math unit (\type
+{mu}) that scales with the math font in use.
+
+All units are internally scaled points and one real point is 65536 scaled points.
+That means that when a unit is entered it gets mapped onto this internal scaled
+point quantity. \footnote {If you go back to the early days, there are even
+cases where you want to talk in terms of true units. Those are not
+affected by original \TEX's
+magnification factor (\cs{mag}) but in \LUAMETATEX\ we dropped that factor and therefore
+also these true units became obsolete.}
+
+For a while we had the new didot and new cicero but in \LUAMETATEX\ these were
+dropped because no one used them. On the contrary, the newly introduced (Don)
+Knuth unit (\type {dk}) is quite convenient and we use it as a convenient offset for
+a so|-|called \TEX\ page environment, which we use a lot in testing math
+functionality.
+
+From this summary we can observe that there are three units that are
+names: Didot, Cicero and Knuth. But do you realize that these are all males? That
+can't be right and should be fixed. If you look at user styles (or questions on
+support platforms) you will also notice that in spite of standardization, the
+inch (\type {in}) has not been replaced by its more correct metric counterparts.
+Okay, that might be due to the fact that there is no meter as unit but using
+smaller dimensions (\type {mm} and \type {cm}) makes more sense, also for
+internal accuracy reasons. That said, it is about time that we eradicate the
+inch or at least come up with something more metric.
+
+So there you have it: we need some female units that correctly stay within the
+metric domain! In order to convince users to drop the inch the first new unit
+somewhat relates to it: one Edith (\type {es}) is the median of the widths of
+thumbs of Bacho\TEX\ 2023 attendees. One can argue that this is somewhat
+arbitrary and indeed it is. In order to get a decent value we use a discrete
+measurement device that groups thumbs into 15, 20, 25 and 30 mm intervals. A 10mm
+interval is unlikely to get many hits unless the \TEX\ ecosystem suddenly became
+very easy to use and toddlers get interested in it as a game.
+
+\stopsubject
+
+\startsubject[title={Rule of thumb}]
+
+If we talk in terms of one Edith, we should keep in mind that at any point we can
+decide to re|-|calibrate that unit. If we end up below 25mm we probably have
+quite some young and|/|or old users in the sample set. So, in order to have a
+constant value, the community has to make sure that \TEX\ (and preferably
+\CONTEXT) usage is nicely distributed. Now, of course at \BACHOTEX\ we are quite
+tolerant, because also Plain and \LATEX\ users are sampled. Also, given that this
+sample of the \TEX\ community is skewed to older users, one can wonder how that
+influences the initial value. It is up to the \CONTEXT\ group to decide when and
+where to re|-|calibrate at a later moment. After all, we have to keep the
+narrative that \CONTEXT\ is unstable and evolves alive, and occasionally updating
+a unit fits into that narrative. If you think that this kind of research is
+somewhat flaky, keep in mind that probably all research related to typography is
+kind of subjective and somewhat unreal. And Bacho\TEX\ being tagged as \quote
+{conference} adds a lot of credibility.
+
+The Edith (\blackrule [width=1es]) makes a nice unit for margins, but it is a bit
+large for offsets, so we also need a female counterpart for the Knuth (\blackrule
+[width=1dk]). This is why, just like a centimeter (\blackrule [width=1cm]) has a
+smaller companion in millimeter (\blackrule [width=1mm]), the Edith has a
+companion Tove (\blackrule [width=1ts]). In terms of points one Tove is \the
+\dimexpr 1ts \relax, while a Knuth is \the \dimexpr 1dk \relax.
+It is surely just a
+coincidence that the value of one Tove in points is about the age of Tove when she
+became aware that her dad was a \CONTEXT\ fan. In terms of points one Edith is
+\the \dimexpr 1es \relax\ which, ignoring the unit, comes close to the average age of
+those who have attended Bacho\TEX\ more than 10 times.
+
+The implementation of these units in \LUAMETATEX\ is not that hard, simply
+because scanning for these dimensions happens in few places: when scanning
+dimensions, and in a \LUA\ helper that converts a string to scaled points. At the
+\CONTEXT\ meeting where we implemented the Knuth, there was some trial and error
+involved in order to get the right numerator and denominator. One \type {dk} is
+\number \dimexpr 1dk \relax\
+scaled points which brings us to a numerator 49838
+and denominator 7739. Except for scaled points, the fraction gets multiplied by
+65536 and the amount. Most units have numerators and denominators with weird
+values, although 7227 jumps out.
+
+\starttabulate[|cT|c|l|r|r|]
+\BC unit \BC visualized                            \BC name         \BC num   \BC denom \NC \NR
+\ML
+\NC bp   \NC \blackrule[width=1bp]                 \NC base point   \NC  7227 \NC 7200  \NC \NR
+\NC cc   \NC \blackrule[width=1cc]                 \NC cicero       \NC 14856 \NC 1157  \NC \NR
+\NC cm   \NC \blackrule[width=1cm]                 \NC centimeter   \NC  7227 \NC  254  \NC \NR
+\NC dd   \NC \blackrule[width=1dd]                 \NC didot        \NC  1238 \NC 1157  \NC \NR
+\NC dk   \NC \blackrule[width=1dk]                 \NC knuth        \NC 49838 \NC 7739  \NC \NR
+\NC es   \NC \blackrule[width=1es,color=maincolor] \NC edith        \NC  9176 \NC  129  \NC \NR
+\NC in   \NC \blackrule[width=1in]                 \NC inch         \NC  7227 \NC  100  \NC \NR
+\NC mm   \NC \blackrule[width=1mm]                 \NC millimeter   \NC  7227 \NC 2540  \NC \NR
+\NC pc   \NC \blackrule[width=1pc]                 \NC pica         \NC    12 \NC    1  \NC \NR
+\NC pt   \NC \blackrule[width=1pt]                 \NC point        \NC     1 \NC    1  \NC \NR
+\NC sp   \NC \blackrule[width=1sp]                 \NC scaled point\footnote{This one is not multiplied by 65536.}
+                                                   \NC     1 \NC    1  \NC \NR
+\NC ts   \NC \blackrule[width=1ts,color=maincolor] \NC tove         \NC  4588 \NC  645  \NC \NR
+\stoptabulate
+
+When you consider these numbers it is good to realize that internally the engine
+uses a 32 bit number, split into two halves. There is a maximum,
+\the\dimexpr\maxdimen\relax, so that (intermediate) calculations don't overflow.
+The last digit of what \TEX\ reports when it computes a dimension as points is
+to be taken with a grain of salt. Here is how the Edith and Tove compare to their
+metric counterparts:
+
+\starttabulate[|rT|r|r|]
+\NC 2.5cm \NC \number\dimexpr2.5cm \NC \the\dimexpr2.5cm \NC \NR
+\NC 2.5mm \NC \number\dimexpr2.5mm \NC \the\dimexpr2.5mm \NC \NR
+\NC   1es \NC \number\dimexpr  1es \NC \the\dimexpr 1es  \NC \NR
+\NC   1ts \NC \number\dimexpr  1ts \NC \the\dimexpr 1ts  \NC \NR
+\stoptabulate
+
+In case you wonder if checking for yet another unit has drawbacks in terms of
+performance, we can guarantee \LMTX\ users that they won't notice a performance
+hit. Even with these additional units the engine quite likely beats its
+predecessors in scanning units. And the impact on the code base is less than 20
+short lines of trivial code so that goes unnoticed as well.
+
+\stopsubject
+
+\startsubject[title={Calibration}]
+
+In order to conduct the calibration we need a reliable measurement device and
+here we got lucky. The \CONTEXT\ community has some unique craftsmanship amongst
+its members and Willi Egger made us a robust sampling device that can compete
+with those used by the ones that the International Organization for Standards uses:
+the Edithorial.
+
+In addition to that, the \CONTEXT\ Math Society, indeed the same one that brings
+you all these nice new math capabilities in \LUAMETATEX, provided the necessary
+statistical and mathematical underpinning to make the Edith and Tove believable
+units. So here are some more details.
+
+\startMPdefinitions
+    vardef makethumb(expr thumbscale,thumbrandom,nrings,ringscale,penscale,thumbcolor) =
+        save thumb,basethumb, thumbshift ;
+        path thumb, basethumb ;
+        pair thumbshift ;
+        thumbshift := (-0.75*thumbscale,0) + (uniformdeviate(1.5)*thumbscale,uniformdeviate(1)*thumbscale) ;
+        thumb := ((-1*thumbscale,0) .. (-1*thumbscale,1thumbscale) .. (0,3thumbscale) .. (1thumbscale,1thumbscale) .. (1thumbscale,0) .. cycle) shifted -thumbshift ;
+        basethumb := ((-1*thumbscale,0) .. (-1*thumbscale,1thumbscale) .. (0,3thumbscale) .. (1thumbscale,1thumbscale) .. (1thumbscale,0) --cycle) randomizedcontrols thumbrandom ;
+        image(
+            fill basethumb withcolor 0.5[white,resolvedcolor(thumbcolor)] ;
+            for i = 1 upto nrings :
+                thumb := thumb scaled ringscale randomizedcontrols thumbrandom ;
+                draw thumb shifted thumbshift withcolor thumbcolor withpen pencircle scaled penscale ;
+            endfor
+            clip currentpicture to basethumb ;
+            draw basethumb withcolor thumbcolor ;
+        )
+    enddef;
+\stopMPdefinitions
+
+\startplacefloat
+    [figure]
+    [title={Results from thumb measurements at Bacho\TEX, with the median thumb marked in blue.}]
+    \startMPcode
+        numeric thumbs[] ;
+        thumbs[15] := 1 ;
+        thumbs[20] := 7 ;
+        thumbs[25] := 15 ;
+        thumbs[30] := 12 ;
+        %
+        for i = 0 upto thumbs[15] - 1 :
+            draw makethumb(0.15cm,0.1mm,20,0.9,0.1,"maincolor") shifted (i*0.70cm,0) ;
+        endfor
+        for i = 0 upto thumbs[20] - 1 :
+            draw makethumb(0.2cm,0.1mm,20,0.9,0.1,"maincolor") shifted (i*0.70cm,-1.25cm) ;
+        endfor
+        for i = 0 upto thumbs[25] - 1 :
+            if i = 9 :
+                draw makethumb(0.25cm,0.15mm,20,0.9,0.1,"extracolor") shifted (i*0.70cm,-2.5cm) ;
+            else:
+                draw makethumb(0.25cm,0.15mm,20,0.9,0.1,"maincolor") shifted (i*0.70cm,-2.5cm) ;
+            fi
+        endfor
+        for i = 0 upto thumbs[30] - 1 :
+            draw makethumb(0.30cm,0.2mm,20,0.9,0.1,"maincolor") shifted (i*0.70cm,-3.75cm) ;
+        endfor
+        %
+        label.lft("\unit{15 millimeter}", (-0.75cm, 0.25cm)) ;
+        label.lft("\unit{20 millimeter}", (-0.75cm,-1cm)) ;
+        label.lft("\unit{25 millimeter}", (-0.75cm,-2.25cm)) ;
+        label.lft("\unit{30 millimeter}", (-0.75cm,-3.5cm)) ;
+    \stopMPcode
+\stopplacefloat
+
+We have found out that the Tove unit, 2.5 millimeters, corresponds to
+7.1131744384765625 points. Let us find a decent rational approximation of this,
+with a small denominator. We do this by calculating the continued fraction, and
+we try a few steps to get something that is good enough.
+
+We start by noting that the integer part is 7. We then use a calculator (in our
+case Wolfram Alpha) to compute
+
+\startformula
+\frac{1}{7.1131744384765625 - 7} \alignhere = \frac{1}{0.1131744384765625}
+                                 \breakhere\approx 8.835917486854523392207091816098
+\stopformula
+
+This means that we get as a first possible choice
+
+\startformula
+7 + \frac{1}{8} = \frac{57}{8} = 7.125\mtp{.}
+\stopformula
+
+We continue, and next note that
+
+\startformula
+\frac{1}{8.835917486854523392207091816098-8} \approx 1.196290322580645161290322580645.
+\stopformula
+
+Thus, our next candidate is
+
+\startformula
+7 + \frac{1}{8 + \frac{1}{1}} = \frac{64}{9} = 7.\overbar{1}.
+\stopformula
+
+Here, the bar over the \im{1} indicates that \im{1} is repeating. In the next
+step we calculate
+
+\startformula
+\frac{1}{1.196290322580645161290322580645 - 1} \approx 5.094494658997534921939194741167.
+\stopformula
+
+The next candidate becomes
+
+\startformula
+7 + \frac{1}{8 + \frac{1}{1+\frac{1}{5}}} = \frac{377}{53} = 7.\overbar{1132075471698}.
+\stopformula
+
+We continue, to get
+
+\startformula
+\frac{1}{5.094494658997534921939194741167 - 5} \approx 10.582608695652173913043478260870
+\stopformula
+
+The next approximant becomes
+
+\startformula
+7 + \frac{1}{8 + \frac{1}{1+\frac{1}{5 + \frac{1}{10}}}} = \frac{3834}{539} = 7.\overbar{113172541743970315398886827458256029684601}.
+\stopformula
+
+For the next step we have
+
+\startformula
+\frac{1}{10.582608695652173913043478260870 - 10} \approx 1.716417910447761194029850746269
+\stopformula
+
+so the next approximant becomes
+
+\startformula
+7 + \frac{1}{8 + \frac{1}{1+\frac{1}{5 + \frac{1}{10+\frac{1}{1}}}}} = \frac{4211}{592} = 7.1131\overbar{756}.
+\stopformula
+
+Since this one has such a nice short repeating set of decimals, we fell for it,
+and quit here. The next approximant would be
+
+\startformula
+    \frac{12256}{1723}\mtp{,}
+    \frac{20301}{2854}\mtp{,}
+    \frac{28346}{3985}\mtp{,}
+    \frac{48647}{6839}\mtp{,}
+    \frac{466169}{65536}\mtp{,}
+\stopformula
+
+where the last one exactly equals what we started with, \im{7.1131744384765625}.
+Before we continue, we mention that \im{[7; 8, 1, 5, 10, 1, 1, 2, 1, 1, 9]} is a
+more compact way to write the continued fraction above.
+
+One could perhaps first think that multiplying the rational number by 10 would
+yield a very similar continued fraction, but that is not the case. In fact, the
+continued fraction for \im{71.131744384765625} is given by \im{[71; 7, 1, 1, 2,
+3, 1, 3, 1, 3, 1, 3, 2]}. This put us in a bit of an awkward situation. Do we
+want a nice approximation for the true value, or do we prefer to have \type {es}
+to be exactly \im{10} times as large as \type {ts}? If we go for the latter, we
+could take \im{42110/592}. We calculated the approximants though, and got
+
+\startformula
+    \frac{489}{7}\mtp{,}
+    \frac{569}{8}\mtp{,}
+    \frac{1067}{15}\mtp{,}
+    \frac{2703}{38}\mtp{,}
+    \frac{9176}{129}\mtp{,}
+    \frac{11879}{167}\mtp{,}
+    \frac{44813}{630}\mtp{,}\breakhere
+    \frac{56692}{692}\mtp{,}
+    \frac{214889}{3021}\mtp{,}
+    \frac{271581}{3818}\mtp{,}
+    \frac{1029532}{14475}\mtp{,}
+    \frac{2330845}{32768}\mtp{.}
+\stopformula
+
+When we saw this, it was irresistible to define \type {es} as
+
+\startformula
+    \frac{9176}{129} = 71.\overbar{131782945736434108527}
+\stopformula
+
+and then to define \type {ts} as
+
+\startformula
+    \frac{9176}{1290} = \frac{4588}{645} = 7.1\overbar{131782945736434108527}\mtp{.}
+\stopformula
+
+\stopsubject
+
+\startsubject[title={The edithorial device}]
+
+The design of the edithorial also involved some research. Of course there was
+some discussion about the right way to sample thumbs and those who have attended
+Bacho\TEX\ and \CONTEXT\ meetings will not be surprised that Willi is responsible
+for this. He presented us with a drawing (\in {figure} [fig:design]) that we
+immediately agreed upon.
+
+\startplacefigure[title={A \TEX\ community worthy edithorial for measuring the Edith.},reference=fig:design]
+    \externalfigure[musings-units-design.pdf][frame=on,width=.75\textwidth]
+\stopplacefigure
+
+Willi then sat down and made a prototype (\in {figure}
+[fig:prototype]) in order to see if sampling would work
+out. Knowing that the device would be stored under harsh conditions in the
+university city of Lund in Sweden, it had to be sturdy Polish oak and after being
+brought to precision it underwent first an iron acetate treatment and after that
+a furniture oil (tung oil) treatment as can be seen in \in {figure} [fig:final].
+Even with \TEX\ being digital we cannot get around physical devices for measuring
+digits. And with \TEX\ operating in nanometers we have to fit in.
+
+% \startplacefigure[title={The prototype of the edithorial.},reference=fig:prototype]
+%     \clip[ny=10,y=4,sy=5]{%
+%         \externalfigure[musings-units-prototype.png][width=.75\textwidth]%
+%     }
+% \stopplacefigure
+
+\startplacefigure[title={This reference edithorial plus protective cover.},reference=fig:final]
+    \startcombination[3*1]
+        {\externalfigure[musings-units-final-1.png][width=\combinationwidth]}{}
+        {\externalfigure[musings-units-final-2.png][width=\combinationwidth]}{}
+        {\externalfigure[musings-units-final-3.png][width=\combinationwidth]}{}
+    \stopcombination
+\stopplacefigure
+
+\stopsubject
+
+\startsubject[title={Some double checking}]
+
+There is one question we have to answer before we dare to use the Edith (\type
+{es}) and Tove (\type {ts}) as offsets next to a Knuth (\type {dk}) and that is:
+in what box does Don's thumb fit? After all, we need to assign some more weight to
+his thumb. On the Internet you can find images of Don Knuth sitting behind an
+organ but for reasons of copyright we cannot show these, but one thing we can be
+sure of is that his thumb is not wider than a key of that instrument, because
+according to the Wikipedia page \type {Musical_keyboard}: \footnote {Notice how
+metric measures win over inches here!}
+
+\startquotation
+    Over the last three hundred years, the octave span distance found on historical
+    keyboard instruments (organs, virginals, clavichords, harpsichords, and pianos)
+    has ranged from as little as 125 mm (4.9 in) to as much as 170 mm (6.7 in).
+    Modern piano keyboards ordinarily have an octave span of 164||165 mm (6.5||6.5 in),
+    resulting in the width of black keys averaging 13.7 mm (0.54 in) and white keys
+    about 23.5 mm (0.93 in) at the base, disregarding space between keys.
+\stopquotation
+
+This definitely keeps Don's thumb out of the 30mm bucket. When we zoom into these
+images it seems also unlikely that the thumb will go to the 20mm bucket, but in
+the end the only one who can answer this is Don Knuth himself. And because he's
+behind an email firewall we don't dare to ask him. So more research was needed
+and after a brainstorm session we decided to rely on a public visual that any
+\TEX\ user should be familiar with: the yearly Christmas lectures.
+
+\startplacefigure[title={The 2019 lecture: Pi and The Art of Computer Programming.},reference=fig:dek-1,width=.5\textwidth]
+    \clip[nx=6,ny=8,x=1,y=5,sx=4,sy=3]{%
+        \externalfigure[musings-units-dek-thumb-1.png][width=20cm]%
+    }
+\stopplacefigure
+
+\startplacefigure[title={The 2014 lecture: (3/2)-ary Trees},reference=fig:dek-2,width=.5\textwidth]
+    \clip[nx=6,ny=8,x=1,y=5,sx=4,sy=3]{%
+        \externalfigure[musings-units-dek-thumb-2.png][width=20cm]%
+    }
+\stopplacefigure
+
+And because we know which books the thumb is on, we can calculate the bucket by
+comparing the dimensions: on one case we use the paper size as a reference, on
+the other case we use the interline spacing of the book as reference!
+
+\startplacefloat
+    [figure]
+    [title={Close-up of the thumb.},
+     reference=fig:closeupthumb]
+    \startMPcode
+        draw externalfigure "musings-units-dek-thumb-closeup.jpg" xsized 12cm ;
+        draw hlingrid(0, 100, 1, 8cm, 12cm) withpen pencircle scaled 0.1 withcolor 0.8white ;
+        draw vlingrid(0, 100, 1, 12cm, 8cm) withpen pencircle scaled 0.1 withcolor 0.8white ;
+        interim linecap := butt ;
+        draw (31/100*12cm,19/100*8cm) -- (31/100*12cm,27/100*8cm) withpen pencircle scaled 2 withcolor "extracolor" ;
+        draw (80/100*12cm,13/100*8cm) -- (92/100*12cm,54/100*8cm) withpen pencircle scaled 2 withcolor "extracolor" ;
+    \stopMPcode
+\stopplacefloat
+
+In \in {Figure} [fig:closeupthumb] we show a close-up of the thumb and the page.
+We have divided the image into a \im{100 \times 100} grid, but the aspect ratio
+of the image is \im{3:2}, so we need to compensate for that. We estimate that the
+interline space of the text is 8 grid lines high, while the diagonal line
+measuring the width of the thumb is 12 grid lines wide and 42 grid lines high.
+This means that the thumb-interline space quotient is given by
+
+\startformula
+\frac{\sqrt{(12\cdot 3/2)^2 + 42^2}}{8} \approx 5.71.
+\stopformula
+
+Next, we need to know what interline space is used. We should probably know this
+by heart, but as we do not, we instead downloaded one of the pre-fascicles of
+TAOCP volume 4. We cut out a square with sides of \unit{5 centimeter}, and added
+again a \im{100 \times 100} grid.
+
+\startplacefloat
+    [figure]
+    [title={A 5cm \im{\times} 5cm cutout.},
+     reference=fig:fasciclescloseup]
+    \startMPcode
+        draw externalfigure "musings-units-dek-fasc0b-13.pdf" ;
+        currentpicture := currentpicture shifted (-1cm,-15cm) ;
+        clip currentpicture to unitsquare scaled 5cm ;
+        draw boundingbox currentpicture withpen pencircle scaled 0.25 ;
+        draw hlingrid(0, 100, 1, 5cm, 5cm) withpen pencircle scaled 0.1 withcolor 0.8white ;
+        draw vlingrid(0, 100, 1, 5cm, 5cm) withpen pencircle scaled 0.1 withcolor 0.8white ;
+        interim linecap := butt ;
+        draw origin -- (0,5cm) withpen pencircle scaled 2 withcolor "extracolor";
+        draw (32/100*5cm,50/100*5cm) -- (32/100*5cm,67/100*5cm) withpen pencircle scaled 2 withcolor "extracolor" ;
+    \stopMPcode
+\stopplacefloat
+
+We measured the height of two lines and got in return 17 grid lines. This means
+that the interline space is given by
+
+\startformula
+    5\times \frac{17}{2\cdot 100} \unit{centimeter}
+    = 0.425 \unit{centimeter}\mtp{.}
+\stopformula
+
+As a result we estimate that Don Knuth's thumb has the size
+
+\startformula
+    5.71 \times 0.425 \unit{centimeter}
+    \approx
+    2.43 \unit{centimeter}\mtp{.}
+\stopformula
+
+If we're right about all this then the Edith will not be influenced by the grand
+wizard's thumb, so the well|-|calibrated (derived) Tove cannot be discarded for
+offsets as being less accurate (and stable) as the Knuth.
+
+\stopsubject
+
+\startsubject[title={A modern relative unit}]
+
+Since \TEX\ showed up a lot has changed when it comes to computers: the
+computers considered powerful in the early days now fit in your pocket. One
+disadvantage of these portable devices is that they have a variety of display
+sizes. A document can easily be generated again, adapting the layout to all these
+devices is a bit of a pain.
+
+This is why we introduce a new dynamic unit, the \type {eu} or the European Unit,
+but one that can be changed by setting an internal register, \type {\eufactor}.
+Because that defaults to 10, one \type {eu} starts out as one \type {es}. A
+nice coincidence is that one can also read it as Edith's Unit.
+
+% Mikael can argue that the e in eu stands for Elin
+
+\starttabulate[|c|c|c|]
+\NC \type {\eufactor} \NC \type {1eu} \NC \type {2eu} \NC \NR
+\ML
+\NC  2 \NC \eufactor= 2\blackrule[color=extracolor,width=1eu] \NC \eufactor= 2\blackrule[color=extracolor,width=2eu] \NC \NR
+\NC 10 \NC \eufactor=10\blackrule[color=extracolor,width=1eu] \NC \eufactor=10\blackrule[color=extracolor,width=2eu] \NC \NR
+\NC 15 \NC \eufactor=15\blackrule[color=extracolor,width=1eu] \NC \eufactor=15\blackrule[color=extracolor,width=2eu] \NC \NR
+\stoptabulate
+
+We can set the factor in Tove steps between~1 and 50 so that we retain a
+reasonable accuracy. So, this relative unit stresses the sisterhood of these two
+new units because \type {1eu} is \type {10ts} and \type {1es}. This unit might
+also come in handy when writing manuals so you can bet that we will use it.
+
+These units are modern in another way too. The popular game MineCraft has its own
+unit, a block, as (for instance) discussed on \typ
+{https://minecraft.fandom.com/wiki/Tutorials/Units_of_measure}. For those using
+inches, one inch is 0.0254 blocks, so one block makes 39.3700787in. For those
+using metric system one cm equals 0.01 blocks or 0.16 pixels and therefore one
+block makes 40cm. These 40cm are 16 Ediths which means that the Edith is also a
+good introduction in the hexadecimal numbering system. Unfortunately \LEGO\ bricks
+are defined in inches so there the inchers still have the edge. But Edith and
+Tove have an advantage in MineCraft, which is confirmed by observation. Just like
+some of \TEX's units are actually defined using the inch paradigm, we could add
+units like \type {mb} for MineCraft Block being 16 Ediths. After all,
+implementing extra units is trivial in \LUAMETATEX. Let us know what you think.
+
+\stopsubject
+
+\startsubject[title={How about \METAPOST ?}]
+
+We not only have to deal with \TEX\ but also with \METAPOST, so from now on
+\METAFUN\ will also provide these units, which we can then use to properly draw
+thumbs as in \in {figure} [fig:thumbs].
+
+\startplacefigure[title={One can sign documents with these calibrated thumbs.},reference=fig:thumbs]
+    \startMPcode
+        draw makethumb(es/2,ts/2,20,0.9,0.5,"maincolor") shifted (3es/2,0) ;
+        draw makethumb(es/2,ts/2,20,0.9,0.5,"extracolor") ;
+    \stopMPcode
+\stopplacefigure
+
+While checking other units in \METAFUN\ we were reminded that they are there
+given as floats and not as fractions. We were amused to see
+
+\starttyping
+mm :=  2.83464 ;
+cm := 28.34645 ;
+\stoptyping
+
+which means that a \type {mm} is not exactly one tenth of a \type {cm}, and also
+that the rounding has been done by the even|/|odd rounding off rule. We decided to
+define
+
+\starttyping
+es := 71.13174 ;
+ts :=  7.11317 ;
+\stoptyping
+
+\stopsubject
+
+\startsubject[title={Overflow}]
+
+When you enter a dimension in \TEX\ and it is larger than \the\maxdimen\space or
+\number\maxdimen\space scaled points, an error message is shown and when you ask for
+help, that contains the sentence \quotation {I can't work with sizes bigger than
+about 19 feet}. There is no \type {ft} unit in \TEX, so the user has to do some
+conversion, maybe taking ones own foot into account.
+
+Just like we had to adapt the error message issued when an unknown unit is used,
+we decided make the overflow message a bit more detailed. For that we introduced
+the Theodore, where that unit is to the Edith what the Foot is to the Inch. With
+one Theodore being five Edits we now report this:
+
+\startquotation
+I can't work with sizes bigger than about 19 feet (45 Theodores as of 2023),
+575 centimeters, 2300 Toves, 230 Ediths or 16383 points.
+\stopquotation
+
+So how did we come to this one? At the Bacho\TeX\ meeting the 18 month old,
+always good humored, Theodore was running around in the conference room and his
+little feet were carefully measured by his father Arthur Rosendahl (the self
+appointed High Commissioner of Hyphenation and upcoming \TUG\ president). Because
+the 19 inches are also an approximation, we rounded the Theodore to five Ediths.
+In addition we mention a few more maxima, so that the user gets a better
+impression how large \TEX\ can go. Mojca Miklavec, who gets her feet dirty by
+managing the binary build farm on the context garden, proposed a \type {th} unit
+but as there is no \type {ft} we didn't come to a conclusion yet. Actually that
+unit would make a good default for text width, just like an \type {es} makes
+perfect left margin, and a \type {ts} a nice offset around framed content.
+
+\stopsubject
+
+\startsubject[title={Wrapping up}]
+
+In this article we discussed a few additional units that have been added to
+\LUAMETATEX. We've carefully chosen some names that not only compensate the male
+dominance in unit names, but also have a modern and fresh ring. The units are of
+course metric. The Edith (\type {es}) replaces the deprecated inch (\type {in})
+and the Tove (\type {ts}) can be used for offsets as alternative to the Knuth
+(\type {dk}) that of course we will keep using alongside. The units are
+calibrated using an edithorial of which there exists a unique reference measurement
+piece. The standard has been established at the 2023 Bacho\TEX\ meeting and might
+be recalibrated at a future \CONTEXT\ meeting when a new generation of users
+thinks that is needed. Many thanks to Karl Berry for copy|-|editing.
+
+\stopsubject
+
+\stopcomponent

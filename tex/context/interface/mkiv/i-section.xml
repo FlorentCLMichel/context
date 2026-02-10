@@ -4,7 +4,7 @@
 
 <cd:interface xmlns:cd="http://www.pragma-ade.com/commands">
 
-    <cd:command name="definehead" level="style" category="structure" file="strc-sec.mkiv">
+    <cd:command name="definehead" level="style" category="structure" file="strc-sec.mkxl">
         <cd:arguments>
             <cd:resolve name="keyword-name"/>
             <cd:resolve name="keyword-section-optional"/>
@@ -14,7 +14,7 @@
         </cd:arguments>
     </cd:command>
 
-    <cd:command name="setuphead" level="style" category="structure" file="strc-sec.mkiv">
+    <cd:command name="setuphead" level="style" category="structure" file="strc-sec.mkxl">
         <cd:arguments>
             <cd:resolve name="keyword-section-list-optional"/>
             <cd:assignments list="yes">
@@ -130,6 +130,7 @@
                 <cd:parameter name="marking">
                     <cd:constant type="page"/>
                     <cd:constant type="reset"/>
+                    <cd:constant type="new"/>
                 </cd:parameter>
                 <cd:parameter name="header">
                     <cd:resolve name="value-textstate"/>
@@ -263,7 +264,7 @@
         </cd:arguments>
     </cd:command>
 
-    <cd:command name="setupheads" level="style" category="structure" file="strc-sec.mkiv">
+    <cd:command name="setupheads" level="style" category="structure" file="strc-sec.mkxl">
         <cd:arguments>
             <cd:resolve name="keyword-section-list-optional"/>
             <cd:assignments list="yes">
@@ -272,7 +273,7 @@
         </cd:arguments>
     </cd:command>
 
-    <cd:command name="section" generated="yes" variant="instance" level="document" category="structure" file="strc-sec.mkiv">
+    <cd:command name="section" generated="yes" variant="instance" level="document" category="structure" file="strc-sec.mkxl">
         <cd:sequence>
             <cd:instance value="section"/>
         </cd:sequence>
@@ -285,7 +286,7 @@
         </cd:instances>
     </cd:command>
 
-    <cd:command name="section" generated="yes" variant="instance:ownnumber" level="document" category="structure" file="strc-sec.mkiv">
+    <cd:command name="section" generated="yes" variant="instance:ownnumber" level="document" category="structure" file="strc-sec.mkxl">
         <cd:sequence>
             <cd:instance value="section"/>
         </cd:sequence>
@@ -299,7 +300,7 @@
         </cd:instances>
     </cd:command>
 
-    <cd:command name="section" generated="yes" variant="instance:assignment" level="document" category="structure" file="strc-sec.mkiv">
+    <cd:command name="section" generated="yes" variant="instance:assignment" level="document" category="structure" file="strc-sec.mkxl">
         <cd:sequence>
             <cd:instance value="section"/>
         </cd:sequence>
@@ -311,7 +312,7 @@
         </cd:instances>
     </cd:command>
 
-    <cd:command name="section" type="environment" generated="yes" variant="instance" level="document" category="structure" file="strc-sec.mkiv">
+    <cd:command name="section" type="environment" generated="yes" variant="instance" level="document" category="structure" file="strc-sec.mkxl">
         <cd:sequence>
             <cd:instance value="section"/>
         </cd:sequence>
@@ -324,7 +325,7 @@
         </cd:instances>
     </cd:command>
 
-    <cd:command name="namedsection" type="environment" level="document" category="structure" file="strc-sec.mkiv">
+    <cd:command name="namedsection" type="environment" level="document" category="structure" file="strc-sec.mkxl">
         <cd:arguments>
             <cd:resolve name="keyword-section"/>
             <cd:resolve name="assignment-sectiondata-list-optional"/>
@@ -332,49 +333,49 @@
         </cd:arguments>
     </cd:command>
 
-    <cd:command name="placerawheaddata" level="system" category="structure" file="strc-sec.mkiv">
+    <cd:command name="placerawheaddata" level="system" category="structure" file="strc-sec.mkxl">
         <cd:arguments>
             <cd:resolve name="keyword-section"/>
         </cd:arguments>
     </cd:command>
 
-    <cd:command name="placerawheadtext" level="system" category="structure" file="strc-sec.mkiv">
+    <cd:command name="placerawheadtext" level="system" category="structure" file="strc-sec.mkxl">
         <cd:arguments>
             <cd:resolve name="keyword-section"/>
         </cd:arguments>
     </cd:command>
 
-    <cd:command name="placerawheadnumber" level="system" category="structure" file="strc-sec.mkiv">
+    <cd:command name="placerawheadnumber" level="system" category="structure" file="strc-sec.mkxl">
         <cd:arguments>
             <cd:resolve name="keyword-section"/>
         </cd:arguments>
     </cd:command>
 
-    <cd:command name="repeathead" level="document" category="structure" file="strc-sec.mkiv">
+    <cd:command name="repeathead" level="document" category="structure" file="strc-sec.mkxl">
         <cd:arguments>
             <cd:resolve name="keyword-section"/>
         </cd:arguments>
     </cd:command>
 
-    <cd:command name="definesection" level="system" category="structure" file="strc-sec.mkiv">
+    <cd:command name="definesection" level="system" category="structure" file="strc-sec.mkxl">
         <cd:arguments>
             <cd:resolve name="keyword-name"/>
         </cd:arguments>
     </cd:command>
 
-    <cd:command name="placeheadtext" level="system" category="structure" file="strc-sec.mkiv">
+    <cd:command name="placeheadtext" level="system" category="structure" file="strc-sec.mkxl">
         <cd:arguments>
             <cd:resolve name="keyword-section"/>
         </cd:arguments>
     </cd:command>
 
-    <cd:command name="placeheadnumber" level="system" category="structure" file="strc-sec.mkiv">
+    <cd:command name="placeheadnumber" level="system" category="structure" file="strc-sec.mkxl">
         <cd:arguments>
             <cd:resolve name="keyword-section"/>
         </cd:arguments>
     </cd:command>
 
-    <cd:command name="setupheadnumber" level="style" category="structure" file="strc-sec.mkiv">
+    <cd:command name="setupheadnumber" level="style" category="structure" file="strc-sec.mkxl">
         <cd:arguments>
             <cd:resolve name="keyword-section"/>
             <cd:keywords>
@@ -383,21 +384,21 @@
         </cd:arguments>
     </cd:command>
 
-    <cd:command name="determineheadnumber" level="system" category="structure" file="strc-sec.mkiv">
+    <cd:command name="determineheadnumber" level="system" category="structure" file="strc-sec.mkxl">
         <cd:arguments>
             <cd:resolve name="keyword-section"/>
         </cd:arguments>
     </cd:command>
 
-    <cd:command name="currentheadnumber" level="system" category="structure" file="strc-sec.mkiv"/>
+    <cd:command name="currentheadnumber" level="system" category="structure" file="strc-sec.mkxl"/>
 
-    <cd:command name="namedheadnumber" level="system" category="structure" file="strc-sec.mkiv">
+    <cd:command name="namedheadnumber" level="system" category="structure" file="strc-sec.mkxl">
         <cd:arguments>
             <cd:resolve name="argument-section"/>
         </cd:arguments>
     </cd:command>
 
-    <cd:command name="somenamedheadnumber" level="system" category="structure" file="strc-sec.mkiv">
+    <cd:command name="somenamedheadnumber" level="system" category="structure" file="strc-sec.mkxl">
         <cd:arguments>
             <cd:resolve name="argument-section"/>
             <cd:keywords delimiters="braces">
@@ -410,7 +411,7 @@
         </cd:arguments>
     </cd:command>
 
-    <cd:command name="headnumber" level="system" category="structure" file="strc-sec.mkiv">
+    <cd:command name="headnumber" level="system" category="structure" file="strc-sec.mkxl">
         <cd:arguments>
             <cd:resolve name="keyword-section"/>
             <cd:keywords optional="yes">
@@ -423,7 +424,7 @@
         </cd:arguments>
     </cd:command>
 
-    <cd:command name="someheadnumber" level="system" category="structure" file="strc-sec.mkiv">
+    <cd:command name="someheadnumber" level="system" category="structure" file="strc-sec.mkxl">
         <cd:arguments>
             <cd:resolve name="keyword-section"/>
             <cd:keywords>
@@ -436,36 +437,36 @@
         </cd:arguments>
     </cd:command>
 
-    <cd:command name="namedstructureheadlocation" level="system" category="structure" file="strc-sec.mkiv">
+    <cd:command name="namedstructureheadlocation" level="system" category="structure" file="strc-sec.mkxl">
         <cd:arguments>
             <cd:resolve name="argument-section"/>
         </cd:arguments>
     </cd:command>
 
-    <cd:command name="structurenumber" level="system" category="structure" file="strc-sec.mkiv"/>
+    <cd:command name="structurenumber" level="system" category="structure" file="strc-doc.lmt"/>
 
-    <cd:command name="structuretitle" level="system" category="structure" file="strc-sec.mkiv"/>
+    <cd:command name="structuretitle" level="system" category="structure" file="strc-doc.lmt"/>
 
-    <cd:command name="structurevariable" level="system" category="structure" file="strc-sec.mkiv">
+    <cd:command name="structurevariable" level="system" category="structure" file="strc-doc.lmt">
         <cd:arguments>
             <cd:resolve name="argument-key"/>
         </cd:arguments>
     </cd:command>
 
-    <cd:command name="structureuservariable" level="system" category="structure" file="strc-sec.mkiv">
+    <cd:command name="structureuservariable" level="system" category="structure" file="strc-doc.lmt">
         <cd:arguments>
             <cd:resolve name="argument-key"/>
         </cd:arguments>
     </cd:command>
 
-    <cd:command name="namedstructurevariable" level="system" category="structure" file="strc-sec.mkiv">
+    <cd:command name="namedstructurevariable" level="system" category="structure" file="strc-doc.lmt">
         <cd:arguments>
             <cd:resolve name="argument-section"/>
             <cd:resolve name="argument-key"/>
         </cd:arguments>
     </cd:command>
 
-    <cd:command name="namedstructureuservariable" level="system" category="structure" file="strc-sec.mkiv">
+    <cd:command name="namedstructureuservariable" level="system" category="structure" file="strc-doc.lmt">
         <cd:arguments>
             <cd:resolve name="argument-section"/>
             <cd:resolve name="argument-key"/>

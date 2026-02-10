@@ -185,6 +185,9 @@
                     <cd:constant type="yes"/>
                     <cd:constant type="no" default="yes"/>
                 </cd:parameter>
+                <cd:parameter name="delay">
+                    <cd:constant type="text"/>
+                </cd:parameter>
                 <!-- end construction values -->
                 <cd:inherit name="setupcounter"/>
             </cd:assignments>

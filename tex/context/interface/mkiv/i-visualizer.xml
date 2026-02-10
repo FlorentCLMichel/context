@@ -199,20 +199,15 @@
         </cd:arguments>
     </cd:command>
 
-    <cd:command name="showbreakpoints" level="document" file="trac-brk.mkxl">
-        <cd:arguments>
-            <cd:assignments list="yes" optional="yes">
-                <cd:inherit name="setupcolumns"/>
-            </cd:assignments>
-        </cd:arguments>
-    </cd:command>
-
     <cd:command name="showbreakpoints" type="environment" level="document" file="trac-brk.mkxl">
         <cd:arguments>
             <cd:assignments list="yes" optional="yes">
                 <cd:parameter name="option">
                     <cd:constant type="margin"/>
                     <cd:constant type="simple"/>
+                </cd:parameter>
+                <cd:parameter name="level">
+                    <cd:constant type="cd:number"/>
                 </cd:parameter>
                 <!-- I'm unable to determine what arguments the list key accepts -->
                 <cd:parameter name="list" list="yes">
@@ -224,5 +219,116 @@
             </cd:assignments>
         </cd:arguments>
     </cd:command>
+
+    <cd:command name="showbreakpoints" level="document" file="trac-brk.mkxl">
+        <cd:arguments>
+            <cd:assignments list="yes" optional="yes">
+                <cd:inherit name="setupcolumns"/>
+            </cd:assignments>
+        </cd:arguments>
+    </cd:command>
+
+    <cd:command name="drawbreakpoints" level="document" file="trac-brk.mkxl">
+        <cd:arguments>
+            <cd:assignments list="yes" optional="yes">
+                <cd:parameter name="dx">
+                    <cd:constant type="cd:dimension"/>
+                </cd:parameter>
+                <cd:parameter name="dy">
+                    <cd:constant type="cd:dimension"/>
+                </cd:parameter>
+                <cd:parameter name="sx">
+                    <cd:constant type="cd:dimension"/>
+                </cd:parameter>
+                <cd:parameter name="sy">
+                    <cd:constant type="cd:dimension"/>
+                </cd:parameter>
+                <cd:parameter name="rulethickness">
+                    <cd:constant type="cd:dimension"/>
+                </cd:parameter>
+            </cd:assignments>
+        </cd:arguments>
+    </cd:command>
+
+    <cd:command name="showbalancepoints" type="environment" level="document" file="trac-brk.mkxl">
+        <cd:arguments>
+            <cd:assignments list="yes" optional="yes">
+                <cd:parameter name="option">
+                    <cd:constant type="margin"/>
+                    <cd:constant type="simple"/>
+                </cd:parameter>
+                <cd:parameter name="level">
+                    <cd:constant type="cd:number"/>
+                </cd:parameter>
+                <!-- I'm unable to determine what arguments the list key accepts -->
+                <cd:parameter name="list" list="yes">
+                    <cd:constant type="cd:text"/>
+                </cd:parameter>
+                <cd:parameter name="offset">
+                    <cd:constant type="cd:dimension"/>
+                </cd:parameter>
+            </cd:assignments>
+        </cd:arguments>
+    </cd:command>
+
+    <cd:command name="showbalancepoints" level="document" file="trac-brk.mkxl">
+        <cd:arguments>
+            <cd:assignments list="yes" optional="yes">
+                <cd:inherit name="setupcolumns"/>
+            </cd:assignments>
+        </cd:arguments>
+    </cd:command>
+
+    <cd:command name="drawbalancepoints" level="document" file="trac-brk.mkxl">
+        <cd:arguments>
+            <cd:assignments list="yes" optional="yes">
+                <cd:parameter name="dx">
+                    <cd:constant type="cd:dimension"/>
+                </cd:parameter>
+                <cd:parameter name="dy">
+                    <cd:constant type="cd:dimension"/>
+                </cd:parameter>
+                <cd:parameter name="sx">
+                    <cd:constant type="cd:dimension"/>
+                </cd:parameter>
+                <cd:parameter name="sy">
+                    <cd:constant type="cd:dimension"/>
+                </cd:parameter>
+                <cd:parameter name="rulethickness">
+                    <cd:constant type="cd:dimension"/>
+                </cd:parameter>
+            </cd:assignments>
+        </cd:arguments>
+    </cd:command>
+
+    <!--
+
+        <cd:command name="showsplitpoints" type="environment" file="trac-vsp.mkxl">
+            <cd:arguments>
+                <cd:assignments list="yes" optional="yes">
+                    <cd:parameter name="option">
+                        <cd:constant type="cd:text"/>
+                    </cd:parameter>
+                    <cd:parameter name="list">
+                        <cd:constant type="cd:text"/>
+                    </cd:parameter>
+                    <cd:parameter name="offset">
+                        <cd:constant type="cd:dimension"/>
+                    </cd:parameter>
+                </cd:assignments>
+            </cd:arguments>
+        </cd:command>
+
+        <cd:command name="showsplitpoints" file="trac-vsp.mkxl">
+            <cd:arguments>
+                <cd:assignments list="yes" optional="yes">
+                    <cd:parameter name="option">
+                        <cd:constant type="cd:text"/>
+                    </cd:parameter>
+                </cd:assignments>
+            </cd:arguments>
+        </cd:command>
+
+    -->
 
 </cd:interface>

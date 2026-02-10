@@ -28,7 +28,6 @@
   + \demeritsfrozenparcode
   + \displaypenaltyfrozenparcode
   + \emergencyfrozenparcode
-  + \exhyphenpenaltyfrozenparcode
   + \fitnessclassesfrozenparcode
   + \hangfrozenparcode
   + \hsizefrozenparcode
@@ -54,6 +53,7 @@
   + \tolerancefrozenparcode
   + \twindemeritsfrozenparcode
   + \widowpenaltyfrozenparcode
+  % \linesnappingfrozenparcode
 \relax
 
 \setnewconstant\paragraphupdatecodes\numexpr
@@ -69,7 +69,6 @@
   + \shapingpenaltyfrozenparcode
   + \singlelinepenaltyfrozenparcode
   + \hyphenpenaltyfrozenparcode
-  + \exhyphenpenaltyfrozenparcode
   + \linebreakchecksfrozenparcode
   + \twindemeritsfrozenparcode
 \relax
@@ -84,7 +83,6 @@
   + \toddlerpenaltyfrozenparcode
   + \singlelinepenaltyfrozenparcode
   + \hyphenpenaltyfrozenparcode
-  + \exhyphenpenaltyfrozenparcode
   + \linebreakchecksfrozenparcode
 \relax
 

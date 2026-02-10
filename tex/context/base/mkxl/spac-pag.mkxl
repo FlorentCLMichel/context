@@ -41,7 +41,7 @@
 \permanent\protected\def\doifelserightpagestate#1#2% not expandable !
   {\ifcase\frozenpagestate
      \pagestatemismatchfalse
-     \realpagestateno\realfolio
+     \realpagestateno\realpageno
      \ifinpagebody
        \ifdoublesided
          \ifodd\realpageno\relax
@@ -90,7 +90,7 @@
 \permanent\protected\def\doifelseforcedrightpagestate#1#2%
   {\ifcase\frozenpagestate
      \pagestatemismatchfalse
-     \realpagestateno\realfolio
+     \realpagestateno\realpageno
      \edef\m_spac_pagestates_realpage{\pagestaterealpage{#1}{\number#2}}%
      \ifempty\m_spac_pagestates_realpage
        \ifodd\realpageno\relax

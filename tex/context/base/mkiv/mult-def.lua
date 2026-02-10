@@ -11617,6 +11617,14 @@ return {
    ["pe"]="ضخامت‌خط",
    ["ro"]="grosimerigla",
   },
+  ["rulewidth"]={
+   ["en"]="rulewidth",
+   ["nl"]="lijnbreedte",
+  },
+  ["ruledistance"]={
+   ["en"]="ruledistance",
+   ["nl"]="lijnafstand",
+  },
   ["samepage"]={
    ["cs"]="stejnastranka",
    ["de"]="selbeseite",
@@ -11891,6 +11899,9 @@ return {
   },
   ["snap"]={
    ["en"]="snap",
+  },
+  ["snapping"]={
+    ["en"]="snapping",
   },
   ["snapstep"]={
    ["en"]="snapstep",
@@ -17554,6 +17565,9 @@ return {
    ["pe"]="بدون‌فضاگذاری",
    ["ro"]="nospacing",
   },
+  ["nosnapping"]={
+    ["en"]="nosnapping",
+  },
   ["nostopper"]={
    ["en"]="nostopper",
    ["fr"]="sansstoppeur",
@@ -18773,6 +18787,9 @@ return {
    ["nl"]="kleintype",
    ["pe"]="تایپ‌کوچک",
    ["ro"]="mictype",
+  },
+  ["snapping"]={
+    ["en"]="snapping",
   },
   ["somewhere"]={
    ["cs"]="nekde",

@@ -4,7 +4,7 @@
 
 <cd:interface xmlns:cd="http://www.pragma-ade.com/commands">
 
-    <cd:command name="doifelsebuffer" level="system" category="buffer" keywords="conditional" file="buff-ini.mkxl">
+    <cd:command name="doifelsebuffer" level="system" category="buffer" keywords="conditional" file="buff-ini.lmt">
         <cd:arguments>
             <cd:resolve name="argument-buffer"/>
             <cd:resolve name="argument-true"/>
@@ -13,6 +13,14 @@
     </cd:command>
 
     <cd:command name="doifbufferelse" level="system" category="buffer" keywords="conditional" file="buff-ini.mkxl">
+        <cd:arguments>
+            <cd:resolve name="argument-buffer"/>
+            <cd:resolve name="argument-true"/>
+            <cd:resolve name="argument-false"/>
+        </cd:arguments>
+    </cd:command>
+
+    <cd:command name="doifelsebufferempty" level="system" category="buffer" keywords="conditional" file="buff-ini.lmt">
         <cd:arguments>
             <cd:resolve name="argument-buffer"/>
             <cd:resolve name="argument-true"/>
@@ -59,6 +67,10 @@
         <cd:arguments>
             <cd:resolve name="keyword-buffer-list-optional"/>
             <cd:assignments list="yes">
+                <cd:parameter name="define">
+                    <cd:constant type="yes" default="yes"/>
+                    <cd:constant type="no"/>
+                </cd:parameter>
                 <cd:parameter name="before">
                     <cd:constant type="cd:command"/>
                 </cd:parameter>
@@ -117,15 +129,6 @@
         </cd:sequence>
     </cd:command>
 
-    <cd:command name="processtexbuffer" level="style" category="buffer" file="buff-ini.mkxl">
-        <cd:sequence>
-            <cd:string value="processTEXbuffer"/>
-        </cd:sequence>
-        <cd:arguments>
-            <cd:resolve name="keyword-buffer-optional"/>
-        </cd:arguments>
-    </cd:command>
-
     <cd:command name="savebuffer" variant="list" level="style" category="buffer" file="buff-ini.mkxl">
         <cd:arguments>
             <cd:resolve name="keyword-buffer-list"/>
@@ -136,6 +139,25 @@
     <cd:command name="savebuffer" level="style" category="buffer" file="buff-ini.mkxl">
         <cd:arguments>
             <cd:resolve name="keyword-buffer-list-optional"/>
+            <cd:assignments list="yes">
+                <cd:inherit name="setupsavebuffer"/>
+            </cd:assignments>
+        </cd:arguments>
+    </cd:command>
+
+    <cd:command name="definesavebuffer" file="buff-ini.mkxl">
+        <cd:arguments>
+            <cd:resolve name="keyword-name"/>
+            <cd:resolve name="keyword-name-optional"/>
+            <cd:assignments list="yes" optional="yes">
+                <cd:inherit name="setupsavebuffer"/>
+            </cd:assignments>
+        </cd:arguments>
+    </cd:command>
+
+    <cd:command name="setupsavebuffer" file="buff-ini.mkxl">
+        <cd:arguments>
+            <cd:resolve name="keyword-name-list-optional"/>
             <cd:assignments list="yes">
                 <cd:parameter name="list">
                     <cd:constant type="cd:buffer"/>
@@ -157,15 +179,57 @@
         </cd:arguments>
     </cd:command>
 
+    <cd:command name="processtexbuffer" level="style" category="buffer" file="buff-ini.mkxl">
+        <cd:sequence>
+            <cd:string value="processTEXbuffer"/>
+        </cd:sequence>
+        <cd:arguments>
+            <cd:resolve name="keyword-buffer-optional"/>
+        </cd:arguments>
+    </cd:command>
+
+    <cd:command name="processtexbuffer" variant="argument" level="style" category="buffer" file="buff-ini.mkxl">
+        <cd:sequence>
+            <cd:string value="processTEXbuffer"/>
+        </cd:sequence>
+        <cd:arguments>
+            <cd:resolve name="argument-buffer"/>
+        </cd:arguments>
+    </cd:command>
+
     <cd:command name="ctxluabuffer" level="style" category="buffer" keywords="lua" file="buff-ini.mkxl">
         <cd:arguments>
             <cd:resolve name="keyword-buffer-optional"/>
         </cd:arguments>
     </cd:command>
 
+    <cd:command name="ctxluabuffer" variant="argument" level="style" category="buffer" keywords="lua" file="buff-ini.mkxl">
+        <cd:arguments>
+            <cd:resolve name="argument-buffer"/>
+        </cd:arguments>
+    </cd:command>
+
     <cd:command name="mkvibuffer" level="style" category="buffer" file="buff-ini.mkxl">
         <cd:arguments>
             <cd:resolve name="keyword-buffer-optional"/>
+        </cd:arguments>
+    </cd:command>
+
+    <cd:command name="mkvibuffer" variant="argument" level="style" category="buffer" file="buff-ini.mkxl">
+        <cd:arguments>
+            <cd:resolve name="argument-buffer"/>
+        </cd:arguments>
+    </cd:command>
+
+    <cd:command name="texbuffer" level="style" category="buffer" file="buff-ini.mkxl">
+        <cd:arguments>
+            <cd:resolve name="keyword-buffer-optional"/>
+        </cd:arguments>
+    </cd:command>
+
+    <cd:command name="texbuffer" variant="argument" level="style" category="buffer" file="buff-ini.mkxl">
+        <cd:arguments>
+            <cd:resolve name="argument-buffer"/>
         </cd:arguments>
     </cd:command>
 

@@ -142,6 +142,14 @@
                     <cd:constant type="yes" default="yes"/>
                     <cd:constant type="no"/>
                 </cd:parameter>
+                <cd:parameter name="topdistance">
+                    <cd:constant type="cd:dimension"/>
+                    <cd:constant type="cd:number"/>
+                </cd:parameter>
+                <cd:parameter name="bottomdistance">
+                    <cd:constant type="cd:dimension"/>
+                    <cd:constant type="cd:number"/>
+                </cd:parameter>
                 <!-- begin root only -->
                 <cd:parameter name="spacebefore">
                     <cd:constant type="none"/>
@@ -670,6 +678,29 @@
         </cd:instances>
     </cd:command>
 
+    <cd:command name="placefloattext" type="environment" file="strc-flt.mkxl">
+        <cd:arguments>
+            <cd:resolve name="keyword-name"/>
+            <cd:resolve name="assignment-floatdata-list-optional"/>
+            <cd:resolve name="assignment-userdata-list-optional"/>
+        </cd:arguments>
+    </cd:command>
+
+    <cd:command name="placefloattext" type="environment" generated="yes" variant="instance" file="strc-flt.mkxl">
+        <cd:sequence>
+            <cd:string value="place"/>
+            <cd:instance value="float"/>
+            <cd:string value="text"/>
+        </cd:sequence>
+        <cd:arguments>
+            <cd:resolve name="assignment-floatdata-list-optional"/>
+            <cd:resolve name="assignment-userdata-list-optional"/>
+        </cd:arguments>
+        <cd:instances>
+            <cd:resolve name="instance-float"/>
+        </cd:instances>
+    </cd:command>
+
     <cd:command name="placelistoffloats" generated="yes" variant="instance" level="document" category="structure" file="strc-flt.mklx">
         <cd:sequence>
             <cd:string value="placelistof"/>
@@ -910,5 +941,11 @@
     <cd:command name="flushsidefloatsafterpar" category="structure" file="page-sid.mkxl"/>
 
     <cd:command name="forgetsidefloats" category="structure" file="page-sid.mkxl"/>
+
+    <cd:command name="reorderfloats" file="strc-lst.lmt">
+        <cd:arguments>
+            <cd:resolve name="keyword-name-list"/>
+        </cd:arguments>
+    </cd:command>
 
 </cd:interface>

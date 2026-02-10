@@ -1118,7 +1118,7 @@ void tex_begin_diagnostic(void)
             lmt_error_state.history = warning_issued;
         }
     }
-    tex_print_levels();
+ // tex_print_levels();
 }
 
 /*tex Restore proper conditions after tracing. */

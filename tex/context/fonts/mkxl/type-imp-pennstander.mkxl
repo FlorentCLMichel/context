@@ -15,7 +15,7 @@
 
 \starttypescriptcollection[pennstander]
 
-\definefontfeature[pennstander-math-scale][pennstanderscale=yes]
+% \definefontfeature[pennstander-math-scale][pennstanderscale=yes]
 
 \pushglobalsetups
     \startsetups[\s!math:pennstander]
@@ -95,8 +95,8 @@
 \stoptypescript
 
 \starttypescript [\s!math] [pennstander-thin]
-    \definefontsynonym [\s!MathRoman][PSMathThin] [\s!features={\s!math\mathsizesuffix,pennstander-math-scale},\s!goodies=pennstander-math]
-    \definefontsynonym [\s!MathBold] [PSMathLight][\s!features={\s!math\mathsizesuffix,pennstander-math-scale},\s!goodies=pennstander-math]
+    \definefontsynonym [\s!MathRoman][PSMathThin] [\s!features={\s!math\mathsizesuffix},\s!goodies=pennstander-math]
+    \definefontsynonym [\s!MathBold] [PSMathLight][\s!features={\s!math\mathsizesuffix},\s!goodies=pennstander-math]
 \stoptypescript
 
 \starttypescript [\s!serif] [pennstander-extralight]
@@ -108,8 +108,8 @@
 \stoptypescript
 
 \starttypescript [\s!math] [pennstander-extralight]
-    \definefontsynonym [\s!MathRoman][PSMathExtraLight][\s!features={\s!math\mathsizesuffix,pennstander-math-scale},\s!goodies=pennstander-math]
-    \definefontsynonym [\s!MathBold] [PSMathLight]     [\s!features={\s!math\mathsizesuffix,pennstander-math-scale},\s!goodies=pennstander-math]
+    \definefontsynonym [\s!MathRoman][PSMathExtraLight][\s!features={\s!math\mathsizesuffix},\s!goodies=pennstander-math]
+    \definefontsynonym [\s!MathBold] [PSMathLight]     [\s!features={\s!math\mathsizesuffix},\s!goodies=pennstander-math]
 \stoptypescript
 
 \starttypescript [\s!serif] [pennstander-light]
@@ -121,8 +121,8 @@
 \stoptypescript
 
 \starttypescript [\s!math] [pennstander-light]
-    \definefontsynonym [\s!MathRoman][PSMathLight]  [\s!features={\s!math\mathsizesuffix,pennstander-math-scale},\s!goodies=pennstander-math]
-    \definefontsynonym [\s!MathBold] [PSMathRegular][\s!features={\s!math\mathsizesuffix,pennstander-math-scale},\s!goodies=pennstander-math]
+    \definefontsynonym [\s!MathRoman][PSMathLight]  [\s!features={\s!math\mathsizesuffix},\s!goodies=pennstander-math]
+    \definefontsynonym [\s!MathBold] [PSMathRegular][\s!features={\s!math\mathsizesuffix},\s!goodies=pennstander-math]
 \stoptypescript
 
 \starttypescript [\s!serif] [pennstander,pennstander-regular]
@@ -134,8 +134,8 @@
 \stoptypescript
 
 \starttypescript [\s!math] [pennstander,pennstander-regular]
-    \definefontsynonym [\s!MathRoman][PSMathRegular][\s!features={\s!math\mathsizesuffix,pennstander-math-scale},\s!goodies=pennstander-math]
-    \definefontsynonym [\s!MathBold] [PSMathmedium] [\s!features={\s!math\mathsizesuffix,pennstander-math-scale},\s!goodies=pennstander-math]
+    \definefontsynonym [\s!MathRoman][PSMathRegular][\s!features={\s!math\mathsizesuffix},\s!goodies=pennstander-math]
+    \definefontsynonym [\s!MathBold] [PSMathmedium] [\s!features={\s!math\mathsizesuffix},\s!goodies=pennstander-math]
 \stoptypescript
 
 \starttypescript [\s!serif] [pennstander-medium]
@@ -147,8 +147,8 @@
 \stoptypescript
 
 \starttypescript [\s!math] [pennstander-medium]
-    \definefontsynonym [\s!MathRoman][PSMathMedium]  [\s!features={\s!math\mathsizesuffix,pennstander-math-scale},\s!goodies=pennstander-math]
-    \definefontsynonym [\s!MathBold] [PSMathSemiBold][\s!features={\s!math\mathsizesuffix,pennstander-math-scale},\s!goodies=pennstander-math]
+    \definefontsynonym [\s!MathRoman][PSMathMedium]  [\s!features={\s!math\mathsizesuffix},\s!goodies=pennstander-math]
+    \definefontsynonym [\s!MathBold] [PSMathSemiBold][\s!features={\s!math\mathsizesuffix},\s!goodies=pennstander-math]
 \stoptypescript
 
 \starttypescript [\s!serif] [pennstander-semibold]
@@ -160,7 +160,7 @@
 \stoptypescript
 
 \starttypescript [\s!math] [pennstander-semibold]
-    \definefontsynonym [\s!MathRoman][PSMathSemiBold][\s!features={\s!math\mathsizesuffix,pennstander-math-scale},\s!goodies=pennstander-math]
+    \definefontsynonym [\s!MathRoman][PSMathSemiBold][\s!features={\s!math\mathsizesuffix},\s!goodies=pennstander-math]
     \definefontsynonym [\s!MathBold] [PSMathBold]    [\s!features={\s!math\mathsizesuffix},\s!goodies=pennstander-math]
 \stoptypescript
 

@@ -369,6 +369,8 @@
 \permanent         \protected\def\currentsynonymname         {\clf_synonymname\currentsimplelist\currentsynonymtag}
 \permanent         \protected\def\currentsynonymmeaning      {\clf_synonymmeaning\currentsimplelist\currentsynonymtag}
 \permanent         \protected\def\currentsynonympages        {\clf_synonympages\currentsimplelist\currentsynonymtag}
+\permanent         \protected\def\currentsynonymuserpages    {\clf_synonymuserpages\currentsimplelist\currentsynonymtag}
+\permanent         \protected\def\currentsynonymfirstuserpage{\clf_synonymfirstuserpage\currentsimplelist\currentsynonymtag}
 \permanent         \protected\def\doifelsecurrentsynonymused {\clf_doifelsesynonymused\currentsimplelist\currentsynonymtag}
 \permanent         \protected\def\doifelsecurrentsynonymshown{\clf_doifelsesynonymshown\currentsimplelist\currentsynonymtag}
 \permanent         \protected\def\resetusedsynonyms      [#1]{\clf_resetsynonyms{#1}{used}}
@@ -386,9 +388,11 @@
 \aliased\let\rawsynonymmeaning\clf_synonymmeaning
 \aliased\let\rawsynonympages  \clf_synonympages
 
-\permanent\protected\def\synonymname   [#1]#*[#2]{\clf_synonymname   {#1}{#2}}
-\permanent\protected\def\synonymmeaning[#1]#*[#2]{\clf_synonymmeaning{#1}{#2}}
-\permanent\protected\def\synonympages  [#1]#*[#2]{\clf_synonympages  {#1}{#2}}
+\permanent\protected\def\synonymname         [#1]#*[#2]{\clf_synonymname         {#1}{#2}}
+\permanent\protected\def\synonymmeaning      [#1]#*[#2]{\clf_synonymmeaning      {#1}{#2}}
+\permanent\protected\def\synonympages        [#1]#*[#2]{\clf_synonympages        {#1}{#2}}
+\permanent\protected\def\synonymuserpages    [#1]#*[#2]{\clf_synonymuserpages    {#1}{#2}}
+\permanent\protected\def\synonymfirstuserpage[#1]#*[#2]{\clf_synonymfirstuserpage{#1}{#2}} % could be option
 
 \installcorenamespace{simplelistalternative} % specific ways of rendering a list
 \installcorenamespace{simplelistrenderings}  % a namespace for setups (rather local)
@@ -479,9 +483,30 @@
         \fastsetup{\??simplelistrenderings::\v!synonym}
         \simplelistalternativeparameter\c!right
     }
+
+% \placelistofsynonyms
+%   [criterium=all,
+%    command=\synonymlistentrywithpage, % has to be protected
+%    before=\starttabulate[|l|P|l|],
+%    after=\stoptabulate]
+%
+% \setupsynonyms[acro][page=yes]
+%
+% \starttexdefinition protected synonymlistentrywithpage #1#2#3
+%     \NC #2 % \synonymname    [\currentsynonym][#1]
+%     \NC #3 % \synonymmeaning [\currentsynonym][#1]
+%     \NC \synonymfirstuserpage[\currentsynonym][#1]
+%   % \NC \synonymuserpages  [\currentsynonym][#1]
+%   % \NC \synonympages[\currentsynonym][#1]
+%     \NC \NR
+% \stoptexdefinition
+
 \stopsetups
 
 \aliased\let\synonymentry\relax
+
+\def\strc_synonym_command#1#2#3#4%
+  {\p_simplelist_command{#2}{#3}{#4}}
 
 \permanent\tolerant\protected\def\placelistofsynonyms[#1]#*[#S#2]%
   {\begingroup
@@ -489,7 +514,12 @@
    \doifelsecommandhandler\??simplelist\currentsimplelist
      {\strc_constructions_initialize{#1}%
       \setupcurrentsimplelist[#2]%
-      \enforced\let\synonymentry\strc_synonym_normal
+      \edef\p_simplelist_command{\simplelistparameter\c!command}%
+      \ifempty\p_simplelist_command
+        \enforced\let\synonymentry\strc_synonym_normal
+      \else
+        \enforced\let\synonymentry\strc_synonym_command
+      \fi
       % so we can hook tabulate into before and after
       \expanded{%
         \simplelistparameter\c!before
@@ -501,7 +531,7 @@
                method    {\simplelistparameter\c!method}%
            }%
         \relax
-      \simplelistparameter\c!after
+        \simplelistparameter\c!after
       }\relax}%
      {}% todo: message that invalid
    \endgroup}

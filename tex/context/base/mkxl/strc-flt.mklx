@@ -146,14 +146,15 @@
   %\c!after=,
    \c!spacebefore=\v!big,
    \c!spaceafter=\v!big,
+   \c!spaceinbetween=\v!big,
    \c!sidespacebefore=\rootfloatparameter\c!spacebefore,
    \c!sidespaceafter=\rootfloatparameter\c!spaceafter,
    \c!sidespaceinbetween=\rootfloatparameter\c!spacebefore,
    \c!spacebeforeside=, % extra, not part of, can be used to add whitespace before text
    \c!spaceafterside=,  % idem
    \c!sidealign=\v!normal,
-   \c!textmethod=\ifgridsnapping2\else0\fi, % 0=raw 1=safe (.99pg) 2=tight (-1pt) % THIS WILL CHANGE
-   \c!sidemethod=\ifgridsnapping2\else1\fi, % 0=raw 1=safe (.99pg) 2=tight (-1pt) % THIS WILL CHANGE
+   \c!textmethod=\ifgridlinesnapping2\orelse\ifgridsnapping2\else0\fi, % 0=raw 1=safe (.99pg) 2=tight (-1pt) % THIS WILL CHANGE
+   \c!sidemethod=\ifgridlinesnapping2\orelse\ifgridsnapping2\else1\fi, % 0=raw 1=safe (.99pg) 2=tight (-1pt) % THIS WILL CHANGE
    \c!indentnext=\v!no,
    \c!margin=\emwidth,
    \c!method=1,
@@ -1149,6 +1150,7 @@
 
 \newdimension\d_strc_floats_top
 \newdimension\d_strc_floats_bottom
+\newdimension\d_strc_floats_mid
 \newdimension\d_strc_floats_overflow
 
 % \def\strc_floats_calculate_skip#target#skip%
@@ -1200,19 +1202,22 @@
    \global\c_page_floats_n_of_bottom\rootfloatparameter\c!nbottom
    \global\d_strc_floats_overflow   \zeropoint
    \global\c_page_sides_shape_down\conditionalfalse
+   \global\d_strc_floats_top      \zeropoint
+   \global\d_strc_floats_bottom   \zeropoint
+   \global\d_strc_floats_mid      \zeropoint
+   \global\d_page_sides_topskip   \zeropoint
+   \global\d_page_sides_bottomskip\zeropoint
+   \global\d_page_sides_midskip   \zeropoint
    \ifconditional\c_strc_floats_par_float
-     \global\d_strc_floats_top        \zeropoint
-     \global\d_strc_floats_bottom     \zeropoint
      \strc_floats_calculate_skip\d_page_sides_topskip   \c!sidespacebefore
      \strc_floats_calculate_skip\d_page_sides_bottomskip\c!sidespaceafter
      \strc_floats_calculate_skip\d_page_sides_midskip   \c!sidespaceinbetween
      \strc_floats_calculate_skip\d_strc_floats_top      \c!spacebeforeside
      \strc_floats_calculate_skip\d_strc_floats_bottom   \c!spaceafterside
    \else
-     \global\d_page_sides_topskip     \zeropoint
-     \global\d_page_sides_bottomskip  \zeropoint
      \strc_floats_calculate_skip\d_strc_floats_top   \c!spacebefore
      \strc_floats_calculate_skip\d_strc_floats_bottom\c!spaceafter
+     \strc_floats_calculate_skip\d_strc_floats_mid   \c!spaceinbetween
    \fi
    % keyword handling
    \ifconditional\c_strc_floats_par_float
@@ -1574,7 +1579,11 @@
    \ifhastok={#settings}%
      \begingroup
      \setupcurrentfloat[\c!x=\zeropoint,\c!y=\zeropoint,#settings]%
-     \ifgridsnapping
+     \ifgridlinesnapping
+       % gridlinesnapping: to be decided
+       \getnoflines{\floatparameter\c!y}%
+       \global\d_page_sides_downshift\noflines\lineheight
+     \orelse\ifgridsnapping
        \getnoflines{\floatparameter\c!y}%
        \global\d_page_sides_downshift\noflines\lineheight
      \else
@@ -2347,7 +2356,7 @@
    \next}
 
 \def\strc_floats_build_box_side
-  {\c_page_sides_force_shape\conditionalfalse
+  {\c_page_sides_force_shape\conditionalfalse % global ?
    \ifconditional\c_strc_floats_par_float
      \let\next\strc_floats_build_box_high
    \else

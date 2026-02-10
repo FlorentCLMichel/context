@@ -660,7 +660,7 @@ static void tex_aux_run_math_non_math(void)
 {
     if (tracing_commands_par >= 4) {
         tex_begin_diagnostic();
-        tex_print_format("[math: pushing back %C]", cur_cmd, cur_chr);
+        tex_print_format("%l[math: pushing back %C]", cur_cmd, cur_chr);
         tex_end_diagnostic();
     }
     tex_back_input(cur_tok);
@@ -877,7 +877,7 @@ static void tex_aux_scan_box(int boxcontext, int optional_equal, scaled shift, h
         case vrule_cmd:
             {
                 if (box_leaders_flag(boxcontext)) {
-                    halfword rulenode = tex_aux_scan_rule_spec(cur_cmd == hrule_cmd ? h_rule_type : (cur_cmd == vrule_cmd ? v_rule_type : m_rule_type), cur_chr);
+                    halfword rulenode = tex_aux_scan_rule_spec(cur_cmd == hrule_cmd ? h_rule_type : (cur_cmd == vrule_cmd ? v_rule_type : m_rule_type), cur_chr, 0);
                     tex_box_end(boxcontext, rulenode, shift, unset_noad_class, slot, callback, leaders);
                     return;
                 } else {
@@ -1237,7 +1237,7 @@ static void tex_aux_run_new_paragraph(void)
     }
     if (tracing_commands_par >= 4) {
         tex_begin_diagnostic();
-        tex_print_format("[text: pushing back %C]", cur_cmd, cur_chr);
+        tex_print_format("%l[text: pushing back %C]", cur_cmd, cur_chr);
         tex_end_diagnostic();
     }
     tex_back_input(cur_tok);
@@ -1257,11 +1257,13 @@ static void tex_aux_run_new_paragraph(void)
     basically have a zero penalty equivalent (but one that doesn't register as last node).
 */
 
-void tex_page_boundary_message(const char *s, halfword n)
+void tex_page_boundary_message(const char *s, halfword b)
 {
     if (tracing_pages_par > 0) {
         tex_begin_diagnostic();
-        tex_print_format("[page: boundary, %s, trigger %i]", s, n);
+        tex_print_format("%l[page: boundary, %s, trigger %i, detail %i]",
+            s, b ? boundary_data(b) : 0, b ? boundary_reserved(b) : 0
+        );
         tex_end_diagnostic();
     }
 }
@@ -1272,27 +1274,47 @@ static void tex_aux_run_par_boundary(void)
         case page_boundary:
             {   
                 halfword n = tex_scan_integer(0, NULL, NULL);
+                halfword m = tex_scan_integer(0, NULL, NULL);
                 if (lmt_nest_state.nest_data.ptr == 0 && ! lmt_page_builder_state.output_active) {
                     halfword boundary = tex_new_node(boundary_node, page_boundary);
                     boundary_data(boundary) = n;
+                    boundary_reserved(boundary) = m;
                     tex_tail_append(boundary);
                     if (cur_list.mode == vmode) {
-                        tex_page_boundary_message("build triggered", n);
-                        tex_build_page(boundary_page_context, n);
+                        if (n) {
+                            tex_page_boundary_message("callback, delayed", boundary);
+                        } else {
+                            tex_page_boundary_message("contributing, triggered", boundary);
+                            tex_build_page(boundary_page_context, m);
+                        }
                     } else {
-                        tex_page_boundary_message("appended", n);
+                        tex_page_boundary_message("appended", boundary);
                     }
                 } else {
-                    tex_page_boundary_message("ignored", n);
+                    tex_page_boundary_message("ignored", null);
                 }
                 break;
             }
         case balance_boundary:
+            /* todo: tracing */
             {
                 halfword n = tex_scan_integer(0, NULL, NULL);
                 halfword m = tex_scan_integer(0, NULL, NULL);
                 if (cur_list.mode == vmode && ! lmt_page_builder_state.output_active) {
                     halfword boundary = tex_new_node(boundary_node, balance_boundary);
+                    boundary_data(boundary) = n;
+                    boundary_reserved(boundary) = m;
+                    tex_tail_append(boundary);
+                }
+                break;
+            }
+        case insert_boundary:
+            /* todo: tracing */
+            {
+                halfword n = tex_scan_integer(0, NULL, NULL);
+                halfword m = tex_scan_integer(0, NULL, NULL);
+                if (cur_list.mode == vmode && ! lmt_page_builder_state.output_active) {
+                    halfword boundary = tex_new_node(boundary_node, insert_boundary);
                     boundary_data(boundary) = n;
                     boundary_reserved(boundary) = m;
                     tex_tail_append(boundary);
@@ -1329,12 +1351,11 @@ static void tex_aux_run_text_boundary(void)
             boundary_data(boundary) = tex_scan_integer(0, NULL, NULL);
             boundary_reserved(boundary) = tex_scan_integer(0, NULL, NULL);
             break;
+        case insert_boundary:
         case balance_boundary:
-            /*tex Maybe we should force vmode? For now we just ignore the value. */
-            tex_scan_integer(0, NULL, NULL);
-            /* fall through */
         case page_boundary:
             /*tex Maybe we should force vmode? For now we just ignore the value. */
+            tex_scan_integer(0, NULL, NULL);
             tex_scan_integer(0, NULL, NULL);
             break;
         default:
@@ -1789,7 +1810,7 @@ int tex_main_control(void)
 void tex_local_control_message(const char *s)
 {
     tex_begin_diagnostic();
-    tex_print_format("[local control: level %i, %s]", lmt_main_control_state.local_level, s);
+    tex_print_format("%l[local control: level %i, %s]", lmt_main_control_state.local_level, s);
     tex_end_diagnostic();
 }
 
@@ -2905,6 +2926,7 @@ void tex_box_end(int boxcontext, halfword boxnode, scaled shift, halfword maincl
             if (boxnode) {
                 /*tex We just show the box ... */
                 tex_begin_diagnostic();
+                tex_print_levels();
                 tex_show_node_list(boxnode, max_integer, max_integer);
                 tex_end_diagnostic();
                 /*tex ... and wipe it when it's a register ... */
@@ -2971,7 +2993,14 @@ void tex_begin_paragraph(int doindent, int context)
             tex_local_control(1);
 // tex_cleanup_input_state();
         }
-        tex_tail_append(tex_new_param_glue_node(par_skip_code, par_skip_glue));
+        if (tex_delayed_glue_par_skipped()) {
+            /*tex We have already included the parskip into preceding glue. */
+        } else {
+            tex_tail_append(tex_new_param_glue_node(par_skip_code, par_skip_glue));
+        }
+        tex_delayed_glue_check(delayed_glue_target_current, delayed_glue_location_parskip);
+    } else {
+        tex_delayed_glue_check(delayed_glue_target_current, delayed_glue_location_paragraph);
     }
     lmt_begin_paragraph_callback(isvmode, &indented, context);
     /*tex We'd better not messed up things in the callback! */
@@ -2990,8 +3019,8 @@ void tex_begin_paragraph(int doindent, int context)
     tex_aux_insert_parindent(indented);
     if (tracing_paragraph_lists) {
         tex_begin_diagnostic();       
-     // tex_print_format("[paragraph: start, context %i]", context);
-        tex_print_format("[paragraph: start, context %s]", lmt_interface.par_trigger_values[context].name);
+     // tex_print_format("%l[paragraph: start, context %i]", context);
+        tex_print_format("%l[paragraph: start, context %s]", lmt_interface.par_trigger_values[context].name);
         tex_show_box(node_next(cur_list.head));
         tex_end_diagnostic();
     }
@@ -4099,11 +4128,20 @@ static void tex_aux_set_page_property(void)
         case insert_penalties_code:
             lmt_page_builder_state.insert_penalties = tex_scan_integer(1, NULL, NULL);
             break;
+        case insert_only_count_code:
+            lmt_page_builder_state.insert_only_count = tex_scan_integer(1, NULL, NULL);
+            break;
         case insert_heights_code:
             lmt_page_builder_state.insert_heights = tex_scan_dimension(0, 0, 0, 1, NULL, NULL);
             break;
         case insert_storing_code:
             lmt_insert_state.storing = tex_scan_integer(1, NULL, NULL);
+            break;
+        case insert_category_code:
+            {
+                int index = tex_scan_integer(0, NULL, NULL);
+                tex_set_insert_category(index, tex_scan_integer(1, NULL, NULL));
+            }
             break;
         case insert_distance_code:
             {
@@ -4191,6 +4229,18 @@ static void tex_aux_set_page_property(void)
             {
                 int index = tex_scan_integer(0, NULL, NULL);
                 tex_set_insert_shrink(index, tex_scan_dimension(0, 0, 0, 1, NULL, NULL));
+            }
+            break;
+        case insert_maxplaced_code:
+            {
+                int index = tex_scan_integer(0, NULL, NULL);
+                tex_set_insert_maxplaced(index, tex_scan_integer(0, NULL, NULL));
+            }
+            break;
+        case insert_placed_code:
+            {
+                int index = tex_scan_integer(0, NULL, NULL);
+                tex_set_insert_placed(index, tex_scan_integer(0, NULL, NULL));
             }
             break;
         case page_stretch_code:                        
@@ -4493,6 +4543,14 @@ static void tex_aux_set_box_property(void)
                 halfword factor = tex_scan_integer(0, NULL, NULL);
                 if (b) {
                     tex_freeze(b, 0, -1, factor); /* recurse makes no sense here */
+                }
+            }
+            break;
+        case box_snapping_code:
+            {
+                halfword snapping = tex_snapping_scan();
+                if (b && snapping) {
+                    tex_snapping_line(b, snapping);
                 }
             }
             break;
@@ -4833,7 +4891,7 @@ static void tex_aux_set_font_property(void)
             {
                 halfword fnt = tex_scan_font_identifier(NULL);
                 halfword chr = tex_scan_char_number(0);
-                halfword val = tex_scan_dimension(0, 0, 0, 1, NULL, NULL);
+                halfword val = tex_scan_integer(1, NULL, NULL);
                 tex_set_lpcode_in_font(fnt, chr, val);
                 break;
             }
@@ -4841,7 +4899,7 @@ static void tex_aux_set_font_property(void)
             {
                 halfword fnt = tex_scan_font_identifier(NULL);
                 halfword chr = tex_scan_char_number(0);
-                halfword val = tex_scan_dimension(0, 0, 0, 1, NULL, NULL);
+                halfword val = tex_scan_integer(1, NULL, NULL);
                 tex_set_rpcode_in_font(fnt, chr, val);
                 break;
             }
@@ -6748,6 +6806,7 @@ static void tex_aux_run_show_whatever(void)
                     }
                     if (diagnose) {
                         tex_begin_diagnostic();
+                        tex_print_levels();
                     }
                     if (! content) {
                         tex_print_format("> \\box%i=",n);
@@ -6779,6 +6838,7 @@ static void tex_aux_run_show_whatever(void)
        case show_lists_code:
             {
                 tex_begin_diagnostic();
+                tex_print_levels();
                 tex_show_activities();
                 tex_end_diagnostic();
                 break;
@@ -6786,6 +6846,7 @@ static void tex_aux_run_show_whatever(void)
         case show_groups_code:
             {
                 tex_begin_diagnostic();
+                tex_print_levels();
                 tex_show_save_groups();
                 tex_end_diagnostic();
                 break;
@@ -6793,6 +6854,7 @@ static void tex_aux_run_show_whatever(void)
         case show_stack_code:
             {
                 tex_begin_diagnostic();
+                tex_print_levels();
                 tex_show_save_stack();
                 tex_end_diagnostic();
                 break;
@@ -6800,6 +6862,7 @@ static void tex_aux_run_show_whatever(void)
         case show_code_stack_code:
             {
                 tex_begin_diagnostic();
+                tex_print_levels();
                 tex_show_code_stack();
                 tex_end_diagnostic();
                 break;
@@ -6817,6 +6880,7 @@ static void tex_aux_run_show_whatever(void)
             {
              // if (! justshow) {
                 tex_begin_diagnostic();
+                tex_print_levels();
              // }
                 tex_show_ifs();
              // if (! justshow) {
@@ -7280,6 +7344,9 @@ void tex_initialize_variables(void)
         hbadness_mode_par = badness_mode_all;
         vbadness_mode_par = badness_mode_all;
         empty_paragraph_mode_par = effective_empty_option_all;
+        line_snapping_ht_factor_par = scaling_factor;
+        line_snapping_dp_factor_par = scaling_factor;
+        line_snapping_tolerance_par = 2; /* scaled points */
         aux_get_date_and_time(&time_par, &day_par, &month_par, &year_par, &lmt_engine_state.utc_time);
     }
 }

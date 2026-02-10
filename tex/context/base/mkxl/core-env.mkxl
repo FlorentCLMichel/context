@@ -208,20 +208,20 @@
 
 % all
 
-\let\syst_modes_check_all_step\gobbleoneargument
+% \let\syst_modes_check_all_step\gobbleoneargument
 
-\def\syst_modes_check_all_indeed#1%
-  {\ifcsname\??mode#1\endcsname
-     \ifcase\lastnamedcs
-       \let\syst_modes_check_all_step\gobbleoneargument
-     \or
-       % enabled
-     \else
-       \let\syst_modes_check_all_step\gobbleoneargument
-     \fi
-   \else
-     \let\syst_modes_check_all_step\gobbleoneargument
-   \fi}
+% \def\syst_modes_check_all_indeed#1%
+%   {\ifcsname\??mode#1\endcsname
+%      \ifcase\lastnamedcs
+%        \let\syst_modes_check_all_step\gobbleoneargument
+%      \or
+%        % enabled
+%      \else
+%        \let\syst_modes_check_all_step\gobbleoneargument
+%      \fi
+%    \else
+%      \let\syst_modes_check_all_step\gobbleoneargument
+%    \fi}
 
 % \def\syst_modes_check_all_lr#1#2#3%
 %   {\let\syst_modes_check_all_step\syst_modes_check_all_indeed
@@ -410,6 +410,8 @@
 \permanent\protected\tolerant\def\setups[#1]#;#2{\processcommacommand[#1#2]\syst_setups} % {..} or [..]
 \permanent\protected\tolerant\def\setup [#1]#;#2{\syst_setups{#1#2}} % {..} or [..]
 
+% old:
+%
 % \letcsname\??setup:\??empty\endcsname\gobbleoneargument
 %
 % \permanent\def\syst_setups#1% the grid option will be extended to other main modes
@@ -420,8 +422,29 @@
 %                                                            :\ifcsname\??setup:#1\endcsname#1\else\??empty\fi
 %      \fi
 %    \endcsname\empty} % takes one argument
-
-% We drop the grid option here:
+%
+% newer:
+%
+% \cdef\syst_setups_empty{\??setup:\??empty}
+%
+% \permanent\def\syst_setups#1% the grid option will be extended to other main modes
+%   {\begincsname
+%      \ifgridsnapping
+%        \ifcsname\??setup\v!grid:#1\endcsname
+%           \csnamestring
+%        \orelse\ifcsname\??setup:#1\endcsname
+%           \csnamestring
+%        \else
+%           \syst_setups_empty
+%        \fi
+%      \orelse\ifcsname\??setup:#1\endcsname
+%        \csnamestring
+%      \else
+%        \syst_setups_empty
+%      \fi
+%    \endcsname\empty} % takes one argument
+%
+% but now:
 
 \letcsname\??setup\endcsname\gobbleoneargument
 

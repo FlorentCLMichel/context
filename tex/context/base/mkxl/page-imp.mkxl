@@ -163,7 +163,7 @@
   {\begingroup
    \setbox\scratchbox\hpack
      {% before the main one !
-      \ifcase\realfolio \or
+      \ifcase\realpageno \or
         \expand\everyfirstshipout
         \global\everyfirstshipout\emptytoks
       \fi

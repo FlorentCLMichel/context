@@ -268,6 +268,15 @@
    \resetallattributes % \c_attr_linenumber\attributeunsetvalue
    \c_attr_snapmethod\scratchcounter}
 
+\def\anch_backgrounds_grid_bpos
+  {\spac_helpers_assign_skip\textbackgroundskip{\textbackgroundparameter\c!topoffset}%
+   \ifdim\textbackgroundskip>\zeropoint
+     \struttedbox % not always ok (e.g. setups)
+       {\hpack{\raise\textbackgroundskip\hpack{\anch_backgrounds_bpos}}}%
+   \else
+     \anch_backgrounds_bpos
+   \fi}
+
 \def\anch_backgrounds_text_start_par % beware .. background shapes
   {\endgraf % new
    \textbackgroundparameter\c!before
@@ -276,14 +285,11 @@
    \begingroup
    \anch_backgrounds_reset_attributes
    \noindent
-   \ifgridsnapping
-     \spac_helpers_assign_skip\textbackgroundskip{\textbackgroundparameter\c!topoffset}%
-     \ifdim\textbackgroundskip>\zeropoint
-       \struttedbox % not always ok (e.g. setups)
-         {\hpack{\raise\textbackgroundskip\hpack{\anch_backgrounds_bpos}}}%
-     \else
-       \anch_backgrounds_bpos
-     \fi
+   \ifgridlinesnapping
+     % gridlinesnapping: to be decided
+     \anch_backgrounds_grid_bpos
+   \orelse\ifgridsnapping
+     \anch_backgrounds_grid_bpos
    \else
      \anch_backgrounds_bpos
    \fi
@@ -292,7 +298,11 @@
    \nobreak
    \vskip-\lineheight
    \nobreak
-   \ifgridsnapping \else
+   \ifgridlinesnapping
+     % nothing
+   \orelse\ifgridsnapping
+     % nothing
+   \else
      \spac_helpers_assign_skip\textbackgroundskip{\textbackgroundparameter\c!topoffset}%
      \ifdim\textbackgroundskip>\zeropoint
         \kern\textbackgroundskip\nobreak
@@ -310,6 +320,14 @@
    \doinhibitblank %   \blank[\v!disable]% new
    \par}
 
+\def\anch_backgrounds_grid_epos
+  {\ifdim\textbackgroundskip>\zeropoint
+     \struttedbox % not always ok (e.g. setups)
+      {\hpack{\lower\textbackgroundskip\hpack{\anch_backgrounds_epos}}}%
+   \else
+     \anch_backgrounds_epos
+   \fi}
+
 \def\anch_backgrounds_text_stop_par
   {\par
    \removelastskip % new
@@ -317,7 +335,10 @@
    \ifdim\lastskip>\zeropoint
      \advanceby\textbackgroundskip-\lastskip
    \fi
-   \ifgridsnapping
+   \ifgridlinesnapping
+     % nothing
+   \orelse\ifgridsnapping
+     % nothing
    \orelse\ifdim\textbackgroundskip>\zeropoint
      \kern\textbackgroundskip\nobreak
    \fi
@@ -331,13 +352,11 @@
    \nobreak \noindent \strut \hfill \kern\zeropoint
    % so far
    \spac_helpers_assign_skip\textbackgroundskip{\textbackgroundparameter\c!bottomoffset}%
-   \ifgridsnapping % experimental, pascal (todo: topoffset in same way)
-     \ifdim\textbackgroundskip>\zeropoint
-       \struttedbox % not always ok (e.g. setups)
-         {\hpack{\lower\textbackgroundskip\hpack{\anch_backgrounds_epos}}}%
-     \else
-       \anch_backgrounds_epos
-     \fi
+   \ifgridlinesnapping
+     % gridlinesnapping: to be decided
+     \anch_backgrounds_grid_epos
+   \orelse\ifgridsnapping % experimental, pascal (todo: topoffset in same way)
+     \anch_backgrounds_grid_epos
    \else
      \anch_backgrounds_epos
    \fi

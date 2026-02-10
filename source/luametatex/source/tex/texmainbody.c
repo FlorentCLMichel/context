@@ -368,6 +368,8 @@ void tex_main_body(void)
     par_passes_par = null;
     par_passes_exception_par = null;
 
+    line_snapping_par = null;
+
     {
         char *ptr = tex_engine_input_filename();
         char *fln = NULL;

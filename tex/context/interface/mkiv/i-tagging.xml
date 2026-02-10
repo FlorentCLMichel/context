@@ -4,35 +4,71 @@
 
 <cd:interface xmlns:cd="http://www.pragma-ade.com/commands">
 
-    <cd:command name="setuptagging" level="style" category="xml" file="strc-tag.mkiv">
+    <cd:command name="setuptagging" level="style" category="xml" file="strc-tag.mkxl">
         <cd:arguments>
             <cd:assignments list="yes">
                 <cd:parameter name="state">
                     <cd:constant type="start"/>
                     <cd:constant type="stop" default="yes"/>
+                    <cd:constant type="on"/>
+                    <cd:constant type="off"/>
                 </cd:parameter>
                 <cd:parameter name="method">
                     <cd:constant type="auto"/>
+                </cd:parameter>
+                <cd:parameter name="preset" list="yes">
+                    <cd:constant type="basic"/>
+                    <cd:constant type="demo"/>
+                    <cd:constant type="mkiv"/>
+                    <cd:constant type="uac"/>
+                </cd:parameter>
+                <cd:parameter name="level">
+                    <cd:constant type="cd:number"/>
+                </cd:parameter>
+                <cd:parameter name="comment">
+                    <cd:constant type="cd:text"/>
+                </cd:parameter>
+                <cd:parameter name="option">
+                    <cd:constant type="interaction"/>
                 </cd:parameter>
             </cd:assignments>
         </cd:arguments>
     </cd:command>
 
-    <cd:command name="tagged" type="environment" begin="dostart" end="dostop" level="system" category="xml" file="strc-tag.mkiv">
+    <cd:command name="forgettagging" file="strc-tag.mkxl"/>
+
+    <cd:command name="tagged" type="environment" begin="dostart" end="dostop" level="system" category="xml" file="strc-tag.mkxl">
         <cd:arguments>
             <cd:resolve name="argument-name"/>
             <cd:resolve name="argument-name"/>
         </cd:arguments>
     </cd:command>
 
-    <cd:command name="element" type="environment" level="document" category="xml" file="strc-tag.mkiv">
+    <cd:command name="taggednodetail" type="environment" begin="dostart" end="dostop" level="system" category="xml" file="strc-tag.mkxl">
+        <cd:arguments>
+            <cd:resolve name="argument-name"/>
+        </cd:arguments>
+    </cd:command>
+
+    <cd:command name="taggedchained" type="environment" begin="dostart" end="dostop" level="system" category="xml" file="strc-tag.mkxl">
+        <cd:arguments>
+            <cd:resolve name="argument-name"/>
+            <cd:resolve name="argument-name"/>
+            <cd:resolve name="argument-name"/>
+            <cd:resolve name="argument-name"/>
+        </cd:arguments>
+    </cd:command>
+
+    <cd:command name="dotaggedplaceholder" level="system" category="xml" file="strc-tag.mkxl"/>
+
+    <cd:command name="element" type="environment" level="document" category="xml" file="strc-tag.mkxl">
         <cd:arguments>
             <cd:resolve name="keyword-name"/>
             <cd:resolve name="assignment-userdata-list-optional"/>
         </cd:arguments>
     </cd:command>
 
-    <cd:command name="doifelseinelement" level="system" category="xml" keywords="conditional" file="strc-tag.mkiv">
+    <cd:command name="doifelseinelement" level="system" category="xml" keywords="conditional" file="strc-tag.mkxl">
         <cd:arguments>
             <cd:resolve name="argument-name"/>
             <cd:resolve name="argument-true"/>
@@ -40,7 +76,7 @@
         </cd:arguments>
     </cd:command>
 
-    <cd:command name="doifinelementelse" level="system" category="xml" keywords="conditional" file="strc-tag.mkiv">
+    <cd:command name="doifinelementelse" level="system" category="xml" keywords="conditional" file="strc-tag.mkxl">
         <cd:arguments>
             <cd:resolve name="argument-name"/>
             <cd:resolve name="argument-true"/>
@@ -48,7 +84,7 @@
         </cd:arguments>
     </cd:command>
 
-    <cd:command name="taggedlabeltexts" level="system" category="xml" keywords="language" file="strc-tag.mkiv">
+    <cd:command name="taggedlabeltexts" level="system" category="xml" keywords="language" file="strc-tag.mkxl">
         <cd:arguments>
             <cd:resolve name="argument-name"/>
             <cd:resolve name="argument-name"/>
@@ -56,7 +92,7 @@
         </cd:arguments>
     </cd:command>
 
-    <cd:command name="namedtaggedlabeltexts" level="system" category="xml" keywords="language" file="strc-tag.mkiv">
+    <cd:command name="namedtaggedlabeltexts" level="system" category="xml" keywords="language" file="strc-tag.mkxl">
         <cd:arguments>
             <cd:resolve name="argument-name"/>
             <cd:resolve name="argument-name"/>
@@ -66,13 +102,13 @@
         </cd:arguments>
     </cd:command>
 
-    <cd:command name="settaggedmetadata" level="document" category="xml" file="strc-tag.mkiv">
+    <cd:command name="settaggedmetadata" level="document" category="xml" file="strc-tag.mkxl">
         <cd:arguments>
             <cd:resolve name="assignment-userdata-list"/>
         </cd:arguments>
     </cd:command>
 
-    <cd:command name="ignoretagsinexport" level="style" category="xml" file="strc-tag.mkiv">
+    <cd:command name="ignoretagsinexport" level="style" category="xml" file="strc-tag.mkxl">
         <cd:arguments>
             <cd:resolve name="keyword-name-list"/>
         </cd:arguments>

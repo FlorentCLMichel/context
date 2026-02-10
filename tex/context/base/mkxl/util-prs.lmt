@@ -48,6 +48,8 @@ local newline     = lpegpatterns.newline
 local anything    = lpegpatterns.anything
 local endofstring = lpegpatterns.endofstring
 
+local spacing     = whitespace^0
+
 local nobrace     = 1 - (lbrace   + rbrace )
 local noparent    = 1 - (lparent  + rparent)
 local nobracket   = 1 - (lbracket + rbracket)
@@ -69,7 +71,6 @@ lpegpatterns.balanced = P {
 local nestedbraces   = P { lbrace   * (nobrace   + V(1))^0 * rbrace }
 local nestedparents  = P { lparent  * (noparent  + V(1))^0 * rparent }
 local nestedbrackets = P { lbracket * (nobracket + V(1))^0 * rbracket }
-local spaces         = space^0
 local argument       = Cs((lbrace/"") * ((nobrace + nestedbraces)^0) * (rbrace/""))
 local content        = (1-endofstring)^0
 
@@ -89,9 +90,9 @@ local pattern_c = (space+comma)^0 * (key * equal * value)
 local pattern_d = (space+comma)^0 * (key * (equal+colon) * value + key * C(""))
 
 local key       = C((1-space-equal-comma)^1)
-local pattern_b = spaces * comma^0 * spaces * (key * ((spaces * equal * spaces * value) + C("")))
+local pattern_b = spacing * comma^0 * spacing * (key * ((spacing * equal * spacing * value) + C("")))
 
--- "a=1, b=2, c=3, d={a{b,c}d}, e=12345, f=xx{a{b,c}d}xx, g={}" : outer {} removes, leading spaces ignored
+-- "a=1, b=2, c=3, d={a{b,c}d}, e=12345, f=xx{a{b,c}d}xx, g={}" : outer {} removes, leading spacing ignored
 
 local hash = { }
 
@@ -191,7 +192,7 @@ end
 local separator = comma * space^0
 local value     = lbrace * C((nobrace + nestedbraces)^0) * rbrace
                 + C((nestedbraces + (1-comma))^0)
-local pattern   = spaces * Ct(value*(separator*value)^0)
+local pattern   = spacing * Ct(value*(separator*value)^0)
 
 -- "aap, {noot}, mies" : outer {} removed, leading spaces ignored
 
@@ -236,7 +237,7 @@ end
 
 local value     = lbrace * C((nobrace + nestedbraces)^0) * rbrace
                 + C((nestedbraces + nestedbrackets + nestedparents + (1-comma))^0)
-local pattern   = spaces * Ct(value*(separator*value)^0)
+local pattern   = spacing * Ct(value*(separator*value)^0)
 
 function parsers.settings_to_array_obey_fences(str)
     return lpegmatch(pattern,str)
@@ -252,8 +253,8 @@ end
 -- local value     = P(lbrace * C((nobrace + nestedbraces)^0) * rbrace)
 --                 + C((nestedbraces + (1-(space^0*(comma+P(-1)))))^0)
 -- local withvalue = Carg(1) * value / function(f,s) return f(s) end
--- local pattern_a = spaces * Ct(value*(separator*value)^0)
--- local pattern_b = spaces * withvalue * (separator*withvalue)^0
+-- local pattern_a = spacing * Ct(value*(separator*value)^0)
+-- local pattern_b = spacing * withvalue * (separator*withvalue)^0
 
 local cache_a = { }
 local cache_b = { }
@@ -276,10 +277,10 @@ function parsers.groupedsplitat(symbol,withaction)
                         C((nestedbraces + (1-(space^0*(symbols+P(-1)))))^0)
         if withaction then
             local withvalue = Carg(1) * value / function(f,s) return f(s) end
-            pattern = spaces * withvalue * (separator*withvalue)^0
+            pattern = spacing * withvalue * (separator*withvalue)^0
             cache_b[symbol] = pattern
         else
-            pattern = spaces * Ct(value*(separator*value)^0)
+            pattern = spacing * Ct(value*(separator*value)^0)
             cache_a[symbol] = pattern
         end
     end
@@ -374,8 +375,10 @@ end
 --     end
 -- end
 
------ pattern = Cf(Ct("") * Cg(C((1-S(", "))^1) * S(", ")^0 * Cc(true) )^1,rawset)
-local pattern = Ct("") * (C((1-S(", "))^1) * S(", ")^0 * Cc(true) % rawset)^1
+----- separator = S(", ")
+local separator = P(",") * spacing + whitespace * P(-1)
+
+local pattern = spacing * Ct("") * (C((1-separator)^1) * separator^0 * Cc(true) % rawset)^1
 
 function parsers.settings_to_set(str)
     return str and lpegmatch(pattern,str) or { }
@@ -391,7 +394,7 @@ function parsers.settings_to_set(str)
     return str and lpegmatch(pattern,str) or { }
 end
 
-local pattern = Ct((C((1-S(", "))^1) * S(", ")^0)^1)
+local pattern = spacing * Ct((C((1-separator)^1) * separator^0)^1)
 
 hashes.settings_to_list =  table.setmetatableindex(function(t,k) -- experiment, not public
     local v = k and lpegmatch(pattern,k) or { }
@@ -399,15 +402,18 @@ hashes.settings_to_list =  table.setmetatableindex(function(t,k) -- experiment, 
     return v
 end)
 
+-- inspect(hashes.settings_to_set[" a b c d "])
+-- inspect(hashes.settings_to_set["a b c d"])
 -- inspect(hashes.settings_to_set["a,b, c, d"])
 -- inspect(hashes.settings_to_list["a,b, c, d"])
+-- inspect(hashes.settings_to_list[" a,b, c, d "])
 
 -- as we use a next, we are not sure when the gc kicks in
 
 getmetatable(hashes.settings_to_set ).__mode = "kv" -- could be an option (maybe sharing makes sense)
 getmetatable(hashes.settings_to_list).__mode = "kv" -- could be an option (maybe sharing makes sense)
 
-function parsers.simple_hash_to_string(h, separator)
+function parsers.simple_hash_to_string(h,separator)
     local t  = { }
     local tn = 0
     for k, v in sortedhash(h) do
@@ -442,7 +448,7 @@ local value     = P(lbrace * C((nobrace + nestedbraces)^0) * rbrace)
                 + C(digit^1 * lparent * (noparent + nestedparents)^1 * rparent)
                 + C((nestedbraces + (1-comma))^1)
                 + Cc("") -- new
-local pattern_a = spaces * Ct(value*(separator*value)^0)
+local pattern_a = spacing * Ct(value*(separator*value)^0)
 
 local function repeater(n,str)
     if not n then
@@ -469,7 +475,7 @@ local value     = P(lbrace * C((nobrace + nestedbraces)^0) * rbrace)
                 + (C(digit^1)/tonumber * lparent * Cs((noparent + nestedparents)^1) * rparent) / repeater
                 + C((nestedbraces + (1-comma))^1)
                 + Cc("") -- new
-local pattern_b = spaces * Ct(value*(separator*value)^0)
+local pattern_b = spacing * Ct(value*(separator*value)^0)
 
 function parsers.settings_to_array_with_repeat(str,expand) -- beware: "" =>  { }
     if expand then
@@ -677,7 +683,7 @@ local spacers     = lpegpatterns.spacer^0
 local endofstring = lpegpatterns.endofstring
 
 ----- stepper  = spacers * ( cardinal * ( spacers * S(":-") * spacers * ( cardinal + Cc(true) ) + Cc(false) )
------          * Carg(1) * Carg(2) / ranger * S(", ")^0 )^1
+-----          * Carg(1) * Carg(2) / ranger * separator^0 )^1
 
 local stepper  =
     spacers
@@ -688,10 +694,10 @@ local stepper  =
                 spacers * S(":-") * spacers * ( cardinal + (P("*") + endofstring) * Cc(true) )
               + Cc(false)
             )
-          + Cs((1-S(", "))^1) * Cc(false)
+          + Cs((1-separator)^1) * Cc(false)
         )
       * Carg(1) * Carg(2) / ranger
-      * S(", ")^0
+      * separator^0
     )^1
   * endofstring -- we're sort of strict (could do without endofstring)
 
@@ -737,14 +743,13 @@ end
 
 -- print(parsers.unittotex("10^-32 %"),utilities.parsers.unittoxml("10^32 %"))
 
-local cache   = { }
-local spaces  = lpegpatterns.space^0
-local dummy   = function() end
+local cache = { }
+local dummy = function() end
 
 setmetatableindex(cache,function(t,k)
     local separator = S(k) -- was P
     local value     = (1-separator)^0
-    local pattern   = spaces * C(value) * separator^0 * Cp()
+    local pattern   = spacing * C(value) * separator^0 * Cp()
     t[k] = pattern
     return pattern
 end)
@@ -798,11 +803,8 @@ local function process(result,more)
     return result
 end
 
------ name   = C((1-S(", "))^1)
------ parser = (Carg(1) * name / initialize) * (S(", ")^1 * (Carg(1) * name / fetch))^0
------ merge  = Cf(parser,process)
-local name   = Carg(1) * C((1-S(", "))^1)
-local parser = S(", ")^1 * (name / fetch)
+local name   = Carg(1) * C((1-separator)^1)
+local parser = separator^1 * (name / fetch)
 local merge  = (name / initialize) * (parser % process)^0
 
 function parsers.mergehashes(hash,list)
@@ -831,7 +833,6 @@ end
 
 --
 
-local spacing = whitespace^0
 local apply   = P("->")
 local method  = C((1-apply)^1)
 local token   = lbrace * C((1-rbrace)^1) * rbrace + C(anything^1)

@@ -379,9 +379,9 @@ extern halfword tex_badness(
 # define default_space_factor 1000
 # define special_space_factor  999
 
-# define min_local_hang_indent  0
+# define min_local_hang_indent -max_dimension
 # define max_local_hang_indent  max_dimension
-# define min_local_hang_after  -0x7FFF
+# define min_local_hang_after   0
 # define max_local_hang_after   0x7FFF
 # define min_local_hang_index   0
 # define max_local_hang_index   0x7FFF
@@ -503,11 +503,11 @@ typedef union memorysplit {
 } memorysplit;
 
 typedef union memoryalias {
-    halfword     H;
+    halfword     H;           // 0xFFFFFFFF
     unsigned int U;
  /* quarterword  Q[2]; */
  /* singleword   S[4]; */
-    memorysplit  X[2];
+    memorysplit  X[2];        // [0xFFFF][0xFFFF] | [[0xFF][0xFF]][[0xFF][0xFF]]
 } memoryalias;
 
 typedef union memoryword {
@@ -886,6 +886,7 @@ typedef struct line_break_properties {
     halfword shaping_penalties_mode;
     halfword shaping_penalty;
     halfword par_passes;
+    halfword line_snapping;
     halfword line_break_checks;
     halfword extra_hyphen_penalty; 
     halfword line_break_optional;

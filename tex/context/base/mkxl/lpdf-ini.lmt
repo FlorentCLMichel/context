@@ -234,10 +234,14 @@ do
             depth  = depth  +   offset
         end
         if pdfhasmatrix() then
-            local rx, sx, sy, ry = pdfgetmatrix()
+            local rx, sx, sy, ry, _, _, px, py = pdfgetmatrix()
+         -- print("tx px dx",tx*factor,px*factor,dx*factor)
             local llx, lly, urx, ury = bounds(0,-depth,width,height,rx,sx,sy,ry)
-            tx = tx + sx * height
-            ty = ty - rx * height + height
+         -- tx = tx + sx * height
+         -- ty = ty - rx * height + height
+            local dx = tx - px
+            tx = px + sx * height + dx * rx -- kind of
+            ty = py - rx * height + dx * sx -- horrible
             return
                 factor * (tx + llx),
                 factor * (ty + lly),
@@ -262,10 +266,13 @@ do
             depth  = depth  +   offset
         end
         if pdfhasmatrix() then
-            local rx, sx, sy, ry = pdfgetmatrix()
+            local rx, sx, sy, ry, _, _, px, py = pdfgetmatrix()
             local x1, y1, x2, y2, x3, y3, x4, y4 = corners(zero,-depth,width,height,rx,sx,sy,ry)
-            tx = tx + sx * height
-            ty = ty - rx * height + height
+         -- tx = tx + sx * height
+         -- ty = ty - rx * height + height
+            local dx = tx - px
+            tx = px + sx * height + dx * rx -- kind of
+            ty = py - rx * height + dx * sx -- horrible
             return
                 factor * (tx + x1), factor * (ty + y1),
                 factor * (tx + x2), factor * (ty + y2),

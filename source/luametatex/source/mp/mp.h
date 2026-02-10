@@ -44,9 +44,42 @@ rid of the intermediate \POSTSCRIPT\ representation or add a little more abstrac
 
 */
 
-# define metapost_version "3.15.01"
+/*tex
+    The \LUATEX\ \METAPOST\ library goes to version 3.0 so we need to stay ahead of that or use a
+    rather future number, like 30 or so. This is to be decided.
+*/
+
+# define metapost_version "3.16.02"
 
 typedef struct MP_instance *MP;
+
+# if 1
+
+    /* Before we enable this we need to (double) check:
+
+        -- odd (in double)
+        -- random seed (either upgrade or cast, or take from lua instead)
+        -- all int and (int) in files
+
+    */
+
+    typedef int64_t mp_scaled_t;
+
+    # define mp_scaled_bits      64
+    # define mpscaledround       llround
+    # define decNumberToScaled   decNumberToInt32
+    # define decNumberFromScaled decNumberFromInt32
+
+# else
+
+    typedef int32_t mp_scaled_t;
+
+    # define mp_scaled_bits      32
+    # define mpscaledround       lround
+    # define decNumberToScaled   decNumberToInt32
+    # define decNumberFromScaled decNumberFromInt32
+
+# endif
 
 typedef enum mp_number_type {
     mp_nan_type,
@@ -62,10 +95,10 @@ typedef enum mp_number_type {
 # define is_number(A) ((A).type != mp_nan_type)
 
 typedef union mp_number_store {
-    void   *num;
-    double  dval;
-    int     val;
-    posit_t pval;
+    void        *num;
+    double       dval;
+    mp_scaled_t  val;
+    posit_t      pval;
 } mp_number_store;
 
 typedef struct mp_number_data {
@@ -75,11 +108,11 @@ typedef struct mp_number_data {
 
 typedef struct mp_number_data mp_number;
 
-enum mp_filetype {
+typedef enum mp_filetype {
     mp_filetype_terminal, /* the terminal (input) */
     mp_filetype_program,  /* \MP\ language input */
     mp_filetype_text      /* first text file for readfrom and writeto primitives */
-};
+} mp_filetype;
 
 typedef char *(*mp_file_finder)     (MP, const char *, const char *, int);
 typedef char *(*mp_script_runner)   (MP, const char *m, size_t len, int n);
@@ -105,29 +138,35 @@ typedef struct mp_lstring {
 
 typedef mp_lstring *mp_string; /* for pointers to string values */
 
-enum mp_interaction_mode {
+typedef enum mp_interaction_mode {
     mp_unspecified_mode, /* extra value for command-line switch */
     mp_batch_mode,       /* omits all stops and omits terminal output */
     mp_nonstop_mode,     /* omits all stops */
     mp_scroll_mode,      /* omits error stops */
     mp_error_stop_mode,  /* stops at every opportunity to interact */
     mp_silent_mode       /* stops at every opportunity to interact but not always*/
-};
+} mp_interaction_mode;
 
-enum mp_history_state {
+typedef enum mp_history_state {
     mp_spotless,             /* |history| value when nothing has been amiss yet */
     mp_warning_issued,       /* |history| value when |begin_diagnostic| has been called */
     mp_error_message_issued, /* |history| value when |error| has been called */
     mp_fatal_error_stop,     /* |history| value when termination was premature */
     mp_system_error_stop     /* |history| value when termination was due to disaster */
-};
+} mp_history_state;
+
+/*tex
+    At some point we introduced \quote {posit} mode in extended \METAPOST\ but then the traditional
+    library got \quote {interval} mode.
+*/
 
 typedef enum mp_math_mode {
     mp_math_scaled_mode,
     mp_math_double_mode,
     mp_math_binary_mode,
     mp_math_decimal_mode,
-    mp_math_posit_mode
+    mp_math_posit_mode,
+    mp_math_interval_mode,
 } mp_math_mode;
 
 typedef struct mp_graphic_object *mp_graphic_object_node;
@@ -193,17 +232,17 @@ typedef struct mp_knot_object {
     signed int              info;
 } mp_knot_object;
 
-enum mp_knot_originator {
+typedef enum mp_knot_originator {
     mp_program_code,  /* not created by a user */
     mp_metapost_user  /* created by a user */
-};
+} mp_knot_originator;
 
-enum mp_knot_states {
+typedef enum mp_knot_states {
     mp_regular_knot,
     mp_begin_knot,
     mp_end_knot,
     mp_single_knot,
-};
+} mp_knot_states;
 
 # define mp_valid_knot_state(s) (s >= mp_regular_knot && s <= mp_single_knot)
 
@@ -395,7 +434,7 @@ typedef enum mp_knot_type {
 
 # define mp_valid_knot_type(k) (k >= mp_endpoint_knot && k <= mp_end_cycle_knot)
 
-enum mp_graphical_object_code {
+typedef enum mp_graphical_object_code {
     mp_unset_code,
     mp_fill_code,
     mp_stroked_code,
@@ -406,7 +445,7 @@ enum mp_graphical_object_code {
     mp_stop_group_code,   /* |type| of a node that stops grouping */
     mp_stop_bounds_code,  /* |type| of a node that stops |setbounds| */
     mp_final_graphic
-};
+} mp_graphical_object_code;
 
 typedef enum mp_command_code {
     mp_undefined_command,
@@ -910,79 +949,79 @@ typedef enum mp_stop_codes {
 
 /* types in the outer block */
 
-typedef void   (*convert_func)                      (mp_number *r);
-typedef void   (*m_log_func)                        (MP mp, mp_number *r, mp_number *a);
-typedef void   (*m_exp_func)                        (MP mp, mp_number *r, mp_number *a);
-typedef void   (*m_unif_rand_func)                  (MP mp, mp_number *ret, mp_number *x_orig);
-typedef void   (*m_norm_rand_func)                  (MP mp, mp_number *ret);
-typedef void   (*pyth_add_func)                     (MP mp, mp_number *r, mp_number *a, mp_number *b);
-typedef void   (*pyth_sub_func)                     (MP mp, mp_number *r, mp_number *a, mp_number *b);
-typedef void   (*power_of_func)                     (MP mp, mp_number *r, mp_number *a, mp_number *b);
-typedef void   (*n_arg_func)                        (MP mp, mp_number *r, mp_number *a, mp_number *b);
-typedef void   (*velocity_func)                     (MP mp, mp_number *r, mp_number *a, mp_number *b, mp_number *c, mp_number *d, mp_number *e);
-typedef int    (*ab_vs_cd_func)                     (mp_number *a, mp_number *b, mp_number *c, mp_number *d);
-typedef void   (*crossing_point_func)               (MP mp, mp_number *r, mp_number *a, mp_number *b, mp_number *c);
-typedef void   (*number_from_int_func)              (mp_number *A, int B);
-typedef void   (*number_from_boolean_func)          (mp_number *A, int B);
-typedef void   (*number_from_scaled_func)           (mp_number *A, int B);
-typedef void   (*number_from_double_func)           (mp_number *A, double B);
-typedef void   (*number_from_addition_func)         (mp_number *A, mp_number *B, mp_number *C);
-typedef void   (*number_half_from_addition_func)    (mp_number *A, mp_number *B, mp_number *C);
-typedef void   (*number_from_subtraction_func)      (mp_number *A, mp_number *B, mp_number *C);
-typedef void   (*number_half_from_subtraction_func) (mp_number *A, mp_number *B, mp_number *C);
-typedef void   (*number_from_div_func)              (mp_number *A, mp_number *B, mp_number *C);
-typedef void   (*number_from_mul_func)              (mp_number *A, mp_number *B, mp_number *C);
-typedef void   (*number_from_int_div_func)          (mp_number *A, mp_number *B, int C);
-typedef void   (*number_from_int_mul_func)          (mp_number *A, mp_number *B, int C);
-typedef void   (*number_from_of_the_way_func)       (MP mp, mp_number *A, mp_number *t, mp_number *B, mp_number *C);
-typedef void   (*number_negate_func)                (mp_number *A);
-typedef void   (*number_add_func)                   (mp_number *A, mp_number *B);
-typedef void   (*number_subtract_func)              (mp_number *A, mp_number *B);
-typedef void   (*number_modulo_func)                (mp_number *A, mp_number *B);
-typedef void   (*number_half_func)                  (mp_number *A);
-typedef void   (*number_double_func)                (mp_number *A);
-typedef void   (*number_abs_func)                   (mp_number *A);
-typedef void   (*number_clone_func)                 (mp_number *A, mp_number *B);
-typedef void   (*number_negated_clone_func)         (mp_number *A, mp_number *B);
-typedef void   (*number_abs_clone_func)             (mp_number *A, mp_number *B);
-typedef void   (*number_swap_func)                  (mp_number *A, mp_number *B);
-typedef void   (*number_add_scaled_func)            (mp_number *A, int b);
-typedef void   (*number_multiply_int_func)          (mp_number *A, int b);
-typedef void   (*number_divide_int_func)            (mp_number *A, int b);
-typedef int    (*number_to_int_func)                (mp_number *A);
-typedef int    (*number_to_boolean_func)            (mp_number *A);
-typedef int    (*number_to_scaled_func)             (mp_number *A);
-typedef int    (*number_round_func)                 (mp_number *A);
-typedef void   (*number_floor_func)                 (mp_number *A);
-typedef double (*number_to_double_func)             (mp_number *A);
-typedef int    (*number_odd_func)                   (mp_number *A);
-typedef int    (*number_equal_func)                 (mp_number *A, mp_number *B);
-typedef int    (*number_less_func)                  (mp_number *A, mp_number *B);
-typedef int    (*number_greater_func)               (mp_number *A, mp_number *B);
-typedef int    (*number_non_equal_abs_func)         (mp_number *A, mp_number *B);
-typedef void   (*make_scaled_func)                  (MP mp, mp_number *ret, mp_number *A, mp_number *B);
-typedef void   (*make_fraction_func)                (MP mp, mp_number *ret, mp_number *A, mp_number *B);
-typedef void   (*take_fraction_func)                (MP mp, mp_number *ret, mp_number *A, mp_number *B);
-typedef void   (*take_scaled_func)                  (MP mp, mp_number *ret, mp_number *A, mp_number *B);
-typedef void   (*sin_cos_func)                      (MP mp, mp_number *A, mp_number *S, mp_number *C);
-typedef void   (*slow_add_func)                     (MP mp, mp_number *A, mp_number *S, mp_number *C);
-typedef void   (*sqrt_func)                         (MP mp, mp_number *ret, mp_number *A);
-typedef void   (*init_randoms_func)                 (MP mp, int seed);
-typedef void   (*allocate_number_func)              (MP mp, mp_number *A, mp_number_type t);
-typedef void   (*allocate_number_clone_func)        (MP mp, mp_number *A, mp_number_type t, mp_number *B);
-typedef void   (*allocate_number_abs_func)          (MP mp, mp_number *A, mp_number_type t, mp_number *B);
-typedef void   (*allocate_number_div_func)          (MP mp, mp_number *A, mp_number_type t, mp_number *B, mp_number *C);
-typedef void   (*allocate_number_mul_func)          (MP mp, mp_number *A, mp_number_type t, mp_number *B, mp_number *C);
-typedef void   (*allocate_number_add_func)          (MP mp, mp_number *A, mp_number_type t, mp_number *B, mp_number *C);
-typedef void   (*allocate_number_sub_func)          (MP mp, mp_number *A, mp_number_type t, mp_number *B, mp_number *C);
-typedef void   (*allocate_number_double_func)       (MP mp, mp_number *A, double B);
-typedef void   (*free_number_func)                  (MP mp, mp_number *n);
-typedef void   (*fraction_to_round_scaled_func)     (mp_number *n);
-typedef void   (*print_func)                        (MP mp, mp_number *A);
-typedef char  *(*tostring_func)                     (MP mp, mp_number *A);
-typedef void   (*scan_func)                         (MP mp, int A);
-typedef void   (*mp_free_func)                      (MP mp);
-typedef void   (*set_precision_func)                (MP mp);
+typedef void        (*convert_func)                      (mp_number *r);
+typedef void        (*m_log_func)                        (MP mp, mp_number *r, mp_number *a);
+typedef void        (*m_exp_func)                        (MP mp, mp_number *r, mp_number *a);
+typedef void        (*m_unif_rand_func)                  (MP mp, mp_number *ret, mp_number *x_orig);
+typedef void        (*m_norm_rand_func)                  (MP mp, mp_number *ret);
+typedef void        (*pyth_add_func)                     (MP mp, mp_number *r, mp_number *a, mp_number *b);
+typedef void        (*pyth_sub_func)                     (MP mp, mp_number *r, mp_number *a, mp_number *b);
+typedef void        (*power_of_func)                     (MP mp, mp_number *r, mp_number *a, mp_number *b);
+typedef void        (*n_arg_func)                        (MP mp, mp_number *r, mp_number *a, mp_number *b);
+typedef void        (*velocity_func)                     (MP mp, mp_number *r, mp_number *a, mp_number *b, mp_number *c, mp_number *d, mp_number *e);
+typedef int         (*ab_vs_cd_func)                     (mp_number *a, mp_number *b, mp_number *c, mp_number *d);
+typedef void        (*crossing_point_func)               (MP mp, mp_number *r, mp_number *a, mp_number *b, mp_number *c);
+typedef void        (*number_from_int_func)              (mp_number *A, mp_scaled_t B);
+typedef void        (*number_from_boolean_func)          (mp_number *A, mp_scaled_t B);
+typedef void        (*number_from_scaled_func)           (mp_number *A, mp_scaled_t B);
+typedef void        (*number_from_double_func)           (mp_number *A, double B);
+typedef void        (*number_from_addition_func)         (mp_number *A, mp_number *B, mp_number *C);
+typedef void        (*number_half_from_addition_func)    (mp_number *A, mp_number *B, mp_number *C);
+typedef void        (*number_from_subtraction_func)      (mp_number *A, mp_number *B, mp_number *C);
+typedef void        (*number_half_from_subtraction_func) (mp_number *A, mp_number *B, mp_number *C);
+typedef void        (*number_from_div_func)              (mp_number *A, mp_number *B, mp_number *C);
+typedef void        (*number_from_mul_func)              (mp_number *A, mp_number *B, mp_number *C);
+typedef void        (*number_from_int_div_func)          (mp_number *A, mp_number *B, mp_scaled_t C);
+typedef void        (*number_from_int_mul_func)          (mp_number *A, mp_number *B, mp_scaled_t C);
+typedef void        (*number_from_of_the_way_func)       (MP mp, mp_number *A, mp_number *t, mp_number *B, mp_number *C);
+typedef void        (*number_negate_func)                (mp_number *A);
+typedef void        (*number_add_func)                   (mp_number *A, mp_number *B);
+typedef void        (*number_subtract_func)              (mp_number *A, mp_number *B);
+typedef void        (*number_modulo_func)                (mp_number *A, mp_number *B);
+typedef void        (*number_half_func)                  (mp_number *A);
+typedef void        (*number_double_func)                (mp_number *A);
+typedef void        (*number_abs_func)                   (mp_number *A);
+typedef void        (*number_clone_func)                 (mp_number *A, mp_number *B);
+typedef void        (*number_negated_clone_func)         (mp_number *A, mp_number *B);
+typedef void        (*number_abs_clone_func)             (mp_number *A, mp_number *B);
+typedef void        (*number_swap_func)                  (mp_number *A, mp_number *B);
+typedef void        (*number_add_scaled_func)            (mp_number *A, mp_scaled_t B);
+typedef void        (*number_multiply_int_func)          (mp_number *A, mp_scaled_t B);
+typedef void        (*number_divide_int_func)            (mp_number *A, mp_scaled_t B);
+typedef mp_scaled_t (*number_to_int_func)                (mp_number *A);
+typedef mp_scaled_t (*number_to_boolean_func)            (mp_number *A);
+typedef mp_scaled_t (*number_to_scaled_func)             (mp_number *A);
+typedef mp_scaled_t (*number_round_func)                 (mp_number *A);
+typedef void        (*number_floor_func)                 (mp_number *A);
+typedef double      (*number_to_double_func)             (mp_number *A);
+typedef int         (*number_odd_func)                   (mp_number *A);
+typedef int         (*number_equal_func)                 (mp_number *A, mp_number *B);
+typedef int         (*number_less_func)                  (mp_number *A, mp_number *B);
+typedef int         (*number_greater_func)               (mp_number *A, mp_number *B);
+typedef int         (*number_non_equal_abs_func)         (mp_number *A, mp_number *B);
+typedef void        (*make_scaled_func)                  (MP mp, mp_number *ret, mp_number *A, mp_number *B);
+typedef void        (*make_fraction_func)                (MP mp, mp_number *ret, mp_number *A, mp_number *B);
+typedef void        (*take_fraction_func)                (MP mp, mp_number *ret, mp_number *A, mp_number *B);
+typedef void        (*take_scaled_func)                  (MP mp, mp_number *ret, mp_number *A, mp_number *B);
+typedef void        (*sin_cos_func)                      (MP mp, mp_number *A, mp_number *S, mp_number *C);
+typedef void        (*slow_add_func)                     (MP mp, mp_number *A, mp_number *S, mp_number *C);
+typedef void        (*sqrt_func)                         (MP mp, mp_number *ret, mp_number *A);
+typedef void        (*init_randoms_func)                 (MP mp, int seed);
+typedef void        (*allocate_number_func)              (MP mp, mp_number *A, mp_number_type t);
+typedef void        (*allocate_number_clone_func)        (MP mp, mp_number *A, mp_number_type t, mp_number *B);
+typedef void        (*allocate_number_abs_func)          (MP mp, mp_number *A, mp_number_type t, mp_number *B);
+typedef void        (*allocate_number_div_func)          (MP mp, mp_number *A, mp_number_type t, mp_number *B, mp_number *C);
+typedef void        (*allocate_number_mul_func)          (MP mp, mp_number *A, mp_number_type t, mp_number *B, mp_number *C);
+typedef void        (*allocate_number_add_func)          (MP mp, mp_number *A, mp_number_type t, mp_number *B, mp_number *C);
+typedef void        (*allocate_number_sub_func)          (MP mp, mp_number *A, mp_number_type t, mp_number *B, mp_number *C);
+typedef void        (*allocate_number_double_func)       (MP mp, mp_number *A, double B);
+typedef void        (*free_number_func)                  (MP mp, mp_number *n);
+typedef void        (*fraction_to_round_scaled_func)     (mp_number *n);
+typedef void        (*print_func)                        (MP mp, mp_number *A);
+typedef char       *(*tostring_func)                     (MP mp, mp_number *A);
+typedef void        (*scan_func)                         (MP mp, mp_scaled_t A);
+typedef void        (*mp_free_func)                      (MP mp);
+typedef void        (*set_precision_func)                (MP mp);
 
 /*tex
     We use a prefix |md_| so that we don't get complaints about recursive macro definitions. This
@@ -1264,10 +1303,10 @@ typedef struct mp_save_data {
     struct mp_save_data *link;
 } mp_save_data;
 
-enum mp_bb_code {
+typedef enum mp_bb_code {
     mp_x_code, /* index for |minx| and |maxx| */
     mp_y_code  /* index for |miny| and |maxy| */
-};
+} mp_bb_code;
 
 typedef struct mp_in_state_record {
     int       start_field;

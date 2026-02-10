@@ -97,7 +97,31 @@
                 <cd:constant type="keeptwins"/>
                 <cd:constant type="notoddlers"/>
                 <cd:constant type="keeptoddlers"/>
+                <cd:constant type="tight"/>
                 <cd:constant type="granular"/>
+                <cd:constant type="lesswidows"/>
+                <cd:constant type="lessclubs"/>
+                <cd:constant type="lessbroken"/>
+                <cd:constant type="lessorphans"/>
+                <cd:constant type="lessorphans:2"/>
+                <cd:constant type="lessorphans:3"/>
+                <cd:constant type="lessorphans:4"/>
+                <cd:constant type="defaultwidows"/>
+                <cd:constant type="defaultclubs"/>
+                <cd:constant type="defaultbroken"/>
+                <cd:constant type="strictwidows "/>
+                <cd:constant type="strictwidows:2"/>
+                <cd:constant type="strictwidows:3"/>
+                <cd:constant type="strictwidows:4"/>
+                <cd:constant type="strictclubs "/>
+                <cd:constant type="strictclubs:2"/>
+                <cd:constant type="strictclubs:3"/>
+                <cd:constant type="strictclubs:4"/>
+                <cd:constant type="strictbroken"/>
+                <cd:constant type="defaultmath"/>
+                <cd:constant type="strictmath"/>
+                <cd:constant type="nonstrictmath"/>
+                <cd:constant type="default"/>
                 <!--
                     <cd:constant type="cd:name"/>
                 -->
@@ -110,6 +134,31 @@
             <cd:csname/>
         </cd:arguments>
     </cd:command>
+
+    <cd:command name="installaligncommand" type="environment" file="spac-ali.mkxl">
+        <cd:arguments>
+            <cd:resolve name="keyword-name"/>
+        </cd:arguments>
+    </cd:command>
+
+    <cd:command name="installaligncommand" file="spac-ali.mkxl">
+        <cd:arguments>
+            <cd:resolve name="argument-name"/>
+            <cd:content/>
+        </cd:arguments>
+    </cd:command>
+
+    <cd:command name="noorphans" file="spac-ali.mkxl"/>
+
+    <cd:command name="notoddlers" file="spac-ali.mkxl"/>
+
+    <cd:command name="notwins" file="spac-ali.mkxl"/>
+
+    <cd:command name="keeporphans" file="spac-ali.mkxl"/>
+
+    <cd:command name="keeptoddlers" file="spac-ali.mkxl"/>
+
+    <cd:command name="keeptwins" file="spac-ali.mkxl"/>
 
     <cd:command name="alignment" type="environment" level="document" category="alignment" file="spac-ali.mkxl">
         <cd:arguments>
@@ -293,6 +342,8 @@
 
     <cd:command name="forgetragged" level="style" category="alignment" file="spac-ali.mkxl"/>
 
+    <cd:command name="raggedslanted" level="style" category="alignment" file="spac-ali.mkxl"/>
+
     <cd:command name="line" level="document" category="alignment" file="spac-ali.mkxl">
         <cd:arguments>
             <cd:content/>
@@ -317,19 +368,33 @@
         </cd:arguments>
     </cd:command>
 
-    <cd:command name="hanging" type="environment" level="document" category="alignment" file="spac-ver.mkxl">
+    <cd:command name="setuphanging" file="spac-ver.mkxl">
         <cd:arguments>
-            <cd:assignments list="yes" optional="yes">
+            <cd:assignments list="yes">
                 <cd:parameter name="distance">
                     <cd:constant type="cd:dimension"/>
                 </cd:parameter>
                 <cd:parameter name="n">
                     <cd:constant type="cd:number"/>
                 </cd:parameter>
+                <cd:parameter name="topoffset">
+                    <cd:constant type="cd:dimension"/>
+                </cd:parameter>
+                <cd:parameter name="bottomoffset">
+                    <cd:constant type="cd:dimension"/>
+                </cd:parameter>
                 <cd:parameter name="location">
                     <cd:constant type="left" default="yes"/>
                     <cd:constant type="right"/>
                 </cd:parameter>
+            </cd:assignments>
+        </cd:arguments>
+    </cd:command>
+
+    <cd:command name="hanging" type="environment" level="document" category="alignment" file="spac-ver.mkxl">
+        <cd:arguments>
+            <cd:assignments list="yes" optional="yes">
+                <cd:inherit name="setuphanging"/>
             </cd:assignments>
             <cd:content/>
         </cd:arguments>
@@ -363,6 +428,8 @@
         </cd:arguments>
     </cd:command>
 
+    <cd:command name="synchronizealignpass" level="style" category="alignment" file="spac-pas.mkxl"/>
+
     <cd:command name="setupalignpass" level="style" category="alignment" file="spac-pas.mkxl">
         <cd:arguments>
             <cd:keywords>
@@ -389,16 +456,12 @@
         </cd:arguments>
     </cd:command>
 
-    <!--
-
-        <cd:command name="optional" level="document" category="alignment" file="spac-imp-tests.mkxl">
-            <cd:arguments>
-                <cd:resolve name="argument-test"/>
-                <cd:resolve name="argument-test"/>
-            </cd:arguments>
-        </cd:command>
-
-    -->
+    <cd:command name="optional" level="document" category="alignment" file="spac-pas.mkxl">
+        <cd:arguments>
+            <cd:resolve name="argument-number"/>
+            <cd:resolve name="argument-text"/>
+        </cd:arguments>
+    </cd:command>
 
     <cd:command name="rtltext" level="document" category="alignment" keywords="direction" file="spac-ali.mkxl">
         <cd:arguments>
@@ -411,5 +474,11 @@
             <cd:content/>
         </cd:arguments>
     </cd:command>
+
+    <cd:command name="hangrange" type="environment" file="spac-ali.mkxl"/>
+
+    <cd:command name="hangrangestep" type="environment" file="spac-ali.mkxl"/>
+
+    <cd:command name="emptyhangrangestep" file="spac-ali.mkxl"/>
 
 </cd:interface>

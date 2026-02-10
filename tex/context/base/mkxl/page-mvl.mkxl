@@ -470,8 +470,11 @@
    \egroup
    \page_mvl_set_indeed}
 
+% \protected\def\page_mvl_command_set_vsize % todo: just intercept
+%   {\vsize\textheight}
+
 \protected\def\page_mvl_command_set_vsize % todo: just intercept
-  {\vsize\textheight}
+  {\vsize\snappedtextheight}
 
 \protected\def\page_mvl_command_set_hsize
   {\ifempty\currentsubcolumnset
@@ -973,7 +976,7 @@
        \hskip-\layoutparameter\c!backspace % todo: #9
        \clip
          [    \c!offset=\columnsetareaparameter\c!clipoffset,%
-          \c!leftoffset=\columnsetareaparameter\c!rightoffset,%
+          \c!leftoffset=\columnsetareaparameter\c!leftoffset,%
              \c!hoffset=\scratchdimen,%
                \c!width=\wd\nextbox-\scratchdimen,%
             % \c!height=
@@ -1501,6 +1504,7 @@
    \forgetall
    \dontcomplain
    \resetgridsnapping
+   \resetgridlinesnapping
    \specificationdef\d_d_page_mvl_htdp\dimen
       {\nofcolumns}%
       \s!options \c_page_mvl_htdp_options

@@ -15,7 +15,7 @@
 \startsection[title={Introduction}]
 
 It really puzzles me why, when someone someplace asks if \CONTEXT\ is suitable
-for her or is his needs, there are answers like: \quotation {You need to think of
+for her or his needs, there are answers like: \quotation {You need to think of
 \CONTEXT\ as being kind of plain \TEX: you have to define everything yourself.}
 That answer probably stems from the fact that for \LATEX\ you load some style
 that defines a lot, which you then might need to undefine or redefine, but that's
@@ -73,7 +73,7 @@ Now, nothing demands that we have to assume \ASCII\ input but for practical
 reasons the formfeed character is made equivalent to a \type {\par}.
 
 Now what do these \type {^^K} and similar triplets represent? The \type {^^A}
-represents character zero and normally all these control characters below decimal
+represents character one and normally all these control characters below decimal
 32 (space) are special. The \type {^^I} is the \ASCII\ tab character, and \type
 {^^L} the formfeed. But, the ones referred to as uparrow and downarrow in the
 comments have only meaning on certain keyboards. So these are typical definitions
@@ -174,7 +174,7 @@ Watch the last comment. One of the complications of \TEX\ is that because some
 characters have special meanings, we also need to deal with exceptions. It also
 means that arbitrary input is not possible. For instance, unless the percent
 character is made a letter, everything following it till the end of a line will
-be discarded. This is an areas where macro packages can differ but in \MKII\ we
+be discarded. This is an area where macro packages can differ, but in \MKII\ we
 followed these rules. In \MKIV\ we made what we called \type {\nonknuthmode}
 default which means that ampersands are just that and scripts are only special in
 math (there was also \type {\donknuthmode}). So, \CONTEXT\ is not like plain
@@ -186,7 +186,7 @@ there.
 
 The next section defines some numeric shortcuts. Here the fact is used that a
 defined symbolic character can act as counter value. When the number is larger
-than 255 a math character is to be used. In \LUATEX, which is a \UNICODE\ engine
+than 255 a math character is to be used. In \LUATEX, which is a \UNICODE\ engine,
 character codes can be much larger.
 
 \startnarrowtyping
@@ -207,7 +207,7 @@ character codes can be much larger.
 
 In \CONTEXT\ we still support these shortcuts but never use them ourselves. We
 have plenty more variables and constants and nowadays always use verbose names.
-(There was indeed a time when each extra characters depleted string memory more
+(There was indeed a time when each extra character depleted string memory more
 and more so then using short command names made sense.) The comment is right that
 using such variables is more efficient, for instance once loaded a macro is a
 sequence of tokens, so \type {\@one} takes one memory slot. In the case of the
@@ -390,16 +390,16 @@ come from disk. In fact, as the plain format is normally dumped for faster reloa
 later on, the font data is also retained. So, preloading is a speed up hack. In
 \CONTEXT\ font loading has always been delayed till the moment a font is really
 used. This permits plenty of definitions and gives less memory usage. Of course
-we do reuse fonts once loaded. All this, plus the fact that we have a a system of
+we do reuse fonts once loaded. All this, plus the fact that we have a system of
 related sizes, collections of families, support multiple font encodings
-alongside, collect definitions in so called typescript, etc. makes that the
+alongside, collect definitions in so called typescripts, etc., results in that the
 \CONTEXT\ font subsystem is far from what plain provides. Only some of the
 command stick, like \type {\rm} and \type {\bf}.
 
 The same is true for math fonts, where we can have different math font setups in
 one document. Definitely in \MKII\ times, we also had to work around limitations
 in the number of available math families, which again complicated the code. In
-\MKIV\ things are even more different, one can even consider the implementation
+\MKIV\ things are even more different; one can even consider the implementation
 somewhat alien for a standard macro package, but that's for another article (if
 at all).
 
@@ -410,7 +410,7 @@ at all).
 Of course \CONTEXT\ comes with macros, but these are organized in setups,
 environments, instances, etc. The whole process and setup is keyword driven. Out
 of the box all things work: nothing needs to be loaded. If you want it different,
-you change some settings, but you don't need to load something. Maybe that last
+you change some settings, but you don't need to load anything. Maybe that last
 aspect is what is meant with \CONTEXT\ being like plain: you don't (normally)
 load extra stuff. You just adapt the system to your needs. So there we proudly
 follow up on plain \TEX.
@@ -457,7 +457,7 @@ we do have sectioning commands, and have no \type {\proclaim} but provide lots o
 descriptive alternatives, so many that I forgot about most of them by now (so
 plain is a winner in terms of knowing a macro package inside out).
 
-The fact that we use tables, floats and footnotes indeed makes \CONTEXT\ to act
+The fact that we use tables, floats and footnotes indeed causes \CONTEXT\ to act
 like plain, but that's then also true for other macro packages. A fact is that
 plain sets the standard for how to think about these matters! The same is true
 for naming characters:
@@ -477,7 +477,7 @@ for naming characters:
 \chardef\i="10 \chardef\j="11 % dotless letters
 \stopnarrowtyping
 
-But we have many more and understandable the numbers are different in \CONTEXT\
+But we have many more, and understandably the numbers are different in \CONTEXT\
 because we use different font (encodings). Their implementation is more adaptive.
 The same is true for accented characters:
 
@@ -489,7 +489,7 @@ The same is true for accented characters:
 The definitions in \MKII\ are different (in most cases we use native glyphs) and
 in \MKIV\ we use \UNICODE\ anyway. I think that the \type {\accent} command is
 only used in a few exceptional cases (like very limited fonts) in \MKII\ and never
-in \MKIV. The implementation of for instance accents (and other pasted together
+in \MKIV. The implementation of, for instance, accents (and other pasted together
 symbols) in math is also quite different.
 
 There are also definitions that seem to be commonly used in macro packages but
@@ -525,7 +525,7 @@ showed the way. As did many examples in the \TEX\ book.
 As an afterthought, the plain format ends with loading hyphenation patterns, that
 is the English ones. That said it will be clear that \CONTEXT\ is not like plain:
 we support many languages, and the subsystem deals with labels, specific
-typesetting properties, etc.\ too.
+typesetting properties, etc., too.
 
 \startnarrowtyping
 \lefthyphenmin=2 \righthyphenmin=3 % disallow x- or -xx breaks
@@ -542,17 +542,17 @@ lot there. In \MKIV\ again things are much different.
 
 The plain format does (and provides) what it is supposed to do. It is a showcase
 of possibilities and part of the specification. In that respect it's nice that
-\CONTEXT\ is considered to be like plain. But if it wasn't more, there was no
+\CONTEXT\ is considered to be like plain. But if it wasn't more, there would be no
 reason for its existence. Like more assumptions about \CONTEXT\ it demonstrates
 that those coming up with answers and remarks like that probably missed something
 in assessing \CONTEXT. Just let users find out themselves what suits best (and
 for some that actually might be plain \TEX).
 
-Let me make on thing clear. If you look at the documents that describe the
+Let me make one thing clear. If you look at the documents that describe the
 development of \TEX, \METAFONT\ and the related fonts, you can only awe at what
 was done on hardware that doesn't come close to what we hold now in the palm of
-our hand. And it was done in a relative short time span. The fact that plain
-\TEX\ ran on it the way it did is amazing. Anyone who considers criticizing \TEX\
+our hand. And it was done in a relatively short time span. The fact that plain
+\TEX\ ran on such hardware the way it did is amazing. Anyone who considers criticizing \TEX\
 and plain \TEX\ should think (more than) twice.
 
 \stopsection

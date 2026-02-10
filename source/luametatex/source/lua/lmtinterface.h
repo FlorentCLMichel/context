@@ -705,6 +705,7 @@ make_lua_key(L, displaywidowpenalty);\
 make_lua_key(L, doffset);\
 make_lua_key(L, doublehyphendemerits);\
 make_lua_key(L, doublesuperscript);\
+make_lua_key(L, dummy);\
 make_lua_key(L, emergencyextrastretch);\
 make_lua_key(L, emergencyleftskip);\
 make_lua_key(L, emergencyrightskip);\
@@ -960,6 +961,8 @@ make_lua_key(L, lineheight);\
 make_lua_key(L, linepenalty);\
 make_lua_key(L, lineskip);\
 make_lua_key(L, lineskiplimit);\
+make_lua_key(L, linesnapping);\
+make_lua_key(L, linesnappingkern);\
 make_lua_key(L, list);\
 make_lua_key(L, lmtxexpression);\
 make_lua_key(L, local);\

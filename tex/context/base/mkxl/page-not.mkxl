@@ -29,4 +29,25 @@
     +\page_insert_insertion_height\s!bottomfloat
    }}
 
+% The final solution for these excessive pending note inserts (that of course no sane user
+% will run into) relies on boundaries resetting some properties and signalling if we have
+% only inserts. (Musical timestamp: the day after an unforgetabble Anna von Hausswolff
+% concert in Paradiso 2025; there's still hope after a few weird weeks of world politics.)
+
+\insertoptions {
+    \checkheightinsertoptioncode
+}
+
+\newconditional\c_page_insert_only_check \c_page_insert_only_check\conditionaltrue
+
+\let\pageinsertonlyfactor\plusone
+
+\def\strc_notes_set_boundary
+  {\ifcstok{\noteparameter\c!location}\v!page
+     \insertboundary\plusthree\currentnoteinsertionnumber % height and count
+   \fi}
+
+\installpagebreakmethod \v!note
+  {\strc_notes_process\strc_notes_set_boundary}
+
 \protect \endinput

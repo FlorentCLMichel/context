@@ -1,0 +1,516 @@
+% language=us runpath=texruns:manuals/musings
+
+\startcomponent musings-fake
+
+\environment musings-style
+
+\usebodyfont[ebgaramond]
+
+\newconditional\FakeRules
+\newdimension  \FakeWidth
+\newinteger    \FakeScale
+\newinteger    \FakeCharacter   \FakeCharacter`B
+
+% n width kern xscale
+
+\startbuffer[fake]
+\starttexdefinition Fake #1#2#3#4
+    \dorecurse {#1} {
+        \ifconditional\FakeRules
+            \vrule
+                height 1\exheight
+                depth .1\exheight
+                width #2\FakeWidth
+            \relax
+        \else
+            \glyph
+                scale \FakeScale
+                xscale #4
+                \FakeCharacter
+            \relax
+        \fi
+        \ifcase#3\else
+            \kern{\FakeWidth/#3}\relax
+        \fi
+    }
+\stoptexdefinition
+
+\starttexdefinition FakeOne #1#2#3#4#5
+   \FakeScale{\FakeWidth / 400}
+   \ruledhbox to 1tw {
+        \llap {
+            \ttxx
+            \hpack {
+                #3\enspace             % width
+                \twodigits{#4}\enspace % kern
+                #5\quad                % xscale
+            }
+        }
+        \dorecurse {#2} {
+            \Fake{#1}{#3}{#4}{#5}
+            \unkern
+            \space
+        }
+        \removeunwantedspaces
+    }
+\stoptexdefinition
+\stopbuffer
+
+\getbuffer[fake]
+
+\starttexdefinition FakeMore #1
+    \startlinecorrection
+        \dontcomplain
+        \switchtobodyfont[ebgaramond]
+        \FakeWidth {tw/65}
+        \writestatus{fake width more}{\todimension \FakeWidth}
+        \vbox \bgroup
+                         \FakeOne{#1}{5}{1.00} {0}{1000}
+            {\darkyellow \FakeOne{#1}{5}{1.05} {0}{1050}}
+            {\darkred    \FakeOne{#1}{5}{1.00}{12}{1000}}
+            {\darkred    \FakeOne{#1}{5}{1.05}{12}{1050}}
+            {\darkgreen  \FakeOne{#1}{5}{1.00}{10}{1000}}
+            {\darkgreen  \FakeOne{#1}{5}{1.05}{10}{1050}}
+            {\darkblue   \FakeOne{#1}{5}{1.00} {8}{1000}}
+            {\darkblue   \FakeOne{#1}{5}{1.05} {8}{1050}}
+        \egroup
+    \stoplinecorrection
+\stoptexdefinition
+
+\starttexdefinition FakeLess #1
+    \startlinecorrection
+        \dontcomplain
+        \FakeWidth {tw/60}
+        \writestatus{fake width less}{\todimension \FakeWidth}
+        \vbox \bgroup
+                         \FakeOne{#1}{5}{1.00} {0}{1000}
+            {\darkyellow \FakeOne{#1}{5}{0.90} {0}{0900}}
+            {\darkred    \FakeOne{#1}{5}{1.00}{12}{1000}}
+            {\darkred    \FakeOne{#1}{5}{0.90}{12}{0900}}
+            {\darkgreen  \FakeOne{#1}{5}{1.00}{10}{1000}}
+            {\darkgreen  \FakeOne{#1}{5}{0.90}{10}{0900}}
+            {\darkblue   \FakeOne{#1}{5}{1.00} {8}{1000}}
+            {\darkblue   \FakeOne{#1}{5}{0.90} {8}{0900}}
+        \egroup
+    \stoplinecorrection
+\stoptexdefinition
+
+\starttexdefinition FakeBoth #1
+    \startlinecorrection
+        \switchtobodyfont[ebgaramond]
+        \dontcomplain
+        \FakeWidth {tw/65}
+        \writestatus{fake width both}{\todimension \FakeWidth}
+        \vbox \bgroup
+                         \FakeOne{#1}{5}{1.00} {0}{1000}
+                         \FakeOne{#1}{5}{1.05} {0}{1050}
+                         \FakeOne{#1}{5}{0.90} {0}{0900}
+            {\darkred    \FakeOne{#1}{5}{1.00}{12}{1000}}
+            {\darkred    \FakeOne{#1}{5}{1.05}{12}{1050}}
+            {\darkred    \FakeOne{#1}{5}{0.90}{12}{0900}}
+            {\darkyellow \FakeOne{#1}{5}{1.00} {0}{1000}}
+            {\darkyellow \FakeOne{#1}{5}{1.05} {0}{1050}}
+            {\darkyellow \FakeOne{#1}{5}{0.90} {0}{0900}}
+            {\darkgreen  \FakeOne{#1}{5}{1.00}{10}{1000}}
+            {\darkgreen  \FakeOne{#1}{5}{1.05}{10}{1050}}
+            {\darkgreen  \FakeOne{#1}{5}{0.90}{10}{0900}}
+            {\darkblue   \FakeOne{#1}{5}{1.00} {8}{1000}}
+            {\darkblue   \FakeOne{#1}{5}{1.05} {8}{1050}}
+            {\darkblue   \FakeOne{#1}{5}{0.90} {8}{0900}}
+        \egroup
+    \stoplinecorrection
+\stoptexdefinition
+
+\starttexdefinition FakeBad #1
+    \startlinecorrection
+        \dontcomplain
+        \switchtobodyfont[ebgaramond]
+        \FakeWidth {tw/65}
+        \writestatus{fake width bad}{\todimension \FakeWidth}
+        \vbox \bgroup
+            {\darkgreen  \FakeOne{#1}{3}{1.05} {8}{1050}}
+            {\darkgreen  \FakeOne{#1}{3}{1.25} {8}{1250}}
+            {\darkgreen  \FakeOne{#1}{3}{1.50} {8}{1500}}
+            {\darkblue   \FakeOne{#1}{3}{1.05} {5}{1050}}
+            {\darkblue   \FakeOne{#1}{3}{1.25} {5}{1250}}
+            {\darkblue   \FakeOne{#1}{3}{1.50} {5}{1500}}
+            {\darkmagenta\FakeOne{#1}{3}{1.05} {3}{1050}}
+            {\darkmagenta\FakeOne{#1}{3}{1.25} {3}{1250}}
+            {\darkmagenta\FakeOne{#1}{3}{1.50} {3}{1500}}
+        \egroup
+    \stoplinecorrection
+\stoptexdefinition
+
+\startchapter[title={Fake quality}]
+
+% \enabledirectives[visualizers.fraction=2]
+\enabledirectives[visualizers.fraction=2.5]
+
+In these days of running into so called \quote {fake news} it is no surprise that
+we also can run into fake quality typesetting. Of course, as with news, it is can
+be hard to figure out what actually is real or fake, so with typesetting we also
+need to be careful in what we claim. For that reason I will not mention names of
+programs, nor refer to claims made about how well programs behave, even when they
+compare themselves to for instance \TEX, in which perspective one can read
+strange assumptions with respect to what \TEX\ can do or not, nor will I comment
+on claims made by designers of journals who brag about the improved quality due
+to choice of fonts, applied trickery, design choices and what more. I just stick
+to some abstract visual examples that might help the reader to identify false
+claims, especially when to have to defend their use of \TEX\ and friends. What
+follows below is about awareness. Trust your eyes. If looking at some text gives
+so a feeling that something is off, wonder why. If it looks kind of weird, find a
+reason.
+
+We start with the challenge. When typesetting a paragraph of text, a typesetting
+engine has to make choices. When words can be hyphenated, a potentially overfull
+line can be prevented by breaking a word. When spaces have stretch or shrink,
+that can be used to make better decisions. In the case of \TEX\ a first look at
+the paragraph might result in breaking without hyphenation. If the result is too
+bad, a second attempt will be made, this time with hyphenation. If we're still
+not okay, the criteria can be more liberal and we can permit additional stretch
+between (either ot not hyphenated) words. When set up right, the final result
+will not have any overfull lines but spaces can be excessive in some lines.
+However, in practice that seldom happens. The engine looks at the whole
+paragraph, builds a solution tree and chooses the best possible outcome. That of
+course comes at the cost of runtime but nowadays that can be neglected.
+
+Starting with \PDFTEX\ some more wiggle room became available: character
+expansion. This is a variant on so called hz optimization, a trick inspired by
+Herman Zapf, loosely based on Gutenbergs \quotation {choose a wider or narrower
+variant of a shape}. In this case we permit a glyph to scale in the horizontal
+direction and we can use different scales per glyph. Of course that means that
+one has to set up fonts properly and the engine has to work harder because now it
+has to take potential stretch or shrink into account as well. The more
+constraints we have the more runtime is needed.
+
+In \LUATEX\ this mechanism has been optimized so there the impact is less,
+although more complex feature processing obscures that, which means that in the
+end this engine is more demanding when it comes to typesetting a paragraph. In
+\LUAMETATEX\ we go even further by permitting more than the usual up to three
+passes: we can follow different scenarios to get to an optimal result. In
+practice the additional runtime for e.g.\ up to six passes can be neglected.
+
+So, when we look at the result, and assuming that we have expansion applied, we
+can end up with a paragraph that have lines where no expansion took place, or
+lines where glyphs became a bit narrower or wider, depending on what was needed
+to make lines visually compatible. And that last fact is what we need to stress:
+the \TEX\ engine tries to make neighboring lines look compatible! Again, in
+\LUAMETATEX\ we can do that for three, five, seven etc lines, where the distance
+between lines is taken into account, so we can be more tolerant the further away
+we are. And yes, that comes at a price in runtime, but as said, in practice one
+wil be fine: runtime matters but getting a performance of 50 pages per second on
+my 2018 laptop for moderate complex documents, where typesetting the paragraph
+only accounts for a small portion of the process, I guess we're good. And it
+can only get better with more modern machines.
+
+All that said, we now come to the point where we can look at what one can
+encounter in documents. For this we visualize two processes that we see applied
+in other applications. The first is inter-character kerning, the second is
+horizontal scaling. When we talk \TEX, the first method can be applied but that
+is normally only done in special situation, like some title. If it is needed for
+a regular text run one should make a better choice of fonts. The second process
+can be part of \TEX's typesetting but as discussed before, it happens as part of
+decision making and is granular with respect to glyphs. It is not applied after
+the lines have been broken, it is applied as we decide to break. It is not a last
+resort, it is part of the decision making.
+
+In order not to fake news, I will not make any assumption about how other
+applications construct a paragraph. I just don't know any other application than
+by name: I never use a word processor, page construction program, or any batch
+processing system other than \TEX. I just have no reason and application and am
+not even interested on how things are done elsewhere. When we develop solutions
+the driving force is not \quotation {Can you do this or that as done in program
+such or so?} but more \quotation {We have this problem, can we handle that?}. And
+of course we just start and follow up on where \TEX\ ended up decades ago. It's
+all about having fun solving challenges. \footnote {Quite often we have applied
+\TEX\ in situations where other solutions failed. Manipulating and cleaning up bad
+and unstructured input was then part of the game. The fact that we could typeset
+decent results mattered less, it only made the work more rewarding.}
+
+But, if you look at some typeset page, you might wonder how it is done. For
+instance, when you see excessive horizontal stretch or space between characters
+but also notice that there are better ways to hyphenate, you can be sure that
+\TEX\ is not used., First of all, it does not expand kerns unless told so and even
+then does that within limits that go unnoticed. When glyphs get scaled normally,
+a macro package will put constraints on that, although I admit that I've seen
+badly done \TEX\ documents too.
+
+So, when you wonder about quality of what you see, maybe it is due to the fact
+that the program used went on line by line, not much helped by proper
+hyphenation, and eventually started to apply extra kerning between glyphs either
+of not combined with stretch or shrink. The main objective likely was to get rid
+of too wide spacing and sacrifice quality of the text over that. It's like
+hammering screws into wood instead of using a screwdriver: it might work out but
+looks bad. In such cases just ask yourself: was the whole paragraph taken into
+account, was hyphenation properly applied, did anyone actually look at the
+result? The latter is actually a pretty valid question. If you consider workflows
+it can be that for instance in journal a lot of time went into the peer review
+and editing, then out-sourcing all to some typesetting company, assuming that all
+is okay and done to specs and finally goes to print. The programs used are
+supposed to do the best they can and be properly applied. The whole process is
+managed in steps, and following these steps is the assumed guarantee for quality.
+We can see results in scientific journals and books that really make you wonder
+if someone even look at the typeset results. Compare that to children books,
+where it is actually hard to find bad examples.
+
+We can visualize the methods. We use simple sequences of glyphs and apply stretch
+or shrink as well as add some proportion of the width as kerns between. We use
+word of 9, 10 or 11 characters. These are not real text examples so we let the
+text overflow the line width for the sake of showing what happens.
+
+We start with compensating spaces by making the words wider. The first line is
+what comes out naturally. The second line applies a bit of stretch. The next pairs
+of lines show what happens when we add kerns, with or without stretch. The spaces
+become less but the picture worsens.
+
+In the margin we see three numbers: the width, kern and horizontal scale.
+
+\FakeMore{09}
+\FakeMore{10}
+\FakeMore{11}
+
+The next examples show what shrink does. Maybe it is good to know that \TEX, when
+it comes to shrinking spaces never goes below zero but when stretch is permitted
+it can go beyond what is specified, the \type {plus} value is used relative to
+other stretch applied.
+
+\FakeLess{09}
+\FakeLess{10}
+\FakeLess{11}
+
+Last we show triplets of lines and those extreme differences is what one can
+observe when an application doesn't consider visual compatibility and permits
+such extremes. And yes, you can run into these cases in journals, newspaper and
+books. We only show one words size.
+
+%FakeBoth{09}
+\FakeBoth{10}
+%FakeBoth{11}
+
+Our main objective is to make you aware of these two tricks being applied by
+applications. I want to stress again that in \TEX\ this kerning doesn't happen,
+although it is able to widen inter-glyph font kerns as defined by the kern
+features. One pitfall with adapting these is that it assumes that scaling doesn't
+impact for instance ligature building or accent anchoring.
+
+We can also use rules instead of glyphs to demonstrate this, so we end with a few
+examples of that.
+
+\start
+    \settrue\FakeRules
+
+    \FakeMore{10}
+
+    \FakeLess{10}
+
+    \FakeBoth{10}
+\stop
+
+It can get real bad, and don't pretend that you never saw such extreme rendering,
+after all with a \TEX\ trained eye you can't avoid noticing.
+
+\FakeBad{10}
+
+So how does \TEX\ keeps up with the mainstream typesetting machineries? Here we
+have a torture test, a quote from Donald Knuth in Digital Typography.
+
+\start
+    \samplefile {math-knuth-dt}
+    \par
+\stop
+
+Here we show the bounding boxes of glyphs and the applied font kerns. You might
+need to zoom in to see them.
+
+\start
+    \showfontkerns \showglyphs
+    \samplefile {math-knuth-dt}
+    \par
+\stop
+
+Below we show the same text with expansion applied. You can see where it gets
+applied.
+
+\start
+    \setupalign[hz]
+    \showmakeup[expansion]
+    \samplefile {math-knuth-dt}
+    \par
+\stop
+
+In \LUAMETATEX\ we actually also can apply expansion in math, which is shown
+next:
+
+\start
+    \setupalign[hz]
+    \setupmathematics[hz=yes]
+    \showmakeup[expansion]
+    \samplefile {math-knuth-dt}
+    \par
+\stop
+
+Although it might not be visible in the next example we also use a more detailed
+paragraph pass setup, we use \typ {\setupalign [mathbookpasses,hz]} here. The
+more advanced passes setup actually means that we only apply expansion when other
+solutions are worse, so we might not get it at all, but we leave it to your eyes
+to decide if that happens.
+
+\start
+    \setupalign[mathbookpasses,hz]
+%     \showmakeup[expansion]
+    \samplefile {math-knuth-dt}
+    \par
+\stop
+
+Here we also enable expansion in math, so does ity kick in here or not?
+
+\start
+    \setupalign[mathbookpasses,hz]
+    \setupmathematics[hz=yes]
+%     \showmakeup[expansion]
+    \samplefile {math-knuth-dt}
+    \par
+\stop
+
+When we half the width we still get a reasonable result. If you still think in
+expansion only, realize that typesetting math involves more, especially when you
+don't want to break in certain places. We can also enable features that control
+how many hyphens we want in a row, how the last line should look, what penalties
+kick in, if we discourage similar words at the end of lines, or short words, or
+\unknown\ In that respect often spacing is the least or our worries. In narrow
+paragraphs the likelyhood of expansion kicking in increases.
+
+\startcolumns[grid=no]
+    \setupalign[mathbookpasses,hz]
+    \showmakeup[expansion]
+    \setupmathematics[hz=yes]
+    \samplefile {math-knuth-dt}
+    \par
+\stopcolumns
+
+Our experiences with moving on with engine development, improving rendering of
+math, and typesetting in \TEX\ in general has shown that publishers seem to care
+less about these matters than one would imagine. At least, no matter what we
+publish about it, we hear little to nothing from those using \TEX\ who deal with
+their typesetting. So as \TEX ies we just do what we like best, keep a low
+profile, and focus on our own documents, which often happens to be in an
+educational settings where hopefully students still appreciate the look and feel
+and don't want to get distracted by bad typesetting.
+
+Another trick that \TEX ies like to apply is protrusion. If applied, that must be
+done consistently which actually adds a constraint. I always wonder if that then
+makes for better results; after all the solution space doesn't become much
+larger. But here a typical \TEX\ user syndrome kicks in: because they know that
+\TEX\ is good at these things, they also assume that the result is good. However,
+the Internet demonstrates that plenty of users don't notice overfull boxes,
+sub-optimal math rendering and other artifacts. In that respect it is no surprise
+that journals that these users read also get a pass.
+
+In \CONTEXT\ (using \LUAMETATEX) you have a lot of control over the typesetting.
+For instance you can locally influence hyphenation, enable or disable font
+kerning and ligature building between (before and/or after) characters, influence
+scaling and what more. In practice users will not do that and just rely on the
+par builder doing its work, trusting fonts to be okay. It also defeats a bit the
+fact that users want this to be done automatic.
+
+% I suppose it's in the nature (no pun intended) of humans.
+
+Given the above, we have to come back to the occasional \quotation {I use this
+because it beats that.} argument when it comes to typesetting systems. First of
+all, just use what you like. If seeing a backslash in a source annoys you, find a
+system with a different escape symbol. If you think that minimized encoding
+combined with tricky parsing solves your problem, go ahead. If performance
+matter, hunt for faster programs, but realize that, as the problem doesn't
+change, future versions of that solution might run slower when they do more. But
+all that doesn't change how you can look at the result because that is what
+matters. The \TEX\ ecosystem has set some standards and inspired some
+developments but in many aspects remains a sort of reference.
+
+\startitemize
+
+\startitem
+    How consistent is vertical spacing: lines and between lines, around section
+    titles, before and after paragraphs, around images, etc.
+\stopitem
+
+\startitem
+    Is horizontal spacing uniform: between words, around table cells, are proper
+    font kerns applied between glyphs, is there additional kerning between
+    specific glyphs (e.g.\ in titling) and is it done right, etc.
+\stopitem
+
+\startitem
+    Is math properly and consistently spaced, scaled, stacked, aligned, broken
+    across lines, etc. As with text rendering, once you know what to look at you
+    can't unsee it.
+\stopitem
+
+\startitem
+    Can you identify annoying interference, often visual by inconsistencies all
+    over the place, weird artifacts, sloppy checking of overfull boxes.
+\stopitem
+
+\startitem
+    Are images consistently scaled, especially when they have embedded text, do
+    fonts in them match the document, is bleeding intentional of just an oversight.
+\stopitem
+
+\startitem
+    Is the text properly aligned, has hyphenation been applied when possible to
+    make for better solutions, is expansion used within reasonable bounds (read:
+    close to invisible). It's easy to go overboard here and it can become a reason
+    for not reading and/or buying books.
+\stopitem
+
+\startitem
+    Did the user constraint excessive font abuse, are features properly applied
+    to fonts, do font sizes make sense. Does the font make reading a pleasure.
+\stopitem
+
+\stopitemize
+
+We can come up with more but you get the idea. Just look and be honest. A problem
+with \TEX\ usage is that one can tweak a lot and thereby also mess up a lot. Bad
+spacing in text and math and bad font usage can be seen all over the Internet.
+The system can do a lot of good, and users (or styles) a lot of bad. The fact
+that \TEX\ is used is no excuse for not looking carefully at the result, nor
+being critical. But after all these years I'm convinced that plenty users don't
+really care: they key in, render and never look back; they just assume it's okay.
+This is quite understandable because not every (maybe even forced to use it) user
+cares about, is interested in, or even aware, of typesetting at all. However,
+that is not our intended audience but if you came reading this far, you might be.
+
+In case you want to know how a sample line is typeset, here is some code. We use
+EBGaramond as sample font, have a 12pt bodyfont, assume 65 characters per line
+and therefore have a fake width of 7.00372pt. This wrap-up is not a tutorial, it
+just wants to make the reader aware of what goes on and what to pay attention to
+
+\typebuffer[fake]
+
+\enabledirectives[visualizers.fraction=false]
+
+As a bonus we mention another \quote {trick} that sometimes gets applied: making
+spaces larger or smaller. In \TEX\ this happens by applying stretch or shrink. We
+decided to stick to this model of spaces bound to fonts but not all fonts set up
+the spacing as we like. So, if one is desperate one can do this:
+
+\usemodule[simulate]
+
+\pushrandomseed
+
+\simulatewords[n=50,m=100,min=2,max=6,hyphen=yes,color=maincolor]\par
+
+\poprandomseed
+
+The previous fake text can also be typeset with \typ {\spaceskipfactor 1500} but
+does it look better or worse? Our experience is that there is no reason to mess
+with the defaults, so this option is only there to prove a point.
+
+\start
+    \spaceskipfactor1500
+    \simulatewords[n=50,m=100,min=2,max=6,hyphen=yes,color=maincolor]\par
+\stop
+
+\stopchapter
+
+\stopcomponent

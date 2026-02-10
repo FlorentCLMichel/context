@@ -193,8 +193,7 @@
    \csname\??constructioninitializer\currentconstructionhandler\endcsname}
 
 \protected\def\strc_constructions_finalize
-  {\csname\??constructionfinalizer\currentconstructionhandler\endcsname
-   \strc_constructions_discard}
+  {\csname\??constructionfinalizer\currentconstructionhandler\endcsname}
 
 \newconditional\c_strc_constructions_number_state
 \newconditional\c_strc_constructions_title_state
@@ -1050,10 +1049,10 @@
  %{\writestatus{constructions}{reusing \currentconstruction: \number\currentconstructionlistentry}}
   {}
 
-\def\strc_constructions_discard
+\def\strc_constructions_discard % thisne is not reliable
   {\iftrialtypesetting
    % \writestatus{constructions}{discarding \currentconstruction: \number\currentconstructionlistentry}%
-     \clf_discardfromlist\currentconstructionlistentry\relax
+   % \clf_discardfromlist\currentconstructionlistentry\relax
    \fi}
 
 \let\currentconstructionlistnumber \!!zerocount

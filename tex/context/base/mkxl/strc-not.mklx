@@ -13,9 +13,42 @@
 
 \writestatus{loading}{ConTeXt Structure Macros / Note Handling}
 
-\registerctxluafile{strc-not}{autosuffix}
-
 \unprotect
+
+% Spacing is kind of complicated and eventually we might move so more to the engine:
+%
+% [global spacebefore]     % force flexible
+%
+% [before][rule 1][after]  % force fixed
+% [local spacebefore 1]    % force fixed
+% [notes 1.1]
+% [local spaceinbetween 1] % force fixed
+% [notes 1.2]
+%
+% [global spaceinbetween]  % force fixed
+%
+% [before][rule 2][after]  % force fixed
+% [local spacebefore 2]    % force fixed
+% [notes 2.1]
+% [local spaceinbetween 2] % force fixed
+% [notes 2.2]
+%
+% [global spaceinbetween]  % force fixed
+%
+% [before][rule 2][after]  % force fixed
+% [local spacebefore 3]    % force fixed
+% [notes 3.1]
+% [local spaceinbetween 3] % force fixed
+% [notes 3.2]
+
+\newgluespec \s_strc_notes_global_before
+\newgluespec \s_strc_notes_global_inbetween
+\newgluespec \s_strc_notes_local_before
+\newgluespec \s_strc_notes_local_inbetween
+
+% These are accessed in:
+
+\registerctxluafile{strc-not}{autosuffix}
 
 % todo: finish local rendering
 % todo: more p_strc_notations_* (outside trial loop)
@@ -281,6 +314,7 @@
 \def\strc_notations_wrapup
   {\csname\??constructionnotehandler\currentconstructionhandler\endcsname
    \strc_constructions_finalize
+  %\strc_constructions_discard % yes or no, for now disabled
    \strc_notations_finalize}
 
 \tolerant\protected\def\strc_notations_start
@@ -369,16 +403,21 @@
 \setupnotes % not all make sense here
   [\c!location=\v!page,
   %\c!conversion=,
-   \c!rule=\v!on,
-   \c!before=\blank,
+  %\c!before=\blank,
+  %\c!before=,
+  %\c!after=,
+   \c!spacebefore=\v!line,
+   \c!spaceinbetween=\v!halfline,
    \c!bodyfont=\v!small,
    \c!anchor=, % can also be v!next
   %\c!style=,
   %\c!color=,
-  %\c!after=,
   %\c!rulecolor=,
   %\c!rulecommand=,
+   \c!rule=\v!on,
    \c!rulethickness=\linewidth,
+   \c!rulewidth=.2\hsize,
+   \c!ruledistance=\zeropoint,
    \c!frame=\v!off,
    \c!distance=.125em, % in the text between symbols
  % \c!textseparator={,}, % optional separator
@@ -409,6 +448,13 @@
   [\c!expansion=\v!no,
    \c!xmlsetup=,
    \s!catcodes=]
+
+\appendtoks
+   \resetnoteparameter\c!spacebefore
+   \resetnoteparameter\c!spaceinbetween
+\to \everydefinenote
+
+% What keyword to use for this: max ? \insertmaxplaced\namedinsertionnumber{footnote} 4
 
 %D Insertions are part of notes.c!delay
 
@@ -877,8 +923,9 @@
   {\def\strc_notes_process_list##1{\cdef\currentnote{##1}\let\currentdescription\currentnote#action}%
    \expand\t_strc_notes}
 
-\newtoks\everychecknote       % just before a note is typeset
-\newtoks\everysynchronizenote % after a general setup has happened
+\newtoks\everychecknote                % just before a note is typeset
+\newtoks\everysynchronizenote          % after a general setup has happened
+\newtoks\everysynchronizenoteinbetween % during collecting just before packaging
 
 \appendtoks
     \ifempty\currentnote \else
@@ -1079,30 +1126,15 @@
 
 \newgluespec   \s_strc_notes_distance % we need to implement stretch
 \newinteger    \c_strc_notes_columns
-\newgluespec   \s_strc_notes_before
-\newgluespec   \s_strc_notes_inbetween
 \newconditional\c_strc_notes_first_flushed
 
 % we can store them per insert so so real need to redo it
 
-\appendtoks
-    \edef\p_spacebefore{\rootnoteparameter\c!spacebefore}%
-    \ifempty\p_spacebefore
-        \global\s_strc_notes_before\zeropoint
-    \else
-        \setbox\scratchbox\vbox{\blank[\p_spacebefore]\global\s_strc_notes_before\lastskip}%
-    \fi
-    \edef\p_spaceinbetween{\noteparameter\c!spaceinbetween}%
-    \ifempty\p_spaceinbetween
-        \global\s_strc_notes_inbetween\zeropoint
-    \else
-        \setbox\scratchbox\vbox{\blank[\p_spaceinbetween]\global\s_strc_notes_inbetween\lastskip}%
-    \fi
-\to \everysynchronizenote
-
-\def\strc_notes_set_distance
+\def\strc_notes_set_distance % basically only wrapper and rule
   {\begingroup
    \restoreglobalbodyfont
+ % \expand\everysynchronizenote
+ % \resetgridsnapping \gridsnappingfalse \strc_notes_set_bodyfont
    \setbox\scratchbox\vbox % no reuse as it can mirror
      {\forgetall
       \dontcomplain
@@ -1111,19 +1143,17 @@
         \nointerlineskip
       \fi
       \placenoterule
-     %\nointerlineskip
-      \strut
-      \noteparameter\c!after}%
-   % also dp now
-   \scratchdimen{\htdp\scratchbox-\lineheight}%
-   \ifconditional\c_page_mvl_active
-     % quick hack, columnsets already handle the grid .. maybe an option
-   \orelse\ifgridsnapping
-     \getnoflines\scratchdimen
-     \scratchdimen\noflines\lineheight
-   \fi
-%    \expandafter\endgroup\expandafter
-%    \s_strc_notes_distance\the\scratchdimen\relax%
+      \noteparameter\c!after
+      }%
+   \scratchdimen\htdp\scratchbox
+ % \ifconditional\c_page_mvl_active
+ %   % quick hack, columnsets already handle the grid .. maybe an option
+ % \orelse\ifgridlinesnapping
+ %   % gridlinesnapping: to be decided
+ % \orelse\ifgridsnapping
+ %   \getnoflines\scratchdimen
+ %   \scratchdimen\noflines\lineheight
+ % \fi
    \expanded{%
      \endgroup
      \s_strc_notes_distance\the\scratchdimen\relax
@@ -1144,6 +1174,7 @@
    \strc_notes_set_distance
    \strc_notes_set_columns
    \page_inserts_set_location\currentnoteinsertion\v!page % \setupinsertion[\currentnote][\c!location=\v!page]%
+   \insertcategory  \currentnoteinsertionnumber\pageinsertcategorycode
    \insertmultiplier\currentnoteinsertionnumber{(\plusthousand/\c_strc_notes_columns)*\nofmulticolumns}%
    \insertlimit     \currentnoteinsertionnumber\ifnotelimit{(\noteparameter\c!height)*\c_strc_notes_columns}\else\maxdimen\fi
    \insertdistance  \currentnoteinsertionnumber\s_strc_notes_distance}
@@ -1157,6 +1188,7 @@
      \c_strc_notes_columns\plusone
    \fi
    \page_inserts_set_location\currentnoteinsertion\v!columns % \setupinsertion[\currentnote][\c!location=\v!columns]%
+   \insertcategory  \currentnoteinsertionnumber\pageinsertcategorycode
    \insertmultiplier\currentnoteinsertionnumber{\plusthousand/\c_strc_notes_columns}%
    \insertlimit     \currentnoteinsertionnumber\ifnotelimit{(\noteparameter\c!height)*\c_strc_notes_columns}\else\maxdimen\fi
    \insertdistance  \currentnoteinsertionnumber\s_strc_notes_distance}
@@ -1233,24 +1265,41 @@
 %D skipswitch is tricky (many many MP runs). Let's just reserve a few points, that
 %D probably match those of the stretch component. A bit messy:
 
+% \permanent\protected\def\placenoterule
+%   {\begingroup
+%    \currentnoterulealign
+%    \currentnoterulecommand
+%    \par
+%    \endgroup}
+
 \permanent\protected\def\placenoterule
   {\begingroup
    \currentnoterulealign
-   \currentnoterulecommand
-   \par
+ % \begingroup
+ % \resetgridsnapping
+ % \gridsnappingfalse
+ % \strc_notes_set_bodyfont
+   \setbox\scratchbox\hpack\bgroup
+     \currentnoterulecommand
+   \egroup
+   \ifzeropt\htdp\scratchbox\else
+     \box\scratchbox\par
+     \ifvmode
+       \vkern{\noteparameter\c!ruledistance}%
+     \fi
+     \par
+   \fi
+ % \endgroup
    \endgroup}
 
 \permanent\protected\def\normalnoterule
-  {\ifvmode
-    %\nointerlineskip % maybe, columnsets
-     \dontleavehmode \blackrule
-       [\c!color=\noteparameter\c!rulecolor,
-        \c!width=.2\hsize,
-        \c!height=\noteparameter\c!rulethickness,
-        \c!depth=\zeropoint]%
-     \endgraf
-     \kern\strutdepth
-   \fi}
+  {\blackrule
+     [\c!color=\noteparameter\c!rulecolor,
+      \c!width={\noteparameter\c!rulewidth},
+    % \c!height={\noteparameter\c!rulethickness-\strutdp},
+    % \c!depth=\strutdp]}
+      \c!height={\noteparameter\c!rulethickness},
+      \c!depth=\zeropoint]}
 
 %D The formatting depends on the width of the table, so we have to set \type {n} to
 %D zero.
@@ -1383,8 +1432,25 @@
    %endgroup
    }
 
+% see deeptextcommand-001.tex
+%
+% \starttexdefinition protected MyNoteCommand #1
+%     \doifelsetaggednoteonsamepage {\currentnote} {\SomeTag} {
+%         \color[darkblue]
+%     } {
+%         \color[darkred]
+%     }
+%     {#1}
+% \stoptexdefinition
+%
+% \setupnotation[footnote][deeptextcommand=\MyNoteCommand]
+
+% \protected\def\strc_notes_inject_text % hm main?
+%   {\clf_savedlisttitle{\currentconstructionmain}\currentconstructionlistentry\relax}
+
 \protected\def\strc_notes_inject_text % hm main?
-  {\clf_savedlisttitle{\currentconstructionmain}\currentconstructionlistentry\relax}
+  {\notationparameter\c!deeptextcommand
+     {\clf_savedlisttitle{\currentconstructionmain}\currentconstructionlistentry\relax}}
 
 \installstructurelistprocessor{construction}{\usestructurelistprocessor{section}}
 
@@ -1428,8 +1494,9 @@
     \forgetall % again
     \strc_notes_set_bodyfont
     \redoconvertfont % to undo \undo calls in in headings etc
-    \splittopskip\strutht  % not actually needed here
-    \splitmaxdepth\strutdp % not actually needed here
+    \splittopskip\strutht  % not actually needed here (plain has it)
+    \splitmaxdepth\strutdp % not actually needed here (plain has it)
+% \insertsplittop  \currentnoteinsertionnumber\strutht
 \insertmaxdepth  \currentnoteinsertionnumber\strutdp
     %
     % not:
@@ -1519,38 +1586,60 @@
 
 \def\strc_notes_place_inserts_indeed_before
   {\endgraf
+   \c_spac_whitespace_flexible\conditionalfalse
+  %\gridsnappingfalse
    \ifvmode
-     \whitespace
+     \begingroup % global or not
+   % \whitespace % hm
      \ifconditional\c_strc_notes_first_placed
-       \edef\p_spaceinbetween{\noteparameter\c!spaceinbetween}%
-       \ifempty\p_spaceinbetween\else
-         \blank[\p_spaceinbetween]%
+       \edef\p_space{\rootnoteparameter\c!spaceinbetween}%
+       \ifempty\p_space\else
+         \setbox\scratchbox\vbox{\blank[\p_space]}\vskip\htdp\scratchbox
        \fi
      \else
-       \edef\p_spacebefore{\rootnoteparameter\c!spacebefore}%
-       \ifempty\p_spacebefore\else
-         \blank[\p_spacebefore]%
+       \edef\p_space{\rootnoteparameter\c!spacebefore}%
+       \ifempty\p_space\else
+         \setbox\scratchbox\vbox{\blank[\p_space]}\vskip\htdp\scratchbox
        \fi
      \fi
-     \noteparameter\c!before
-     \nointerlineskip % added, otherwise spacing between multiple classes
+%      \edef\p_space{\noteparameter\c!spacebefore}%
+%      \ifempty\p_space\else
+%        \setbox\scratchbox\vbox{\blank[\p_space]}\vskip\htdp\scratchbox
+%      \fi
+     \endgroup
    \fi
-   \placenoterule}
+   \ifvmode
+     \strc_notes_set_bodyfont
+     \noteparameter\c!before % part of note, maybe inside
+     \ifvmode
+        \nointerlineskip % added, otherwise spacing between multiple classes
+     \fi
+   \fi
+   \placenoterule
+   \ifvmode
+     \begingroup
+       \edef\p_space{\noteparameter\c!spacebefore}%
+       \ifempty\p_space\else
+         \setbox\scratchbox\vbox{\blank[\p_space]}\vskip\htdp\scratchbox
+       \fi
+     \endgroup
+  \fi}
 
 \def\strc_notes_place_inserts_indeed_after
   {\endgraf
    \ifvmode
-     \noteparameter\c!after
+     \noteparameter\c!after % part of note, maybe inside
    \fi}
 
 \def\strc_notes_place_inserts_indeed
   {\relax
-%    \ifdim\ht\currentnoteinsertionnumber>\zeropoint
    \ifcase\insertheight\currentnoteinsertionnumber\else
-%  \ifzeropt\insertheight\currentnoteinsertionnumber\else
+ % \ifzeropt\insertheight\currentnoteinsertionnumber\else
      \strc_notes_place_inserts_indeed_before
-     \bgroup
-     \strc_notes_set_bodyfont
+     \begingroup
+\resetgridsnapping
+\gridsnappingfalse
+\strc_notes_set_bodyfont
      \setbox\b_strc_notes_inserts\hbox
        {\strc_notes_flush_inserts}%
      \page_postprocessors_linenumbers_deepbox\b_strc_notes_inserts
@@ -1568,18 +1657,47 @@
              \box\b_strc_notes_inserts
            \fi}}%
      \setbox\b_strc_notes_inserts\hpack{\lower\strutdepth\box\b_strc_notes_inserts}%
-     \dp\b_strc_notes_inserts\strutdepth % so we know that it has the note bodyfont depth
+   % \dp\b_strc_notes_inserts\strutdepth % so we know that it has the note bodyfont depth
      \ifvmode
        \nointerlineskip % else sometimes empty line
      \fi
      \box\b_strc_notes_inserts
-     \egroup
+     \endgroup
      \strc_notes_place_inserts_indeed_after
    \fi}
+
+% \def\strc_notes_place_inserts_very_indeed#1%
+%   {\strc_notes_place_inserts_indeed_before
+%    \bgroup
+%    \strc_notes_set_bodyfont
+%    #1% set the box here
+%    \page_postprocessors_linenumbers_deepbox\b_strc_notes_inserts
+%    \scratchheight\ht\b_strc_notes_inserts
+%    \scratchdepth \dp\b_strc_notes_inserts
+%    \setbox\b_strc_notes_inserts\hbox
+%      {\setupcurrentnote
+%         [\c!location=,
+%          \c!width=\v!fit,
+%          \c!height=\v!fit,
+%          \c!strut=\v!no,
+%          \c!offset=\v!overlay]%
+%       \inheritednoteframed
+%         {\box\b_strc_notes_inserts}}%
+%    \ht\b_strc_notes_inserts\scratchheight
+%   %\dp\b_strc_notes_inserts\scratchdepth
+%    \dp\b_strc_notes_inserts\strutdepth % so we know that it has the note bodyfont depth
+%    \ifvmode
+%      \nointerlineskip % else sometimes empty line
+%    \fi
+%    \box\b_strc_notes_inserts
+%    \egroup
+%    \strc_notes_place_inserts_indeed_after}
 
 \def\strc_notes_place_inserts_very_indeed#1%
   {\strc_notes_place_inserts_indeed_before
    \bgroup
+\resetgridsnapping
+\gridsnappingfalse
    \strc_notes_set_bodyfont
    #1% set the box here
    \page_postprocessors_linenumbers_deepbox\b_strc_notes_inserts
@@ -1602,7 +1720,8 @@
    \fi
    \box\b_strc_notes_inserts
    \egroup
-   \strc_notes_place_inserts_indeed_after}
+   \strc_notes_place_inserts_indeed_after
+   }
 
 \def\strc_notes_flush_inserts
   {\ifcase\noteparameter\c!n\relax
@@ -1818,8 +1937,14 @@
 %D
 %D \showsetup{placefootnotes}
 
+% \permanent\protected\def\placebottomnotes
+%   {\strc_notes_process\strc_notes_place_inserts}
+
 \permanent\protected\def\placebottomnotes
-  {\strc_notes_process\strc_notes_place_inserts}
+  {\vbox \s!yoffset -\usedlineskip \bgroup % TODO (normally 1pt), \lineskip is zero at this moment
+     \strc_notes_process\strc_notes_place_inserts
+     \vskip\strutdp
+   \egroup}
 
 \permanent\tolerant\protected\def\placenotes[#list]#spacer[#S#settings]%
   {\processcommalist[#list]{\strc_notes_place_indeed{#settings}}}
@@ -1884,16 +2009,21 @@
 \installnotealternative \v!grid % test if n > 0
   {\begingroup
    \setupcurrentnote[\c!location=]%
-   \snaptogrid\hbox
-     {\inheritednoteframed
-        {\flushlocalnotes\currentnote}}%
+   \ifgridlinesnapping
+     % gridlinesnapping: to be decided
+     \expandafter\snaptogridline
+   \orelse\ifgridsnapping
+     \expandafter\snaptogrid
+   \else
+     % to be decided
+   \fi
+   \hbox{\inheritednoteframed{\flushlocalnotes\currentnote}}%
    \endgroup}
 
 \installnotealternative \v!fixed % test if n > 0
   {\begingroup
    \setupcurrentnote[\c!location=]%
-   \inheritednoteframed
-     {\flushlocalnotes\currentnote}%
+   \inheritednoteframed{\flushlocalnotes\currentnote}%
    \endgroup}
 
 \installnotealternative \v!columns % redundant
@@ -2068,13 +2198,14 @@
 %D
 %D \starttyping
 %D \dorecurse {100} {
-%D     test \footnote{\doifnoteonsamepageelse[footnote]{ibidem}{aaa}}
+%D     test \footnote{\doifnoteonsamepageelse{footnote}{ibidem}{aaa}}
 %D }
 %D \stoptyping
 
-\permanent\def\doifelsenoteonsamepage#tag{\clf_doifnoteonsamepageasprevious{#tag}}
+% defined at lua end:
 
-\aliased\let\doifnoteonsamepageelse\doifelsenoteonsamepage
+\aliased\let\doifnoteonsamepageelse      \doifelsenoteonsamepage
+\aliased\let\doiftaggednoteonsamepageelse\doifelsetaggednoteonsamepage
 
 %D New trickery:
 
@@ -2155,5 +2286,33 @@
 \appendtoks
    \setsystemmode\currentnote
 \to \everysynchronizenote
+
+\def\strc_notes_check_space#1#2#3%
+  {\edef\p_space{#2#3}%
+   \ifempty\p_space
+     \global#1\zeropoint
+   \else
+     \setbox\scratchbox\vbox\bgroup
+       \blank[\p_space]% so anyway fixed and force
+       \global#1\lastskip
+     \egroup
+   \fi}
+
+\appendtoks
+    \begingroup
+        \restoreglobalbodyfont
+        \strc_notes_check_space\s_strc_notes_global_before   \rootnoteparameter\c!spacebefore
+        \strc_notes_check_space\s_strc_notes_global_inbetween\rootnoteparameter\c!spaceinbetween
+        \strc_notes_check_space\s_strc_notes_local_before    \noteparameter    \c!spacebefore
+        \strc_notes_check_space\s_strc_notes_local_inbetween \noteparameter    \c!spaceinbetween
+    \endgroup
+\to \everysynchronizenote
+
+\appendtoks
+    \begingroup
+        \restoreglobalbodyfont
+        \strc_notes_check_space\s_strc_notes_local_inbetween \noteparameter \c!spaceinbetween
+    \endgroup
+\to \everysynchronizenoteinbetween
 
 \protect \endinput

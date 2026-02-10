@@ -98,6 +98,15 @@ then
     cd       build/osx
     cmake $NINJA -DCMAKE_OSX_ARCHITECTURES="arm64;x86_64" ../..
 
+elif [ "$1" = "arm-64" ] || [ "$1" = "arm64" ] || [ "$1" = "--arm-64" ] || [ "$1" = "--arm64" ]
+then
+
+    PLATFORM="arm64"
+    SUFFIX=".exe"
+    mkdir -p build/arm64
+    cd       build/arm64
+    cmake $NINJA -DCMAKE_TOOLCHAIN_FILE=./cmake/arm64.cmake ../..
+
 elif [ "$1" = "help" ] || [ "$1" = "--help" ]
 then
 

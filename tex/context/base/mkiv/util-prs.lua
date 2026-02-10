@@ -59,6 +59,7 @@ local escape, left, right = P("\\"), P('{'), P('}')
 --     [1] = ((escape * (left+right)) + (1 - (left+right)) + V(2))^0,
 --     [2] = left * V(1) * right
 -- }
+
 lpegpatterns.balanced = P {
     ((escape * (left+right)) + (1 - (left+right)) + V(2))^0,
     left * V(1) * right
@@ -371,7 +372,11 @@ end
 --     end
 -- end
 
-local pattern = Cf(Ct("") * Cg(C((1-S(", "))^1) * S(", ")^0 * Cc(true))^1,rawset)
+local spacing   = whitespace^0
+----- separator = S(", ")
+local separator = P(",") * spacing + whitespace * P(-1)
+
+local pattern = spacing * Cf(Ct("") * Cg(C((1-separator)^1) * separator^0 * Cc(true))^1,rawset)
 
 function parsers.settings_to_set(str)
     return str and lpegmatch(pattern,str) or { }
@@ -387,7 +392,7 @@ function parsers.settings_to_set(str)
     return str and lpegmatch(pattern,str) or { }
 end
 
-local pattern = Ct((C((1-S(", "))^1) * S(", ")^0)^1)
+local pattern = spacing * Ct((C((1-separator)^1) * separator^0)^1)
 
 hashes.settings_to_list =  table.setmetatableindex(function(t,k) -- experiment, not public
     local v = k and lpegmatch(pattern,k) or { }
@@ -666,10 +671,10 @@ local spacers     = lpegpatterns.spacer^0
 local endofstring = lpegpatterns.endofstring
 
 local stepper  = spacers * ( cardinal * ( spacers * S(":-") * spacers * ( cardinal + Cc(true) ) + Cc(false) )
-               * Carg(1) * Carg(2) / ranger * S(", ")^0 )^1
+               * Carg(1) * Carg(2) / ranger * separator^0 )^1
 
 local stepper  = spacers * ( cardinal * ( spacers * S(":-") * spacers * ( cardinal + (P("*") + endofstring) * Cc(true) ) + Cc(false) )
-               * Carg(1) * Carg(2) / ranger * S(", ")^0 )^1 * endofstring -- we're sort of strict (could do without endofstring)
+               * Carg(1) * Carg(2) / ranger * separator^0 )^1 * endofstring -- we're sort of strict (could do without endofstring)
 
 function parsers.stepper(str,n,action)
     local ts = type(str)
@@ -774,8 +779,8 @@ local function process(result,more)
     return result
 end
 
-local name   = C((1-S(", "))^1)
-local parser = (Carg(1) * name / initialize) * (S(", ")^1 * (Carg(1) * name / fetch))^0
+local name   = C((1-separator)^1)
+local parser = (Carg(1) * name / initialize) * (separator^1 * (Carg(1) * name / fetch))^0
 local merge  = Cf(parser,process)
 
 function parsers.mergehashes(hash,list)

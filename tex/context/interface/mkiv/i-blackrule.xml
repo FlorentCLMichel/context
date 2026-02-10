@@ -43,6 +43,9 @@
                 <cd:parameter name="mp">
                     <cd:constant type="cd:name"/>
                 </cd:parameter>
+                <cd:parameter name="rulethickness">
+                    <cd:constant type="cd:dimension"/>
+                </cd:parameter>
                 <cd:parameter name="shrink">
                     <cd:constant type="cd:dimension"/>
                 </cd:parameter>

@@ -4,7 +4,7 @@
 
 <cd:interface xmlns:cd="http://www.pragma-ade.com/commands">
 
-    <cd:command name="installlanguage" level="system" category="language" file="lang-ini.mkiv">
+    <cd:command name="installlanguage" level="system" category="language" file="lang-ini.mkxl">
         <cd:arguments>
             <cd:resolve name="keyword-name"/>
             <cd:assignments list="yes">
@@ -13,14 +13,14 @@
         </cd:arguments>
     </cd:command>
 
-    <cd:command name="installlanguage" variant="name" level="system" category="language" file="lang-ini.mkiv">
+    <cd:command name="installlanguage" variant="name" level="system" category="language" file="lang-ini.mkxl">
         <cd:arguments>
             <cd:resolve name="keyword-name"/>
             <cd:resolve name="keyword-language"/>
         </cd:arguments>
     </cd:command>
 
-    <cd:command name="setuplanguage" level="style" category="language" file="lang-ini.mkiv">
+    <cd:command name="setuplanguage" level="style" category="language" file="lang-ini.mkxl">
         <cd:arguments>
             <cd:keywords optional="yes">
                 <cd:constant type="cd:language"/>
@@ -55,6 +55,16 @@
                 <cd:parameter name="righthyphenchar">
                     <cd:constant type="cd:number"/>
                 </cd:parameter>
+                <cd:parameter name="explicitlefthyphenchar">
+                    <cd:constant type="cd:number"/>
+                </cd:parameter>
+                <cd:parameter name="explicitrighthyphenchar">
+                    <cd:constant type="cd:number"/>
+                </cd:parameter>
+                <cd:paraneter name="apostrophe">
+                    <cd:constant type="yes" default="yes"/>
+                    <cd:constant type="no"/>
+                </cd:paraneter>
                 <cd:parameter name="setups">
                     <cd:constant type="cd:name"/>
                 </cd:parameter>
@@ -130,81 +140,122 @@
                     <cd:constant type="yes"/>
                     <cd:constant type="no" default="yes"/>
                 </cd:parameter>
+                <cd:parameter name="goodies" list="yes">
+                    <cd:constant type="cd:file"/>
+                </cd:parameter>
             </cd:assignments>
         </cd:arguments>
     </cd:command>
 
-    <cd:command name="doifelselanguage" level="system" category="language" keywords="conditional" file="lang-ini.mkiv">
-        <cd:arguments>
-            <cd:resolve name="argument-language"/>
-            <cd:resolve name="argument-true"/>
-            <cd:resolve name="argument-false"/>
-        </cd:arguments>
-    </cd:command>
+    <cd:command name="keephyphensequences" file="lang-ini.mkxl"/>
 
-    <cd:command name="doiflanguageelse" level="system" category="language" keywords="conditional" file="lang-ini.mkiv">
-        <cd:arguments>
-            <cd:resolve name="argument-language"/>
-            <cd:resolve name="argument-true"/>
-            <cd:resolve name="argument-false"/>
-        </cd:arguments>
-    </cd:command>
+    <cd:command name="collapsehyphensequences" file="lang-ini.mkxl"/>
 
-    <cd:command name="doifelsepatterns" level="system" category="language" keywords="conditional" file="lang-ini.mkiv">
-        <cd:arguments>
-            <cd:resolve name="argument-language"/>
-            <cd:resolve name="argument-true"/>
-            <cd:resolve name="argument-false"/>
-        </cd:arguments>
-    </cd:command>
+    <cd:command name="dohyphens" file="lang-ini.mkxl"/>
 
-    <cd:command name="doifpatternselse" level="system" category="language" keywords="conditional" file="lang-ini.mkiv">
-        <cd:arguments>
-            <cd:resolve name="argument-language"/>
-            <cd:resolve name="argument-true"/>
-            <cd:resolve name="argument-false"/>
-        </cd:arguments>
-    </cd:command>
+    <cd:command name="nohyphens" file="lang-ini.mkxl"/>
 
-    <cd:command name="language" generated="yes" variant="example" level="document" category="language" file="lang-ini.mkiv">
-        <cd:sequence>
-            <cd:variable value="language"/>
-        </cd:sequence>
-    </cd:command>
+    <cd:command name="doapostrophes" file="lang-ini.mkxl"/>
 
-    <cd:command name="language" level="document" category="language" file="lang-ini.mkiv">
-        <cd:arguments>
-            <cd:resolve name="keyword-language"/>
-        </cd:arguments>
-    </cd:command>
+    <cd:command name="noapostrophes" file="lang-ini.mkxl"/>
 
-    <cd:command name="language" type="environment" level="document" category="language" file="lang-ini.mkiv">
-        <cd:arguments>
-            <cd:resolve name="keyword-language"/>
-        </cd:arguments>
-    </cd:command>
+    <cd:command name="dohyphencollapsing" file="lang-ini.mkxl"/>
 
-    <cd:command name="mainlanguage" level="style" category="language" file="lang-ini.mkiv">
-        <cd:arguments>
-            <cd:resolve name="keyword-language"/>
-        </cd:arguments>
-    </cd:command>
+    <cd:command name="nohyphencollapsing" file="lang-ini.mkxl"/>
 
-    <cd:command name="uselanguageparameter" level="system" category="language" file="lang-ini.mkiv">
+    <cd:command name="doexplicithyphens" file="lang-ini.mkxl"/>
+
+    <cd:command name="noexplicithyphens" file="lang-ini.mkxl"/>
+
+    <cd:command name="usehyphensparameter" level="system" category="language" file="lang-ini.mkxl">
         <cd:arguments>
             <cd:csname/>
         </cd:arguments>
     </cd:command>
 
-    <cd:command name="exceptions" type="environment" level="style" category="language" file="lang-ini.mkiv">
+    <cd:command name="lesshyphens" file="lang-ini.mkxl"/>
+
+    <cd:command name="morehyphens" file="lang-ini.mkxl"/>
+
+    <cd:command name="doifelselanguage" level="system" category="language" keywords="conditional" file="lang-ini.mkxl">
+        <cd:arguments>
+            <cd:resolve name="argument-language"/>
+            <cd:resolve name="argument-true"/>
+            <cd:resolve name="argument-false"/>
+        </cd:arguments>
+    </cd:command>
+
+    <cd:command name="doiflanguageelse" level="system" category="language" keywords="conditional" file="lang-ini.mkxl">
+        <cd:arguments>
+            <cd:resolve name="argument-language"/>
+            <cd:resolve name="argument-true"/>
+            <cd:resolve name="argument-false"/>
+        </cd:arguments>
+    </cd:command>
+
+    <cd:command name="doifelsepatterns" level="system" category="language" keywords="conditional" file="lang-ini.mkxl">
+        <cd:arguments>
+            <cd:resolve name="argument-language"/>
+            <cd:resolve name="argument-true"/>
+            <cd:resolve name="argument-false"/>
+        </cd:arguments>
+    </cd:command>
+
+    <cd:command name="doifpatternselse" level="system" category="language" keywords="conditional" file="lang-ini.mkxl">
+        <cd:arguments>
+            <cd:resolve name="argument-language"/>
+            <cd:resolve name="argument-true"/>
+            <cd:resolve name="argument-false"/>
+        </cd:arguments>
+    </cd:command>
+
+    <cd:command name="language" generated="yes" variant="example" level="document" category="language" file="lang-ini.mkxl">
+        <cd:sequence>
+            <cd:variable value="language"/>
+        </cd:sequence>
+    </cd:command>
+
+    <cd:command name="language" level="document" category="language" file="lang-ini.mkxl">
         <cd:arguments>
             <cd:resolve name="keyword-language"/>
         </cd:arguments>
     </cd:command>
 
-    <cd:command name="currentlanguage" level="system" category="language" file="lang-ini.mkiv"/>
+    <cd:command name="language" type="environment" level="document" category="language" file="lang-ini.mkxl">
+        <cd:arguments>
+            <cd:resolve name="keyword-language"/>
+        </cd:arguments>
+    </cd:command>
 
-    <cd:command name="currentmainlanguage" level="system" category="language" file="lang-ini.mkiv"/>
+    <cd:command name="mainlanguage" level="style" category="language" file="lang-ini.mkxl">
+        <cd:arguments>
+            <cd:resolve name="keyword-language"/>
+        </cd:arguments>
+    </cd:command>
+
+    <cd:command name="uselanguageparameter" level="system" category="language" file="lang-ini.mkxl">
+        <cd:arguments>
+            <cd:csname/>
+        </cd:arguments>
+    </cd:command>
+
+    <cd:command name="douselanguageparameter" level="system" category="language" file="lang-ini.mkxl">
+        <cd:arguments>
+            <cd:csname/>
+        </cd:arguments>
+    </cd:command>
+
+    <cd:command name="dousecurrentlanguageparameter" level="system" category="language" file="lang-ini.mkxl"/>
+
+    <cd:command name="exceptions" type="environment" level="style" category="language" file="lang-ini.mkxl">
+        <cd:arguments>
+            <cd:resolve name="keyword-language-optional"/>
+        </cd:arguments>
+    </cd:command>
+
+    <cd:command name="currentlanguage" level="system" category="language" file="lang-ini.mkxl"/>
+
+    <cd:command name="currentmainlanguage" level="system" category="language" file="lang-ini.mkxl"/>
 
     <cd:command name="commalistsentence" level="document" category="language" file="lang-lab.mkiv">
         <cd:arguments>
@@ -214,6 +265,55 @@
             <cd:keywords list="yes" optional="yes">
                 <cd:constant type="cd:text"/>
             </cd:keywords>
+        </cd:arguments>
+    </cd:command>
+
+    <cd:command name="splitsequence" file="lang-ini.mkxl">
+        <cd:arguments>
+            <cd:keywords delimiters="braces">
+                <cd:constant type="yes"/>
+                <cd:constant type="no"/>
+                <cd:constant type="cd:text"/>
+            </cd:keywords>
+            <cd:resolve name="argument-text"/>
+        </cd:arguments>
+    </cd:command>
+
+    <cd:command name="splitsymbol" file="lang-ini.mkxl">
+        <cd:arguments>
+            <cd:keywords delimiters="braces">
+                <cd:constant type="yes"/>
+                <cd:constant type="no"/>
+                <cd:constant type="cd:text"/>
+            </cd:keywords>
+        </cd:arguments>
+    </cd:command>
+
+    <cd:command name="patterns" type="environment" level="style" category="language" file="lang-ini.mkxl">
+        <cd:arguments>
+            <cd:resolve name="keyword-language-optional"/>
+        </cd:arguments>
+    </cd:command>
+
+    <cd:command name="nokerning" file="lang-ini.mkxl"/>
+
+    <cd:command name="noligaturing" file="lang-ini.mkxl"/>
+
+    <cd:command name="noitaliccorrection" file="lang-ini.mkxl"/>
+
+    <cd:command name="noleftkerning" file="lang-ini.mkxl"/>
+
+    <cd:command name="noleftligaturing" file="lang-ini.mkxl"/>
+
+    <cd:command name="norightkerning" file="lang-ini.mkxl"/>
+
+    <cd:command name="norightligaturing" file="lang-ini.mkxl"/>
+
+    <cd:command name="noitaliccorrection" file="lang-ini.mkxl"/>
+
+    <cd:command name="languageoptions" type="environment" level="style" category="language" file="lang-ini.mkxl">
+        <cd:arguments>
+            <cd:resolve name="keyword-language-optional"/>
         </cd:arguments>
     </cd:command>
 

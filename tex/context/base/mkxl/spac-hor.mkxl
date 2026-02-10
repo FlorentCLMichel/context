@@ -989,16 +989,13 @@
     \forgetbothskips
 \to \everyforgetall
 
-% in spac-ver.mkiv
-%
-% \protected\def\forgetparskip
-%   {\s_spac_whitespace_parskip\zeroskip
-%    \parskip\zeroskip
-%    \let\v_spac_whitespace_current\v!none}
-%
-% \appendtoks
-%     \forgetparskip
-% \to \everyforgetall
+%D In \type {spac-ver.mkiv} we define \type {\forgetparskip} and do this:
+%D
+%D \starttyping
+%D \appendtoks
+%D     \forgetparskip
+%D \to \everyforgetall
+%D \stoptyping
 
 %D Tolerance (can also be set with align):
 

@@ -277,12 +277,12 @@
         \unvbox\b_page_mix_preceding
       \fi
       \unvbox\normalpagebox}%
-      \ifconditional\c_page_mix_grid_snapping
-        % probably ok anyway
-      \orelse\ifconditional\c_page_mix_snap_preceding % see (x)
-        \global\ht\b_page_mix_preceding{\ht\b_page_mix_preceding-\strutdp+\topskip-\lineheight}%
-        \global\dp\b_page_mix_preceding\strutdp
-      \fi}
+   \ifconditional\c_page_mix_grid_snapping
+     % probably ok anyway
+   \orelse\ifconditional\c_page_mix_snap_preceding % see (x)
+     \global\ht\b_page_mix_preceding{\ht\b_page_mix_preceding-\strutdp+\topskip-\lineheight}%
+     \global\dp\b_page_mix_preceding\strutdp
+   \fi}
 
 %D The error routine is there but unlikely to be called. It is a left-over from
 %D the traditional routine that might come in handy some day.
@@ -352,7 +352,12 @@
    \ifempty\p_grid
      % just follow the default grid settings
    \else
-     \ifgridsnapping\c_page_mix_grid_snapping\conditionaltrue\fi
+     \ifgridlinesnapping
+       % gridlinesnapping: to be decided
+       \c_page_mix_grid_snapping\conditionaltrue
+     \orelse\ifgridsnapping
+       \c_page_mix_grid_snapping\conditionaltrue
+     \fi
      \gridsnappingtrue
      \setsystemmode\v!grid
      \spac_grids_snap_value_set\p_grid
@@ -675,7 +680,7 @@
      \c_page_mix_routine\c_page_mix_routine_intercept
      \page_otr_trigger_output_routine
      %
-     \holdinginserts\maxdimen
+     \holdinginserts\plusone
      %
      \ifvoid\b_page_mix_preceding \else
        % moved here, before the packaging
@@ -751,7 +756,14 @@
        balance      {#1}%
        alternative  {\mixedcolumnsparameter\c!alternative}%
        internalgrid {\mixedcolumnsparameter\c!internalgrid}%
-       grid         \ifgridsnapping tru\else fals\fi e %
+       grid         \ifgridlinesnapping
+                      % gridlinesnapping: to be decided
+                      tru%
+                    \orelse\ifgridsnapping
+                      tru%
+                    \else
+                      fals%
+                    \fi e %
        notes        \ifconditional\c_page_mix_process_notes tru\else fals\fi e %
    \relax
    \deadcycles\zerocount}

@@ -26,6 +26,8 @@
 
 \startMPcalculation{simplefun}
 
+    % We could now use && instead!
+
     picture DiceDots[] ; pickup pencircle scaled 3/2 ;
 
     DiceDots[ 1] := image ( draw(4,4) ; ) ;

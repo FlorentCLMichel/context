@@ -41,6 +41,11 @@
     <cd:command name="MPXL" level="document" category="symbols" file="cont-log.mkxl"/>
     <cd:command name="MPLX" level="document" category="symbols" file="cont-log.mkxl"/>
 
+    <cd:command name="LMTX" level="document" category="symbols" file="cont-log.mkxl"/>
+
+    <cd:command name="MPMI" level="document" category="symbols" file="cont-log.mkxl"/>
+    <cd:command name="MPML" level="document" category="symbols" file="cont-log.mkxl"/>
+
     <cd:command name="PPCHTeX" level="document" category="symbols" file="cont-log.mkxl"/>
     <cd:command name="PPCHTEX" level="document" category="symbols" file="cont-log.mkxl"/>
 

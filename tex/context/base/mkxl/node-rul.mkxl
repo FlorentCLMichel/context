@@ -132,6 +132,8 @@
 \newinteger\c_node_rules_up
 \newinteger\c_node_rules_down
 
+% todo: also pass strutht and strutdp
+
 \permanent\protected\def\node_rules_set#1%
   {\cdef\currentbar{#1}%
    \advanceby\c_node_rules_level\plusone
@@ -414,7 +416,7 @@
    \c!continue=\v!yes,
    \c!order=\v!background]
 
-\definebar[underrandom] [undergraphic][\c!mp=rules:under:random,]
+\definebar[underrandom] [undergraphic][\c!mp=rules:under:random]
 \definebar[underrandoms][underrandom] [\c!continue=\v!no]
 
 \definebar[underdash]   [undergraphic][\c!mp=rules:under:dash]

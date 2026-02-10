@@ -1517,7 +1517,8 @@
    \uselanguageparameter\btxdatasetparameter % new
    \dostarttaggednodetail\t!citation
    \btxparameter\c!left
-   \btxparameter\c!command{\dobtxcitevariantblob}% {\publ_cite_handle_variant_blob}%
+ % \btxparameter\c!command{\dobtxcitevariantblob}% {\publ_cite_handle_variant_blob}%
+   \dobtxcitevariantblob % has to call \btxusecommand
    \btxparameter\c!right
    \dostoptagged
    \publ_cite_trace_blob

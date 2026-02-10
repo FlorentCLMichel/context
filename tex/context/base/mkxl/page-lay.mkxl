@@ -73,6 +73,33 @@
 
 \newdimension\textadaptive
 
+% \permanent\protected\def\snappedtextheight
+%   {\dimexpr
+%      \ifcase\layoutlines
+%        \numexpr
+%          \dimexpr\textheight+\roundingeps+\openlineheight:\plustwo\relax:\openlineheight
+%        \relax
+%      \else
+%        \layoutlines
+%      \fi\openlineheight
+%    \relax}
+
+% \permanent\protected\def\xgetrawnoflines#1%
+%   {\numexpr
+%      % \dimexpr#1+\roundingeps+.5\openlineheight\relax:\openlineheight
+%        \dimexpr#1+\roundingeps+\openlineheight:2\relax:\openlineheight
+%    \relax}
+
+\permanent\protected\def\snappedtextheight
+  {\dimexpr
+     \ifcase\layoutlines
+       ((\textheight+\roundingeps+\openlineheight:\plustwo):\openlineheight)*%
+     \else
+       \layoutlines
+     \fi
+     \openlineheight
+   \relax}
+
 %D \starttyping
 %D \setuplayout
 %D   [columns=4,
@@ -84,6 +111,8 @@
 \newuserunit \lineheight        lh
 \newuserunit \layoutcolumnwidth lc
 \newuserunit \layoutrowheight   lr
+
+\newuserunit \globalbodyfontlineheight gl
 
 %D The next series of dimensions are complemented by left and rights ones.
 
@@ -688,10 +717,6 @@
 
 \fi
 
-\ifdefined\synchronizegridsnapping \else
-    \let\synchronizegridsnapping\relax
-\fi
-
 %D The fit options were used for situations like this:
 %D
 %D \starttyping
@@ -1180,8 +1205,72 @@
 \installlayoutalternative\v!default{\page_boxes_construct_content_default}
 \installlayoutalternative\v!normal {\page_boxes_construct_content_default}
 
+% \def\page_boxes_construct_content % targetbox flusher box
+%   {\ifcsname\??layoutalternative\layoutparameter\c!alternative\endcsname
+%      \expandafter\lastnamedcs
+%    \else
+%      \expandafter\page_boxes_construct_content_default
+%    \fi}
+%
+% see below
+
+%D For Mikael:
+%D
+%D \starttyping
+%d \starttext
+%D
+%D \definecolumnset[mine][n=2]
+%D
+%D \startbuffer[whatever-2]
+%D     \setupbackgrounds[page][background=color,backgroundcolor=red]%
+%D     \setupheader[state=empty]%
+%D \stopbuffer
+%D \startbuffer[whatever-3]
+%D     \setupbackgrounds[page][background=color,backgroundcolor=green]%
+%D     \setupheader[state=empty]%
+%D \stopbuffer
+%D \startbuffer[whatever-4]
+%D     \setupbackgrounds[page][background=color,backgroundcolor=yellow]%
+%D     \setupheader[state=empty]%
+%D \stopbuffer
+%D
+%D \startcolumnset[mine]
+%D     \dorecurse{10}{
+%D         \startsection[title=Show #1.1]
+%D             \dorecurse{40}{\samplefile{knuthmath}}
+%D         \stopsection
+%D         \startsection[title=Show #1.2,extradata=\atthispage{\getbuffer[whatever-2]}]
+%D             \dorecurse{50}{\samplefile{knuthmath}}
+%D         \stopsection
+%D         \startsection[title=Show #1.3,extradata=\atthispage{\getbuffer[whatever-3]}]
+%D             \dorecurse{30}{\samplefile{knuthmath}}
+%D         \stopsection
+%D         \startsection[title=Show #1.4,extradata=\atthispage{\getbuffer[whatever-4]}]
+%D             \dorecurse{20}{\samplefile{knuthmath}}
+%D         \stopsection
+%D     }
+%D \stopcolumnset
+%D
+%D \stoptext
+%D \stoptyping
+
+\installcorenamespace{thispage}
+
+\definemarking[\??thispage]
+
+\lettonothing\page_marks_flush_this_page
+
+\permanent\def\page_marks_flush_this_page_indeed
+  {\firstmarks\csname\??markingclass\??thispage\endcsname
+   \clearmarks\csname\??markingclass\??thispage\endcsname}
+
+\permanent\protected\def\atthispage#1%
+  {\glet\page_marks_flush_this_page\page_marks_flush_this_page_indeed
+   \marks\csname\??markingclass\??thispage\endcsname{#1}}
+
 \def\page_boxes_construct_content % targetbox flusher box
-  {\ifcsname\??layoutalternative\layoutparameter\c!alternative\endcsname
+  {\page_marks_flush_this_page
+   \ifcsname\??layoutalternative\layoutparameter\c!alternative\endcsname
      \expandafter\lastnamedcs
    \else
      \expandafter\page_boxes_construct_content_default
@@ -1610,6 +1699,7 @@
                       \c!dx=\zeropoint,
                       \c!dy=\zeropoint,
                     \c!grid=\v!no,
+                \c!snapping=\v!normal, % when \c!grid=\v!snapping
                \c!direction=\v!normal,
                   \c!preset=,
                   \c!setups=\systemsetupsprefix\s!default,

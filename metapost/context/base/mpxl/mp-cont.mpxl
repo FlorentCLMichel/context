@@ -109,9 +109,10 @@ immutable % permanent
     RealPageNumber, LastPageNumber, PageNumber,
     NOfPages, SubPageNumber, NOfSubPages, CurrentColumn, NOfColumns ;
 
-newscriptindex mfid_BaseLineSkip  ; mfid_BaseLineSkip  := scriptindex "BaseLineSkip"  ; vardef BaseLineSkip  = runscript mfid_BaseLineSkip         enddef ;
-newscriptindex mfid_LineHeight    ; mfid_LineHeight    := scriptindex "LineHeight"    ; vardef LineHeight    = runscript mfid_LineHeight           enddef ;
-newscriptindex mfid_BodyFontSize  ; mfid_BodyFontSize  := scriptindex "BodyFontSize"  ; vardef BodyFontSize  = runscript mfid_BodyFontSize         enddef ;
+newscriptindex mfid_BaseLineSkip     ; mfid_BaseLineSkip     := scriptindex "BaseLineSkip"     ; vardef BaseLineSkip     = runscript mfid_BaseLineSkip     enddef ;
+newscriptindex mfid_LineHeight       ; mfid_LineHeight       := scriptindex "LineHeight"       ; vardef LineHeight       = runscript mfid_LineHeight       enddef ;
+newscriptindex mfid_GlobalLineHeight ; mfid_GlobalLineHeight := scriptindex "GlobalLineHeight" ; vardef GlobalLineHeight = runscript mfid_GlobalLineHeight enddef ;
+newscriptindex mfid_BodyFontSize     ; mfid_BodyFontSize     := scriptindex "BodyFontSize"     ; vardef BodyFontSize     = runscript mfid_BodyFontSize     enddef ;
 
 newscriptindex mfid_TopSkip       ; mfid_TopSkip       := scriptindex "TopSkip"       ; vardef TopSkip       = runscript mfid_TopSkip              enddef ;
 newscriptindex mfid_StrutHeight   ; mfid_StrutHeight   := scriptindex "StrutHeight"   ; vardef StrutHeight   = runscript mfid_StrutHeight          enddef ;

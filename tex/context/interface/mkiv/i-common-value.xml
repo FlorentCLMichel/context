@@ -754,6 +754,7 @@
         <cd:constant type="back"/>
         <cd:constant type="overlay"/>
         <cd:constant type="always"/>
+        <cd:constant type="keep"/>
         <cd:constant type="weak"/>
         <cd:constant type="strong"/>
         <cd:constant type="default"/>
@@ -768,6 +769,8 @@
         <cd:constant type="big"/>
         <cd:constant type="line"/>
         <cd:constant type="halfline"/>
+        <cd:constant type="halflinebefore"/>
+        <cd:constant type="halflineafter"/>
         <cd:constant type="quarterline"/>
         <cd:constant type="formula"/>
         <cd:constant type="white"/>
@@ -915,12 +918,15 @@
         <cd:constant type="minifun"/>
         <cd:constant type="extrafun"/>
         <cd:constant type="lessfun"/>
+        <cd:constant type="scaledfun"/>
         <cd:constant type="doublefun"/>
         <cd:constant type="binaryfun"/>
         <cd:constant type="decimalfun"/>
+        <cd:constant type="positfun"/>
         <cd:constant type="mprun"/>
         <cd:constant type="metapost"/>
         <cd:constant type="nofun"/>
+        <cd:constant type="scaledpost"/>
         <cd:constant type="doublepost"/>
         <cd:constant type="binarypost"/>
         <cd:constant type="decimalpost"/>

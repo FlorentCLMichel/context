@@ -29,4 +29,14 @@
         </cd:arguments>
     </cd:command>
 
+    <cd:command name="shapecorrection" level="system" category="fonts" file="typo-itc.mklx">
+        <cd:arguments>
+            <cd:keywords>
+                <cd:constant type="left"/>
+                <cd:constant type="right"/>
+                <cd:constant type="both"/>
+            </cd:keywords>
+        </cd:arguments>
+    </cd:command>
+
 </cd:interface>

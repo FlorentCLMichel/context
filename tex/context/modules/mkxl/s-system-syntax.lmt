@@ -125,6 +125,7 @@ local s_tokens_relax  = [==[tokens\relax]==]
 local s_tokens_endcs  = [==[tokens\endcsname]==]
 local s_tokens_endlc  = [==[tokens\endlocalcontrol]==]
 local s_parameter_or  = [==[parameter\or]==]
+local s_linesnapping  = [==[linesnapping\or]==]
 
 local c_tokens        = "tokens"
 
@@ -268,9 +269,9 @@ syntax.boundary = newsyntax {
     balanceboundary    = sequence(o_equal,s_integer,s_integer),
     boundary           = sequence(o_equal,s_integer),
     noboundary         = false,
-    mathboundary       = sequence(o_equal,s_integer,optional(s_integer)),
+    mathboundary       = sequence(o_equal,s_integer,optional(s_integer)), -- maybe not optional
     optionalboundary   = sequence(o_equal,s_integer), -- linebreak optionals
-    pageboundary       = sequence(o_equal,s_integer),
+    pageboundary       = sequence(o_equal,s_integer,s_integer),
     protrusionboundary = sequence(o_equal,s_integer),
     wordboundary       = false,
     luaboundary        = sequence(o_equal,s_integer,s_integer),
@@ -556,6 +557,7 @@ local common_rule = sequence(
     optional(sequence(keyword("pair"),s_dimension,s_dimension)),
     optional(sequence(keyword("xoffset"),s_dimension)),
     optional(sequence(keyword("yoffset"),s_dimension)),
+    optional(sequence(keyword("linesnapping"),s_linesnapping)),
     optional(keyword("running")),
     optional(keyword("discardable")),
     optional(keyword("keepspacing")),
@@ -703,6 +705,10 @@ result.internaldimension = {
     balanceemergencystretch  = r_dimension,
     balancelineheight        = r_dimension, -- reserved
     balancevsize             = r_dimension,
+    breaklasthangindent      = r_dimension,
+    breaklasthangleftindent  = r_dimension,
+    breaklasthangrightindent = r_dimension,
+    breaklastlinewidth       = r_dimension,
     boxmaxdepth              = r_dimension,
     delimitershortfall       = r_dimension,
     displayindent            = r_dimension,
@@ -716,6 +722,8 @@ result.internaldimension = {
     hsize                    = r_dimension,
     ignoredepthcriterion     = r_dimension,
     lineskiplimit            = r_dimension,
+    linesnappingtolerance    = r_dimension,
+    localhangindent          = r_dimension,
     mathsurround             = r_dimension,
     maxdepth                 = r_dimension,
     nulldelimiterspace       = r_dimension,
@@ -788,6 +796,10 @@ result.internalinteger = {
     balancetolerance         = r_integer,
     binoppenalty             = r_integer,
     boxlimitmode             = r_integer,
+    breaklasthangslack       = r_integer,
+    breaklasthangleftslack   = r_integer,
+    breaklasthangrightslack  = r_integer,
+    breaklastlinecount       = r_integer,
     brokenpenalty            = r_integer,
     catcodetable             = r_integer,
     clubpenalty              = r_integer,
@@ -846,7 +858,10 @@ result.internalinteger = {
     linebreakpasses          = r_integer,
     linedirection            = r_integer,
     linepenalty              = r_integer,
+    linesnappinght           = r_integer,
+    linesnappingdp           = r_integer,
     localbrokenpenalty       = r_integer,
+    localhangafter           = r_integer,
     localinterlinepenalty    = r_integer,
     localpretolerance        = r_integer,
     localtolerance           = r_integer,
@@ -1056,12 +1071,28 @@ syntax.let = newsyntax {
     unletprotected   = s_cs,
 }
 
-syntax.localbox = newsyntax {
-    localleftbox    = s_box,
-    localmiddlebox  = s_box,
-    localrightbox   = s_box,
-    resetlocalboxes = false,
-}
+-- always index keep local par move
+
+do
+
+    local localbox = sequence(
+        optional(keyword("always")),
+        optional(keyword("index"),s_integer),
+        optional(keyword("keep")),
+        optional(keyword("local")),
+        optional(keyword("move")),
+        optional(keyword("par")),
+        s_box
+    )
+
+    syntax.localbox = newsyntax {
+        localleftbox    = localbox,
+        localmiddlebox  = localbox,
+        localrightbox   = localbox,
+        resetlocalboxes = false,
+    }
+
+end
 
 syntax.luafunctioncall = newsyntax {
     luabytecodecall = s_integer,
@@ -1094,6 +1125,7 @@ do
         optional(sequence(keyword("xmove"),s_dimension)),
         optional(sequence(keyword("yoffset"),s_dimension)),
         optional(sequence(keyword("ymove"),s_dimension)),
+        optional(sequence(keyword("linesnapping"),s_linesnapping)),
         optional(keyword("reverse")),
         optional(keyword("retain")),
         optional(keyword("container")),
@@ -1918,6 +1950,20 @@ syntax.specification = newsyntax {
                                     optional(sequence(keyword("top"),s_glue)),
                                     optional(sequence(keyword("bottom"),s_glue)),
                                     optional(sequence(keyword("options"),s_integer))
+                                )
+                            ),
+    linesnapping          = sequence(
+                                optional(keyword("factors")),
+                                optional(keyword("global")),
+                                optional(keyword("constant")),
+                                repeated(
+                                    optional(keyword("next")),
+                                    optional(sequence(keyword("height"),s_integer)),
+                                    optional(sequence(keyword("depth"),s_integer)),
+                                    optional(sequence(keyword("httolerance"),s_integer)),
+                                    optional(sequence(keyword("dptolerance"),s_integer)),
+                                    optional(keyword("top")),
+                                    optional(keyword("bottom"))
                                 )
                             ),
     brokenpenalties       = sequence(optional(keyword("options"),s_integer),s_integer,repeated(s_integer)),

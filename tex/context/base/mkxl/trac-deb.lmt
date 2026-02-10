@@ -137,6 +137,8 @@ local nop           = function() end
 local resetmessages = status.resetmessages or nop
 local erroroffset   = 10
 local erroraction   = false
+local busy          = false
+local errorvalues   = false
 
 local function processerror(errortype)
     local readstate      = status.getreadstate()
@@ -173,18 +175,19 @@ local function processerror(errortype)
     if erroraction then
         erroraction()
     end
-    lua.setexitcode(1)
+    errorvalues = errorvalues or table.swapped(tex.geterrorvalues())
+    if errortype ~= errorvalues.warning then
+        lua.setexitcode(1)
+    end
 end
 
 directives.register("system.quitonerror",  function(v) quitonerror   = toboolean(v) end)
 directives.register("system.usescitelexer",function(v) usescitelexer = toboolean(v) end)
 
-local busy = false
-
 function tracers.printerror(specification)
     if not busy then
-        busy = true
-        local errorvalues  = table.swapped(tex.geterrorvalues())
+        busy        = true
+        errorvalues = errorvalues or table.swapped(tex.geterrorvalues())
         local filename     = specification.filename
         local linenumber   = specification.linenumber
         local lasttexerror = specification.lasttexerror
@@ -300,7 +303,8 @@ end)
 callbacks.register {
     name     = "show_error_message",
     frozen   = true,
-    disabled = true,
+ -- disabled = true,
+    action   = function() end
 }
 
 callbacks.register {

@@ -123,8 +123,10 @@ engine provides. If you are new to \TEX, you need to play a while with its mixed
 bag of typesetting and programming features in order to understand the difference
 between this macro language and other languages you might be familiar with.
 
-% \starttworows \hsize.5\textwidth
 \startcolumns
+    \setuplist
+      [newprimitive,oldprimitive]
+      [width=4.5em]
     \placelist
       [newprimitive,oldprimitive]
       [alternative=c,criterium=text]
@@ -1718,6 +1720,13 @@ This is equivalent to a hash in an alignment preamble. Contrary to \prm
 
 \stopnewprimitive
 
+\startnewprimitive[title={\prm {alignloop}}]
+
+This is just a convenient (and more clear) variant of the double tab: \typ
+{\aligntab \aligntab} or \type {&&} when that method is used.
+
+\stopnewprimitive
+
 \startnewprimitive[title={\prm {alignmark}}]
 
 When you have the \type {#} not set up as macro parameter character cq.\ align
@@ -1736,6 +1745,15 @@ This sets the source id (a box property) of the current alignment cell.
 
 This sets the source id (a box property) of the current alignment row (in a \prm
 {halign}) or column (in a \prm {valign}).
+
+\stopnewprimitive
+
+\startnewprimitive[title={\prm {alignoption}}]
+
+This is an experimental feature that accepts some of the keywords that one can
+pass to the alignment command: \typ {firstskip}, \typ {lastskip}, \typ
+{nofirstskip}, \typ {nolastskip} and \type {prune}. When given in a cell they
+will overload the already set options.
 
 \stopnewprimitive
 
@@ -2714,6 +2732,13 @@ gives: \inlinebuffer
 
 \stopnewprimitive
 
+\startnewprimitive[title={\prm {boxsnapping}}]
+
+This is an experimental feature what we occasionally come back to, so it's
+currently undocumented.
+
+\stopnewprimitive
+
 \startnewprimitive[title={\prm {boxsource}}]
 
 This feature is part of an (experimental) mechanism that relates boxes. The
@@ -2823,6 +2848,65 @@ This will set the vertical offset and adapt the dimensions accordingly.
 \startnewprimitive[title={\prm {boxyoffset}}]
 
 Returns or sets the vertical offset of the given box.
+
+\stopnewprimitive
+
+\startnewprimitive[title={\prm {breaklasthangindent}}]
+
+This variable reflects the state of the current vertical list with respect to
+a \prm {hangindent} and \prm {hangafter} situation.
+
+\stopnewprimitive
+
+\startnewprimitive[title={\prm {breaklasthangleftindent}}]
+
+This variable reflects the state of the current vertical list with respect to a
+(positive, therefore left) \prm {localhangindent} and \prm {localhangafter}
+situation.
+
+\stopnewprimitive
+
+\startnewprimitive[title={\prm {breaklasthangleftslack}}]
+
+This variable reflects the state of the current vertical list with respect to a
+(positive, therefore left) \prm {localhangindent} and \prm {localhangafter}
+situation. Here slack refers to the pending number lines on the left.
+
+\stopnewprimitive
+
+\startnewprimitive[title={\prm {breaklasthangrightindent}}]
+
+This variable reflects the state of the current vertical list with respect to a
+(negative, therefore right) \prm {localhangindent} and \prm {localhangafter}
+situation.
+
+\stopnewprimitive
+
+\startnewprimitive[title={\prm {breaklasthangrightslack}}]
+
+This variable reflects the state of the current vertical list with respect to a
+(negative, therefore right) \prm {localhangindent} and \prm {localhangafter}
+situation. Here slack refers to the pending number lines on the right.
+
+\stopnewprimitive
+
+\startnewprimitive[title={\prm {breaklasthangslack}}]
+
+This variable reflects the state of the current vertical list with respect to a
+\prm {hangindent} and \prm {hangafter} situation. Here slack refers to the
+pending number lines.
+
+\stopnewprimitive
+
+\startnewprimitive[title={\prm {breaklastlinecount}}]
+
+This variable refers to the current vertical list.
+
+\stopnewprimitive
+
+\startnewprimitive[title={\prm {breaklastlinewidth}}]
+
+This variable refers to last lines of the current vertical list.
 
 \stopnewprimitive
 
@@ -3176,6 +3260,24 @@ with a simple helper but this is more natural.
 \typebuffer
 
 We get the name, not the meaning: {\tt \inlinebuffer}.
+
+\stopnewprimitive
+
+\startnewprimitive[title={\prm {currentalignmentcolumn}}]
+
+This number keeps track of the current column.
+
+\stopnewprimitive
+
+\startnewprimitive[title={\prm {currentalignmentrow}}]
+
+This number keeps track of the current row.
+
+\stopnewprimitive
+
+\startnewprimitive[title={\prm {currentalignmenttabskip}}]
+
+This dimension reflects the currently uses tabskip.
 
 \stopnewprimitive
 
@@ -4263,6 +4365,17 @@ on how \TEX\ is configured. For the record: we don't use this primitive in
 This parameter determines the number on lines shown when an error is triggered.
 
 \stopoldprimitive
+
+\startnewprimitive[title={\prm {errorrecoverymode}}]
+
+There are cases when an error is not fatal and \TEX\ can easily recover from it.
+It does not mean that one should not pay attention. This parameter gets a bitset
+that makes the engine turn these errors into warnings and continue. Currently we
+have two options: 0x01 for fixing an alignment tab, and 0x02 for fixing infinite
+shrink (which happens in various places). We don't enable this in \CONTEXT; it's
+more for unattended runs.
+
+\stopnewprimitive
 
 \startoldprimitive[title={\prm {errorstopmode}}]
 
@@ -7360,6 +7473,9 @@ this one is (as with some others) to get less tracing.
 
 \stopnewprimitive
 
+% \startnewprimitive[title={\prm {ifspecification}}]
+% \stopnewprimitive
+
 \startnewprimitive[title={\prm {iftok}}]
 
 When you want to compare two arguments, the usual way to do this is the
@@ -7869,10 +7985,31 @@ insert issue}.
 
 \stopoldprimitive
 
+\startnewprimitive[title={\prm {insertboundary}}]
+
+This boundary takes two integer values. When it is encountered in the page
+builder a callback \typ {insert_boundary} will be triggered that gets the two
+integers as arguments.
+
+\stopnewprimitive
+
 \startnewprimitive[title={\prm {insertbox}}]
 
 This is the accessor for the box (with results) of an insert with the given
 index. This is equivalent to the \prm {box} in the traditional method.
+
+\stopnewprimitive
+
+\startnewprimitive[title={\prm {insertcategory}}]
+
+There is currently only one category (0x01) for page bound inserts like
+footnotes. The category is used to help determining the top of an insert stack as
+well as the first in a substack. For instance, a top insert can come before a
+footnote but in that case the first footnote is still the first in the list of
+inserts with the same category (when set). This relates to the \type
+{insert_distance} callback where the first variant call gets an index (integer),
+variant (here 1), a first and top state (boolean) and returns a distance (glue).
+These are rather specialized features.
 
 \stopnewprimitive
 
@@ -7944,6 +8081,13 @@ get.
 
 \stopnewprimitive
 
+\startnewprimitive[title={\prm {insertmaxplaced}}]
+
+This represents the maximum number of inserts that gets placed (flushed) for the
+given index.
+
+\stopnewprimitive
+
 \startnewprimitive[title={\prm {insertmode}}]
 
 In traditional \TEX\ inserts are controlled by a \prm {box}, \prm {dimen}, \prm
@@ -7961,6 +8105,24 @@ given index. This is equivalent to \prm {count} in the traditional method.
 
 \stopnewprimitive
 
+\startnewprimitive[title={\prm {insertonlycount}}]
+
+When a page was wrapped up and there are {\em only} inserts left, this variable
+hold the number of inserts. In \CONTEXT\ we use this property to issue an insert
+boundary that then triggers (via a callback) resetting some constraints with
+respect to note placement. It's one of the more specialized features.
+
+\stopnewprimitive
+
+\startnewprimitive[title={\prm {insertoptions}}]
+
+When bit 0x01 is set, the engine will check for insert overflows as described in
+one of the \quote {beyond} wrap-ups in the \CONTEXT\ distribution. Such overflows
+can happen in documents (like critical editions) that have many (large) notes
+that end up on their own pages.
+
+\stopnewprimitive
+
 \startoldprimitive[title={\prm {insertpenalties}}]
 
 This dual purpose internal counter holds the sum of penalties for insertions that
@@ -7973,6 +8135,13 @@ is kept in store.
 
 This is the insert penalty associated with the inserted material with the given
 index.
+
+\stopnewprimitive
+
+\startnewprimitive[title={\prm {insertplaced}}]
+
+This quantity hold the number of inserts in a specific class that has been
+placed, assuming that we use that insert mode.
 
 \stopnewprimitive
 
@@ -8137,6 +8306,18 @@ the current language is stored in the glyph nodes.
 
 \stopoldprimitive
 
+\startnewprimitive[title={\prm {lastalignmentcolumn}}]
+
+This number keeps track of the last (maximum) column count.
+
+\stopnewprimitive
+
+\startnewprimitive[title={\prm {lastalignmentrow}}]
+
+This number keeps track of the last (maximum) row count.
+
+\stopnewprimitive
+
 \startnewprimitive[title={\prm {lastarguments}}]
 
 \startbuffer
@@ -8208,12 +8389,12 @@ This variable registers the first applied math class in a formula.
 
 \stopnewprimitive
 
-% \startnewprimitive[title={\prm {lastlinecount}}]
-
-% This state variable holds the most recent number of lines in a paragraph broken
-% into lines.
-
-% \stopnewprimitive
+% % \startnewprimitive[title={\prm {lastlinecount}}]
+% %
+% % This state variable holds the most recent number of lines in a paragraph broken
+% % into lines.
+% %
+% % \stopnewprimitive
 
 \startoldprimitive[title={\prm {lastlinefit}}]
 
@@ -8223,12 +8404,12 @@ previous line. Basically it counters the strong push of a \prm {parfillskip}.
 
 \stopoldprimitive
 
-% \startnewprimitive[title={\prm {lastlinewidth}}]
-
-% This state variable holds the width of the last line in the most recently
-% paragraph broken into lines.
-
-% \stopnewprimitive
+% % \startnewprimitive[title={\prm {lastlinewidth}}]
+% %
+% % This state variable holds the width of the last line in the most recently
+% % paragraph broken into lines.
+% %
+% % \stopnewprimitive
 
 \startnewprimitive[title={\prm {lastloopiterator}}]
 
@@ -8649,6 +8830,22 @@ so we get two times a 3pt glue injected.
 
 \stopoldprimitive
 
+\startnewprimitive[title={\prm {linesnapping}}]
+
+This is an experimental feature what we occasionally come back to, so it's
+currently undocumented.
+
+\stopnewprimitive
+
+% \startnewprimitive[title={\prm {linesnappingdpfactor}}]
+% \stopnewprimitive
+
+% \startnewprimitive[title={\prm {linesnappinghtfactor}}]
+% \stopnewprimitive
+
+% \startnewprimitive[title={\prm {linesnappingtolerance}}]
+% \stopnewprimitive
+
 \startnewprimitive[title={\prm {localbreakpar}}]
 
 This forces a newline in a paragraph without side effects so that for instance
@@ -8784,6 +8981,24 @@ that indicate the end of sequence of digits.
 
 This one takes one instead three arguments which looks a bit better
 in simple looping.
+
+\stopnewprimitive
+
+\startnewprimitive[title={\prm {localhangafter}}]
+
+A positive value will create a local, that is at he current line, hole in the
+paragraph similar to a \prm {hangafter}. One needs to set \prm {localhangindent}
+in order to happen. Depending on the sign of that dimension the hole will appear
+left or right. In this perspective \quote {current} is a bit fluid because the
+par builder is in charge of breaking lines at the best possible location.
+
+\stopnewprimitive
+
+\startnewprimitive[title={\prm {localhangindent}}]
+
+This value only kicks in when a \prm {localhangafter} command is given. A
+positive dimension will create an insert left of the paragraph, a negative
+number creates a hole at the right. This is consistent with \prm {hangindent}.
 
 \stopnewprimitive
 
@@ -14018,6 +14233,13 @@ variables are reported on the console and|/|or in the log file. Because
 
 \stopoldprimitive
 
+\startnewprimitive[title={\prm {tracingsnapping}}]
+
+This is an experimental feature what we occasionally come back to, so it's
+currently undocumented.
+
+\stopnewprimitive
+
 \startoldprimitive[title={\prm {tracingstats}}]
 
 This parameter is a dummy in \LUAMETATEX. There are anyway some statistic
@@ -14833,6 +15055,8 @@ This internal number starts out with the year that the job started.
 \page
 
 \startsection[title=Syntax]
+
+% This needs to be checked because some was added.
 
 \startpagecolumns[page=no]
     \startluacode

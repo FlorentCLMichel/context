@@ -1038,6 +1038,11 @@
 \defcsname\??aligncommand\s!notoddlers  \endcsname{\toksapp\t_spac_align_collected{\notoddlers}}
 \defcsname\??aligncommand\s!keeptoddlers\endcsname{\toksapp\t_spac_align_collected{\keeptoddlers}}
 
+\permanent\protected\def\nosnapping{\linesnapping\zerocount}
+
+\defcsname\??aligncommand\s!nosnapping  \endcsname{\toksapp\t_spac_align_collected{\nosnapping}}
+\defcsname\??aligncommand\v!nosnapping  \endcsname{\toksapp\t_spac_align_collected{\nosnapping}}
+
 \newconstant \matchallfitnessclasses \setconstant \matchallfitnessclasses "FF
 
 \appendtoks

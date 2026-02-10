@@ -52,6 +52,10 @@
                 <cd:parameter name="shrink">
                     <cd:constant type="cd:dimension"/>
                 </cd:parameter>
+                <cd:parameter name="location">
+                    <cd:constant type="left" default="yes"/>
+                    <cd:constant type="right"/>
+                </cd:parameter>
             </cd:assignments>
         </cd:arguments>
     </cd:command>
@@ -110,5 +114,15 @@
     <cd:command name="usedadaptivealternative" level="style" category="boxes" file="typo-ada.mkxl"/>
 
     <cd:command name="usedadaptivetotal" level="style" category="boxes" file="typo-ada.mkxl"/>
+
+    <cd:command name="setexcept" file="typo-ada.mkxl">
+        <cd:arguments>
+            <cd:keywords optional="yes">
+                <cd:constant type="left" default="yes"/>
+                <cd:constant type="right"/>
+            </cd:keywords>
+            <cd:content/>
+        </cd:arguments>
+    </cd:command>
 
 </cd:interface>

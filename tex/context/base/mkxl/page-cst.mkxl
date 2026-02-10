@@ -114,7 +114,7 @@
       \ifchkdimension\p_distance\or
         distance \lastchkdimension
       \fi
-      \ifx\p_width\v!auto\orelse\ifchkdimension\or
+      \ifx\p_width\v!auto\orelse\ifchkdimension\p_width\or
         width \lastchkdimension
       \fi
    }}

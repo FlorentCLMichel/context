@@ -191,16 +191,28 @@ end
 
 -- scalar product "factor * m"
 
-function matrix.scalar(m, factor)
-    for i=1,#m do
-        local mi = m[i]
-        for j=1,#mi do
-            mi[j] = factor * mi[j]
-        end
-    end
-    return m
-end
+-- function matrix.scalar(m, factor)
+--     for i=1,#m do
+--         local mi = m[i]
+--         for j=1,#mi do
+--             mi[j] = factor * mi[j]
+--         end
+--     end
+--     return m
+-- end
 
+function matrix.scalar(m, factor)
+    local mat = { }
+    for i=1,#m do
+      local mt = { }
+      local mi = m[i]
+      for j=1,#mi do
+        mt[j] = factor * mi[j]
+      end
+      mat[i] = mt
+    end
+    return mat
+end
 -- replace i-th row with i-th row + factor * (j-th row)
 
 function matrix.sumrow(m,i,j,factor)
@@ -209,6 +221,24 @@ function matrix.sumrow(m,i,j,factor)
     for k=1,#mi do
         mi[k] = mi[k] + factor * mj[k]
     end
+end
+
+function matrix.sum(m1,m2)
+	if #m1 ~= #m2 or #m1[1] ~= #m2[1] then
+		return 0 -- why not nil or false
+	else
+        local result = { }
+		for i=1,#m1	do
+            local m1i = m1[i]
+            local m2i = m2[i]
+            local sum = { }
+            for k=1,#m1i do
+                sum[k] = m1i[k] + m2i[k]
+            end
+			result[i] = sum
+		end
+		return result
+	end
 end
 
 -- transpose of a matrix

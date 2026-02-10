@@ -73,6 +73,9 @@
                 </cd:parameter>
                 <cd:parameter name="factor">
                     <cd:constant type="none"/>
+                    <cd:constant type="fixed"/>
+                    <cd:constant type="force"/>
+                    <cd:constant type="size"/>
                     <cd:constant type="auto"/>
                     <cd:constant type="cd:number"/>
                 </cd:parameter>
@@ -170,20 +173,7 @@
             <cd:content/>
         </cd:arguments>
         <cd:instances>
-            <cd:constant value="parenthesis"/>
-            <cd:constant value="bracket"/>
-            <cd:constant value="brace"/>
-            <cd:constant value="ceiling"/>
-            <cd:constant value="floor"/>
-            <cd:constant value="interval"/>
-            <cd:constant value="openinterval"/>
-            <cd:constant value="closedinterval"/>
-            <cd:constant value="leftopeninterval"/>
-            <cd:constant value="rightopeninterval"/>
-            <cd:constant value="varopeninterval"/>
-            <cd:constant value="varleftopeninterval"/>
-            <cd:constant value="varrightopeninterval"/>
-            <cd:constant value="integerinterval"/>
+            <cd:resolve name="instance-mathfence"/>
         </cd:instances>
     </cd:command>
 

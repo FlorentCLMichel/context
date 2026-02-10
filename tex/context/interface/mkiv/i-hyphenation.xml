@@ -16,6 +16,10 @@
                     <cd:constant type="traditional"/>
                     <cd:constant type="none"/>
                 </cd:parameter>
+                <cd:parameter name="hyphens">
+                    <cd:constant type="yes" default="yes"/>
+                    <cd:constant type="no"/>
+                </cd:parameter>
             </cd:assignments>
         </cd:arguments>
     </cd:command>

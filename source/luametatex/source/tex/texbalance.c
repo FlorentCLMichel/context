@@ -143,7 +143,7 @@ static scaled tex_aux_checked_shrink(halfword p)
         if (lmt_balance_state.no_shrink_error_yet) {
             lmt_balance_state.no_shrink_error_yet = 0;
             tex_handle_error(
-                normal_error_type,
+                infinite_shrink_error_type,
                 "Infinite glue shrinkage found in a (balance) slot",
                 "The (balance) slot just ended includes some glue that has infinite shrinkability.\n"
             );
@@ -530,7 +530,7 @@ static void tex_check_skips_shortfall(const balance_properties *properties, half
     }
     if ((top || bottom) && properties->tracing_balancing > 2) {
         tex_begin_diagnostic();
-        tex_print_format("[balance: correction, top %p, bottom %p]", top, bottom);
+        tex_print_format("%l[balance: correction, top %p, bottom %p]", top, bottom);
         tex_end_diagnostic();
     }
     if (lmt_balance_state.inserts_found) { 
@@ -802,6 +802,7 @@ static scaled tex_aux_try_balance(
                         }
                         if (properties->tracing_balancing > 0) {
                             tex_begin_diagnostic();
+                            tex_print_levels();
                             tex_aux_print_break_node(active, passive, 0);
                             tex_end_diagnostic();
                         }
@@ -834,7 +835,7 @@ static scaled tex_aux_try_balance(
         shortfall = page_height - current_active_height[total_advance_amount];
         if (properties->tracing_balancing > 2) {
             tex_begin_diagnostic();
-            tex_print_format("[balance: check, page %i, height %p, total %p, extra %p, shortfall %p]", 
+            tex_print_format("%l[balance: check, page %i, height %p, total %p, extra %p, shortfall %p]",
                 page, 
                 page_height,
                 lmt_balance_state.active_height[total_advance_amount],
@@ -1210,7 +1211,7 @@ static int tex_aux_set_sub_pass_parameters(
         # define is_okay(a) ((okay & a) == a ? ">" : " ")
 
         tex_begin_diagnostic();
-        tex_print_format("[balance: values used in subpass %i]\n", subpass);
+        tex_print_format("%l[balance: values used in subpass %i]\n", subpass);
         tex_print_str("  --------------------------------\n");
         tex_print_format("  use criteria          %s\n", subpass >= passes_first_final(passes) ? "true" : "false");
         if (features & passes_test_set) {
@@ -1242,7 +1243,7 @@ static int tex_aux_set_sub_pass_parameters(
 static void tex_aux_skip_message(halfword passes, int subpass, int nofsubpasses, const char *str)
 {
     tex_begin_diagnostic();
-    tex_print_format("[balance: id %i, subpass %i of %i, skip %s]\n",
+    tex_print_format("%l[balance: id %i, subpass %i of %i, skip %s]\n",
         passes_identifier(passes), subpass, nofsubpasses, str
     );
     tex_end_diagnostic();
@@ -1294,7 +1295,7 @@ static inline int tex_aux_check_sub_pass(balance_properties *properties, scaled 
     if (result) {
         if (tracing && result > 1) {
             tex_begin_diagnostic();
-            tex_print_format("[balance: id %i, subpass %i of %i, overfull %p, verdict %i, special case, entering subpasses]\n",
+            tex_print_format("%l[balance: id %i, subpass %i of %i, overfull %p, verdict %i, special case, entering subpasses]\n",
                 passes_identifier(passes), subpass, nofsubpasses, overfull, verdict
             );
             tex_end_diagnostic();
@@ -1321,7 +1322,7 @@ static inline int tex_aux_check_sub_pass(balance_properties *properties, scaled 
                         int id = passes_identifier(passes);
                         tex_begin_diagnostic();
                         if (callback) {
-                            tex_print_format("[balance: id %i, subpass %i of %i, overfull %p, underfull %p, verdict %i, classified %x, %s]\n",
+                            tex_print_format("%l[balance: id %i, subpass %i of %i, overfull %p, underfull %p, verdict %i, classified %x, %s]\n",
                                 id, subpass, nofsubpasses, overfull, underfull, verdict, classified, "callback"
                             );
                         } else {
@@ -1331,21 +1332,21 @@ static inline int tex_aux_check_sub_pass(balance_properties *properties, scaled 
                             }
                             if (threshold == max_dimension) {
                                 if (demerits == max_dimension) {
-                                    tex_print_format("[balance: id %i, subpass %i of %i, overfull %p, underfull %p, verdict %i, classified %x, %s]\n",
+                                    tex_print_format("%l[balance: id %i, subpass %i of %i, overfull %p, underfull %p, verdict %i, classified %x, %s]\n",
                                         id, subpass, nofsubpasses, overfull, underfull, verdict, classified, action
                                     );
                                 } else {
-                                    tex_print_format("[balance: id %i, subpass %i of %i, overfull %p, underfull %p, verdict %i, demerits %i, classified %x, %s]\n",
+                                    tex_print_format("%l[balance: id %i, subpass %i of %i, overfull %p, underfull %p, verdict %i, demerits %i, classified %x, %s]\n",
                                         id, subpass, nofsubpasses, overfull, underfull, verdict, demerits, classified, action
                                     );
                                 }
                             } else {
                                 if (demerits == max_dimension) {
-                                    tex_print_format("[balance: id %i, subpass %i of %i, overfull %p, underfull %p, verdict %i, threshold %p, classified %x, %s]\n",
+                                    tex_print_format("%l[balance: id %i, subpass %i of %i, overfull %p, underfull %p, verdict %i, threshold %p, classified %x, %s]\n",
                                         id, subpass, nofsubpasses, overfull, underfull, verdict, threshold, classified, action
                                     );
                                 } else {
-                                    tex_print_format("[balance: id %i, subpass %i of %i, overfull %p, underfull %p, verdict %i, threshold %p, demerits %i, classified %x, %s]\n",
+                                    tex_print_format("%l[balance: id %i, subpass %i of %i, overfull %p, underfull %p, verdict %i, threshold %p, demerits %i, classified %x, %s]\n",
                                         id, subpass, nofsubpasses, overfull, underfull, verdict, threshold, demerits, classified, action
                                     );
                                 }
@@ -1378,7 +1379,7 @@ static inline int tex_aux_check_sub_pass(balance_properties *properties, scaled 
 static void tex_aux_trace_list(halfword current, int line, const char *action)
 {
     tex_begin_diagnostic();
-    tex_print_format("[balance: list, slot %i, line %i, height %p, depth %p, total %p, %s]", 
+    tex_print_format("%l[balance: list, slot %i, line %i, height %p, depth %p, total %p, %s]",
         lmt_balance_state.current_slot_number, 
         line,
         box_height(current), 
@@ -1392,7 +1393,7 @@ static void tex_aux_trace_list(halfword current, int line, const char *action)
 static void tex_aux_trace_rule(halfword current, int line, const char *action)
 {
     tex_begin_diagnostic();
-    tex_print_format("[balance: list, slot %i, line %i, height %p, depth %p, total %p, %s]", 
+    tex_print_format("%l[balance: list, slot %i, line %i, height %p, depth %p, total %p, %s]",
         lmt_balance_state.current_slot_number, 
         line,
         rule_height(current), 
@@ -1406,7 +1407,7 @@ static void tex_aux_trace_rule(halfword current, int line, const char *action)
 static void tex_aux_trace_glue(halfword current, const char *action)
 {
     tex_begin_diagnostic();
-    tex_print_format("[balance: glue, slot %i, amount %p, total %p, %s]", 
+    tex_print_format("%l[balance: glue, slot %i, amount %p, total %p, %s]",
         lmt_balance_state.current_slot_number, 
         glue_amount(current),
         lmt_balance_state.active_height[total_advance_amount],
@@ -1418,7 +1419,7 @@ static void tex_aux_trace_glue(halfword current, const char *action)
 static void tex_aux_trace_kern(halfword current, const char *action)
 {
     tex_begin_diagnostic();
-    tex_print_format("[balance: kern, slot %i, amount %p, total %p, %s]", 
+    tex_print_format("%l[balance: kern, slot %i, amount %p, total %p, %s]",
         lmt_balance_state.current_slot_number, 
         kern_amount(current),
         lmt_balance_state.active_height[total_advance_amount],
@@ -1430,7 +1431,7 @@ static void tex_aux_trace_kern(halfword current, const char *action)
 static void tex_aux_trace_penalty(halfword current, const char *action)
 {
     tex_begin_diagnostic();
-    tex_print_format("[balance: penalty, slot %i, amount %i, total %p, %s]",
+    tex_print_format("%l[balance: penalty, slot %i, amount %i, total %p, %s]",
         lmt_balance_state.current_slot_number, 
         penalty_amount(current),
         lmt_balance_state.active_height[total_advance_amount],
@@ -1593,7 +1594,7 @@ static int tex_aux_quit_balance(const balance_properties *properties, int pass)
         int tracing = tracing_looseness_par;
         if (tracing) {
             tex_begin_diagnostic();
-            tex_print_format("[looseness: pass %i, pages %i, looseness %i]\n", pass, best_page - 1, properties->looseness);
+            tex_print_format("%l[looseness: pass %i, pages %i, looseness %i]\n", pass, best_page - 1, properties->looseness);
         }
         do {
             if (node_type(r) != delta_node) {
@@ -1857,7 +1858,7 @@ void tex_balance(balance_properties *properties, halfword head)
     tex_aux_set_looseness(properties);
     if (properties->tracing_balancing > 1) {
         tex_begin_diagnostic();
-        tex_print_str("[balance: original] ");
+        tex_print_str("%l[balance: original] ");
         tex_short_display(first);
         tex_end_diagnostic();
     }
@@ -1867,7 +1868,7 @@ void tex_balance(balance_properties *properties, halfword head)
         if (properties->tracing_balancing > 0 || properties->tracing_passes > 0) {
             if (specification_presets(passes)) {
                 tex_begin_diagnostic();
-                tex_print_str("[balance: specification presets]");
+                tex_print_str("%l[balance: specification presets]");
                 tex_end_diagnostic();
             }
         }
@@ -1893,7 +1894,7 @@ void tex_balance(balance_properties *properties, halfword head)
             case balance_first_pass:
                 if (properties->tracing_balancing > 0 || properties->tracing_passes > 0) {
                     tex_begin_diagnostic();
-                    tex_print_format("[balance: first pass, used tolerance %i]", lmt_balance_state.threshold);
+                    tex_print_format("%l[balance: first pass, used tolerance %i]", lmt_balance_state.threshold);
                     // tex_end_diagnostic();
                 }
                 lmt_balance_state.passes.n_of_first_passes++;
@@ -1903,7 +1904,7 @@ void tex_balance(balance_properties *properties, halfword head)
                     lmt_balance_state.passes.n_of_second_passes++;
                     if (properties->tracing_balancing > 0 || properties->tracing_passes > 0) {
                         tex_begin_diagnostic();
-                        tex_print_format("[balance: second pass, used tolerance %i]", lmt_balance_state.threshold);
+                        tex_print_format("%l[balance: second pass, used tolerance %i]", lmt_balance_state.threshold);
                         // tex_end_diagnostic();
                     }
                     break;
@@ -1915,7 +1916,7 @@ void tex_balance(balance_properties *properties, halfword head)
                 lmt_balance_state.passes.n_of_final_passes++;
                 if (properties->tracing_balancing > 0 || properties->tracing_passes > 0) {
                     tex_begin_diagnostic();
-                    tex_print_format("[balance: final pass, used tolerance %i, used emergency stretch %p]", lmt_balance_state.threshold, properties->emergency_stretch);
+                    tex_print_format("%l[balance: final pass, used tolerance %i, used emergency stretch %p]", lmt_balance_state.threshold, properties->emergency_stretch);
                     // tex_end_diagnostic();
                 }
                 lmt_balance_state.background[total_stretch_amount] += properties->emergency_stretch;
@@ -1948,7 +1949,7 @@ void tex_balance(balance_properties *properties, halfword head)
                 }
                 if (properties->tracing_balancing > 0 || properties->tracing_passes > 0) {
                     tex_begin_diagnostic();
-                    tex_print_format("[balance: specification subpass %i]\n", subpass);
+                    tex_print_format("%l[balance: specification subpass %i]\n", subpass);
                 }
                 lmt_balance_state.passes.n_of_sub_passes++;
                 break;

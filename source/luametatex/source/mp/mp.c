@@ -9,6 +9,7 @@
 # include "mpmathbinary.h"
 # include "mpmathdecimal.h"
 # include "mpmathposit.h"
+# include "mpmathinterval.h"
 # include "mpstrings.h"
 
 /*tex
@@ -3196,7 +3197,7 @@ a particular error.
 
 The program uses a |jump_buf| to handle this, this is initialized at three spots: the start of
 |mp_new|, the start of |mp_initialize|, and the start of |mp_run|. Those are the only library entry
-points. If the array of internals is still |NULL| when |jump_out| is called, a crash will occur 
+points. If the array of internals is still |NULL| when |jump_out| is called, a crash will occur
 during initialization, and it is not safe to run the normal cleanup routine.
 
 Individual lines of help are recorded in the array |help_line|, which contains entries in positions
@@ -3767,7 +3768,7 @@ static void mp_begin_diagnostic_print(MP mp, const char *s, const char *t, int n
 
 /*tex
 
-Here are the functions needed for the avl construction.The avl comparison function is a 
+Here are the functions needed for the avl construction.The avl comparison function is a
 straight forward version of |strcmp|, except that checks for the string lengths first.
 
 */
@@ -4844,54 +4845,54 @@ static int mp_interesting(MP mp, mp_node p)
                 case mp_x_part_operation:
                     switch (tt->type) {
                         case mp_color_type:
-                            t = mp_red_part(tt)->name_type; 
+                            t = mp_red_part(tt)->name_type;
                             break;
                         case mp_cmykcolor_type:
-                            t = mp_cyan_part(tt)->name_type; 
+                            t = mp_cyan_part(tt)->name_type;
                             break;
                         default:
-                                t = mp_x_part(tt)->name_type; 
+                                t = mp_x_part(tt)->name_type;
                                 break;
                     }
                     break;
-                case mp_y_part_operation:       
+                case mp_y_part_operation:
                     switch (tt->type) {
                         case mp_color_type:
-                            t = mp_green_part(tt)->name_type; 
+                            t = mp_green_part(tt)->name_type;
                             break;
                         case mp_cmykcolor_type:
-                            t = mp_magenta_part(tt)->name_type; 
+                            t = mp_magenta_part(tt)->name_type;
                             break;
                         default:
-                            t = mp_y_part(tt)->name_type; 
+                            t = mp_y_part(tt)->name_type;
                             break;
                     }
                     break;
-                case mp_z_part_operation:       
+                case mp_z_part_operation:
                     switch (tt->type) {
                         case mp_color_type:
-                            t = mp_blue_part(tt)->name_type; 
+                            t = mp_blue_part(tt)->name_type;
                             break;
                         case mp_cmykcolor_type:
-                            t = mp_yellow_part(tt)->name_type; 
+                            t = mp_yellow_part(tt)->name_type;
                             break;
                         default:
                             break;
                     }
                     break;
-                case mp_w_part_operation:       
+                case mp_w_part_operation:
                     switch (tt->type) {
                         case mp_cmykcolor_type:
-                            t = mp_black_part(tt)->name_type; 
+                            t = mp_black_part(tt)->name_type;
                             break;
                         default:
                             break;
                     }
                     break;
-# else 
+# else
                 case mp_x_part_operation:       t = mp_x_part      (tt)->name_type; break;
                 case mp_y_part_operation:       t = mp_y_part      (tt)->name_type; break;
-# endif 
+# endif
                 case mp_xx_part_operation:      t = mp_xx_part     (tt)->name_type; break;
                 case mp_xy_part_operation:      t = mp_xy_part     (tt)->name_type; break;
                 case mp_yx_part_operation:      t = mp_yx_part     (tt)->name_type; break;
@@ -5577,7 +5578,7 @@ static const char *mp_knot_type_string[] = {
     "endpoint",
     "explicit",
     "given",
-    "curl",  
+    "curl",
     "open",
     "endcycle",
 };
@@ -5586,7 +5587,7 @@ static const char *mp_knot_state_string[] = {
     "regular",
     "begin",
     "end",
-    "single",  
+    "single",
 };
 
 static const char * mp_valid_knot_type_string(int n)
@@ -5610,7 +5611,7 @@ static void mp_print_path_only(MP mp, mp_knot h) /* todo: spaces, just after thi
             mp_print_nl(mp, "[no path, no back link]");
             return;
         } else {
-            mp_print_format(mp, "<%s %s : %s> ", 
+            mp_print_format(mp, "<%s %s : %s> ",
                 mp_valid_knot_type_string(mp_left_type(p)),
                 mp_valid_knot_type_string(mp_right_type(p)),
                 mp_valid_knot_state_string(mp_knotstate(p))
@@ -10481,8 +10482,8 @@ The name of this module is a bit of a lie because we just find the first |dd| wh
 stop_x(dd))| is large enough to make an overlap possible. It could be that the un-offset version of
 dash |dln| falls in the gap between |dd| and its predecessor.
 
-At this point we already know that |start_x(dln) <= xoff + mp_take_scaled(hsf,stop_x(dd))|.The next 
-major task is to update the bounding box information in an edge header~|h|. This is done via a 
+At this point we already know that |start_x(dln) <= xoff + mp_take_scaled(hsf,stop_x(dd))|.The next
+major task is to update the bounding box information in an edge header~|h|. This is done via a
 procedure adjust_bbox| that enlarges an edge header's bounding box to accommodate the box computed by
 |path_bbox| or |pen_bbox|. (This is stored in global variables |minx|, |miny|, |maxx|, and |maxy|.)
 
@@ -15493,7 +15494,7 @@ void mp_get_next(MP mp)
                     if (c == '\'') {
                         if (mp_number_to_boolean(internal_value(mp_single_quote_mode_internal)) == mp_true_operation) {
                             /* okay */
-                        } else { 
+                        } else {
                             break;
                         }
                     }
@@ -16386,7 +16387,7 @@ static void mp_check_expansion_depth(MP mp)
 {
     if (++mp->expand_depth_count >= mp->expand_depth) {
         if (mp->interaction >= mp_error_stop_mode) {
-            mp->interaction=mp_scroll_mode; /* no more interaction */
+            mp->interaction = mp_scroll_mode; /* no more interaction */
         }
         mp_error(
             mp,
@@ -16394,7 +16395,7 @@ static void mp_check_expansion_depth(MP mp)
             "Recursive macro expansion cannot be unlimited because of runtime stack\n"
             "constraints. The limit is 10000 recursion levels in total."
         );
-        mp->history=mp_fatal_error_stop;
+        mp->history = mp_fatal_error_stop;
         mp_jump_out(mp);
     }
 }
@@ -20172,7 +20173,7 @@ static void mp_take_part(MP mp, int c)
     mp_free_value_node(mp, cur_exp_node);
     switch (c) {
         case mp_x_part_operation:
-            switch (cur_exp_type) { 
+            switch (cur_exp_type) {
                 case mp_pair_type:
                     mp_make_exp_copy(mp, mp_x_part(p), c);
                     break;
@@ -20188,7 +20189,7 @@ static void mp_take_part(MP mp, int c)
             }
             break;
         case mp_y_part_operation:
-            switch (cur_exp_type) { 
+            switch (cur_exp_type) {
                 case mp_pair_type:
                     mp_make_exp_copy(mp, mp_y_part(p), c);
                     break;
@@ -20204,7 +20205,7 @@ static void mp_take_part(MP mp, int c)
             }
             break;
         case mp_z_part_operation:
-            switch (cur_exp_type) { 
+            switch (cur_exp_type) {
                 case mp_color_type:
                     mp_make_exp_copy(mp, mp_blue_part(p), c);
                     break;
@@ -20217,7 +20218,7 @@ static void mp_take_part(MP mp, int c)
             }
             break;
         case mp_w_part_operation:
-            switch (cur_exp_type) { 
+            switch (cur_exp_type) {
                 case mp_cmykcolor_type:
                     mp_make_exp_copy(mp, mp_black_part(p), c);
                     break;
@@ -20968,8 +20969,8 @@ static void mp_set_up_sqrt(MP mp, int c)
 
 static void mp_set_up_norm(MP mp, int c) /* for 3D experiments */
 {
-    mp_number r; 
-    switch (cur_exp_type) { 
+    mp_number r;
+    switch (cur_exp_type) {
         case mp_numeric_type:
         case mp_known_type:
             mp_new_number_from_mul(r, cur_exp_value_number, cur_exp_value_number);
@@ -20984,7 +20985,7 @@ static void mp_set_up_norm(MP mp, int c) /* for 3D experiments */
                 mp_free_number(x);
                 mp_free_number(y);
                 goto OKAY;
-            } else { 
+            } else {
                 break;
             }
        case mp_color_type:
@@ -20999,7 +21000,7 @@ static void mp_set_up_norm(MP mp, int c) /* for 3D experiments */
                 mp_free_number(y);
                 mp_free_number(z);
                 goto OKAY;
-            } else { 
+            } else {
                 break;
             }
         case mp_cmykcolor_type:
@@ -21017,7 +21018,7 @@ static void mp_set_up_norm(MP mp, int c) /* for 3D experiments */
                 mp_free_number(z);
                 mp_free_number(w);
                 goto OKAY;
-            } else { 
+            } else {
                 break;
             }
         default:
@@ -21196,7 +21197,7 @@ static void mp_set_up_to_string(MP mp, int c)
         mp_new_number(new_expr.data.n);
         if (c == mp_ASCII_operation) {
             n = cur_exp_str->len == 0 ? -1 : cur_exp_str->str[0];
-        } else { 
+        } else {
             int invalid = 0; /* did the string contain an invalid digit? */
             int radix = c == mp_oct_operation ? 8 : 16;
             n = 0;
@@ -21223,18 +21224,18 @@ static void mp_set_up_to_string(MP mp, int c)
                     n = 32767;
                 }
             }
-            /*tex 
+            /*tex
                 Give error messages if |invalid| or |n >= 4096| (so this code is rather
                 scaled specific.
             */
             if (invalid) {
                 mp_display_error(mp, NULL);
                 mp_back_error(
-                    mp, 
-                    "String contains illegal digits", 
-                    c == mp_oct_operation ? 
+                    mp,
+                    "String contains illegal digits",
+                    c == mp_oct_operation ?
                         "I zeroed out characters that weren't in the range 0..7."
-                    : 
+                    :
                         "I zeroed out characters that weren't hex digits."
                 );
                 mp_get_x_next(mp);
@@ -21279,7 +21280,7 @@ static void mp_set_up_length(MP mp, int c)
 {
     /*tex
         The length operation is somewhat unusual in that it applies to a variety of different
-        types of operands. Plain \METAPOST\ lets |abs| to |length|. 
+        types of operands. Plain \METAPOST\ lets |abs| to |length|.
     */
     switch (cur_exp_type) {
         case mp_string_type:
@@ -21420,18 +21421,18 @@ static void mp_set_up_type_3(MP mp, int c)
 
 static int mp_path_is_singularity(MP mp, mp_knot first)
 {
-    mp_knot current = first; 
-    while (1) { 
+    mp_knot current = first;
+    while (1) {
         mp_knot next = mp_next_knot(current);
-        if (next == first) {  
+        if (next == first) {
             break;
         } else if (! mp_number_equal(current->x_coord, next->x_coord) || ! mp_number_equal(current->y_coord, next->y_coord)) {
             return 0;
         } else {
-            current = next; 
+            current = next;
         }
     }
-    return 1; 
+    return 1;
 }
 
 static void mp_set_up_singularity(MP mp, int c)
@@ -21448,7 +21449,7 @@ static void mp_set_up_singularity(MP mp, int c)
         case mp_pair_type:
             b = mp_true_operation;
             break;
-        default: 
+        default:
             b = mp_false_operation;
             break;
     }
@@ -21459,17 +21460,17 @@ static void mp_set_up_singularity(MP mp, int c)
 
 /*tex
 
-    Splitting the pruning is easier to trace. Later we can merge. Although pruning takes time, 
+    Splitting the pruning is easier to trace. Later we can merge. Although pruning takes time,
     think of a 3000 point path, we eventually gain back on less overhead in the backend and smaller
-    results. 
+    results.
 
     \starttyping
-    (1,1) -- (2,2) -- (3,3) && % regular regular end      implicit begin 
+    (1,1) -- (2,2) -- (3,3) && % regular regular end      implicit begin
     (1,1) -- (2,2) -- (3,3) && % begin regular end
     (1,1)                   && % single
     (1,1) -- (1,1)          && % begin end
-    (1,1) -- (1,1) -- (1,1) ;  % begin regular regular    implicit end 
-    \stoptyping 
+    (1,1) -- (1,1) -- (1,1) ;  % begin regular regular    implicit end
+    \stoptyping
 
 */
 
@@ -21482,10 +21483,10 @@ static void mp_set_up_prune_singularities_r_r(MP mp, mp_knot first)
 {
     mp_knot current = first;
     mp_knot previous = NULL;
-    int state = mp_begin_knot; 
-    while (1) { 
+    int state = mp_begin_knot;
+    while (1) {
         mp_knot next = mp_next_knot(current);
-        if (previous && state == mp_regular_knot && next != first && current->state == mp_regular_knot && mp_same_point(mp, previous, current)) { 
+        if (previous && state == mp_regular_knot && next != first && current->state == mp_regular_knot && mp_same_point(mp, previous, current)) {
             mp_knot wiped = current;
             mp_next_knot(previous) = next;
             mp_prev_knot(next) = previous;
@@ -21493,13 +21494,13 @@ static void mp_set_up_prune_singularities_r_r(MP mp, mp_knot first)
             mp_number_clone(previous->right_y, current->right_y);
             current = next;
             mp_free_knot(mp, wiped);
-            goto PICKUP; 
+            goto PICKUP;
         }
         state = current->state;
         previous = current;
         current = next;
       PICKUP:
-        if (current == first) { 
+        if (current == first) {
             break;
         }
     }
@@ -21509,10 +21510,10 @@ static void mp_set_up_prune_singularities_b_r(MP mp, mp_knot first)
 {
     mp_knot previous = first;
     mp_knot current = mp_next_knot(first);
-    int state = mp_begin_knot; 
-    while (current != first) { 
+    int state = mp_begin_knot;
+    while (current != first) {
         mp_knot next = mp_next_knot(current);
-        if (state == mp_begin_knot && next != first && current->state == mp_regular_knot && mp_same_point(mp, previous, current)) { 
+        if (state == mp_begin_knot && next != first && current->state == mp_regular_knot && mp_same_point(mp, previous, current)) {
             mp_knot wiped = current;
             mp_next_knot(previous) = next;
             mp_prev_knot(next) = previous;
@@ -21521,13 +21522,13 @@ static void mp_set_up_prune_singularities_b_r(MP mp, mp_knot first)
             current = next;
             state = mp_regular_knot;
             mp_free_knot(mp, wiped);
-            goto PICKUP; 
+            goto PICKUP;
         }
         state = current->state;
         previous = current;
         current = next;
       PICKUP:
-        if (current == first) { 
+        if (current == first) {
             break;
         }
     }
@@ -21537,10 +21538,10 @@ static void mp_set_up_prune_singularities_r_e(MP mp, mp_knot first) /* todo : la
 {
      mp_knot current = first;
      mp_knot previous = NULL;
-     int state = mp_begin_knot; 
-     while (current != first) { 
+     int state = mp_begin_knot;
+     while (current != first) {
         mp_knot next = mp_next_knot(current);
-         if (previous && state == mp_regular_knot && (current->state == mp_end_knot || next == first ) && mp_same_point(mp, previous, current)) { 
+         if (previous && state == mp_regular_knot && (current->state == mp_end_knot || next == first ) && mp_same_point(mp, previous, current)) {
              mp_knot wiped = previous;
              mp_knot prev = mp_prev_knot(previous);
              mp_number_clone(current->left_x, previous->left_x);
@@ -21552,20 +21553,20 @@ static void mp_set_up_prune_singularities_r_e(MP mp, mp_knot first) /* todo : la
          state = current->state;
          previous = current;
          current = next;
-         if (current == first) { 
+         if (current == first) {
              break;
          }
      }
 }
 
-static void mp_set_up_prune_singularities_b_e(MP mp, mp_knot first) 
+static void mp_set_up_prune_singularities_b_e(MP mp, mp_knot first)
 {
     mp_knot previous = first;
     mp_knot current = mp_next_knot(first);
-    int state = mp_begin_knot; 
-    while (current != first) { 
+    int state = mp_begin_knot;
+    while (current != first) {
         mp_knot next = mp_next_knot(current);
-        if (state == mp_begin_knot && (current->state == mp_end_knot || next == first) && mp_same_point(mp, previous, current)) { 
+        if (state == mp_begin_knot && (current->state == mp_end_knot || next == first) && mp_same_point(mp, previous, current)) {
             mp_knot wiped = current;
             mp_next_knot(previous) = next;
             mp_prev_knot(next) = previous;
@@ -21577,13 +21578,13 @@ static void mp_set_up_prune_singularities_b_e(MP mp, mp_knot first)
             current = next;
             state = mp_single_knot;
             mp_free_knot(mp, wiped);
-            goto PICKUP; 
+            goto PICKUP;
         }
         state = current->state;
         previous = current;
         current = next;
       PICKUP:
-        if (current == first) { 
+        if (current == first) {
             break;
         }
     }
@@ -21593,9 +21594,9 @@ static void mp_set_up_prune_singularities_w_s(MP mp, mp_knot first)
 {
     mp_knot previous = first;
     mp_knot current = mp_next_knot(first);
-    while (current != first) { 
+    while (current != first) {
         mp_knot next = mp_next_knot(current);
-        if (current->state == mp_single_knot) { 
+        if (current->state == mp_single_knot) {
             mp_knot wiped = current;
             mp_next_knot(previous) = next;
             mp_prev_knot(next) = previous;
@@ -21605,13 +21606,13 @@ static void mp_set_up_prune_singularities_w_s(MP mp, mp_knot first)
             mp_number_clone(next->left_y, next->y_coord);
             mp_free_knot(mp, wiped);
             current = next;
-            goto PICKUP; 
-        } else { 
+            goto PICKUP;
+        } else {
             previous = current;
             current = next;
         }
       PICKUP:
-        if (current == first) { 
+        if (current == first) {
             break;
         }
     }
@@ -21621,10 +21622,10 @@ static void mp_set_up_prune_singularities_c_s(MP mp, mp_knot first)
 {
     mp_knot previous = first;
     mp_knot current = mp_next_knot(first);
-    int state = mp_begin_knot; 
-    while (current != first) { 
+    int state = mp_begin_knot;
+    while (current != first) {
         mp_knot next = mp_next_knot(current);
-        if (state == mp_end_knot && current->state == mp_begin_knot && mp_same_point(mp, previous, current)) { 
+        if (state == mp_end_knot && current->state == mp_begin_knot && mp_same_point(mp, previous, current)) {
             mp_knot wiped = current;
             mp_next_knot(previous) = next;
             mp_prev_knot(next) = previous;
@@ -21634,13 +21635,13 @@ static void mp_set_up_prune_singularities_c_s(MP mp, mp_knot first)
             current = next;
             state = mp_regular_knot;
             mp_free_knot(mp, wiped);
-            goto PICKUP; 
+            goto PICKUP;
         }
         state = current->state;
         previous = current;
         current = next;
       PICKUP:
-        if (current == first) { 
+        if (current == first) {
             break;
         }
     }
@@ -21648,7 +21649,7 @@ static void mp_set_up_prune_singularities_c_s(MP mp, mp_knot first)
 
 static void mp_set_up_prune_singularities(MP mp, int c)
 {
-    switch (cur_exp_type) { 
+    switch (cur_exp_type) {
         case mp_path_type: /* we can use a interternal as bitset */
             {
                 int prune = mp_round_unscaled(internal_value(mp_prune_options_internal));
@@ -21672,17 +21673,17 @@ static void mp_set_up_prune_singularities(MP mp, int c)
                 }
                 break;
             }
-        case mp_picture_type: 
+        case mp_picture_type:
             {
                 mp_node current  = mp_edge_list(cur_exp_node)->link;
-                mp_node previous = NULL; 
-                while (current) { 
+                mp_node previous = NULL;
+                while (current) {
                     if (mp_is_start_or_stop(current) && mp_skip_one_component(mp, current) == NULL) {
                         /* skip over it */
-                    } else if (current->type == mp_fill_node_type || current->type == mp_stroked_node_type) { 
+                    } else if (current->type == mp_fill_node_type || current->type == mp_stroked_node_type) {
                         if (mp_path_is_singularity(mp, mp_path_ptr((mp_shape_node) current))) {
-                            if (previous) { 
-                                previous->link = current->link; 
+                            if (previous) {
+                                previous->link = current->link;
                             } else {
                                 mp_edge_list(cur_exp_node)->link = current->link;
                             }
@@ -21698,7 +21699,7 @@ static void mp_set_up_prune_singularities(MP mp, int c)
              // mp_add_edge_ref(mp, cur_exp_node);
                 break;
             }
-        default: 
+        default:
             mp_bad_unary(mp, c);
             break;
     }
@@ -21867,7 +21868,7 @@ static void mp_set_up_delta(MP mp, int c)
             mp_knot p = mp->loop_ptr->point;
             int f = mp_round_unscaled(mp->cur_x);
             int l = mp_round_unscaled(mp->cur_y) - f;
-            if (f > 0) { while (f--) { p = mp_next_knot(p); } } else 
+            if (f > 0) { while (f--) { p = mp_next_knot(p); } } else
             if (f < 0) { while (f++) { p = mp_prev_knot(p); } }
             memset(&new_expr, 0, sizeof(mp_value));
             mp_set_number_from_int(count, l);
@@ -21878,7 +21879,7 @@ static void mp_set_up_delta(MP mp, int c)
         } else {
             mp_bad_unary(mp, c);
         }
-    } else { 
+    } else {
         if (cur_exp_type == mp_known_type) {
             mp_set_cur_exp_value_number(mp, &cur_exp_value_number);
             if (mp->loop_ptr && mp->loop_ptr->point != NULL) {
@@ -21977,8 +21978,8 @@ static void mp_set_up_corner(MP mp, int c)
             case mp_corners_operation:
                 mp_make_bounding_box(mp);
                 break;
-        } 
-    } else { 
+        }
+    } else {
         mp_bad_unary(mp, c);
     }
 }
@@ -21990,17 +21991,17 @@ static void mp_set_up_range(MP mp, int c)
             if (mp_get_cur_xbox(mp)) {
                 mp_pair_value(mp, &mp_minx, &mp_maxx);
                 return;
-            } else { 
+            } else {
                 break;
             }
         case mp_y_range_operation:
             if (mp_get_cur_ybox(mp)) {
                 mp_pair_value(mp, &mp_miny, &mp_maxy);
                 return;
-            } else { 
+            } else {
                 break;
             }
-        default: 
+        default:
             break;
     }
     mp_bad_unary(mp, c);
@@ -22082,7 +22083,7 @@ static void mp_set_up_part(MP mp, int c)
 {
     switch (cur_exp_type) {
         case mp_known_type:
-            switch (c) { 
+            switch (c) {
                 case mp_grey_part_operation:
                     /* self */
                     return;
@@ -22090,17 +22091,17 @@ static void mp_set_up_part(MP mp, int c)
                     goto BAD;
             }
         case mp_pair_type:
-            switch (c) { 
+            switch (c) {
                 case mp_x_part_operation:
                 case mp_y_part_operation:
                     /* take */
                     break;
-                default: 
+                default:
                     goto BAD;
             }
             break;
         case mp_transform_type:
-            switch (c) { 
+            switch (c) {
                 case mp_x_part_operation:
                 case mp_y_part_operation:
                 case mp_xx_part_operation:
@@ -22109,12 +22110,12 @@ static void mp_set_up_part(MP mp, int c)
                 case mp_yy_part_operation:
                     /* take */
                     break;
-                default: 
+                default:
                     goto BAD;
             }
             break;
         case mp_picture_type:
-            switch (c) { 
+            switch (c) {
                 case mp_x_part_operation:
                 case mp_y_part_operation:
                 case mp_xx_part_operation:
@@ -22156,13 +22157,13 @@ static void mp_set_up_part(MP mp, int c)
                 case mp_postscript_part_operation:
                 case mp_stacking_part_operation:
                     break;
-                default: 
+                default:
                     goto BAD;
             }
             mp_take_picture_part(mp, c);
             return;
         case mp_color_type:
-            switch (c) { 
+            switch (c) {
                 case mp_red_part_operation:
                 case mp_green_part_operation:
                 case mp_blue_part_operation:
@@ -22172,12 +22173,12 @@ static void mp_set_up_part(MP mp, int c)
                 case mp_z_part_operation:
                     /* also */
                     break;
-                default: 
+                default:
                     goto BAD;
             }
             break;
         case mp_cmykcolor_type:
-            switch (c) { 
+            switch (c) {
                 case mp_cyan_part_operation:
                 case mp_magenta_part_operation:
                 case mp_yellow_part_operation:
@@ -22189,11 +22190,11 @@ static void mp_set_up_part(MP mp, int c)
                 case mp_w_part_operation:
                     /* also */
                     break;
-                default: 
+                default:
                     goto BAD;
             }
             break;
-        default: 
+        default:
             goto BAD;
     }
     mp_take_part(mp, c);
@@ -22204,7 +22205,7 @@ static void mp_set_up_part(MP mp, int c)
 
 /* Trace the current unary operation */
 
-static void mp_trace_unary(MP mp, int c) 
+static void mp_trace_unary(MP mp, int c)
 {
     mp_begin_diagnostic(mp);
     mp_print_nl(mp, "{");
@@ -22219,7 +22220,7 @@ static void mp_do_unary(MP mp, int c)
 {
     mp_check_arithmic(mp);
     if (mp_number_greater(internal_value(mp_tracing_commands_internal), mp_two_t)) {
-        mp_trace_unary(mp, c); 
+        mp_trace_unary(mp, c);
     }
     switch (c) {
         case mp_plus_operation:
@@ -22298,7 +22299,7 @@ static void mp_do_unary(MP mp, int c)
         case mp_segments_operation:
             mp_set_up_segments(mp, c);
             break;
-        case mp_prune_singularities_operation: 
+        case mp_prune_singularities_operation:
             mp_set_up_prune_singularities(mp, c);
             break;
         case mp_length_operation:
@@ -23079,7 +23080,7 @@ static void mp_set_up_trans(MP mp, int c)
                 if (p->type == mp_known_type) {
                     int index = mp_round_unscaled(mp_get_value_number(p));
                     int nx = 1;
-                    int ny = 1; 
+                    int ny = 1;
                     mp_number sx, sy;
                     if (mp_bytemap_valid_data(mp, index)) {
                         bytemap_data b = mp->bytemaps[index];
@@ -24209,14 +24210,14 @@ static void mp_set_up_pythag(MP mp, mp_node p, int c)
 
 static void mp_set_up_dotprod(MP mp, mp_node p, int c) /* for 3D experiments */
 {
-    mp_number r; 
-    switch (cur_exp_type) { 
+    mp_number r;
+    switch (cur_exp_type) {
         case mp_numeric_type:
         case mp_known_type:
             if (p->type == mp_numeric_type || p->type == mp_known_type) {
                 mp_new_number_from_mul(r, cur_exp_value_number, mp_get_value_number(p));
                 goto OKAY;
-            } else { 
+            } else {
                 break;
             }
         case mp_pair_type:
@@ -24228,7 +24229,7 @@ static void mp_set_up_dotprod(MP mp, mp_node p, int c) /* for 3D experiments */
                 mp_free_number(x);
                 mp_free_number(y);
                 goto OKAY;
-            } else { 
+            } else {
                 break;
             }
         case mp_color_type:
@@ -24243,7 +24244,7 @@ static void mp_set_up_dotprod(MP mp, mp_node p, int c) /* for 3D experiments */
                 mp_free_number(y);
                 mp_free_number(z);
                 goto OKAY;
-            } else { 
+            } else {
                 break;
             }
         case mp_cmykcolor_type:
@@ -24261,7 +24262,7 @@ static void mp_set_up_dotprod(MP mp, mp_node p, int c) /* for 3D experiments */
                 mp_free_number(z);
                 mp_free_number(w);
                 goto OKAY;
-            } else { 
+            } else {
                 break;
             }
         default:
@@ -24280,7 +24281,7 @@ static void mp_set_up_dotprod(MP mp, mp_node p, int c) /* for 3D experiments */
 
 static void mp_set_up_crossprod(MP mp, mp_node p, int c) /* for 3D experiments */
 {
-    switch (cur_exp_type) { 
+    switch (cur_exp_type) {
         case mp_pair_type:
             if (mp_pair_is_known(mp_get_value_node(cur_exp_node)) && mp_nice_pair(mp, p, p->type)) {
                 mp_number xy, yx, r;
@@ -24296,7 +24297,7 @@ static void mp_set_up_crossprod(MP mp, mp_node p, int c) /* for 3D experiments *
                     mp_flush_cur_exp(mp, new_expr);
                 }
                 return;
-            } else { 
+            } else {
                 break;
             }
         case mp_color_type:
@@ -24321,7 +24322,7 @@ static void mp_set_up_crossprod(MP mp, mp_node p, int c) /* for 3D experiments *
                 mp_free_number(rg);
                 mp_free_number(gr);
                 return;
-            } else { 
+            } else {
                 break;
             }
      // case mp_cmykcolor_type:
@@ -24334,18 +24335,18 @@ static void mp_set_up_crossprod(MP mp, mp_node p, int c) /* for 3D experiments *
 
 static void mp_set_up_div(MP mp, mp_node p, int c) /* for 3D experiments */
 {
-    switch (cur_exp_type) { 
+    switch (cur_exp_type) {
         case mp_numeric_type:
         case mp_known_type:
             if (p->type == mp_numeric_type || p->type == mp_known_type) {
                 /* x div y = floor(x/y) */
-                mp_number r; 
+                mp_number r;
                 mp_new_number_from_div(r, mp_get_value_number(p), cur_exp_value_number);
                 mp_floor_scaled(r);
                 mp_set_cur_exp_value_number(mp, &r);
                 mp_free_number(r);
                 return;
-            } else { 
+            } else {
                 break;
             }
         default:
@@ -24356,12 +24357,12 @@ static void mp_set_up_div(MP mp, mp_node p, int c) /* for 3D experiments */
 
 static void mp_set_up_mod(MP mp, mp_node p, int c) /* for 3D experiments */
 {
-    switch (cur_exp_type) { 
+    switch (cur_exp_type) {
         case mp_numeric_type:
         case mp_known_type:
             if (p->type == mp_numeric_type || p->type == mp_known_type) {
                 /* x mod y = x - y*floor(x/y) */
-                mp_number r; 
+                mp_number r;
                 mp_new_number_from_div(r, mp_get_value_number(p), cur_exp_value_number);
                 mp_floor_scaled(r);
                 mp_set_number_from_mul(r, r, cur_exp_value_number);
@@ -24369,7 +24370,7 @@ static void mp_set_up_mod(MP mp, mp_node p, int c) /* for 3D experiments */
                 mp_set_cur_exp_value_number(mp, &r);
                 mp_free_number(r);
                 return;
-            } else { 
+            } else {
                 break;
             }
         default:
@@ -24387,7 +24388,7 @@ static int mp_set_up_times(MP mp, mp_node p, int c, mp_node old_p, mp_node old_e
         /*tex
             Multiply when at least one operand is known.
 
-            pair * number or number * pair or number * number 
+            pair * number or number * pair or number * number
         */
         mp_number vv;
         mp_new_fraction(vv);
@@ -27002,9 +27003,9 @@ static void mp_do_new_internal(MP mp)
 
 */
 
-/* 
+/*
     We will move much of the bytemap code to an auxiliary module and eventually have an 'internal' that hold a bytemap
-    reference. 
+    reference.
 */
 
 # define max_bytemaps 1024
@@ -27048,7 +27049,7 @@ static int mp_bytemap_valid_data(MP mp, int index) /* todo */
     return mp_bytemap_valid(mp, index) && mp->bytemaps[index].data;
 }
 
-static char *mp_bytemap_get_value(MP mp, int index, int *nx, int *ny, int *nz) 
+static char *mp_bytemap_get_value(MP mp, int index, int *nx, int *ny, int *nz)
 {
     if (index >= 0 && index < mp->memory_pool[mp_bytemaps_pool].max && mp->bytemaps[index].data) {
         return bytemap_get_value(&(mp->bytemaps[index]), nx, ny, nz);
@@ -27075,16 +27076,16 @@ static inline int mp_aux_weighted(int r, int g, int b) /* todo */
 
 static inline int mp_aux_bytemap_get_byte(MP mp, bytemap_data *bytemap, mp_number *source) /* todo */
 {
-    if (bytemap->options & bytemap_option_posit) { 
+    if (bytemap->options & bytemap_option_posit) {
         posit8_t p = convertDoubleToP8(mp_number_to_double(*source));
-        return (int) p.v; 
+        return (int) p.v;
     } else {
         return (int) mp_round_unscaled(*source);
     }
 }
 
 static inline void mp_aux_bytemap_set_byte(MP mp, bytemap_data *bytemap, mp_number *target, int value)
-{ 
+{
     if (bytemap->options & bytemap_option_posit) {
         posit8_t p = { .v = (uint8_t) value };
         mp_set_number_from_double(*target, convertP8ToDouble(p));
@@ -27567,7 +27568,7 @@ static void mp_bytemap_path(MP mp, mp_node p, int c) /* no need */
 
 static void mp_bytemap_bounds(MP mp, mp_node p, int c, int clip) /* done */
 {
-    (void) c; 
+    (void) c;
     (void) clip; /* todo */
     switch (cur_exp_type) {
         case mp_numeric_type:
@@ -27822,7 +27823,7 @@ static void mp_bytemap_set_byte(MP mp) /* done */ /* todo */
                                             mp_aux_set_bytemap_channel(
                                                 &(mp->bytemaps[index]),
                                                 x, y, z,
-                                                mp_aux_bytemap_get_byte(mp, &(mp->bytemaps[index]), &(cur_exp_value_number)) 
+                                                mp_aux_bytemap_get_byte(mp, &(mp->bytemaps[index]), &(cur_exp_value_number))
                                             );
                                         }
                                         break;
@@ -29240,7 +29241,7 @@ void mp_do_add_to(MP mp)
                 if (mp_pen_ptr((mp_shape_node) p) == NULL) {
                     mp_pen_ptr((mp_shape_node) p) = mp_get_pen_circle(mp, &mp_zero_t);
 //printf("both\n");
-                } else { 
+                } else {
 //printf("fill\n");
                 }
             } else {
@@ -30477,21 +30478,21 @@ void mp_push_path_value(MP mp, mp_knot k)
 
 // void mp_push_tokens_value(MP mp, const char *str, size_t length)
 // {
-//     /*tex 
+//     /*tex
 //         THIS IS NOT YET OKAY AND NOT TO BE USED.
 //     */
 //     if (str && length > 0) {
 //         printf("push tokens is not yet implemented\n");
-// 
+//
 // //      mp_check_script_result(mp, (char *) str);
-// 
+//
 // //        cur_exp_type = mp_string_type;
 // //        mp_set_cur_exp_str(mp, mp_rtsl(mp, (char *) str, length));
 // //        mp_back_expr(mp);
 // //
 // //        set_cur_cmd(mp_scan_tokens_command);
 // //        mp_back_input(mp);
-// 
+//
 // //        mp_node p = mp_new_symbolic_node(mp);
 // //        mp_set_sym_sym(p, cur_sym);
 // //        mp_begin_token_list(mp, p, mp_backed_up_text);
@@ -30535,7 +30536,7 @@ static void mp_primary_error(MP mp)
     Scan a delimited primary.
 */
 
-static void mp_do_command_left_delimiter(MP mp) 
+static void mp_do_command_left_delimiter(MP mp)
 {
     mp_symbol l_delim = cur_sym;
     mp_symbol r_delim = eq_symbol(cur_sym);
@@ -30658,7 +30659,7 @@ static void mp_do_command_left_delimiter(MP mp)
     Convert a suffix to a boolean.
 */
 
-static void mp_do_command_void(MP mp) 
+static void mp_do_command_void(MP mp)
 {
     mp_value new_expr;
     memset(&new_expr, 0, sizeof(mp_value));
@@ -30679,7 +30680,7 @@ static void mp_do_command_void(MP mp)
     Scan a string constant.
 */
 
-static void mp_do_command_string(MP mp) 
+static void mp_do_command_string(MP mp)
 {
     cur_exp_type = mp_string_type;
     mp_set_cur_exp_str(mp, cur_mod_str);
@@ -30691,7 +30692,7 @@ static void mp_do_command_string(MP mp)
     if the group doesn't actually end.
 */
 
-static void mp_do_command_group(MP mp) 
+static void mp_do_command_group(MP mp)
 {
     int group_line = mp_true_line(mp); /* where a group began */
     if (mp_number_positive(internal_value(mp_tracing_commands_internal))) {
@@ -30728,7 +30729,7 @@ static void mp_do_command_group(MP mp)
     (This accords with the conventions of the save stack, as described earlier.)
 */
 
-static int mp_do_command_internal(MP mp, int my_var_flag) 
+static int mp_do_command_internal(MP mp, int my_var_flag)
 {
     int qq = cur_mod;
     if (my_var_flag == mp_assignment_command) {
@@ -30764,7 +30765,7 @@ static int mp_do_command_internal(MP mp, int my_var_flag)
     higher precision when we use it in scalar multiplication.
 */
 
-static int mp_do_command_numeric(MP mp, int my_var_flag) 
+static int mp_do_command_numeric(MP mp, int my_var_flag)
 {
     mp_number num, denom; /*tex For primaries that are fractions, like $1/2$. */
     (void) my_var_flag;
@@ -30823,7 +30824,7 @@ static int mp_do_command_numeric(MP mp, int my_var_flag)
     Convert a suffix to a string.
 */
 
-static void mp_do_command_str(MP mp) 
+static void mp_do_command_str(MP mp)
 {
     int selector = mp->selector;
     mp_get_x_next(mp);
@@ -30842,7 +30843,7 @@ static void mp_do_command_str(MP mp)
     Scan a unary operation.
 */
 
-static void mp_do_command_plus_or_minus(MP mp) 
+static void mp_do_command_plus_or_minus(MP mp)
 {
     int c = (int) cur_mod; /* a primitive operation code */
     mp_get_x_next(mp);
@@ -30854,7 +30855,7 @@ static void mp_do_command_plus_or_minus(MP mp)
     Scan a binary operation with |of| between its operands.
 */
 
-static void mp_do_command_of_binary(MP mp) 
+static void mp_do_command_of_binary(MP mp)
 {
     mp_node p;             /*tex for list manipulation */
     int c = (int) cur_mod; /*tex a primitive operation code */
@@ -30882,7 +30883,7 @@ static void mp_do_command_of_binary(MP mp)
     Scan a variable primary; |goto restart| if it turns out to be a macro.
 */
 
-static int mp_do_command_tag(MP mp, int my_var_flag) 
+static int mp_do_command_tag(MP mp, int my_var_flag)
 {
     mp_node macro_ref = 0;    /*tex reference count for a suffixed macro */
     int tt = mp_vacuous_type; /*tex approximation to the type of the variable-so-far */
@@ -30900,7 +30901,7 @@ static int mp_do_command_tag(MP mp, int my_var_flag)
                 variable structure; we need to start searching from the root each time.
             */
             mp_node p = pre_head->link;
-            mp_node q = NULL; 
+            mp_node q = NULL;
             mp_symbol qq = mp_get_sym_sym(p);
             tt = mp_undefined_type;
             // if (eq_type(qq) % mp_outer_tag_command == mp_tag_command) {
@@ -31078,9 +31079,9 @@ void mp_scan_primary(MP mp)
             mp_do_command_string(mp);
             break;
         case mp_numeric_command:
-            if (mp_do_command_numeric(mp, my_var_flag)) { 
+            if (mp_do_command_numeric(mp, my_var_flag)) {
                 goto DONE;
-            } else { 
+            } else {
                 break;
             }
         case mp_nullary_command:
@@ -31102,19 +31103,19 @@ void mp_scan_primary(MP mp)
             mp_do_command_void(mp);
             goto DONE;
         case mp_internal_command:
-            if (mp_do_command_internal(mp, my_var_flag)) { 
+            if (mp_do_command_internal(mp, my_var_flag)) {
                 goto DONE;
-            } else { 
+            } else {
                 break;
             }
         case mp_capsule_command:
             mp_make_exp_copy(mp, cur_mod_node, 26);
             break;
         case mp_tag_command:
-            switch (mp_do_command_tag(mp, my_var_flag)) { 
-                case 1: 
+            switch (mp_do_command_tag(mp, my_var_flag)) {
+                case 1:
                     goto DONE;
-                case 2: 
+                case 2:
                     goto RESTART;
                 default:
                     break;
@@ -31496,15 +31497,15 @@ mp_number_clone(mp->previous_y, mp_inf_t);
         mp_get_x_next(mp);
         switch (cur_cmd) {
             case mp_tension_command:
-                /*tex 
-                    Set explicit tensions. Checking if the number is |mp_at_least_command| code is 
-                    kind of curious. We could just have a boolean instead. 
+                /*tex
+                    Set explicit tensions. Checking if the number is |mp_at_least_command| code is
+                    kind of curious. We could just have a boolean instead.
                 */
 // int atleast = 0;
                 mp_get_x_next(mp);
                 mp_set_number_from_scaled(y, cur_cmd);
 // atleast = cur_cmd == mp_at_least_command;
-// if (atleast) {  
+// if (atleast) {
                 if (cur_cmd == mp_at_least_command) {
                     mp_get_x_next(mp);
                 }
@@ -31643,18 +31644,18 @@ mp_number_clone(mp->previous_y, mp_inf_t);
             case mp_recycle_operation:
                 {
                     if (path_p != path_q) {
-                        mp_knot pq = mp_prev_knot(path_q); 
+                        mp_knot pq = mp_prev_knot(path_q);
                      // printf(">>> %i %i\n",mp_right_type(pq),mp_right_type(path_q));
                         mp_free_knot(mp, path_q);
-                        path_q = pq; 
+                        path_q = pq;
                         mp_next_knot(path_q) = NULL;
-                        pq = mp_prev_knot(path_q); 
+                        pq = mp_prev_knot(path_q);
                         mp_number_clone(mp->last_x, path_q->x_coord);
                         mp_number_clone(mp->last_y, path_q->y_coord);
                         if  (path_p == pq) {
                             mp_number_clone(mp->previous_x, mp_inf_t);
                             mp_number_clone(mp->previous_y, mp_inf_t);
-                        } else { 
+                        } else {
                             mp_number_clone(mp->previous_x, pq->x_coord);
                             mp_number_clone(mp->previous_y, pq->y_coord);
                         }
@@ -31836,7 +31837,7 @@ mp_number_clone(mp->previous_y, mp_inf_t);
             Splice independent paths together.
         */
         switch (operation) {
-            case mp_concat_operation:      // & 
+            case mp_concat_operation:      // &
             case mp_just_append_operation: // &&
                 break;
             case mp_tolerant_concat_operation:
@@ -32693,16 +32694,25 @@ MP mp_initialize(MP_options *opt)
         case mp_math_scaled_mode:
             mp->math = mp_initialize_scaled_math(mp);
             break;
+     // case mp_math_double_mode:
+     //     mp->math = mp_initialize_double_math(mp);
+     //     break;
+        case mp_math_binary_mode:
+            /*tex This reports an warning in luametatex. */
+            mp->math = mp_initialize_binary_math(mp);
+            goto DOUBLE_MATH;
         case mp_math_decimal_mode:
             mp->math = mp_initialize_decimal_math(mp);
-            break;
-        case mp_math_binary_mode:
-            mp->math = mp_initialize_binary_math(mp);
             break;
         case mp_math_posit_mode:
             mp->math = mp_initialize_posit_math(mp);
             break;
+        case mp_math_interval_mode:
+            /*tex This reports an warning in luametatex. */
+            mp->math = mp_initialize_interval_math(mp);
+            goto DOUBLE_MATH;
         default:
+          DOUBLE_MATH:
             mp->math = mp_initialize_double_math(mp);
             break;
     }
@@ -32809,6 +32819,9 @@ MP mp_initialize(MP_options *opt)
         case mp_math_scaled_mode:
             set_internal_string(mp_number_system_internal, mp_intern(mp, "scaled"));
             break;
+     // case mp_math_double_mode:
+     //     set_internal_string(mp_number_system_internal, mp_intern(mp, "double"));
+     //     break;
      // case mp_math_binary_mode:
      //     set_internal_string(mp_number_system_internal, mp_intern(mp, "binary"));
      //     break;
@@ -32818,6 +32831,9 @@ MP mp_initialize(MP_options *opt)
         case mp_math_posit_mode:
             set_internal_string(mp_number_system_internal, mp_intern(mp, "posit"));
             break;
+     // case mp_math_interval_mode:
+     //     set_internal_string(mp_number_system_internal, mp_intern(mp, "interval"));
+     //     break;
         default:
             set_internal_string(mp_number_system_internal, mp_intern(mp, "double"));
             break;

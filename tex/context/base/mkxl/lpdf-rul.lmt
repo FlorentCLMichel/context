@@ -152,6 +152,8 @@ FakeRule(RuleWidth,RuleHeight,RuleDepth,RuleThickness,RuleColor);
         setdimen("d_rule_width", h)
         setdimen("d_rule_height", v * ht / total)
         setdimen("d_rule_depth", v * dp / total)
+        setdimen("d_rule_height", ht)
+        setdimen("d_rule_depth", dp)
         setdimen("d_rule_h", h)
         setdimen("d_rule_v", v)
         setdimen("d_rule_line", p.line or 65536)

@@ -333,7 +333,10 @@
 \pushoverloadmode
 
 \permanent\protected\def\startbaselinecorrection
-  {\ifgridsnapping
+  {\ifgridlinesnapping
+     \snaptogridline[\v!normal]\vbox\bgroup
+     \enforced\let\stopbaselinecorrection\egroup
+   \orelse\ifgridsnapping
      \snaptogrid[\v!normal]\vbox\bgroup
      \enforced\let\stopbaselinecorrection\egroup
    \else
@@ -342,36 +345,261 @@
 
 \popoverloadmode
 
-% This is new (and experimental) and might replace some of the above. beware it doesn't always work
-% out well, e.g. when used grouped and such (e.g. before display math doesn't work out well).
+%D Experimental code:
 
-% \permanent\protected\def\fakenextstrutline
-%   {\par
-%    \begingroup
-%    \reseteverypar
-%    \dontleavehmode\hpack to \zeropoint{\page_sides_anchor\hss\strut}% just a tracer
-%    \vskip-\parskip
-%    \vskip-\struttotal
-%    \endgroup}
+\appendtoks
+    \linesnapping \zerocount
+\to \everyforgetall
 
-% \permanent\protected\def\fakenextstrutline
-%   {\par
-%    \begingroup
-%    \reseteverypar
-%    \dontleavehmode\hpack{\strut}\par
-%    \clf_fakenextstrutline
-%    \ifdim\pagetotal>\lineheight
-%      \pagetotal\dimexpr\pagetotal-\lineheight\relax
-%    \fi
-%    \endgroup}
+\newtoks \everysynchronizesnapping
 
-% \permanent\protected\def\fakenextstrutline
-%   {\par
-%    \begingroup
-%    \reseteverypar
-%    \forgetall
-%    \dontleavehmode\hpack{\strut}\par
-%    \clf_removelastline
-%    \endgroup}
+\permanent\protected\def\updatelinesnapping
+  {\linesnappinghtfactor\numericscale\strutheightfactor\relax
+   \linesnappingdpfactor\numericscale\strutdepthfactor \relax
+   \expand\everysynchronizesnapping}
+
+\permanent \specificationdef \linesnappingnone \linesnapping \zerocount
+
+\specificationdef \linesnappingzero \linesnapping \plusone \s!factors \s!global \s!constant
+    \s!step        \zerocount
+    \s!height      \plusthousand
+    \s!depth       \plusthousand
+\relax
+\specificationdef \linesnappingone \linesnapping \plusone \s!factors \s!global \s!constant
+    \s!step        \plusone
+    \s!height      \plusthousand
+    \s!depth       \plusthousand
+\relax
+\specificationdef \linesnappingtwo \linesnapping \plusone \s!factors \s!global \s!constant
+    \s!step        \plustwo
+    \s!height      \plusthousand
+    \s!depth       \plusthousand
+\relax
+
+\specificationdef \linesnappingzeroten \linesnapping \plusone \s!factors \s!global \s!constant
+    \s!step        \zerocount
+    \s!height      \plusthousand
+    \s!depth       \plusthousand
+    \s!httolerance \plushundred % 10 percent
+    \s!dptolerance \plushundred % 10 percent
+\relax
+\specificationdef \linesnappingoneten \linesnapping \plusone \s!factors \s!global \s!constant
+    \s!step        \plusone
+    \s!height      \plusthousand
+    \s!depth       \plusthousand
+    \s!httolerance \plushundred % 10 percent
+    \s!dptolerance \plushundred % 10 percent
+\relax
+\specificationdef \linesnappingtwoten \linesnapping \plusone \s!factors \s!global \s!constant
+    \s!step        \plustwo
+    \s!height      \plusthousand
+    \s!depth       \plusthousand
+    \s!httolerance \plushundred % 10 percent
+    \s!dptolerance \plushundred % 10 percent
+\relax
+\specificationdef \linesnappingtwotwenty \linesnapping \plusone \s!factors \s!global \s!constant
+    \s!step        \plustwo
+    \s!height      \plusthousand
+    \s!depth       \plusthousand
+    \s!httolerance \plustwohundred % 20 percent
+    \s!dptolerance \plustwohundred % 20 percent
+\relax
+
+\specificationdef \linesnappingonetop \linesnapping \plusone \s!factors \s!global \s!constant
+    \s!step   \plusone
+    \s!height \plusthousand
+    \s!depth  \plusthousand
+    \s!top
+\relax
+\specificationdef \linesnappingonebottom \linesnapping \plusone \s!factors \s!global \s!constant
+    \s!step   \plusone
+    \s!height \plusthousand
+    \s!depth  \plusthousand
+    \s!bottom
+\relax
+
+\specificationdef \linesnappingtwobottom \linesnapping \plusone \s!factors \s!global \s!constant
+    \s!step   \plustwo
+    \s!height \plusthousand
+    \s!depth  \plusthousand
+    \s!bottom
+\relax
+\specificationdef \linesnappingtwotop \linesnapping \plusone \s!factors \s!global \s!constant
+    \s!step   \plustwo
+    \s!height \plusthousand
+    \s!depth  \plusthousand
+    \s!top
+\relax
+
+\appendtoks
+    \updatelinesnapping
+\to \everydump
+
+%installaligncommand{\v!nosnapping}{\linesnapping\zerocount}
+\installaligncommand{\v!snapping}  {\linesnappingone}
+
+\installcorenamespace {snapping}
+
+\permanent\protected\def\installsnapping#1#2%
+  {\ifparameter#2\or
+     \instance\protected\defcsname\??snapping#1\endcsname{#2}%
+     \installaligncommand{\v!snapping:#1}{#2}%
+   \fi}
+
+\permanent\protected\def\douseinstalledsnapping#1%
+  {\ifcsname\??snapping#1\endcsname
+     \lastnamedcs
+   \orelse\ifgridlinesnapping
+     % use the default
+   \else
+     \linesnappingone
+   \fi}
+
+% We have \quote {yes} as well as \quote {normal} because the regular one has that
+% too.
+
+\installsnapping{\v!yes}     {\linesnappingone}
+\installsnapping{\v!normal}  {\linesnappingone}
+
+\installsnapping{0}          {\linesnappingzero}
+\installsnapping{1}          {\linesnappingone}
+\installsnapping{2}          {\linesnappingtwo}
+
+\installsnapping{0:10}       {\linesnappingzeroten}
+\installsnapping{1:10}       {\linesnappingoneten}
+\installsnapping{2:10}       {\linesnappingtwoten}
+
+\installsnapping{2:20}       {\linesnappingtwotwenty}
+
+\installsnapping{1:\v!top}   {\linesnappingonetop}
+\installsnapping{1:\v!bottom}{\linesnappingonebottom}
+
+\installsnapping{2:\v!top}   {\linesnappingtwotop}
+\installsnapping{2:\v!bottom}{\linesnappingtwobottom}
+
+% \installsnapping{\v!math:\v!line}    {\linesnappingone}
+% \installsnapping{\v!math:\v!halfline}{\linesnappingtwo}
+
+% \startnarrower
+%     \showmakeup[line]
+%     \setupalign[snapping]
+%     \samplefile{tufte}
+%     \im{x^{x^2}}
+%     \samplefile{tufte}
+% \stopnarrower
+% \page
+% \startnarrower
+%     \showmakeup[line]
+%     \setupalign[snapping:1]
+%     \samplefile{tufte}
+%     \im{x^{x^2}}
+%     \samplefile{tufte}
+% \stopnarrower
+% \page
+% \startnarrower
+%     \showmakeup[line]
+%     \setupalign[snapping:2]
+%     \samplefile{tufte}
+%     \im{x^{x^2}}
+%     \samplefile{tufte}
+% \stopnarrower
+% \page
+% \startnarrower
+%     \showmakeup[line]
+%     \setupalign[snapping:2:10]
+%     \samplefile{tufte}
+%     \im{x^{x^2}}
+%     \samplefile{tufte}
+% \stopnarrower
+
+\permanent\protected\def\resetgridlinesnapping
+  {\gridlinesnappingfalse
+   \linesnapping\zerocount}
+
+\lettonothing\currentlayoutsnapping
+
+\permanent\protected\def\synchronizegridsnapping
+  {\edef\p_grid{\rootlayoutparameter\c!grid}%
+   \gridsnappingfalse
+   \gridlinesnappingfalse
+   \resetsystemmode\v!grid
+   \resetsystemmode\v!snapping
+   \lettonothing\currentlayoutsnapping
+   \linesnapping\zerocount
+   \spac_grids_snap_value_reset
+   \ifx\p_grid\v!no
+     % already done
+   \orelse\ifx\p_grid\v!snapping
+     \gridlinesnappingtrue
+     \setsystemmode\v!snapping
+     \cdef\currentlayoutsnapping{\rootlayoutparameter\c!snapping}%
+     % don't use align here as we don't want to cache
+     \ifcsname\??snapping\currentlayoutsnapping\endcsname
+        \lastnamedcs
+     \fi
+   \orelse\ifcsname\??gridsnappers\p_grid\endcsname
+     \gridsnappingtrue
+     \setsystemmode\v!grid
+     \spac_grids_snap_value_set\p_grid
+   \fi}
+
+% This is a new one, only for snapping (and tests):
+
+\permanent\tolerant\protected\def\startgridlinesnapping[#1]%
+  {\snaptogridline[#1]\vbox\bgroup}
+
+\permanent\protected\def\stopgridlinesnapping
+  {\egroup}
+
+\permanent\tolerant\protected\def\placeongridline[#1]%
+  {\snaptogridline[#1]\vbox} % mark as done
+
+\permanent\tolerant\protected\def\snaptogridline[#1]%
+  {\ifgridlinesnapping
+     \expandafter\spac_grids_snap_to_line_indeed
+   \orelse\ifgridsnapping
+     \expandafter\gobbleoneargument
+   \else
+     \expandafter\gobbleoneargument
+   \fi{#1}}
+
+\def\spac_grids_snap_to_line_indeed#1%
+  {\bgroup
+   \dowithnextbox{\spac_grids_snap_to_line_finish{#1}}}
+
+\def\spac_grids_snap_to_line_finish#1%
+  {\douseinstalledsnapping{#1}%
+  %\ifempty\linesnapping\else
+   \ifspecification\linesnapping
+      \boxsnapping\nextbox\linesnapping
+   \fi
+ % \ifvmode
+ %   \nointerlineskip
+ %   \dontleavehmode
+ %   \box\nextbox
+ %   \par
+ % \else
+     \box\nextbox
+ % \fi
+   \egroup}
+
+\permanent\protected\def\applygridlinemethod#1#2%
+  {\begingroup
+  %\dousealignparameter{\v!snapping:\ifempty{#1}\currentlayoutsnapping\else#1\fi}%
+   \douseinstalledsnapping{#1}%
+  %\ifempty\linesnapping\else
+   \ifspecification\linesnapping
+     \boxsnapping#2\linesnapping
+   \fi
+ % \par     % used in display heads so we can force thsi for the next
+ % \ifvmode % safeguard ... in old school grid mode we zero the lineskips
+ %   \nointerlineskip
+ %   \dontleavehmode
+ %    \box#2%
+ %   \par
+ % \else
+     \box#2%
+ % \fi
+   \endgroup}
 
 \protect \endinput

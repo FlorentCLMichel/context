@@ -73,4 +73,12 @@
         </cd:arguments>
     </cd:command>
 
+    <cd:command name="shift" type="environment" variant="assignment" level="document" category="layout" file="node-rul.mkiv">
+        <cd:arguments>
+            <cd:assignments list="yes">
+                <cd:inherit name="setupshift"/>
+            </cd:assignments>
+        </cd:arguments>
+    </cd:command>
+
 </cd:interface>

@@ -4,11 +4,25 @@
 
 # include "luametatex.h"
 
+/*tex
+    We use \quote {constant} to prevent copying and freeing but we can also consider using a ref
+    count instead. But it gets hairy when specifications themselves refer to specifications.
+*/
+
 static int valid_specification_options[number_specification_pars] = {
     [par_shape_code]               = specification_option_repeat,
     [par_passes_code]              = specification_option_presets
                                    | specification_option_constant,
     [par_passes_exception_code]    = specification_option_presets,
+    [line_snapping_code]           = specification_option_factors
+                                   | specification_option_constant
+                                   | specification_option_global,
+    [math_snapping_code]           = specification_option_factors
+                                   | specification_option_constant
+                                   | specification_option_global,
+    [align_snapping_code]          = specification_option_factors
+                                   | specification_option_constant
+                                   | specification_option_global,
     [balance_shape_code]           = 0,
     [balance_passes_code]          = specification_option_presets
                                    | specification_option_constant,
@@ -57,7 +71,7 @@ static halfword tex_aux_scan_specification_options(quarterword code)
     halfword valid = valid_specification_options[code];
     while (1) {
         /*tex Maybe |migrate <int>| makes sense here. */
-        switch (tex_scan_character("orcdlpifORCDLPIF", 0, 1, 0)) {
+        switch (tex_scan_character("orcdlpigfORCDLPIFG", 0, 1, 0)) {
             case 0:
                 return options;
             case 'o': case 'O':
@@ -115,13 +129,30 @@ static halfword tex_aux_scan_specification_options(quarterword code)
                 }
                 break;
             case 'f': case 'F':
-                if ((valid & specification_option_final) && tex_scan_mandate_keyword("final", 1)) {
-                    options |= specification_option_final;
+                switch (tex_scan_character("aiAI", 0, 0, 1)) {
+                    case 'a': case 'A':
+                        if ((valid & specification_option_factors) && tex_scan_mandate_keyword("factors", 2)) {
+                            options |= specification_option_factors;
+                        }
+                        break;
+                    case 'i': case 'I':
+                        if ((valid & specification_option_final) && tex_scan_mandate_keyword("final", 2)) {
+                            options |= specification_option_final;
+                        }
+                        break;
+                    default:
+                        tex_aux_show_keyword_error("factors|final");
+                        return options;
                 }
                 break;
             case 'c': case 'C':
                 if ((valid & specification_option_constant) && tex_scan_mandate_keyword("constant", 1)) {
                     options |= specification_option_constant;
+                }
+                break;
+            case 'g': case 'G':
+                if ((valid & specification_option_global) && tex_scan_mandate_keyword("global", 1)) {
+                    options |= specification_option_global;
                 }
                 break;
            default:
@@ -1209,6 +1240,114 @@ static halfword tex_aux_scan_specification_balance_shape(void)
     return p;
 }
 
+static halfword tex_aux_scan_snapper(int factor)
+{
+    return factor ? tex_scan_integer(0, NULL, NULL) : tex_scan_dimension(0, 0, 0, 1, NULL, NULL);
+}
+
+static halfword tex_aux_scan_specification_line_snapping(halfword code)
+{
+    halfword p = null;
+    halfword count = tex_scan_integer(1, NULL, NULL);
+    if (count > 0) {
+        /*tex
+            We have no named options here. Presets are automatically set anyway. We might even drop
+            the option scanning here.
+        */
+        halfword options = tex_aux_scan_specification_options(code);
+        int factors = specification_option_factors(options);
+        halfword n = 1;
+        if (1) {
+            /* maybe some day more, we're prepared */
+            count = 1;
+        }
+        p = tex_new_specification_node(count, code, options);
+        while (n <= count) {
+         // switch (tex_scan_character("hdstbnglHDSNTBGL", 0, 1, 0)) {
+            switch (tex_scan_character("hdstbnHDSNTB", 0, 1, 0)) {
+                case 0:
+                    goto DONE;
+                case 'h': case 'H':
+                    switch (tex_scan_character("etET", 0, 0, 0)) {
+                        case 'e': case 'E':
+                            if (tex_scan_mandate_keyword("height", 2)) {
+                                tex_set_line_snapping_height(p, n, tex_aux_scan_snapper(factors));
+                            }
+                            break;
+                        case 't': case 'T':
+                            if (tex_scan_mandate_keyword("httolerance", 2)) {
+                                tex_set_line_snapping_httolerance(p, n, tex_aux_scan_snapper(factors));
+                            }
+                            break;
+                        default:
+                            tex_aux_show_keyword_error("height|httolerance");
+                            goto DONE;
+                    }
+                    break;
+                case 'd': case 'D':
+                    switch (tex_scan_character("epEP", 0, 0, 0)) {
+                        case 'e': case 'E':
+                            if (tex_scan_mandate_keyword("depth", 2)) {
+                                tex_set_line_snapping_depth(p, n, tex_aux_scan_snapper(factors));
+                            }
+                            break;
+                        case 'p': case 'P':
+                            if (tex_scan_mandate_keyword("dptolerance", 2)) {
+                                tex_set_line_snapping_dptolerance(p, n, tex_aux_scan_snapper(factors));
+                            }
+                            break;
+                        default:
+                            tex_aux_show_keyword_error("depth|dptolerance");
+                            goto DONE;
+                    }
+                    break;
+                case 's': case 'S':
+                    if (tex_scan_mandate_keyword("step", 1)) {
+                        tex_set_line_snapping_step(p, n, tex_scan_integer(0, NULL, NULL));
+                    }
+                    break;
+                case 'b': case 'B':
+                    if (tex_scan_mandate_keyword("bottom", 1)) {
+                        tex_add_line_snapping_options(p, n, line_snapping_option_bottom);
+                    }
+                    break;
+                case 't': case 'T':
+                    if (tex_scan_mandate_keyword("top", 1)) {
+                        tex_add_line_snapping_options(p, n, line_snapping_option_top);
+                    }
+                    break;
+             // case 'g': case 'G':
+             //     if (tex_scan_mandate_keyword("global", 1)) {
+             //         tex_add_line_snapping_options(p, n, line_snapping_option_global);
+             //     }
+             //     break;
+             // case 'l': case 'L':
+             //     /* reserved, not yet used */
+             //     if (tex_scan_mandate_keyword("line", 1)) {
+             //         tex_add_line_snapping_options(p, n, line_snapping_option_line);
+             //     }
+             //     break;
+                case 'n': case 'N':
+                    if (tex_scan_mandate_keyword("next", 1)) {
+                        n++;
+                    }
+                    break;
+                default:
+                    goto DONE;
+            }
+        }
+      DONE:
+        if (n < count) {
+            tex_handle_error(
+                normal_error_type,
+                "there %s only %i of %i %s specified for \\linesnapspec",
+                n == 1 ? "is" : "are", n, count, count == 1 ? "line" : "lines",
+                NULL
+            );
+        }
+    }
+    return p;
+}
 
 static halfword tex_aux_scan_specification(quarterword code)
 {
@@ -1226,6 +1365,10 @@ static halfword tex_aux_scan_specification(quarterword code)
             return tex_aux_scan_specification_par_passes();
         case balance_passes_code: 
             return tex_aux_scan_specification_balance_passes();
+        case line_snapping_code:
+        case math_snapping_code:
+        case align_snapping_code:
+            return tex_aux_scan_specification_line_snapping(code);
         default: 
             return tex_aux_scan_specification_penalties(code);
     }

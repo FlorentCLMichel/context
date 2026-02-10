@@ -366,16 +366,37 @@
    \c!lines=\plusthree,
    \c!offset=\zeropoint]
 
+% \def\page_check_amount
+%   {(\pagecheckerparameter\c!lines\lineheight)%
+%    +\pagetotal
+%     \ifdim\lastskip<\parskip+\parskip\fi
+%    +(\pagecheckerparameter\c!offset)}
+
+% \permanent\tolerant\protected\def\checkpage[#1]#*[#2]%
+%   {\relax % look ahead prevention
+%    \endgraf
+%   %\triggerpagebuilder
+%    \checkspacingbeforepar
+%    \relax
+%    \ifconditional\c_page_breaks_enabled
+%      \begingroup
+%      \cdef\currentpagechecker{#1}%
+%      \setupcurrentpagechecker[#2]%
+%      \csname\??pagecheckermethod\pagecheckerparameter\c!method\endcsname
+%      \endgroup
+%    \fi}
+
 \def\page_check_amount
   {(\pagecheckerparameter\c!lines\lineheight)%
-   +\pagetotal
-    \ifdim\lastskip<\parskip+\parskip\fi
+   +\d_spac_total
    +(\pagecheckerparameter\c!offset)}
 
 \permanent\tolerant\protected\def\checkpage[#1]#*[#2]%
   {\relax % look ahead prevention
    \endgraf
-   \triggerpagebuilder
+  %\triggerpagebuilder
+  %\checkspacingbeforepar
+   \checkspacingavailable
    \relax
    \ifconditional\c_page_breaks_enabled
      \begingroup
@@ -413,6 +434,7 @@
          \pagecheckerparameter\c!inbetween
        \fi
      \else
+%          \penalty-\plustenthousand
        \pagecheckerparameter\c!inbetween
      \fi
    \else
@@ -432,6 +454,7 @@
          \pagecheckerparameter\c!inbetween
        \fi
      \else
+%          \penalty-\plustenthousand
        \pagecheckerparameter\c!inbetween
      \fi
    \else
@@ -464,10 +487,29 @@
      \pagecheckerparameter\c!inbetween
    \fi}
 
+% \defcsname\??pagecheckermethod 4\endcsname % needs testing
+%   {\ifdim\pagegoal<\maxdimen \relax
+%      \ifdim\pagelastheight<\pagegoal \relax
+%        \ifdim{\page_check_amount-\pagegoal}>-\lineheight
+%          \pagecheckerparameter\c!before
+%          \penalty-\plustenthousand
+%          \pagecheckerparameter\c!after
+%        \else
+%          \pagecheckerparameter\c!inbetween
+%        \fi
+%      \else
+%        \pagecheckerparameter\c!inbetween
+%      \fi
+%    \else
+%      \goodbreak
+%      \pagecheckerparameter\c!inbetween
+%    \fi}
+
 \definepagechecker[\s!unknown:0]              [\c!method=0,\c!before=,\c!after=,\c!inbetween=]
 \definepagechecker[\s!unknown:1][\s!unknown:0][\c!method=1]
 \definepagechecker[\s!unknown:2][\s!unknown:0][\c!method=2]
 \definepagechecker[\s!unknown:3][\s!unknown:0][\c!method=3]
+%definepagechecker[\s!unknown:4][\s!unknown:0][\c!method=4]
 
 % the \relax prevents premature expansion in case of lookahead
 

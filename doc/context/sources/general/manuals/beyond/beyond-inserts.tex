@@ -1,0 +1,385 @@
+% language=us runpath=texruns:manuals/beyond
+
+% \enabletrackers[pagebuilder.insert]
+
+\environment beyond-style
+
+\startcomponent beyond-inserts
+
+\startchapter[title={Inserts},author={Hans Hagen & Mikael Sundqvist}]
+
+{\em Here we just mention a few of the challenges we have to deal with. It is an
+incomplete overview, more for ourselves to keep track of matters; users will just
+use the mechanism we provide in \CONTEXT.}
+
+Inserts are a rather special mechanism. They package content that is bound to a
+page and when a page is split off the inserts seen on that page are also
+available. There can be many classes of inserts and these are collected group-wise.
+Inserts can migrate to a next page and/or split. Examples of inserts are top and
+bottom floats and footnotes.
+
+The classical insert implementation has four variables that are bound to an insert
+class that control how insertions influence a page break. There is a box that
+will get the collected inserts, a skip that gets inserted before the first one on
+a page (per class), a counter that is used as height multiplier and a dimension
+that limits the amount of space allocated per page. In section 29.4 of \quotation
+{\TEX\ By Topic} you can find a summary of what happens and it is not that
+trivial.
+
+A good template for footnotes is given in Plain \TEX, but it only implements one
+footnote class: \typ {\footnote}. It puts a rule on top of the notes plus some
+space. Although in \CONTEXT\ a user sees such spacing and a rule as independent,
+it is good to know that the engine has no concept of a rule to be drawn. If a
+rule in front the note section at the bottom of a page is needed, that rule is
+inserted by the page builder and for it to look nice one should have enough space
+to let the rule bleed into that.
+
+The \LUAMETATEX\ engine is different in that it has an alternative representation
+for inserts; when that mode is enabled, we will not use the registers. It also
+made (and makes) it possible to add some extensions. The core logic is the same
+but we have ways to make some otherwise tricky spacing more reliable. There are
+also penalties associated with inserts but deciding what to apply is not
+something users bother themselves with, so we assume reasonable defaults for
+specific insert usage.
+
+Here we will only discuss spacing, because that is what we picked up in January
+2026 after some question by a user. Although the spacing model was already
+updated (read: made a bit more reliable) it made sense to run the last mile too.
+We also moved the default (initial) spacing from the footnote class to the
+combined settings so that might result in some incompatibilities.
+
+We limit ourselves mostly to (foot)notes, but the solutions can also be applied to
+top and bottom inserts so once we're satisfied by upgrading notes we will deal
+with them too. The traditional model sort of assumes what we see in \in {figure}
+[fig:inserts:traditional].
+
+\startplacefigure[title={A traditional approach (1).},reference=fig:inserts:traditional]
+    \offinterlineskip
+    \setupframed[width=8cm]
+    \framed                                                                            {space}  \vskip2pt
+    \framed[background=color,backgroundcolor=darkgray, foregroundcolor=white,frame=off]{rule}   \vskip2pt
+    \framed[background=color,backgroundcolor=darkred,  foregroundcolor=white,frame=off]{note 1} \vskip2pt
+    \framed[background=color,backgroundcolor=darkgreen,foregroundcolor=white,frame=off]{note 2}
+\stopplacefigure
+
+In Plain \TEX, which pretty much covers most books, we only have top float,
+bottom float, and footnote inserts. If we assume at most one top and bottom float
+the spacing model works ok; when we assemble a page for shipping out we put the
+space after the top and before the bottom float. \footnote {There is no concept
+of a \quote {midinsert}: when there is space on the page (something that is hard
+to determine reliable) it can be something place immediately, or it can become a
+top insert.} But multiple floats and multiple note classes introduce the problem
+of deciding where to put other space. In \in {figure}
+[fig:inserts:traditional:more] we see this problem. What if we don't want \type
+{space 2}? The engine has based decisions on that distance, and if we have five
+classes and five times that space but actually don't want these, except for the
+first space, we have an issue, if only because the rules do need space anyway. It
+is one of these situations that \TEX\ was made to not handle at all or at most
+handle with a bit of manual help.
+
+\startplacefigure[title={A traditional approach (2).},reference=fig:inserts:traditional:more]
+    \offinterlineskip
+    \setupframed[width=8cm]
+    \framed                                                                            {space 1}  \vskip2pt
+    \framed[background=color,backgroundcolor=darkgray, foregroundcolor=white,frame=off]{rule 1}   \vskip2pt
+    \framed[background=color,backgroundcolor=darkred,  foregroundcolor=white,frame=off]{note 1.1} \vskip2pt
+    \framed[background=color,backgroundcolor=darkred,  foregroundcolor=white,frame=off]{note 1.2} \vskip2pt
+    \framed                                                                            {space 2}  \vskip2pt
+    \framed[background=color,backgroundcolor=darkgray, foregroundcolor=white,frame=off]{rule 2}   \vskip2pt
+    \framed[background=color,backgroundcolor=darkgreen,foregroundcolor=white,frame=off]{note 2.1} \vskip2pt
+    \framed[background=color,backgroundcolor=darkgreen,foregroundcolor=white,frame=off]{note 2.2}
+\stopplacefigure
+
+So we face two problems: there is space between the text and notes do deal with
+and there (normally) is that rule before the notes which also takes some space.
+As we already mentioned, the engine does have the concept of a space but not of a
+rule. This means that we need to include the rule dimension in the space. If the
+space has stretch or shrink, we might want to adapt the fixed part but not the
+flexibility. Often we don't need to be that clever because the page has some
+slack already and the constraint that notes are preferably on the same page as
+where they are referenced is likely to win the competition. One can also decide
+to ignore the rule's dimensions and make the space large enough.
+
+However, in \CONTEXT\ we can have more than one class of footnotes; think of
+critical editions and multi-lingual documents, or just different kind of notes.
+We now need to end up with \in {figure} [fig:inserts:initial] or even
+\in {figure} [fig:inserts:later].
+
+\startplacefigure[title={The initial \CONTEXT\ approach.},reference=fig:inserts:initial]
+    \offinterlineskip
+    \setupframed[width=8cm]
+        \framed{space}           \vskip2pt
+    \start
+        \setupframed[background=color,backgroundcolor=darkred,foregroundcolor=white,frame=off]
+        \framed{rule 1}          \vskip2pt
+        \framed{class 1 note 1}  \vskip2pt
+        \framed{class 1 note 2}  \vskip2pt
+    \stop
+    \start
+        \setupframed[background=color,backgroundcolor=darkgreen,foregroundcolor=white,frame=off]
+        \framed{rule 2}          \vskip2pt
+        \framed{class 2 note 1}
+    \stop
+\stopplacefigure
+
+\startplacefigure[title={A later \CONTEXT\ approach.},reference=fig:inserts:later]
+    \offinterlineskip
+    \setupframed[width=8cm]
+        \framed{space}           \vskip2pt
+    \start
+        \setupframed[background=color,backgroundcolor=darkred,foregroundcolor=white,frame=off]
+        \framed{rule 1}          \vskip2pt
+        \framed{class 1 note 1}  \vskip2pt
+        \framed{also some space} \vskip2pt
+        \framed{class 1 note 2}  \vskip2pt
+    \stop
+    \start
+        \setupframed[background=color,backgroundcolor=darkgreen,foregroundcolor=white,frame=off]
+        \framed{rule 2}          \vskip2pt
+        \framed{class 2 note 1}
+    \stop
+\stopplacefigure
+
+Our experience is that users can come up with all kind of demands so you can
+imagine different variants of a rule, and even different spacing. When
+\LUAMETATEX\ runs into an insert it can trigger a callback that can return the
+initial space of a specific class. The callback gets the class as a state
+indicating if it is the first insert on that page; this permits adaptive spacing.
+The original space, which in traditional \TEX\ is the skip register related to the class,
+can then be used for the rule height or whatever takes its place.
+
+\startplacefigure[title={The current \CONTEXT\ approach.},reference=fig:inserts:later]
+    \offinterlineskip
+    \setupframed[width=12cm]
+    \framed{global space before}     \vskip4pt % force flexible
+    \start
+        \setupframed[background=color,backgroundcolor=darkred,foregroundcolor=white,frame=off]
+        \framed[backgroundcolor=darkgray]{before 1}                \vskip2pt % force fixed
+        \framed                          {rule 1 + distance 1}     \vskip2pt
+        \framed                          {local space before 1}    \vskip2pt % force fixed
+        \framed                          {notes 1.1}               \vskip2pt
+        \framed                          {local space inbetween 1} \vskip2pt % force fixed
+        \framed                          {notes 1.2}               \vskip4pt
+        \framed[backgroundcolor=darkgray]{after 1}                 \vskip2pt % force fixed
+    \stop
+        \framed                          {global space inbetween}  \vskip4pt % force fixed
+    \start
+        \setupframed[background=color,backgroundcolor=darkgreen,foregroundcolor=white,frame=off]
+        \framed[backgroundcolor=darkgray]{before 2}                \vskip2pt % force fixed
+        \framed                          {rule 2 + distance 2}     \vskip2pt
+        \framed                          {local space before 2}    \vskip2pt % force fixed
+        \framed                          {notes 2.5}               \vskip2pt
+%       \framed                          {local space inbetween 2} \vskip2pt % force fixed
+%       \framed                          {notes 2.6}               \vskip4pt
+        \framed[backgroundcolor=darkgray]{after 2}                 \vskip2pt % force fixed
+    \stop
+        \framed                          {global space inbetween}  \vskip4pt % force fixed
+    \start
+        \setupframed[background=color,backgroundcolor=darkblue,foregroundcolor=white,frame=off]
+        \framed[backgroundcolor=darkgray]{before 3}                \vskip2pt % force fixed
+        \framed                          {rule 3 + distance 3}     \vskip2pt
+        \framed                          {local space before 3}    \vskip2pt % force fixed
+        \framed                          {notes 3.8}               \vskip2pt
+%       \framed                          {local space inbetween 3} \vskip2pt % force fixed
+%       \framed                          {notes 3.9}
+        \framed[backgroundcolor=darkgray]{after 3}                 \vskip2pt % force fixed
+    \stop
+\stopplacefigure
+
+However, at some point it started making more sense to be a bit more granular,
+especially when additional spacing crept in. This is why in \CONTEXT\ we
+eventually had what is shown in \in {figure} [fig:inserts:later]. This means that
+we had to extend that callback with two states: \quote {global first} and \quote
+{local first}, which makes it possible to adapt per class. We can even consider
+making these engine parameters, but keep in mind that there are other inserts
+than notes, so we need to be very specific: every note would need four extra
+variables: global and local spaces before and in-between. In case you wonder why
+we have no space before and after (other than part of a rule): this is not really
+needed because we have the global in-between and using a mix of different before
+and after spacing per class would give a rather ugly result.
+
+But we're not done yet. When \TEX\ collects inserts it put them into a box, maybe
+even split, and then moves the pending insert to the next page(s). Because the
+engine lacks a concept of spaces between notes in a class, we need to insert
+these spaces. For that we use the same callback but with an indication that we want to do
+that. \footnote {This is an example of an incompatible upgrade but because we're
+the only macro package using this engine and its more advanced features, we care
+little about that; we just adapt as it (still) evolves.}
+
+Although this approach is very \CONTEXT\ we can consider moving some of the
+burden from \TEX\ and \LUA\ to the engine. For now we stick to the current
+approach because it is a bit more flexible, but at the cost of redundant
+intermediate calculations. This code is not that critical so we have some time to
+think about it.
+
+When looking at ways to improve some border cases we ran into one that is kind of
+peculiar. When Don Knuth added support for inserts with footnotes in mind, he
+also made sure that an overflow worked out well. When one limits the maximum
+insert height (area), a long footnote can end up split between pages. On the
+average that works out well. In Digital Typography Don explicitly mentions that
+he doesn't like footnotes that much and rarely uses them. He also comments that
+for that reason it was not worth the effort to go beyond what is provided. It
+makes perfect sense: just don't go wild on notes unless you have to, and even then
+constrain yourself.
+
+There is however a curious border case. Say that we have two footnote classes,
+something not uncommon in critical editions. Then imagine so many footnotes that
+they don't all fit on a page. In extreme cases we can even end up with (maybe
+final) pages that only have left-over notes. In that case one can end up with
+pages that are too high, that is, when the first class of notes doesn't fit,
+logically the second one also doesn't fit, but still we get something, like a
+split of first line or maybe some epmty line. This is a side effect of how adding
+an insert works. \footnote {This also happens in Plain \TEX, assuming that you
+have added a second footnote instance and, for instance, use notes that input a
+dozen sample files.}
+
+When there is an insert in the vertical list the engine first checks if it is the
+first one and if so adds the configured spacing. Then it checks if the insert
+fits and if not, it will split the insert: what fits gets added, and the rest
+gets delayed. And here is the pitfall: when splitting off part, even when we have
+effectively a negative available height, we do get the first line! And that one
+then ends up in the list of collected inserts and results in an overflow (see \in
+{figure} [fig:inserts:split]).
+
+\startplacefigure[title={An overflow due to splitting.},reference=fig:inserts:split]
+    \offinterlineskip
+    \setupframed[width=8cm]
+    \vskip1ex
+\framed[frame=off,align=normal,offset=overlay,background=color,backgroundcolor=middlegray,backgroundoffset=1ex]{
+    \framed[background=color,backgroundcolor=white]                                    {space 1}  \vskip2pt
+    \framed[background=color,backgroundcolor=darkgray, foregroundcolor=white,frame=off]{rule 1}   \vskip2pt
+    \framed[background=color,backgroundcolor=darkred,  foregroundcolor=white,frame=off]{note 1.1} \vskip2pt
+    \framed[background=color,backgroundcolor=darkred,  foregroundcolor=white,frame=off]{note 1.2} \vskip2pt
+    \framed[background=color,backgroundcolor=darkred,  foregroundcolor=white,frame=off]{note ...} \vskip2pt
+    \framed[background=color,backgroundcolor=darkred,  foregroundcolor=white,frame=off]{note ...} \vskip2pt
+}
+    \framed[background=color,backgroundcolor=white]                                    {space 2}  \vskip2pt
+    \framed[background=color,backgroundcolor=darkgray, foregroundcolor=white,frame=off]{rule 2}   \vskip2pt
+    \framed[background=color,backgroundcolor=darkgreen,foregroundcolor=white,frame=off]{note 2.1} \vskip2pt
+\stopplacefigure
+
+Given the complexity of the code and the fact that any change can have side
+effects, after testing all kinds of alternative ways out, a solution was
+implemented that doesn't interfere too badly with spacing and therefore the
+overall look of the result. Of course it is a solution for a border case that is
+unlikely to occur, but still it makes sense. We (Mikael and Hans) looked at
+current scenarios, discussed alternatives, experimented with real documents, and
+eventually settled on the model that doesn't diverge too much from what we have,
+but is somewhat better defined and implemented a bit more robustly. Of course,
+the topic being inserts, there's always room for confusion and improvements.
+
+\startbuffer[demo]
+\setbox0\vbox{ \darkred
+    \hsize 4cm
+    \strut line 1\par
+    \strut line 2
+} \copy0
+\setbox2\vsplit0 to 0pt split off: [\box2]
+\stopbuffer
+
+\typebuffer[demo]
+
+This gives us
+
+\startbuffer[result]
+\start \forgetall
+\startlinecorrection
+    \start
+    \showmakeup[line,box]
+    \getbuffer[demo]
+    \stop
+\stoplinecorrection
+\stop
+\stopbuffer
+
+\getbuffer[result] \blank[2*big]
+
+\startbuffer[demo]
+\setbox0\vbox{ \darkred
+    \hsize 4cm
+    \hbox{}\vskip0pt\relax
+    \strut line 1\par
+    \strut line 2
+} \copy0
+\setbox2\vsplit0 to 0pt split off: [\box2]
+\stopbuffer
+
+With:
+
+\typebuffer[demo]
+
+we end up with:
+
+\getbuffer[result]
+
+So the split off box is now basically empty, that is, it has no height. This
+trick makes the engine happy and is enabled when we set bit 1 in \type
+{\insertoptions}.
+
+With this out of the way, we need to look at some other features: a limited
+height and/or number of notes. Again, this is not something you are likely to
+mess with but we do handle it. When you limit the available space there is a good
+chance that notes might end up after you're done. But when they are then flushed,
+you better had not impose limitations in the available space. So we need to
+communicate to the engine that more space is available. This is done by appending
+an \typ {\insertboundary} that takes two integers: an action and the insert
+class. When the engine sees that boundary it will trigger a callback with these
+two values passed. The callback can then (decide to) reset some constraints. As
+an experiment we've added \type {\page [node]} likely to be followed by a real
+page break command \type {\page} so that one can test this. \footnote {The test
+suite has a file \type {split-001} that illustrates this feature. We also test
+features like this on real documents, like Mikael's math book and lecture notes,
+especially spacing and compatibility.}
+
+When testing this it made sense to also add the option to limit the number of
+notes on a page, so that is what \typ {\insertmaxplaced} is for, so basically a
+variant of the already present \typ {\insertlimit} primitive. These features only
+work when the insert mechanism is using classes instead of traditional registers.
+
+The callbacks involved in all this are \typ {insert_check_split} for tracing,
+\typ {insert_boundary} for changing properties in the page flow, and of course
+the already present \typ {insert_distance} for communicating the various spacing
+scenarios. We also experimented with grouping (sorting) pending inserts so that
+the come together but in the end rejected such fancy features: no one ever asked
+for it.
+
+So, to summarize, in order to deal with al this, we had to add three (optional)
+features:
+
+\startitemize[packed]
+\startitem
+    Intercept an overflow, that is when the available height is below zero, make
+    sure that the split succeeds with a zero height split first part.
+\stopitem
+\startitem
+    Check if the split of part is too large to fit anyway and if so, again split
+    but this time, as above, make sure that the split succeeds with a zero height
+    split first part.
+\stopitem
+\startitem
+    Provide a way to change the constraints (limited height or number of inserts
+    per insert class). Also add some possibilities for tracing. Both are handled
+    by callbacks.
+\stopitem
+\stopitemize
+
+This of course was done on top of already extended insert support, which includes:
+
+\startitemize[packed]
+\startitem
+    A different insert storage approach which makes it possible to carry around more
+    properties.
+\stopitem
+\startitem
+    A callback that permits managing more advanced inter-class and inter-insert
+    spacing, which of course has to be consistent with the way the page builder
+    (and splitter) work.
+\stopitem
+\stopitemize
+
+It's likely that we will go a bit further but it all depends on usage and given
+the somewhat special nature of inserts, demand might be low.
+
+\stopchapter
+
+\stopcomponent

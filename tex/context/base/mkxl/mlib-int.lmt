@@ -186,6 +186,14 @@ do
     local d_strutht      <const> = isdimen("strutht")      registerdirect("StrutHeight",  function() return getdimen(d_strutht)      * bpfactor end)
     local d_strutdp      <const> = isdimen("strutdp")      registerdirect("StrutDepth",   function() return getdimen(d_strutdp)      * bpfactor end)
 
+    -- Kind of long:
+
+    local d_globallineheight <const> = isdimen("globalbodyfontlineheight")
+
+    registerdirect("GlobalLineHeight",
+        function() return getdimen(d_globallineheight) * bpfactor
+    end)
+
 end
 
 do

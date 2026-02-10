@@ -47,9 +47,10 @@
 static const char *mplib_math_options[] = {
     "scaled",
     "double",
-    "binary",  /* not available in luatex */
+    "binary",   /* not available in luametatex */
     "decimal",
     "posit",
+    "interval", /* not available in luametatex */
     NULL
 };
 
@@ -2334,6 +2335,12 @@ static int mplib_getstatus(lua_State *L)
     }
 }
 
+static int mplib_getscaledbits(lua_State *L)
+{
+    lua_pushinteger(L, mp_scaled_bits);
+    return 1;
+}
+
 static int mplib_aux_set_direction(lua_State *L, MP mp, mp_knot p) {
     double direction_x = (double) lua_tonumber(L, -1);
     double direction_y = 0;
@@ -4274,6 +4281,7 @@ static const struct luaL_Reg mplib_functions_list[] = {
     { "gethashentry",       mplib_gethashentry       },
     { "getstatistics",      mplib_getstatistics      },
     { "getstatus",          mplib_getstatus          },
+    { "getscaledbits",      mplib_getscaledbits      },
     { "solvepath",          mplib_solvepath          },
     /* helpers */                                    
     { "peninfo",            mplib_object_getpeninfo  }, /* old one */

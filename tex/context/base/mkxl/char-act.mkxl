@@ -31,6 +31,8 @@
 \permanent\def\obeyedline {\par}
 \permanent\def\obeyedpage {\page_otr_fill_and_eject_page}
 
+%  \aliased\let\obeyedline\localbreakpar
+
 %D \macros
 %D   {controlspace,setcontrolspaces}
 %D

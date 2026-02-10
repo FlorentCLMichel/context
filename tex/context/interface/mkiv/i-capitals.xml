@@ -18,6 +18,18 @@
         <cd:arguments>
             <cd:resolve name="keyword-name-list-optional"/>
             <cd:assignments list="yes">
+                <cd:parameter name="category">
+                    <cd:constant type="cd:number"/>
+                </cd:parameter>
+                <cd:parameter name="xscale">
+                    <cd:constant type="cd:number"/>
+                </cd:parameter>
+                <cd:parameter name="yscale">
+                    <cd:constant type="cd:number"/>
+                </cd:parameter>
+                <cd:parameter name="weight">
+                    <cd:constant type="cd:number"/>
+                </cd:parameter>
                 <cd:parameter name="title">
                     <cd:constant type="yes" default="yes"/>
                     <cd:constant type="no"/>
@@ -83,6 +95,12 @@
     </cd:command>
 
     <cd:command name="Camel" level="document" category="fonts" file="typo-cap.mkxl">
+        <cd:arguments>
+            <cd:resolve name="argument-text"/>
+        </cd:arguments>
+    </cd:command>
+
+    <cd:command name="scaps" level="document" category="fonts" file="typo-cap.mkxl">
         <cd:arguments>
             <cd:resolve name="argument-text"/>
         </cd:arguments>

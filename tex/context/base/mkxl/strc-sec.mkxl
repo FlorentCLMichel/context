@@ -817,13 +817,12 @@
     \enforced\glet\currentstructuresynchronize\donothing
 \to \everyheadsynchronization
 
-
 \permanent\protected\def\theheadsynchronization % public
   {% no, interferes: \signalcharacter
    \expand\everyheadsynchronization
    % new, this might move to a better place, e.g. first in the box
    \currentstructureextradata
-   \lettonothing\currentstructureextradata
+   \glettonothing\currentstructureextradata
    % done (can be used for e.g. index entries)
   }
 

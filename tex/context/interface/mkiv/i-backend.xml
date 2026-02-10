@@ -4,7 +4,7 @@
 
 <cd:interface xmlns:cd="http://www.pragma-ade.com/commands">
 
-    <cd:command name="setupbackend" level="style" category="pdf" file="back-ini.mkiv">
+    <cd:command name="setupbackend" level="style" category="pdf" file="back-ini.mkxl">
         <cd:arguments>
             <cd:assignments list="yes">
                 <cd:parameter name="export">
@@ -45,8 +45,8 @@
                     -->
                 </cd:parameter>
                 <cd:parameter name="space">
-                    <cd:constant type="yes"/>
-                    <cd:constant type="no" default="yes"/>
+                    <cd:constant type="yes" default="yes"/>
+                    <cd:constant type="no"/>
                 </cd:parameter>
                 <cd:parameter name="hyphen">
                     <cd:constant type="yes" default="yes"/>

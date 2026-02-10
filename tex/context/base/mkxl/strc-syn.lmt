@@ -207,16 +207,76 @@ function synonyms.meaning(class,tag)
     end
 end
 
-function synonyms.pages(class,tag)
-    local data = tobesaved[class]
-    local okay = data.hash[tag]
-    if okay then
-        local definition = okay.definition
-        local pages = definition.pages
-        if pages and next(pages) then
+do
+
+    -- This is not pretty but pages are anyway the only thing relevant.
+
+    local allpages = false
+
+    local function getpages(class,tag)
+        local data = collected[class]
+        local okay = data and data.entries
+        if okay then
+            if not allpages then
+                allpages = table.setmetatableindex("table")
+                for i=1,#okay do
+                    local d = okay[i].definition
+                    if d then
+                        allpages[class][d.tag] = d.pages
+                    end
+                end
+            end
+            local pages = allpages[class][tag]
+            if pages then
+                return pages
+            end
+        end
+        data = tobesaved[class]
+        okay = data and data.hash[tag]
+        if okay then
+            local definition = okay.definition
+            local pages = definition.pages
+            if pages and next(pages) then
+                return pages
+            end
+        end
+    end
+
+    function synonyms.pages(class,tag)
+        local pages = getpages(class,tag)
+        if pages then
             context("%,t",sortedkeys(pages))
         end
     end
+
+    local structurepages = structures.pages
+
+    function synonyms.userpages(class,tag,onlyfirst)
+        local pages = getpages(class,tag)
+        if pages then
+            local list = sortedkeys(pages)
+            local done = false
+            for i=1,#list do
+                local p = structurepages.collected[list[i]]
+                if p then
+                    if done then
+                        context(", ")
+                    else
+                        done = true
+                    end
+                    structurepages.number(p)
+                    if onlyfirst then
+                        return
+                    end
+                end
+            end
+        end
+    end
+
+    function synonyms.firstuserpage(class,tag)
+        synonyms.userpages(class,tag,true)
+    end
+
 end
 
 local ctx_latelua = context.latelua
@@ -365,6 +425,8 @@ implement { name = "registershownsynonym", actions = synonyms.registershown, arg
 implement { name = "synonymmeaning",       actions = synonyms.meaning,       arguments = "2 arguments" }
 implement { name = "synonymname",          actions = synonyms.synonym,       arguments = "2 arguments" }
 implement { name = "synonympages",         actions = synonyms.pages,         arguments = "2 arguments" }
+implement { name = "synonymuserpages",     actions = synonyms.userpages,     arguments = "2 arguments" }
+implement { name = "synonymfirstuserpage", actions = synonyms.firstuserpage, arguments = "2 arguments" }
 implement { name = "enhancesynonym",       actions = synonyms.enhance,       arguments = "2 arguments" }
 --        { name = "resetusedsynonyms",    actions = resetused,              arguments = "argument" }
 --        { name = "resetshownsynonyms",   actions = resetshown,             arguments = "argument" }

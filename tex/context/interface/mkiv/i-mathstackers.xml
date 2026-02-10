@@ -541,6 +541,28 @@
         </cd:arguments>
     </cd:command>
 
+    <cd:command name="mathfiller" file="math-stc.mklx">
+        <cd:arguments>
+            <cd:resolve name="argument-number"/>
+        </cd:arguments>
+    </cd:command>
+
+    <cd:command name="defineextensiblefiller" file="math-stc.mklx">
+        <cd:arguments>
+            <cd:resolve name="keyword-name"/>
+            <cd:resolve name="keyword-number"/>
+        </cd:arguments>
+    </cd:command>
+
+    <cd:command name="mathfiller" generated="yes" variant="instance" file="math-stc.mklx">
+        <cd:sequence>
+            <cd:instance value="mathfiller"/>
+        </cd:sequence>
+        <cd:instances>
+            <cd:resolve name="instance-mathfiller"/>
+        </cd:instances>
+    </cd:command>
+
     <cd:command name="singlebond" level="document" category="mathematics" file="math-stc.mklx"/>
 
     <cd:command name="doublebond" level="document" category="mathematics" file="math-stc.mklx"/>

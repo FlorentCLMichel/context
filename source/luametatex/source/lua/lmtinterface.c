@@ -347,6 +347,7 @@ void lmt_initialize_interface(void)
     set_page_contribute_value(contribute_insert,  insert);
     set_page_contribute_value(contribute_box,     box);
     set_page_contribute_value(contribute_rule,    rule);
+    set_page_contribute_value(contribute_kern,    kern);
 
     lmt_interface.math_style_values = lmt_aux_allocate_value_info(cramped_script_script_style);
 

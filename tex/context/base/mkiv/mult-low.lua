@@ -93,7 +93,7 @@ return {
         "demeritsfrozenparcode", "shapefrozenparcode", "linefrozenparcode", "hyphenationfrozenparcode",
         "shapingpenaltyfrozenparcode", "orphanpenaltyfrozenparcode", "toddlerpenaltyfrozenparcode",
         "emergencyfrozenparcode", "parpassesfrozenparcode", "singlelinepenaltyfrozenparcode",
-        "hyphenpenaltyfrozenparcode", "exhyphenpenaltyfrozenparcode", "linebreakchecksfrozenparcode",
+        "hyphenpenaltyfrozenparcode", "linesnappingfrozenparcode", "linebreakchecksfrozenparcode",
         "twindemeritsfrozenparcode", "fitnessclassesfrozenparcode", "allfrozenparcode",
         --
         "activemathcharcode",
@@ -262,6 +262,9 @@ return {
         "preferdelimiterdimensionsclassoptioncode", "autoinjectclassoptioncode", "removeitaliccorrectionclassoptioncode",
         "operatoritaliccorrectionclassoptioncode", "shortinlineclassoptioncode",
         "pushnestingclassoptioncode", "popnestingclassoptioncode", "obeynestingclassoptioncode",
+        --
+        "checkheightinsertoptioncode",
+        "pageinsertcategorycode",
         --
         "noitaliccorrectionglyphoptioncode", "nozeroitaliccorrectionglyphoptioncode",
         "noexpansionglyphoptioncode", "noprotrusionglyphoptioncode",
@@ -463,6 +466,8 @@ return {
         "pfsqrt", "pflog", "pfexp", "pfceil", "pffloor", "pfround", "pfabs", "pfrad", "pfdeg", "pfatantwo", "pfpow", "pfmod", "pfrem",
         --
         "scratchleftskip", "scratchrightskip", "scratchtopskip", "scratchbottomskip",
+        --
+        "startimage", "stopimage",
         --
         "doif", "doifnot", "doifelse",
         "firstinset",

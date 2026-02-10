@@ -6,6 +6,7 @@ if not modules then modules = { } end modules ['m-spreadsheet'] = {
     license   = "see context related readme files"
 }
 
+local tonumber = tonumber
 local byte, format, gsub, find = string.byte, string.format, string.gsub, string.find
 local R, P, S, C, V, Cs, Cc, Ct, Cg, Cf, Carg = lpeg.R, lpeg.P, lpeg.S, lpeg.C, lpeg.V, lpeg.Cs, lpeg.Cc, lpeg.Ct, lpeg.Cg, lpeg.Cf, lpeg.Carg
 local lpegmatch, patterns = lpeg.match, lpeg.patterns
@@ -178,7 +179,24 @@ function functions._s_(row,col,c,f,t)
     return r
 end
 
-functions.fmt = string.tformat
+do
+    local fmt = string.tformat
+
+    functions.fmt = fmt
+
+    functions.rnd = function(n,m)
+        local t= type(m)
+        if t == "string" then
+            -- keep m
+        elseif t =="number" then
+            m = "%0." .. m .. "f"
+        else
+            m = "%0.2f"
+        end
+        return tonumber(fmt("%0.2f",n))
+    end
+
+end
 
 local f_code = formatters [ [[
     local _m_ = moduledata.spreadsheets
@@ -190,6 +208,7 @@ local f_code = formatters [ [[
     function fnc.sum(...) return fnc._s_(row,col,...) end
     local sum = fnc.sum
     local fmt = fnc.fmt
+    local rnd = fnc.rnd
     return %s
 ]] ]
 

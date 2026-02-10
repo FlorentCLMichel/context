@@ -147,6 +147,7 @@ static int tex_aux_pass_text_x(int tracing_ifs, int tracing_commands)
                         int unless = cur_chr == or_unless_code;
                         if (tracing_commands > 1) {
                             tex_begin_diagnostic();
+                            tex_print_levels();
                             tex_print_str(unless ? "{orunless}" : "{orelse}");
                             tex_end_diagnostic();
                         } else if (tracing_ifs) {
@@ -214,7 +215,7 @@ static void tex_aux_if_warning(void)
     }
     if (warning) {
         tex_begin_diagnostic();
-        tex_print_format("[conditional: end of %C%L of a different file]", if_test_cmd, lmt_condition_state.cur_if, lmt_condition_state.if_line);
+        tex_print_format("%l[conditional: end of %C%L of a different file]", if_test_cmd, lmt_condition_state.cur_if, lmt_condition_state.if_line);
         tex_end_diagnostic();
         if (tracing_nesting_par > 1) {
             tex_show_context();
@@ -365,6 +366,7 @@ static void tex_aux_missing_equal_error(int code)
 static void tex_aux_show_if_state(halfword code, halfword case_value)
 {
     tex_begin_diagnostic();
+    tex_print_levels();
     switch (code) {
         case if_chk_int_code       : tex_print_format("{chknum %i}",        case_value); break;
         case if_chk_integer_code   : tex_print_format("{chknumber %i}",     case_value); break;
@@ -1260,8 +1262,12 @@ void tex_conditional_if(halfword code, int unless)
                             cur_cmd = eq_type(lmt_scanner_state.last_cs_name);
                             cur_chr = eq_value(lmt_scanner_state.last_cs_name);
                             goto EMPTY_CHECK_AGAIN;
-                        } 
-                        /* fall through */
+                        } else {
+                            result = 0;
+                        }
+                    case specification_cmd:
+                        result = (cur_chr && eq_value(cur_chr)) ? 0 : 1;
+                        break;
                     default:
                         result = 0;
                 }
@@ -1389,13 +1395,27 @@ void tex_conditional_if(halfword code, int unless)
                 result = box_register(n) != null && box_list(box_register(n)) != null;
             }
             goto RESULT;
+        case if_specification_code:
+            {
+                tex_get_token();
+                switch (cur_cmd) {
+                    case specification_cmd:
+                        result = (cur_chr && eq_value(cur_chr)) ? 1 : 0;
+                        break;
+                    default:
+                        /*tex For now we don't error, but we might some day. */
+                        result = 0;
+                        break;
+                }
+                goto RESULT;
+            }
         case if_bitwise_and_code:
             {
                 halfword n1 = tex_scan_integer(0, NULL, NULL);
                 halfword n2 = tex_scan_integer(0, NULL, NULL);
                 result = n1 & n2 ? 1 : 0;
                 goto RESULT;
-        }
+            }
         default:
             {
                 int category;
@@ -1445,6 +1465,7 @@ void tex_conditional_if(halfword code, int unless)
         halfword online = tracing_online_par;
         tracing_online_par = 1;
         tex_begin_diagnostic();
+        tex_print_levels();
         tex_print_format( "ignoring \\unless in %C test", if_test_cmd, code);
         tex_end_diagnostic();
         tracing_online_par = online;
@@ -1492,6 +1513,7 @@ void tex_conditional_if(halfword code, int unless)
     if (tracing_commands > 1) {
         /*tex Display the value of |b|. */
         tex_begin_diagnostic();
+        tex_print_levels();
         tex_print_str(result ? "{true}" : "{false}");
         tex_end_diagnostic();
     }

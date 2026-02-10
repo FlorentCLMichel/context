@@ -75,7 +75,7 @@
 \lettonothing\p_grid
 \lettonothing\p_hang
 \lettonothing\p_hascaption
-\lettonothing\p_haslevel
+\lettonothing\p_level
 \lettonothing\p_hasnumber
 \lettonothing\p_hastitle
 \lettonothing\p_header
@@ -157,6 +157,7 @@
 \lettonothing\p_sidethreshold
 \lettonothing\p_simplecommand
 \lettonothing\p_size
+\lettonothing\p_snapping
 \lettonothing\p_spaceafter
 \lettonothing\p_spacebefore
 \lettonothing\p_spaceinbetween

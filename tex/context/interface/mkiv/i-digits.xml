@@ -23,4 +23,13 @@
 
     <cd:command name="dummydigit" level="document" category="symbols" keywords="fonts" file="typo-dig.mkxl"/>
 
+    <cd:command name="digitsbreak" level="document" category="symbols" keywords="fonts" file="phys-dim.mkxl"/>
+
+    <cd:command name="hyphenateddigits" file="phys-dim.lmt">
+        <cd:arguments>
+            <cd:resolve name="keyword-csname-optional"/>
+            <cd:resolve name="argument-number"/>
+        </cd:arguments>
+    </cd:command>
+
 </cd:interface>

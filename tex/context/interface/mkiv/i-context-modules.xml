@@ -28,6 +28,7 @@
 
     <cd:interfacefile filename="i-chart.xml"/>
     <cd:interfacefile filename="i-database.xml"/>
+    <cd:interfacefile filename="i-ecmascript.xml"/>
     <cd:interfacefile filename="i-hemistich.xml"/>
     <cd:interfacefile filename="i-ipsum.xml"/>
     <cd:interfacefile filename="i-scite.xml"/>
@@ -36,5 +37,6 @@
     <cd:interfacefile filename="i-steps.xml"/>
     <cd:interfacefile filename="i-translate.xml"/>
     <cd:interfacefile filename="i-visual.xml"/>
+    <cd:interfacefile filename="i-zint.xml"/>
 
 </cd:interface>

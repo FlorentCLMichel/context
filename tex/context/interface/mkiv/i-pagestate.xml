@@ -4,23 +4,30 @@
 
 <cd:interface xmlns:cd="http://www.pragma-ade.com/commands">
 
-    <cd:command name="signalrightpage" level="system" category="twopassdata" file="spac-pag.mkiv"/>
+    <cd:command name="signalrightpage" level="system" category="twopassdata" file="spac-pag.mkxl"/>
 
-    <cd:command name="doifelserightpage" level="system" category="twopassdata" keywords="conditional" file="spac-pag.mkiv">
+    <cd:command name="doifelserightpage" level="system" category="twopassdata" keywords="conditional" file="spac-pag.mkxl">
         <cd:arguments>
             <cd:resolve name="argument-true"/>
             <cd:resolve name="argument-false"/>
         </cd:arguments>
     </cd:command>
 
-    <cd:command name="doifrightpageelse" level="system" category="twopassdata" keywords="conditional" file="spac-pag.mkiv">
+    <cd:command name="doifrightpageelse" level="system" category="twopassdata" keywords="conditional" file="spac-pag.mkxl">
         <cd:arguments>
             <cd:resolve name="argument-true"/>
             <cd:resolve name="argument-false"/>
         </cd:arguments>
     </cd:command>
 
-    <cd:command name="rightpageorder" level="system" category="twopassdata" file="spac-pag.mkiv"/>
+    <cd:command name="rightpageorder" level="system" category="twopassdata" file="spac-pag.mkxl"/>
+
+    <cd:command name="doifelseupcomingrightpage" level="system" category="twopassdata" keywords="conditional" file="spac-pag.mkxl">
+        <cd:arguments>
+            <cd:resolve name="argument-true"/>
+            <cd:resolve name="argument-false"/>
+        </cd:arguments>
+    </cd:command>
 
     <cd:command name="definepagestate" level="system" category="twopassdata" keywords="counter pagenumber" file="core-dat.mkiv">
         <cd:arguments>

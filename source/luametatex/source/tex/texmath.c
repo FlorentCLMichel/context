@@ -708,6 +708,7 @@ void tex_flush_math(void)
 static void tex_aux_print_parameter(const char *what, halfword style, halfword param, halfword indirect, halfword value)
 {
     tex_begin_diagnostic();
+    tex_print_levels();
     tex_print_format("{%s ", what);
     if (indirect >= 0 && indirect <= last_math_indirect) {
         tex_print_str(lmt_interface.math_indirect_values[indirect].name);
@@ -742,6 +743,7 @@ static void tex_aux_print_parameter(const char *what, halfword style, halfword p
 static void tex_aux_print_fam(const char *what, halfword size, halfword fam)
 {
     tex_begin_diagnostic();
+    tex_print_levels();
     tex_print_format("{%s %C family %i: %F}", what, define_family_cmd, size, fam, tex_fam_fnt(fam, size));
     tex_end_diagnostic();
 }
@@ -2105,7 +2107,7 @@ mathcodeval tex_scan_delimiter_as_mathchar(int extcode)
 static void tex_aux_report_active(int where, const char *what, int code, int character)
 {
     tex_begin_diagnostic();
-    tex_print_format("[active: location %i, %s, code %i, char %i]",where, what, code, character);
+    tex_print_format("%l[active: location %i, %s, code %i, char %i]",where, what, code, character);
     tex_end_diagnostic();
 }
 
@@ -2444,7 +2446,7 @@ static void tex_trace_continuation_atom(const char *s)
 {
     if (tracing_math_par >= 2) {
         tex_begin_diagnostic();
-        tex_print_format("[math: continuation atom %s]", s);
+        tex_print_format("%l[math: continuation atom %s]", s);
         tex_end_diagnostic();
     }
 }
@@ -5973,7 +5975,7 @@ void tex_fixup_math_parameters(int fam, int size, int f, int level)
 
     if (tracing_math_par > 1) {
         tex_begin_diagnostic();
-        tex_print_format("[math: fixing up font, family %i, size %i, font %i, level %i]", fam, size, f, level);
+        tex_print_format("%l[math: fixing up font, family %i, size %i, font %i, level %i]", fam, size, f, level);
         tex_end_diagnostic();
     }
 
@@ -6569,7 +6571,7 @@ static int tex_aux_math_parameter_okay(int param)
     if (ignore_math_parameter(param) == 1) {
         if (tracing_math_par > 1) {
             tex_begin_diagnostic();
-            tex_print_format("[math: parameter, name %s, ignored]", lmt_name_of_math_parameter(param));
+            tex_print_format("%l[math: parameter, name %s, ignored]", lmt_name_of_math_parameter(param));
             tex_end_diagnostic();
         }
         return 0;

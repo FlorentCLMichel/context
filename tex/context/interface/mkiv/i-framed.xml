@@ -462,40 +462,6 @@
         </cd:arguments>
     </cd:command>
 
-    <cd:command name="definemathframed" level="style" category="rules" keywords="background mathematics" file="pack-rul.mkxl">
-        <cd:arguments>
-            <cd:resolve name="keyword-name"/>
-            <cd:resolve name="keyword-name-optional"/>
-            <cd:assignments list="yes" optional="yes">
-                <cd:inherit name="setupmathframed"/>
-            </cd:assignments>
-        </cd:arguments>
-    </cd:command>
-
-    <cd:command name="setupmathframed" level="style" category="rules" keywords="background mathematics" file="pack-rul.mkxl">
-        <cd:arguments>
-            <cd:resolve name="keyword-name-list-optional"/>
-            <cd:assignments list="yes">
-                <cd:inherit name="setupframed"/>
-            </cd:assignments>
-        </cd:arguments>
-    </cd:command>
-
-    <cd:command name="mathframed" generated="yes" variant="instance" level="document" category="rules" keywords="background mathematics" file="pack-rul.mkxl">
-        <cd:sequence>
-            <cd:instance value="mathframed"/>
-        </cd:sequence>
-        <cd:arguments>
-            <cd:assignments list="yes" optional="yes">
-                <cd:inherit name="setupmathframed"/>
-            </cd:assignments>
-            <cd:content/>
-        </cd:arguments>
-        <cd:instances>
-            <cd:resolve name="instance-mathframed"/>
-        </cd:instances>
-    </cd:command>
-
     <cd:command name="defineformulaframed" level="style" category="rules" keywords="background mathematics" file="math-for.mkiv">
         <cd:arguments>
             <cd:resolve name="keyword-name"/>
@@ -696,4 +662,12 @@
         </cd:arguments>
     </cd:command>
 
+    <cd:command name="clipframed" type="environment" file="pack-rul.mkxl">
+        <cd:arguments>
+            <cd:assignments list="yes" optional="yes">
+                <cd:inherit name="setupframed"/>
+            </cd:assignments>
+        </cd:arguments>
+    </cd:command>
+    
 </cd:interface>

@@ -92,12 +92,17 @@
       \eTABLE}%
    \ifinsidefloat\else\stopbaselinecorrection\fi}
 
+\newinteger \c_module_fonts_glyphscale
+
 \permanent\protected\tolerant\gdef\showfont[#1]#*[#2]%
   {\bgroup
+   \
    \iftok{#1}\emptytoks\else
      \definedfont[#1]%
+     \c_module_fonts_glyphscale\plusthousand
      \ifdim40\emwidth>\hsize
-       \glyphscale750\relax
+        \definedfont[#1]%
+        \c_module_fonts_glyphscale750\relax
      \fi
    \fi
    \integerdef\c_module_fonts_font_id\fontid\font
@@ -183,7 +188,10 @@
                   \scratchcounterthree\numexpr\scratchcounterone*16+\scratchcountertwo\relax
                   \scratchcounterthree\numexpr\scratchcounterfour*256+\scratchcounterthree\relax
                   \iffontchar\font\scratchcounterthree
-                    \setbox\scratchbox\ruledhpack{\char\scratchcounterthree}%
+                    \setbox\scratchbox\ruledhpack\bgroup
+                        \glyphscale\c_module_fonts_glyphscale
+                        \char\scratchcounterthree
+                    \egroup
                     \bgroup
                     \tf
                     \startoverlay

@@ -47,6 +47,7 @@ return {
         ["letterspace"]       = { url = "modules", zips = { "t-letterspace.mkiv.zip" } },
         ["lettrine"]          = { url = "modules", zips = { "t-lettrine.zip" } },
         ["lua-widow-control"] = { url = "modules", zips = { "lua-widow-control.zip" } },   -- we wipe the non context stuff
+        ["luageo"]            = { url = "modules", zips = { "luageo.zip" } },
         ["mathsets"]          = { url = "modules", zips = { "t-mathsets.zip" } },
     --  ["metaducks"]         = { url = "modules", zips = { "metaducks.zip" } },           -- has top level files
         ["pararef"]           = { url = "modules", zips = { "pararef.zip" } },

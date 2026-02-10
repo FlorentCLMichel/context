@@ -1573,7 +1573,7 @@ void tex_hyphenate_list(halfword head, halfword tail)
                                     if (trace > 1) {
                                         *utf8ori = 0;
                                         tex_begin_diagnostic();
-                                        tex_print_format("[language: compound word break after %s]", utf8original);
+                                        tex_print_format("%l[language: compound word break after %s]", utf8original);
                                         tex_end_diagnostic();
                                     }
                                     if (hyphenation_permitted(glyph_hyphenate(g), compound_hyphenation_mode)) {
@@ -1697,7 +1697,7 @@ void tex_hyphenate_list(halfword head, halfword tail)
                                         tex_aux_do_exception(start, r, replacement); // r == next_node(word_end)
                                         if (trace > 1) {
                                             tex_begin_diagnostic();
-                                            tex_print_format("[language: exception %s to %s]", utf8original, replacement);
+                                            tex_print_format("%l[language: exception %s to %s]", utf8original, replacement);
                                             if (trace > 2) {
                                                 tex_aux_hyphenate_show(node_next(beg), node_prev(r));
                                             }
@@ -1735,12 +1735,12 @@ void tex_hyphenate_list(halfword head, halfword tail)
                                                 if (trace > 1) {
                                                     tex_begin_diagnostic();
                                                     if (done) {
-                                                        tex_print_format("[language: hyphenated %s at %i positions]", utf8original, done);
+                                                        tex_print_format("%l[language: hyphenated %s at %i positions]", utf8original, done);
                                                         if (trace > 2) {
                                                             tex_aux_hyphenate_show(node_next(left), node_prev(right));
                                                         }
                                                     } else {
-                                                        tex_print_format("[language: not hyphenated %s]", utf8original);
+                                                        tex_print_format("%l[language: not hyphenated %s]", utf8original);
                                                     }
                                                     tex_end_diagnostic();
                                                 }

@@ -55,6 +55,7 @@
 \definesystemconstant {belarussian}    \definesystemconstant {be}
 \definesystemconstant {bengali}        \definesystemconstant {bn}
 \definesystemconstant {bulgarian}      \definesystemconstant {bg}
+\definesystemconstant {burmese}        \definesystemconstant {my}
 \definesystemconstant {bokmal}         \definesystemconstant {nb}
 \definesystemconstant {catalan}        \definesystemconstant {ca}
 \definesystemconstant {chinese}        \definesystemconstant {cn}
@@ -68,7 +69,7 @@
 \definesystemconstant {farsi}          \definesystemconstant {fa} % just persian
 \definesystemconstant {finnish}        \definesystemconstant {fi}
 \definesystemconstant {french}         \definesystemconstant {fr}
-\definesystemconstant {gaelic}         \definesystemconstant {ga}
+\definesystemconstant {gaelic}
 \definesystemconstant {gbenglish}      \definesystemconstant {gb}
 \definesystemconstant {german}         \definesystemconstant {de}
 \definesystemconstant {greek}          \definesystemconstant {gr}
@@ -78,8 +79,11 @@
 \definesystemconstant {yiddish}        \definesystemconstant {yi}
 \definesystemconstant {hungarian}      \definesystemconstant {hu}
 \definesystemconstant {indonesian}     \definesystemconstant {id}
+\definesystemconstant {irish}
+\definesystemconstant {irishgaelic}    \definesystemconstant {ga}
 \definesystemconstant {italian}        \definesystemconstant {it}
 \definesystemconstant {japanese}       \definesystemconstant {ja}
+\definesystemconstant {kalaallisut}    \definesystemconstant {kal}
 \definesystemconstant {kannada}        \definesystemconstant {kn}
 \definesystemconstant {korean}         \definesystemconstant {kr}
 \definesystemconstant {latin}          \definesystemconstant {la}
@@ -87,7 +91,7 @@
 \definesystemconstant {malay}          \definesystemconstant {ms}
 \definesystemconstant {malayalam}      \definesystemconstant {ml}
 \definesystemconstant {macedonian}     \definesystemconstant {mk}
-\definesystemconstant {moldavian}      \definesystemconstant {mo}
+\definesystemconstant {moldovan}       \definesystemconstant {mo}
 \definesystemconstant {montenegrin}    \definesystemconstant {cnr}
 \definesystemconstant {norwegian}      \definesystemconstant {no}
 \definesystemconstant {nynorsk}        \definesystemconstant {nn}
@@ -97,6 +101,7 @@
 \definesystemconstant {romanian}       \definesystemconstant {ro}
 \definesystemconstant {russian}        \definesystemconstant {ru}
 \definesystemconstant {sanskrit}       \definesystemconstant {sa}
+\definesystemconstant {scottishgaelic} \definesystemconstant {gd}
 \definesystemconstant {slovak}         \definesystemconstant {sk}
 \definesystemconstant {slovenian}      \definesystemconstant {sl}
 \definesystemconstant {serbian}        \definesystemconstant {sr}
@@ -123,6 +128,7 @@
 \definesystemconstant {accent}
 \definesystemconstant {action}
 \definesystemconstant {all}
+\definesystemconstant {always}
 \definesystemconstant {ampersand}
 \definesystemconstant {anchors}
 \definesystemconstant {anchor}
@@ -220,6 +226,7 @@
 \definesystemconstant {ex}
 \definesystemconstant {e}
 \definesystemconstant {factor}
+\definesystemconstant {factors}
 \definesystemconstant {fallbacks}
 \definesystemconstant {fallback}
 \definesystemconstant {false}
@@ -341,6 +348,8 @@
 \definesystemconstant {nowidth}
 \definesystemconstant {numbering}
 \definesystemconstant {number}
+\definesystemconstant {off}
+\definesystemconstant {on}
 \definesystemconstant {open}
 \definesystemconstant {operator}
 \definesystemconstant {options}
@@ -414,6 +423,9 @@
 \definesystemconstant {slanted}
 \definesystemconstant {Slanted}
 %definesystemconstant {sl}
+\definesystemconstant {snapping}
+\definesystemconstant {nosnapping}
+\definesystemconstant {linesnapping}
 \definesystemconstant {smallcaps}
 \definesystemconstant {small}
 \definesystemconstant {somewhere}
@@ -426,6 +438,7 @@
 \definesystemconstant {ss}
 \definesystemconstant {start}
 \definesystemconstant {stop}
+\definesystemconstant {step}
 \definesystemconstant {stretch}
 \definesystemconstant {style}
 \definesystemconstant {subpage}
@@ -477,6 +490,9 @@
 \definesystemconstant {x}
 \definesystemconstant {ymove}
 \definesystemconstant {yoffset}
+
+\definesystemconstant {httolerance}
+\definesystemconstant {dptolerance}
 
 \definesystemconstant {syncpos}
 

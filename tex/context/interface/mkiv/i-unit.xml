@@ -144,4 +144,6 @@
         </cd:arguments>
     </cd:command>
 
+    <cd:command name="lastunitstring" file="phys-dim.lmt"/>
+
 </cd:interface>

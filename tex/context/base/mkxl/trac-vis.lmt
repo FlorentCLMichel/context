@@ -991,6 +991,7 @@ local ruledbox do
     local getorientation = nuts.getorientation
     local setorientation = nuts.setorientation
     local getheight      = nuts.getheight
+    local issnapped      = nuts.issnapped
 
     setmetatableindex(o_cache,function(t,size)
         local rule   = new_rule(2*size,size,size)
@@ -1024,6 +1025,9 @@ local ruledbox do
         local linewidth = emwidth/fraction
         local size      = 2*linewidth
         local this
+        if issnapped(current) then
+            what = "S" .. what
+        end
         if not simple then
             this = b_cache[what]
             if not this then

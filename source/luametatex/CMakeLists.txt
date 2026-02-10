@@ -199,7 +199,11 @@ if (MSVC)
     # add_definitions(-D__STDC_WANT_LIB_EXT2__=1)
 
     if ((DEFINED LMT_OPTIMIZE) OR (DEFINED LMT_STRIP))
-        if (NOT (${CMAKE_SYSTEM_NAME} MATCHES "Darwin"))
+        if (${CMAKE_SYSTEM_NAME} MATCHES "Darwin")
+            # skip
+        elseif (${CMAKE_SYSTEM_NAME} MATCHES "ARM64")
+            # skip
+        else()
             set(CMAKE_EXE_LINKER_FLAGS "-s")
         endif()
     endif()
@@ -298,6 +302,8 @@ elseif (CMAKE_C_COMPILER_ID MATCHES "AppleClang|Clang")
 else()
     set(luametatex_use_mimalloc 1)
 endif()
+
+# unset(luametatex_use_mimalloc)
 
 include_directories(${CMAKE_ROOT}/source)
 include_directories(${CMAKE_CURRENT_SOURCE_DIR}/source)

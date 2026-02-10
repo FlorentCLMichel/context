@@ -48,13 +48,14 @@
    \pack_black_rule_indeed}
 
 \def\pack_black_rule_indeed
-  {\edef\p_width  {\directblackrulesparameter\c!width}%
-   \edef\p_height {\directblackrulesparameter\c!height}%
-   \edef\p_depth  {\directblackrulesparameter\c!depth}%
-   \edef\p_stretch{\directblackrulesparameter\c!stretch}%
-   \edef\p_shrink {\directblackrulesparameter\c!shrink}%
-   \edef\p_on     {\directblackrulesparameter\c!on}%
-   \edef\p_off    {\directblackrulesparameter\c!off}%
+  {\edef\p_width   {\directblackrulesparameter\c!width}%
+   \edef\p_height  {\directblackrulesparameter\c!height}%
+   \edef\p_depth   {\directblackrulesparameter\c!depth}%
+   \edef\p_stretch {\directblackrulesparameter\c!stretch}%
+   \edef\p_shrink  {\directblackrulesparameter\c!shrink}%
+   \edef\p_on      {\directblackrulesparameter\c!on}%
+   \edef\p_off     {\directblackrulesparameter\c!off}%
+   \edef\p_snapping{\directblackrulesparameter\c!snapping}%
    \ifx\p_height\v!max
      \setstrut
      \let\p_height\strutdp
@@ -85,12 +86,18 @@
    \ifcsname\??blackruletype\directblackrulesparameter\c!type\endcsname
      \lastnamedcs
    \else
-     \vrule
+     \ifempty\p_snapping
+       \vrule
+     \orelse\ifcsname\??snapping\p_snapping\endcsname
+       \hrule \s!linesnapping \lastnamedcs
+     \else
+       \vrule
+     \fi
      \ifempty\p_on \else
-       on \p_on % todo: \s!on {\p_on}%
+       \s!on \p_on % todo: \s!on {\p_on}%
      \fi
      \ifempty\p_off \else
-       off \p_off % todo: \s!off {\p_off}%
+       \s!off \p_off % todo: \s!off {\p_off}%
      \fi
    \fi
    \ifempty\p_height \else

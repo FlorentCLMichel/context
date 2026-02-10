@@ -116,6 +116,7 @@ typedef enum if_test_codes {
     if_in_alignment_code,    /*tex |\ifinalignment| */
     if_cramped_code,         /*tex |\ifcrampedmathstyle| */
     if_list_code,            /*tex |\iflist| */
+    if_specification_code,   /*tex |\ifspecification| */
     if_bitwise_and_code,     /*tex |\ifbitwiseand| */
 } if_test_codes;
 

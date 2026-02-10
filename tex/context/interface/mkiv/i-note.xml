@@ -191,6 +191,9 @@
                     <cd:constant type="yes"/>
                     <cd:constant type="no" default="yes"/>
                 </cd:parameter>
+                <cd:parameter name="delay">
+                    <cd:constant type="text"/>
+                </cd:parameter>
                 <!-- end construction values -->
                 <cd:inherit name="setupcounter"/>
             </cd:assignments>
@@ -410,14 +413,17 @@
                 <cd:parameter name="anchor">
                     <cd:constant type="next"/>
                 </cd:parameter>
+                <cd:parameter name="range">
+                    <cd:constant type="yes"/>
+                </cd:parameter>
                 <!-- begin root only -->
                 <cd:parameter name="spacebefore">
                     <cd:inherit name="blank"/>
                 </cd:parameter>
+                <!-- end root only -->
                 <cd:parameter name="spaceinbetween">
                     <cd:inherit name="blank"/>
                 </cd:parameter>
-                <!-- end root only -->
                 <cd:inherit name="setupframed"/>
             </cd:assignments>
         </cd:arguments>
@@ -697,6 +703,12 @@
                 <cd:inherit name="setuptextnote"/>
             </cd:assignments>
             <cd:resolve name="argument-text"/>
+        </cd:arguments>
+    </cd:command>
+
+    <cd:command name="flushnoterange" file="strc-not.mklx">
+        <cd:arguments>
+            <cd:resolve name="keyword-name"/>
         </cd:arguments>
     </cd:command>
 

@@ -138,7 +138,12 @@
        {\page_col_command_flush_top_insertions
         \page_one_registered_text_area_a#1#2%
         \hsize\d_page_col_column_width
-        \ifgridsnapping
+        \ifgridlinesnapping
+          % gridlinesnapping: to be decided
+          \page_col_fix_depth
+          \page_col_command_flush_bottom_insertions
+          \vfil
+        \orelse\ifgridsnapping
           \page_col_fix_depth
           \page_col_command_flush_bottom_insertions
           \vfil
@@ -163,8 +168,16 @@
      \page_layouts_check_stretch\b_page_one_contents
      \page_one_command_package_show_state
      \ifconditional\c_notes_bottom_present
-       \ifgridsnapping
-         \ifcase\layoutlines
+       \ifgridlinesnapping
+         % gridlinesnapping: to be decided
+         \ifcase\layoutlines % todo: use helper
+           \getrawnoflines\textheight
+         \else
+           \noflines\layoutlines
+         \fi
+         \scratchoffset{\numexpr\noflines-\plusone\relax\lineheight+\topskip}%
+       \orelse\ifgridsnapping
+         \ifcase\layoutlines % todo: use helper
            \getrawnoflines\textheight
          \else
            \noflines\layoutlines
@@ -771,8 +784,16 @@
 % \let\page_col_notes_reset      \relax
 %
 % \protected\def\page_col_command_set_vsize % \page_one_command_set_vsize minus the pagegoal setting
-%   {\ifgridsnapping
-%      \ifcase\layoutlines
+%   {\ifgridlinesnapping
+%      % gridlinesnapping: to be decided
+%      \ifcase\layoutlines % todo: use helper
+%        \getrawnoflines\textheight
+%      \else
+%        \noflines\layoutlines
+%      \fi
+%      \global\vsize\noflines\openlineheight
+%    \orelse\ifgridsnapping
+%      \ifcase\layoutlines % todo: use helper
 %        \getrawnoflines\textheight
 %      \else
 %        \noflines\layoutlines

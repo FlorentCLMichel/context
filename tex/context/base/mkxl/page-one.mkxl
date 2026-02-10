@@ -66,14 +66,20 @@
      -\insertheights
    }}
 
-\protected\def\page_one_command_set_vsize
-  {\ifgridsnapping
-     \ifcase\layoutlines
+\def\snappedtextheight
+  {\dimexpr
+     \localcontrolled{\ifcase\layoutlines
        \getrawnoflines\textheight
      \else
        \noflines\layoutlines
-     \fi
-     \global\vsize\noflines\openlineheight
+     \fi}\noflines\openlineheight
+   \relax}
+
+\protected\def\page_one_command_set_vsize
+  {\ifgridsnapping
+     \global\vsize\snappedtextheight
+   \orelse\ifgridlinesnapping
+     \global\vsize\snappedtextheight
    \else
      \global\vsize\textheight
    \fi
@@ -81,6 +87,13 @@
    \ifzeropt\textadaptive\else
      \global\d_page_adapts_delta\textadaptive
      \global\pageextragoal-\textadaptive
+   \fi
+   %
+   \ifconditional\c_page_insert_only_check
+     \ifcase\insertonlycount\else
+       \global\advance\vsize-\pageinsertonlyfactor\lineheight
+     % \global\advance\vsize-\pageinsertonlyfactor\openlineheight
+     \fi
    \fi
    %
    \global\advanceby\vsize\d_page_adapts_delta
@@ -200,48 +213,71 @@
 %    \ifconditional\c_notes_bottom_present\else
 %       \doifmarkedpage\v!stretch\page_one_check_stretch_lines
 %    \fi
-   \setbox\b_page_one_contents\vbox \ifcase\c_page_one_stretch to \textheight\fi % probably no pack
-     {\page_otr_command_flush_top_insertions
-      % this is messy ... we will provide a more tight area (no big deal as we can
-      % do that at the lua end)
-    % \parfillskip\zeroskip
-      \page_one_registered_text_area_a#1#2% \unvbox <box>
-      %
-      \ifgridsnapping
-        \unskip % new per 2019-06-18, otherwise weird bottom floats
-        \vkern{\openstrutdepth-\d_page_one_natural_depth}%
-        \prevdepth\openstrutdepth
-        \page_otr_command_flush_bottom_insertions
-        \vfil
-      \orelse\ifcase\bottomraggednessmode
-        % ragged (default)
-        \unskip % new per 2019-06-18, otherwise weird bottom floats
-        \vkern{\openstrutdepth-\d_page_one_natural_depth}%
-        \prevdepth\openstrutdepth
-        % these have whitespace before but we can have some more options
-        % like a \vfill or so
-        \page_otr_command_flush_bottom_insertions
-        \vfil
-      \or
-        % align (normal)
-        \page_otr_command_flush_bottom_insertions
-      \or
-        % baseline
-        \unskip % new per 2019-06-18, otherwise weird bottom floats
-        \vkern{\maxdepth-\d_page_one_natural_depth}%
-      % \srule depth {\maxdepth-\d_page_one_natural_depth}%
-        \page_otr_command_flush_bottom_insertions
-      \or
-        % depth
-        \vkern-\d_page_one_natural_depth
-        \unskip % new per 2019-06-18, otherwise weird bottom floats
-        \page_otr_command_flush_bottom_insertions
-      \fi
-      \fakepagenotes}%
+   \ifconditional\c_notes_bottom_present
+      \setbox\b_page_one_bottom_notes\vpack\bgroup
+        \placebottomnotes
+      \egroup
+   \fi
+   \setbox\b_page_one_contents\vbox \ifcase\c_page_one_stretch to \textheight\fi \bgroup% probably no pack
+     \page_otr_command_flush_top_insertions
+     % this is messy ... we will provide a more tight area (no big deal as we can
+     % do that at the lua end)
+   % \parfillskip\zeroskip
+     \page_one_registered_text_area_a#1#2% \unvbox <box>
+     % \unskip's are new per 2019-06-18, otherwise weird bottom floats%
+     \ifgridlinesnapping
+       % gridlinesnapping: to be decided
+       \unskip
+       \vkern{\openstrutdepth-\d_page_one_natural_depth}%
+       \prevdepth\openstrutdepth
+       \page_otr_command_flush_bottom_insertions
+       \vfil
+     \orelse\ifgridsnapping
+       \unskip
+       \vkern{\openstrutdepth-\d_page_one_natural_depth}%
+       \prevdepth\openstrutdepth
+       \page_otr_command_flush_bottom_insertions
+       \vfil
+     \orelse\ifcase\bottomraggednessmode
+       % ragged (default)
+       \unskip
+       \vkern{\openstrutdepth-\d_page_one_natural_depth}%
+       \prevdepth\openstrutdepth
+       % these have whitespace before but we can have some more options
+       % like a \vfill or so
+       \page_otr_command_flush_bottom_insertions
+       \vfil
+     \or
+       % align (normal)
+       \page_otr_command_flush_bottom_insertions
+     \or
+       % baseline
+       \unskip % new per 2019-06-18, otherwise weird bottom floats
+       \vkern{\maxdepth-\d_page_one_natural_depth}%
+     % \srule depth {\maxdepth-\d_page_one_natural_depth}%
+       \page_otr_command_flush_bottom_insertions
+     \or
+       % depth
+       \vkern-\d_page_one_natural_depth
+       \unskip % new per 2019-06-18, otherwise weird bottom floats
+       \page_otr_command_flush_bottom_insertions
+     \fi
+   % \fakepagenotes
+     \vkern\htdp\b_page_one_bottom_notes
+   \egroup
    \page_one_hook_for_checks\b_page_one_contents % todo
    \page_one_command_package_show_state
    \ifconditional\c_notes_bottom_present
-     \ifgridsnapping
+     % todo: use new height calculator: \snappedtextheight
+     \ifgridlinesnapping
+       % gridlinesnapping: to be decided
+       \ifcase\layoutlines
+         \getrawnoflines\textheight
+       \else
+         \noflines\layoutlines
+       \fi
+       \scratchoffset{\numexpr\noflines-\plusone\relax\lineheight+\topskip}%
+     \orelse\ifgridsnapping
        \ifcase\layoutlines
          \getrawnoflines\textheight
        \else
@@ -251,14 +287,20 @@
      \else
        \scratchoffset\ht\b_page_one_contents
      \fi
-     \setbox\b_page_one_bottom_notes\hpack
-       {\lower\scratchoffset\vbox{\placebottomnotes\par\kern\zeropoint}}% kerns makes notes sit on bottom % pack ?
+     \setbox\b_page_one_bottom_notes\hpack\bgroup
+        \lower\scratchoffset\vbox\bgroup
+          \box\b_page_one_bottom_notes
+          \par
+          \kern\zeropoint % kerns makes notes sit on bottom % pack ?
+        \egroup
+     \egroup
      \smashbox\b_page_one_bottom_notes
      \ht\b_page_one_contents\zeropoint
      \page_one_registered_text_area_b
-       {\vpack to \textheight
-          {\box\b_page_one_contents
-           \box\b_page_one_bottom_notes}}%
+       {\vpack to \textheight \bgroup
+           \box\b_page_one_contents
+           \box\b_page_one_bottom_notes
+        \egroup}%
    \else
      \ifcase\c_page_scale_lines
        % nothing to do: vz not enabled
@@ -269,9 +311,9 @@
        \page_scale_text_box_register_page
        \page_scale_text_box\b_page_one_contents
      \fi
-%      \ifcase\c_page_one_stretch\else
-%         \page_one_check_stretch_contents
-%      \fi
+   % \ifcase\c_page_one_stretch\else
+   %    \page_one_check_stretch_contents
+   % \fi
      \ht\b_page_one_contents\textheight
      \page_one_registered_text_area_b
        {\box\b_page_one_contents}%
@@ -425,7 +467,12 @@
    \global\d_page_floats_inserted_top\zeropoint}
 
 \def\page_one_command_flush_top_insertions_indeed
-  {\ifgridsnapping
+  {\ifgridlinesnapping
+     % gridlinesnapping: to be decided
+     \insertbox\namedinsertionnumber\s!topfloat
+     \vkern-\topskip
+     \vkern\strutheight % [xx] new: see icare topbleed
+   \orelse\ifgridsnapping
      \insertbox\namedinsertionnumber\s!topfloat
      \vkern-\topskip
      \vkern\strutheight % [xx] new: see icare topbleed
@@ -448,7 +495,10 @@
    \global\c_page_floats_not_permitted\conditionalfalse}
 
 \def\page_one_command_flush_bottom_insertions_indeed
-  {\ifgridsnapping
+  {\ifgridlinesnapping
+     % gridlinesnapping: to be decided
+     \snaptogridline\hbox{\insertbox\namedinsertionnumber\s!bottomfloat}%
+   \orelse\ifgridsnapping
    % \rootfloatparameter\c!bottombefore
      \snaptogrid\hbox{\insertbox\namedinsertionnumber\s!bottomfloat}%
    % \rootfloatparameter\c!bottomafter
@@ -474,7 +524,12 @@
   {\ifconditional\c_page_floats_center_box \ifdim\wd\floatbox<\hsize
      \global\setbox\floatbox\hpack to \hsize{\hss\box\floatbox\hss}%
    \fi \fi
-   \snaptogrid\hpack{\box\floatbox}} % was copy
+   \ifgridlinesnapping
+     \expandafter\snaptogridline
+   \orelse\ifgridsnapping
+     \expandafter\snaptogrid
+   \fi
+   \hpack{\box\floatbox}} % was copy
 
 \def\page_one_command_floats_get_compressed
   {\c_page_floats_center_box\conditionalfalse % not needed as we do call directly
@@ -585,31 +640,10 @@
      \fi
    \fi}
 
-% \def\page_one_place_float_here_indeed
-%   {\ifgridsnapping
-%      % otherwise real bad outcome
-%    \else
-%      \baselinecorrection % this has to be done better (and definitely not in column mode)
-%    \fi
-%    \doplacefloatbox
-%    \page_floats_report_total
-%    \dohandlenextfloatindent}
-
-% \def\page_one_place_float_here_indeed
-%   {\ifgridsnapping
-%      % otherwise real bad outcome
-%    \else
-%     % this was not really applied (delayed)
-%     % \baselinecorrection % this has to be done better (and definitely not in column mode)
-%     % so we now use this:
-%       \checkprevdepth
-%    \fi
-%    \doplacefloatbox
-%    \page_floats_report_total
-%    \dohandlenextfloatindent}
-
 \def\page_one_place_float_here_indeed
-  {\ifgridsnapping
+  {\ifgridlinesnapping
+     % gridlinesnapping: to be decided
+   \orelse\ifgridsnapping
      % otherwise real bad outcome
    \else
     \forcestrutdepth

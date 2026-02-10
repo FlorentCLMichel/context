@@ -231,6 +231,8 @@ tex.userdiscoptioncodes = setthem({
 -- Not all of these make sense at the tex end (can't be set).
 
 tex.glyphoptioncodes         = getthem(tex.getglyphoptionvalues,"glyphoptioncode")
+tex.insertoptioncodes        = getthem(tex.getinsertoptionvalues,"insertoptioncode")
+tex.insertcategorycodes      = getthem(tex.getinsertcategoryvalues,"insertcategorycode")
 tex.discoptioncodes          = getthem(tex.getdiscoptionvalues,"discoptioncode")
 tex.ruleoptioncodes          = getthem(tex.getruleoptionvalues,"ruleoptioncode")
 tex.boxoptioncodes           = getthem(tex.getboxoptionvalues,"boxoptioncode")
@@ -281,6 +283,7 @@ tex.runstatecodes            = getthem(tex.getrunstatevalues)
 tex.mvloptioncodes           = getthem(tex.getmvloptionvalues,"mvloptioncode")
 tex.balancecallbackcodes     = getthem(tex.getbalancecallbackvalues)
 tex.badnessmodecodes         = getthem(tex.getbadnessmodevalues,"badnessmodecode")
+tex.insertsplitcodes         = getthem(tex.getinsertsplitvalues) -- ,"insertsplitcode")
 
 local linebreakstatecodes    = getthem(tex.getlinebreakstatevalues)
 tex.linebreakstatecodes      = linebreakstatecodes

@@ -38,4 +38,14 @@
         </cd:arguments>
     </cd:command>
 
+    <cd:command name="pagelayout" level="style" category="layout" file="page-plg.mkiv">
+        <cd:arguments>
+            <cd:keywords>
+                <cd:constant type="page"/>
+                <cd:constant type="leftpage"/>
+                <cd:constant type="rightpage"/>
+            </cd:keywords>
+        </cd:arguments>
+    </cd:command>
+
 </cd:interface>

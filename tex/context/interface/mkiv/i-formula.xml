@@ -32,6 +32,8 @@
                     <cd:constant type="right" default="yes"/>
                     <cd:constant type="atleftmargin"/>
                     <cd:constant type="atrightmargin"/>
+                    <cd:constant type="inner"/>
+                    <cd:constant type="outer"/>
                 </cd:parameter>
                 <cd:parameter name="align">
                     <cd:constant type="left"/>
@@ -184,6 +186,9 @@
                 </cd:parameter>
                 <cd:parameter name="numberdistance">
                     <cd:constant type="cd:dimension"/>
+                </cd:parameter>
+                <cd:parameter name="numberstate">
+                    <cd:constant type="auto"/>
                 </cd:parameter>
                 <cd:parameter name="mathematics">
                     <cd:constant type="cd:name"/>

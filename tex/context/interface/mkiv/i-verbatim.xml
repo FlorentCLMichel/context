@@ -366,4 +366,38 @@
         </cd:arguments>
     </cd:command>
 
+    <cd:command name="typetypingfile" generated="yes" variant="instance" level="document" category="verbatim" keywords="buffer" file="buff-ver.mkxl">
+        <cd:sequence>
+            <cd:string value="type"/>
+            <cd:instance value="typing"/>
+            <cd:string value="file"/>
+        </cd:sequence>
+        <cd:arguments>
+            <cd:assignments list="yes" optional="yes">
+                <cd:inherit name="setuptyping"/>
+            </cd:assignments>
+            <cd:resolve name="argument-file"/>
+        </cd:arguments>
+        <cd:instances>
+            <cd:resolve name="instance-typing"/>
+        </cd:instances>
+    </cd:command>
+
+    <cd:command name="typetypingbuffer" generated="yes" variant="instance" level="document" category="verbatim" keywords="buffer" file="buff-ver.mkxl">
+        <cd:sequence>
+            <cd:string value="type"/>
+            <cd:instance value="typing"/>
+            <cd:string value="buffer"/>
+        </cd:sequence>
+        <cd:arguments>
+            <cd:resolve name="keyword-buffer-list-optional"/>
+            <cd:assignments list="yes" optional="yes">
+                <cd:inherit name="setuptyping"/>
+            </cd:assignments>
+        </cd:arguments>
+        <cd:instances>
+            <cd:resolve name="instance-typing"/>
+        </cd:instances>
+    </cd:command>
+
 </cd:interface>

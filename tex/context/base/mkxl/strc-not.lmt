@@ -24,7 +24,9 @@ local notes               = structures.notes
 local references          = structures.references
 local counterspecials     = counters.specials
 
+local texiscount          = tex.iscount
 local texgetcount         = tex.getcount
+local texisglue           = tex.isglue
 local texgetglue          = tex.getglue
 local texgetbox           = tex.getbox
 local getinsertmultiplier = tex.getinsertmultiplier
@@ -59,7 +61,11 @@ local commands   = commands
 
 local implement  = interfaces.implement
 
-local v_page     <const> = interfaces.variables.page
+local trialtypesetting = context.trialtypesetting
+
+local v_page <const> = interfaces.variables.page
+
+local integer_value <const> = tokens.values.integer
 
 -- state: store, insert, postpone
 
@@ -161,8 +167,20 @@ local function getstate(tag)
     return state and state.kind or "unknown"
 end
 
+local function getstorecount(tag)
+    local state = notestates[tag]
+    return state.kind == "store" and #notedata[tag] or 0
+end
+
+local function getstoreflushed(tag)
+    local state = notestates[tag]
+    return state.kind == "store" and state.flushed or 0
+end
+
 notes.setstate        = setstate
 notes.getstate        = getstate
+notes.getstorecount   = getstorecount
+notes.getstoreflushed = getstoreflushed
 
 implement {
     name      = "setnotestate",
@@ -173,6 +191,22 @@ implement {
 implement {
     name      = "getnotestate",
     actions   = { getstate, context },
+    arguments = "string"
+}
+
+implement {
+    name      = "getnotestorecount",
+    public    = true,
+    usage     = "value",
+    actions   = function(s) return integer_value, getstorecount(s) end,
+    arguments = "string"
+}
+
+implement {
+    name      = "getnotestoreflushed",
+    public    = true,
+    usage     = "value",
+    actions   = function(s) return integer_value, getstoreflushed(s) end,
     arguments = "string"
 }
 
@@ -263,47 +297,52 @@ end
 notes.internal = internal
 notes.ordered  = ordered
 
--- local function onsamepageasprevious(tag)
---     local same     = false
---     local n        = getn(tag,n)
---     local current  = get(tag,n)
---     local previous = get(tag,n-1)
---     if current and previous then
---         local cr = current.references
---         local pr = previous.references
---         same = cr and pr and cr.realpage == pr.realpage
---     end
---     return same and true or false
--- end
+-- It's not that efficient code but it is not that critical either. I'd probably make a
+-- beter one if I had a need for it (and could then test it properly). It replaces an
+-- earlier implementation without subtag.
 
-local function onsamepageasprevious(tag)
-    local n        = getn(tag,n)
-    local current  = get(tag,n)
-    if not current then
+local subtags = { }
+
+local function noteonsamepage(tag,subtag)
+    if not subtags[tag] or subtags[tag] ~= subtag then
+        subtags[tag] = subtag
         return false
     end
-    local cr = current.references
-    if not cr then
+    local index = getn(tag)
+    if not index then
         return false
     end
-    local previous = get(tag,n-1)
-    if not previous then
+    local current  = listindex(tag,index)
+    local previous = listindex(tag,index-1)
+    if not current or not previous then
         return false
     end
-    local pr = previous.references
-    if not pr then
+    current  = structures.lists.collected[current]
+    previous = structures.lists.collected[previous]
+    if not current or not previous then
         return false
     end
-    return cr.realpage == pr.realpage
+    return current.references.realpage == previous.references.realpage
 end
 
-notes.doifonsamepageasprevious = onsamepageasprevious
+-- notes.noteonsamepage = noteonsamepage
 
 implement {
-    name      = "doifnoteonsamepageasprevious",
-    actions   = { onsamepageasprevious, commands.doifelse },
+    name      = "doifelsenoteonsamepage", -- expandable
+    actions   = { noteonsamepage, commands.doifelse },
     arguments = "string",
+    public    = true
 }
+
+implement {
+    name      = "doifelsetaggednoteonsamepage",
+    actions   = { noteonsamepage, commands.doifelse },
+    arguments = "2 strings",
+    protected = true,
+    public    = true
+}
+
+local c_realpageno <const> = texiscount("realpageno")
 
 function notes.checkpagechange(tag) -- called before increment !
     local nd = notedata[tag] -- can be unset at first entry
@@ -317,7 +356,7 @@ function notes.checkpagechange(tag) -- called before increment !
             end
         elseif current then
             -- we need to locate the next one, best guess
-            if texgetcount("realpageno") > current.pagenumber.number then
+            if texgetcount(c_realpageno) > current.pagenumber.number then
                 counters.reset(tag)
             end
         end
@@ -388,7 +427,7 @@ implement { name = "notedeltapage", actions = { getdeltapage, context }, argumen
 
 local function flushnotes(tag,whatkind,how) -- store and postpone
     local state = notestates[tag]
-    local kind = state.kind
+    local kind  = state.kind
     if kind == whatkind then
         local nd = notedata[tag]
         local ns = state.start -- first index
@@ -402,20 +441,33 @@ local function flushnotes(tag,whatkind,how) -- store and postpone
                 end
             end
             state.start = nil
-            state.kind = "insert"
+            state.kind  = "insert"
         elseif kind == "store" then
-            if nd and ns then
+            -- This step is a bit special and can be used for parallel flushing.
+            local step  = tonumber(how)
+            if nd and (ns or step) then
                 if trace_notes then
                     report_notes("flushing state %a of %a from %a to %a",whatkind,tag,ns,#nd)
                 end
                 -- todo: as registers: start, stop, inbetween
-                for i=ns,#nd do
+                local first = ns
+                local last  = #nd
+                --
+                if step then
+                    first = step
+                    last  = first
+                    if not first or first < 1 or first > #nd then
+                        return
+                    end
+                end
+                --
+                for i=first,last do
                     -- tricky : trialtypesetting
                     if how == v_page then
                         local rp = get(tag,i)
                         rp = rp and rp.references
                         rp = rp and rp.symbolpage or 0
-                        if rp > texgetcount("realpageno") then
+                        if rp > texgetcount(c_realpageno) then
                             state.start = i
                             return
                         end
@@ -424,9 +476,20 @@ local function flushnotes(tag,whatkind,how) -- store and postpone
                         context.betweennoteitself(tag)
                     end
                     context.handlenoteitself(tag,i)
+                    if not trialtypesetting() then
+                        state.flushed = (state.flushed or 0) + 1
+                    end
+                end
+                if not step or last == #nd then
+                    if not trialtypesetting() then
+                        state.start = nil
+                    end
+                end
+            else
+                if not trialtypesetting() then
+                    state.start = nil
                 end
             end
-            state.start = nil
         elseif kind == "reset" then
             if nd and ns then
                 if trace_notes then
@@ -494,56 +557,177 @@ function notes.internalid(tag,n)
     end
 end
 
--- for the moment here but better in some builder modules
 
--- gets register "n" and location "i" (where 1 is before)
+do
 
--- this is an experiment, we will make a more general handler instead
--- of the current note one
+    -- This started out an an experiment. We might eventually add some more variables to inserts
+    -- so that we can avoid this kind of hackery.
 
-local report_insert = logs.reporter("pagebuilder","insert")
-local trace_insert  = false  trackers.register("pagebuilder.insert",function(v) trace_insert = v end)
+    -- the upgraded callbacks musical timestamp: Artist Gavin Harrison: "Hatesong/Halo" at The UK
+    -- Drum Show 2025 (posted 2026-01-15, right after this update).
 
--- needs to be sorted out!
+    -- [global spacebefore]     % force flexible
+    --
+    -- [before][rule 1][after]  % force fixed
+    -- [local spacebefore 1]    % force fixed
+    -- [notes 1.1]
+    -- [local spaceinbetween 1] % force fixed
+    -- [notes 1.2]
+    --
+    -- [global spaceinbetween]  % force fixed
+    --
+    -- [before][rule 2][after]  % force fixed
+    -- [local spacebefore 2]    % force fixed
+    -- [notes 2.1]
+    -- [local spaceinbetween 2] % force fixed
+    -- [notes 2.2]
+    --
+    -- [global spaceinbetween]  % force fixed
+    --
+    -- [auto boundary]
+    -- [before][rule 2][after]  % force fixed
+    -- [local spacebefore 3]    % force fixed
+    -- [notes 3.1]
+    -- [local spaceinbetween 3] % force fixed
+    -- [notes 3.2]
 
-local function check_spacing(index,slot) -- actually zero should return zero
-    -- we can also check for tex.insertheights > 0 (instead of i > 1)
-    local gn, pn, mn = tex.getinsertdistance(index) -- ,true so no testing needed
-    if not pn then pn = 0 end
-    if not mn then mn = 0 end
-    local gi, pi, mi = texgetglue(slot > 1 and "s_strc_notes_inbetween" or "s_strc_notes_before")
-    if not pi then pi = 0 end
-    if not mi then mi = 0 end
-    local gt = gn + gi
-    local pt = pn + pi
-    local mt = mn + mi
-    if trace_insert then
-        report_insert("%s %i: %p plus %p minus %p","always   ",index,gn,pn,mn)
-        report_insert("%s %i: %p plus %p minus %p",slot > 1 and "inbetween" or "before   ",index,gi,pi,mi)
-        report_insert("%s %i: %p plus %p minus %p","effective",index,gt,pt,mt)
+    local report_insert = logs.reporter("pagebuilder","insert")
+    local trace_insert  = false  trackers.register("pagebuilder.insert",function(v) trace_insert = v end)
+
+    local s_strc_notes_global_before    <const> = texisglue("s_strc_notes_global_before")
+    local s_strc_notes_global_inbetween <const> = texisglue("s_strc_notes_global_inbetween")
+    local s_strc_notes_local_before     <const> = texisglue("s_strc_notes_local_before")
+    local s_strc_notes_local_inbetween  <const> = texisglue("s_strc_notes_local_inbetween")
+
+    local nodecodes         = nodes.nodecodes
+    local hlist_code        = nodecodes.hlist
+    local glue_code         = nodecodes.glue
+
+    local new_glue          = nuts.pool.glue
+
+    local insertnodeafter   = nuts.insertafter
+    local getid             = nuts.getid
+    local getnext           = nuts.getnext
+    local setattrlist       = nuts.setattrlist
+
+    local setmacro          = tokens.setters.macro
+    local runlocal          = tex.runlocal
+    local getinsertdistance = tex.getinsertdistance
+
+    local actions = {
+
+        -- where 1: fetch the skips as we collect an insert:
+
+        function (index,first,top)
+            local ga, gp, gm
+            local la
+            local da
+            if top then
+                if first then
+                    ga, gp, gm = texgetglue(s_strc_notes_global_before)
+                else
+                    ga, gp, gm = texgetglue(s_strc_notes_global_inbetween)
+                end
+                la = texgetglue(s_strc_notes_local_before)
+            else
+                if first then
+                    ga, gp, gm = texgetglue(s_strc_notes_global_inbetween)
+                else
+                    ga, gp, gm = 0, 0, 0
+                end
+                la = texgetglue(s_strc_notes_local_inbetween)
+            end
+            if not la then la = 0 end
+            if not ga then ga = 0 end
+            if not gp then gp = 0 end
+            if not gm then gm = 0 end
+            if not top then
+                gp, gm = 0, 0
+            end
+            local ta = ga + la
+            local tp = gp
+            local tm = gm
+            if first then
+                da = tex.getinsertdistance(index) -- normally only the rule
+            end
+            if not da then
+                da = 0
+            end
+            ta = ta + da
+            if trace_insert then
+                report_insert("index %i, name %a, first %l, top %l",index,structures.inserts.getname(index),first,top)
+                report_insert("  distance  : %p",da)
+                report_insert("  global    : %p plus %p minus %p",ga,gp,gm)
+                report_insert("  local     : %p",la,lp,lm)
+                report_insert("  effective : %p plus %p minus %p",ta,tp,tm)
+            end
+            return newgluespec(ta,tp,tm)
+        end,
+
+        -- where 2: insert the skip(s) just before we package at a break:
+
+        function (index,head)
+            local list = head
+            local seen = false
+            local done = false
+            while list do
+                local id = getid(list)
+                if id == hlist_code then
+                    if seen then
+                        if not done then
+                            setmacro("currentnote",structures.inserts.getname(index))
+                         -- runlocal("everysynchronizenote")
+                            runlocal("everysynchronizenoteinbetween")
+                        end
+                        local la, lp, lm = texgetglue(s_strc_notes_local_inbetween)
+--                         local ga, gp, gm = texgetglue(s_strc_notes_global_inbetween)
+--                         local glue = new_glue(la+ga,lp+gp,lm+gm)
+                        local glue = new_glue(la,lp,lm)
+                        setattrlist(glue,head)
+                        if trace_insert then
+                            if not done then
+                                report_insert("index %i, name %a",index,structures.inserts.getname(index))
+                            end
+                            report_insert("  between : %p plus %p minus %p",la,lp,lm)
+                        end
+                        insertnodeafter(head,seen,glue)
+                        done = true
+                    end
+                    seen = list
+                else
+                    seen = false
+                end
+                list = getnext(list)
+            end
+            return head
+        end
+
+    }
+
+    local function check_spacing(index,what,...)
+        local action = actions[what]
+        if action then
+            return action(index,...)
+        end
     end
-    return gt, pt, mt
-end
 
-notes.check_spacing = check_spacing
-
--- only notes, kind of hardcoded .. bah
-
-local function insert_distance_callback(index,slot)
-    local state = notes.numbers[index]
-    if state then
-        return newgluespec(check_spacing(index,slot))
-    else
-        return newgluespec()
+    local function insert_distance_callback(index,what,...)
+        local state = notes.numbers[index]
+        if state then
+            return check_spacing(index,what,...)
+        elseif what == 1 then
+            return newgluespec()
+        end
     end
-end
 
-callbacks.register {
-    name    = "insert_distance",
-    action  = insert_distance_callback,
-    comment = "check spacing around inserts",
-    frozen  = true,
-}
+    callbacks.register {
+        name    = "insert_distance",
+        action  = insert_distance_callback,
+        comment = "check spacing around inserts",
+        frozen  = true,
+    }
+
+end
 
 -- New, for columnsets:
 

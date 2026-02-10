@@ -608,7 +608,7 @@ static void tex_aux_trace_kerns(halfword kern, const char *what, const char *det
 {
     if (tracing_math_par >= 2) {
         tex_begin_diagnostic();
-        tex_print_format("[math: %s, %s, amount %p]", what, detail, kern_amount(kern));
+        tex_print_format("%l[math: %s, %s, amount %p]", what, detail, kern_amount(kern));
         tex_end_diagnostic();
     }
 }
@@ -1490,7 +1490,7 @@ halfword tex_make_extensible(halfword fnt, halfword chr, scaled target, scaled m
             if (delta > max_shrink) {
                 if (tracing_math_par >= 1) {
                     tex_begin_diagnostic();
-                    tex_print_format("[math: extensible clipped, target %p, natural %p, shrink %p, clip %p]",
+                    tex_print_format("%l[math: extensible clipped, target %p, natural %p, shrink %p, clip %p]",
                         target, max_natural, max_shrink, delta - max_shrink
                     );
                     tex_end_diagnostic();
@@ -2172,6 +2172,7 @@ static inline int tex_aux_is_math_penalty(halfword n)
 static void tex_aux_show_math_list(const char *fmt, halfword list)
 {
     tex_begin_diagnostic();
+    tex_print_levels();
     tex_print_format(fmt, lmt_math_state.level);
     tex_show_node_list(list, tracing_math_par >= 3 ? max_integer : show_box_depth_par, tracing_math_par >= 3 ? max_integer : show_box_breadth_par);
     tex_print_ln();
@@ -2195,6 +2196,7 @@ void tex_run_mlist_to_hlist(halfword mlist, halfword penalties, halfword style, 
         /* not on the stack ... yet */
         if (tracing_math_par >= 1) {
             tex_begin_diagnostic();
+            tex_print_levels();
             switch (style) {
                 case display_style:
                     tex_print_str("> \\displaymath=");
@@ -2300,7 +2302,7 @@ void tex_run_mlist_to_hlist(halfword mlist, halfword penalties, halfword style, 
                     }
                     if (tracing_math_par >= 2) {
                         tex_begin_diagnostic();
-                        tex_print_format("[math: boxing inline, threshold %p, width %p, height %p, depth %p]",
+                        tex_print_format("%l[math: boxing inline, threshold %p, width %p, height %p, depth %p]",
                             glue_amount(math_threshold_par), // todo: stretch and shrink
                             siz.wd, siz.ht, siz.dp
                         );
@@ -2318,7 +2320,7 @@ void tex_run_mlist_to_hlist(halfword mlist, halfword penalties, halfword style, 
                     if (node_type(current) == glyph_node && tex_has_glyph_option(current, glyph_option_math_discretionary)) {
                         if (tracing_math_par >= 2) {
                             tex_begin_diagnostic();
-                            tex_print_format("[math: promoting glyph with character %U to discretionary]", glyph_character(current));
+                            tex_print_format("%l[math: promoting glyph with character %U to discretionary]", glyph_character(current));
                             tex_end_diagnostic();
                         }
                         current = tex_glyph_to_discretionary(current, mathematics_discretionary_code, tex_has_glyph_option(current, glyph_option_math_italics_too));
@@ -3405,7 +3407,7 @@ static int tex_aux_compute_accent_skew(halfword target, int flags, scaled *skew,
                 }
                 if (tracing_math_par >= 2) {
                     tex_begin_diagnostic();
-                    tex_print_format("[math: accent skew, font %i, chr %x, skew %p, absolute %i]", fnt, chr, *skew, absolute);
+                    tex_print_format("%l[math: accent skew, font %i, chr %x, skew %p, absolute %i]", fnt, chr, *skew, absolute);
                     tex_end_diagnostic();
                 }
                 break;
@@ -3454,7 +3456,7 @@ static int tex_aux_compute_accent_skew(halfword target, int flags, scaled *skew,
                 }
                 if (tracing_math_par >= 2) {
                     tex_begin_diagnostic();
-                    tex_print_format("[math: accent skew, absolute %i]", absolute);
+                    tex_print_format("%l[math: accent skew, absolute %i]", absolute);
                     tex_end_diagnostic();
                 }
                 break;
@@ -3675,7 +3677,7 @@ static void tex_aux_do_make_math_accent(halfword target, halfword source, halfwo
                     accent = tex_aux_char_box(accentfnt, flatchr, mergedattr, NULL, glyph_math_accent_subtype, usedwidth, style, keep ? 0 : has_noad_option_shrink(target), keep ? 0 : has_noad_option_stretch(target), &isscaled);
                     if (tracing_math_par >= 2) {
                         tex_begin_diagnostic();
-                        tex_print_format("[math: flattening accent, old %x, new %x]", accentchr, flatchr);
+                        tex_print_format("%l[math: flattening accent, old %x, new %x]", accentchr, flatchr);
                         tex_end_diagnostic();
                     }
                     accentchr = flatchr;
@@ -6379,7 +6381,7 @@ static void tex_aux_make_scripts(halfword target, halfword kernel, scaled italic
         noad_right_slack(target) = rightslack;
         if (tracing_math_par >= 2) {
             tex_begin_diagnostic();
-            tex_print_format("[math: script slack, left %p, right %p]", leftslack, rightslack);
+            tex_print_format("%l[math: script slack, left %p, right %p]", leftslack, rightslack);
             tex_end_diagnostic();
         }
     }
@@ -6649,7 +6651,7 @@ static halfword tex_aux_math_spacing_glue(halfword ltype, halfword rtype, halfwo
                             x = tex_aux_math_dimension(x, inter_math_skip_glue, c);
                             if (tracing_math_par >= 2) {
                                 tex_begin_diagnostic();
-                                tex_print_format("[math: inter atom kern, left %n, right %n, resolved %i, amount %p]", ltype, rtype, s, kern_amount(x));
+                                tex_print_format("%l[math: inter atom kern, left %n, right %n, resolved %i, amount %p]", ltype, rtype, s, kern_amount(x));
                                 tex_end_diagnostic();
                             }
                             return x;
@@ -6660,7 +6662,7 @@ static halfword tex_aux_math_spacing_glue(halfword ltype, halfword rtype, halfwo
                             x = tex_aux_math_glue(x, inter_math_skip_glue, c);
                             if (tracing_math_par >= 2) {
                                 tex_begin_diagnostic();
-                                tex_print_format("[math: inter atom glue, left %n, right %n, resolved %i, amount %P]", ltype, rtype, s, glue_amount(x), glue_stretch(x), NULL, NULL, NULL, glue_shrink(x));
+                                tex_print_format("%l[math: inter atom glue, left %n, right %n, resolved %i, amount %P]", ltype, rtype, s, glue_amount(x), glue_stretch(x), NULL, NULL, NULL, glue_shrink(x));
                                 tex_end_diagnostic();
                             }
                             return x;
@@ -6671,7 +6673,7 @@ static halfword tex_aux_math_spacing_glue(halfword ltype, halfword rtype, halfwo
                             x = tex_aux_math_muglue(x, inter_math_skip_glue, mmu, c, style);
                             if (tracing_math_par >= 2) {
                                 tex_begin_diagnostic();
-                                tex_print_format("[math: inter atom (mu) glue, left %n, right %n, resolved %i, amount %P]", ltype, rtype, s, glue_amount(x), glue_stretch(x), NULL, NULL, NULL, glue_shrink(x));
+                                tex_print_format("%l[math: inter atom (mu) glue, left %n, right %n, resolved %i, amount %P]", ltype, rtype, s, glue_amount(x), glue_stretch(x), NULL, NULL, NULL, glue_shrink(x));
                                 tex_end_diagnostic();
                             }
                             return x;
@@ -6680,7 +6682,7 @@ static halfword tex_aux_math_spacing_glue(halfword ltype, halfword rtype, halfwo
                     default:
                         if (tracing_math_par >= 2) {
                             tex_begin_diagnostic();
-                            tex_print_format("[math: inter atom (mu) glue, left %n, right %n, resolved %i, unset]", ltype, rtype, s);
+                            tex_print_format("%l[math: inter atom (mu) glue, left %n, right %n, resolved %i, unset]", ltype, rtype, s);
                             tex_end_diagnostic();
                         }
                         goto NONE;
@@ -6725,14 +6727,14 @@ static halfword tex_aux_math_spacing_glue(halfword ltype, halfword rtype, halfwo
                 /*tex Now we're lost. */
                 if (tracing_math_par >= 2) {
                     tex_begin_diagnostic();
-                    tex_print_format("[math: inter atom fallback, left %n, right %n, left parent %n, right parent %n, not resolved]", ltype, rtype, lparent, rparent);
+                    tex_print_format("%l[math: inter atom fallback, left %n, right %n, left parent %n, right parent %n, not resolved]", ltype, rtype, lparent, rparent);
                     tex_end_diagnostic();
                 }
                 goto NONE;
              FOUND:
                 if (tracing_math_par >= 2) {
                     tex_begin_diagnostic();
-                    tex_print_format("[math: inter atom fallback, left %n, right %n, left parent %n, right parent %n, resolved %i]", ltype, rtype, lparent, rparent, s);
+                    tex_print_format("%l[math: inter atom fallback, left %n, right %n, left parent %n, right parent %n, resolved %i]", ltype, rtype, lparent, rparent, s);
                     tex_end_diagnostic();
                 }
             }
@@ -7104,7 +7106,7 @@ static int tex_aux_make_fenced(halfword current, halfword current_style, halfwor
                 noad_supscr(current) = null;
                 if (tracing_math_par >= 2) {
                     tex_begin_diagnostic();
-                    tex_print_str("[math: promoting supscript to top delimiter]");
+                    tex_print_str("%l[math: promoting supscript to top delimiter]");
                     tex_end_diagnostic();
                 }
             }
@@ -7118,7 +7120,7 @@ static int tex_aux_make_fenced(halfword current, halfword current_style, halfwor
                 noad_subscr(current) = null;
                 if (tracing_math_par >= 2) {
                     tex_begin_diagnostic();
-                    tex_print_str("[math: promoting subscript to bottom delimiter]");
+                    tex_print_str("%l[math: promoting subscript to bottom delimiter]");
                     tex_end_diagnostic();
                 }
             }
@@ -7346,7 +7348,7 @@ static halfword tex_aux_check_source(halfword current, halfword list, int repack
                 if (repack) {
                     if (tracing_math_par >= 2) {
                         tex_begin_diagnostic();
-                        tex_print_format("[math: packing due to source field %D]", noad_source(current));
+                        tex_print_format("%l[math: packing due to source field %D]", noad_source(current));
                         tex_end_diagnostic();
                     }
                     list = tex_hpack(list, 0, packing_additional, direction_unknown, holding_none_option, box_limit_none);
@@ -8350,9 +8352,9 @@ static void tex_mlist_to_hlist_finalize_list(mliststate *state)
             if (tracing_math_par >= 2) {
                 tex_begin_diagnostic();
                 if (old_recent != recent_subtype || old_current != current_subtype) {
-                    tex_print_format("[math: atom ruling, recent %n, current %n, new recent %n, new current %n]", old_recent, old_current, recent_subtype, current_subtype);
+                    tex_print_format("%l[math: atom ruling, recent %n, current %n, new recent %n, new current %n]", old_recent, old_current, recent_subtype, current_subtype);
                 } else {
-                    tex_print_format("[math: atom ruling, recent %n, current %n]", old_recent, old_current);
+                    tex_print_format("%l[math: atom ruling, recent %n, current %n]", old_recent, old_current);
                 }
                 tex_end_diagnostic();
             }
@@ -8375,7 +8377,7 @@ static void tex_mlist_to_hlist_finalize_list(mliststate *state)
                 p = kern;
                 if (tracing_math_par >= 2) {
                     tex_begin_diagnostic();
-                    tex_print_format("[math: state driven left shape kern %p]", plus);
+                    tex_print_format("%l[math: state driven left shape kern %p]", plus);
                     tex_end_diagnostic();
                 }
             }
@@ -8401,7 +8403,7 @@ static void tex_mlist_to_hlist_finalize_list(mliststate *state)
                 }
                 if (tracing_math_par >= 2) {
                     tex_begin_diagnostic();
-                    tex_print_format("[math: migrating right slack %p]", recent_right_slack);
+                    tex_print_format("%l[math: migrating right slack %p]", recent_right_slack);
                     tex_end_diagnostic();
                 }
                 recent_right_slack = 0;
@@ -8416,7 +8418,7 @@ static void tex_mlist_to_hlist_finalize_list(mliststate *state)
                     p = kern;
                     if (tracing_math_par >= 2) {
                         tex_begin_diagnostic();
-                        tex_print_format("[math: state driven right shape kern %p]", plus);
+                        tex_print_format("%l[math: state driven right shape kern %p]", plus);
                         tex_end_diagnostic();
                     }
                 }
@@ -8469,7 +8471,7 @@ static void tex_mlist_to_hlist_finalize_list(mliststate *state)
                     p = penalty;
                     if (tracing_math_par >= 2) {
                         tex_begin_diagnostic();
-                        tex_print_format("[math: pre penalty, left %n, right %n, amount %i]", recent_subtype, current_subtype, penalty_amount(penalty));
+                        tex_print_format("%l[math: pre penalty, left %n, right %n, amount %i]", recent_subtype, current_subtype, penalty_amount(penalty));
                         tex_end_diagnostic();
                     }
                 }
@@ -8480,7 +8482,7 @@ static void tex_mlist_to_hlist_finalize_list(mliststate *state)
                     if (prv) {
                         if (tracing_math_par >= 2) {
                             tex_begin_diagnostic();
-                            tex_print_format("[math: removing italic correction %D between %i and %i]", kern_amount(p), recent_subtype, current_subtype);
+                            tex_print_format("%l[math: removing italic correction %D between %i and %i]", kern_amount(p), recent_subtype, current_subtype);
                             tex_end_diagnostic();
                         }
                         tex_flush_node(p);
@@ -8575,7 +8577,7 @@ static void tex_mlist_to_hlist_finalize_list(mliststate *state)
                     p = penalty;
                     if (tracing_math_par >= 2) {
                         tex_begin_diagnostic();
-                        tex_print_format("[math: post penalty, left %n, right %n, amount %i]", recent_subtype, current_subtype, penalty_amount(penalty));
+                        tex_print_format("%l[math: post penalty, left %n, right %n, amount %i]", recent_subtype, current_subtype, penalty_amount(penalty));
                         tex_end_diagnostic();
                     }
                 }
@@ -8608,7 +8610,7 @@ static void tex_mlist_to_hlist_finalize_list(mliststate *state)
             node_next(temp_head) = kern;
             if (tracing_math_par >= 2) {
                 tex_begin_diagnostic();
-                tex_print_format("[math: nilling recent left slack %D]", recent_left_slack);
+                tex_print_format("%l[math: nilling recent left slack %D]", recent_left_slack);
                 tex_end_diagnostic();
             }
         }
@@ -8621,7 +8623,7 @@ static void tex_mlist_to_hlist_finalize_list(mliststate *state)
             p = kern;
             if (tracing_math_par >= 2) {
                 tex_begin_diagnostic();
-                tex_print_format("[math: nilling recent right slack %D]", recent_right_slack);
+                tex_print_format("%l[math: nilling recent right slack %D]", recent_right_slack);
                 tex_end_diagnostic();
             }
         }
@@ -8781,5 +8783,9 @@ halfword tex_mlist_to_hlist(halfword mlist, int penalties, int main_style, int b
     glyph_scale_par = state.scale;
     --lmt_math_state.level;
     node_prev(node_next(temp_head)) = null;
+    if (lmt_math_state.level == 0 && math_snapping_par && node_next(temp_head)) {
+        /* before or after popping */
+        node_next(temp_head) = tex_snapping_list(node_next(temp_head), null, math_snapping_par);
+    }
     return node_next(temp_head);
 }

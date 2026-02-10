@@ -1281,6 +1281,7 @@ static void tex_aux_macro_call(halfword cs, halfword cmd, halfword chr)
             for less info here. Introducing an extra parameter makes no sense.
         */
         tex_begin_diagnostic();
+        tex_print_levels();
         tex_print_cs_checked(cs);
         if (is_untraced(eq_flag(cs))) {
             tracing = false;
@@ -1848,6 +1849,7 @@ case integer_match_token:
                     ++nofscanned;
                     if (tracing) {
                         tex_begin_diagnostic();
+                        tex_print_levels();
                         tex_print_format("%c%c<-", match_visualizer, '0' + nofscanned + (nofscanned > 9 ? gap_match_count : 0));
                         tex_show_token_list(pstack[nofscanned - 1], 0, 0);
                         tex_end_diagnostic();
@@ -1930,6 +1932,7 @@ case integer_match_token:
                     nofscanned++;
                     if (tracing) {
                         tex_begin_diagnostic();
+                        tex_print_levels();
                         tex_print_format("%c%i--", match_visualizer, nofscanned);
                         tex_end_diagnostic();
                     }

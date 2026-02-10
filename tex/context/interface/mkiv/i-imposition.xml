@@ -63,6 +63,7 @@
                 <cd:constant type="2*2*2"/>
                 <cd:constant type="2*2*3"/>
                 <cd:constant type="XY"/>
+                <cd:constant type="FLASHCARD"/>
                 <cd:constant type="cd:name"/>
             </cd:keywords>
         </cd:arguments>

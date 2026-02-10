@@ -1310,12 +1310,20 @@ static void tex_aux_set_cur_val_by_page_property_cmd(int code)
             cur_val = lmt_page_builder_state.insert_penalties;
             cur_val_level = integer_val_level;
             break;
+        case insert_only_count_code:
+            cur_val = lmt_page_builder_state.insert_only_count;
+            cur_val_level = integer_val_level;
+            break;
         case insert_heights_code:
             cur_val = lmt_page_builder_state.insert_heights;
             cur_val_level = dimension_val_level;
             break;
         case insert_storing_code:
             cur_val = lmt_insert_state.storing;
+            cur_val_level = integer_val_level;
+            break;
+        case insert_category_code:
+            cur_val = tex_get_insert_category(tex_scan_integer(0, NULL, NULL));
             cur_val_level = integer_val_level;
             break;
         case insert_distance_code:
@@ -1373,6 +1381,14 @@ static void tex_aux_set_cur_val_by_page_property_cmd(int code)
         case insert_shrink_code:
             cur_val = tex_get_insert_shrink(tex_scan_integer(0, NULL, NULL));
             cur_val_level = dimension_val_level;
+            break;
+        case insert_maxplaced_code:
+            cur_val = tex_get_insert_maxplaced(tex_scan_integer(0, NULL, NULL));
+            cur_val_level = integer_val_level;
+            break;
+        case insert_placed_code:
+            cur_val = tex_get_insert_placed(tex_scan_integer(0, NULL, NULL));
+            cur_val_level = integer_val_level;
             break;
         case split_last_depth_code:  
             cur_val = lmt_packaging_state.split_last_depth;
@@ -1849,6 +1865,11 @@ static void tex_aux_set_cur_val_by_box_property_cmd(halfword chr)
         case box_finalize_code:
             /* todo: return what? */
             cur_val = node_type(b) == hlist_node ? box_width(b) : box_total(b);
+            cur_val_level = dimension_val_level;
+            break;
+        case box_snapping_code:
+            /* todo: return what? */
+            cur_val = box_total(b);
             cur_val_level = dimension_val_level;
             break;
         case box_limit_code:
@@ -3856,7 +3877,7 @@ halfword tex_scan_glue(int level, int optional_equal, int options_too)
     q = tex_new_glue_spec_node(zero_glue);
     glue_amount(q) = cur_val;
     while (1) {
-        switch (tex_scan_character("pmlPML", 0, 1, 0)) {
+        switch (tex_scan_character(options_too ? "pmldPMLD" : "pmPM", 0, 1, 0)) {
             case 0:
                 return q;
             case 'p': case 'P':
@@ -3874,14 +3895,17 @@ halfword tex_scan_glue(int level, int optional_equal, int options_too)
                 }
                 break;
             case 'l': case 'L':
-                if (options_too && tex_scan_mandate_keyword("limit", 1)) {
+                if (tex_scan_mandate_keyword("limit", 1)) {
                     glue_options(q) |= glue_option_limit;
-                    break;
-                } else {
-                    /* fall through */
                 }
+                break;
+            case 'd': case 'D':
+                if (tex_scan_mandate_keyword("delay", 1)) {
+                    glue_options(q) |= glue_option_delay;
+                }
+                break;
             default:
-                tex_aux_show_keyword_error(options_too ? "plus|minus|limit" : "plus|minus");
+             // tex_aux_show_keyword_error(options_too ? "plus|minus|limit|delay" : "plus|minus");
                 return q;
         }
     }
@@ -8375,7 +8399,7 @@ static void tex_aux_print_expression_entry(halfword type, long long value)
 // static void tex_aux_trace_expression_entry(const char *what, halfword type, long long value)
 // {
 //     tex_begin_diagnostic();
-//     tex_print_format("[expression entry %s: ", what);
+//     tex_print_format("%l[expression entry %s: ", what);
 //     tex_aux_print_expression_entry(type, value);
 //     tex_print_char(']');
 //     tex_end_diagnostic();
@@ -8385,12 +8409,12 @@ static void tex_aux_trace_expression(stack_info stack, halfword level, halfword 
 {
     tex_begin_diagnostic();
     if (n > 0) {
-        tex_print_format(level == dimension_val_level ? "[dimexpression rpn %i %s:" : "[numexpression rpn %i %s:", n, what ? "r" :"s");
+        tex_print_format(level == dimension_val_level ? "%l[dimexpression rpn %i %s:" : "%l[numexpression rpn %i %s:", n, what ? "r" :"s");
         if (! stack.head) {
             tex_print_char(' ');
         }
     } else {
-        tex_print_str(level == dimension_val_level ? "[dimexpression rpn:" : "[numexpression rpn:");
+        tex_print_str(level == dimension_val_level ? "%l[dimexpression rpn:" : "%l[numexpression rpn:");
     }
     for (halfword current = stack.head; current; current = node_next(current)) {
         tex_print_char(' ');

@@ -1,0 +1,581 @@
+% language=us runpath=texruns:manuals/beyond
+
+\environment beyond-style
+
+% everyalignment : how to reset after collecting
+
+% \alignend
+% tail fields
+% par split
+% snap lines
+
+\startcomponent beyond-alignments
+
+\startchapter[title={Alignments},author={Hans Hagen}]
+
+%     \def\TST{test \the\numexpr\currentalignmentrow\relax,\the\numexpr\currentalignmentcolumn:3\relax}
+
+%     \starttabulate[||||]
+%         \NC \TST \NC \TST \NC \TST \NC \NR
+%         \NC \TST \NC \TST \NC \TST \NC \NR
+%         \NC \TST \NC \TST \NC \TST \NC \NR
+%     \stoptabulate
+
+There are several subsystems \TEX\ that deal with rendering: math, par building,
+page building and alignments. In \LUAMETATEX\ we have extended math quite a bit,
+added features to the par builder, including configurable passes, added some to
+the page builder (and still some on the todo list), but also added a balancing
+mechanism, and even alignments got a bit extended. The last days of 2025 were a
+good moment to catch up on the latter: add a few more pending features to the
+alignment subsystem.
+
+Among the features already present for a while are migration of inserts, marks
+and adjusts. We can also via keywords hook in a callback (\typ {callback}),
+assign attributes (\type {attr}), discard zero skips (\typ {noskip} and \typ
+{discard}), reverse the order of cells \typ {reverse}), ignore first and last
+skips (\typ {nofirstskip} and \typ {nolastskip}). Below we will see a late 2025
+pruning addition (\typ {prune}). Of course we can enforce the size (\typ {to} and
+\typ {spread}).
+
+One can argue that a lot is already possible and that is true, especially when
+you consider that we have callbacks and the ability to post-process, and we can
+basically do what we like. However, not all solutions are pretty, which is due to
+the way an alignment is assembled. So here we discuss a how to keep the preamble
+setup clean.
+
+\startbuffer
+\bgroup \tabskip 5pt \halign \bgroup
+  % preamble
+  \tabskip 10pt      \alignmark \hss \aligntab
+                \hss \alignmark \hss \aligntab
+  \tabskip 20pt \hss \alignmark      \cr
+  % content
+  one   \aligntab two    \aligntab three \cr
+  first \aligntab second \aligntab third \cr
+\egroup \egroup
+\stopbuffer
+
+\typebuffer
+
+\startlinecorrection
+\ruledvpack \bgroup
+    \showboxes
+    \tracingalignments=2
+    \tracingonline    =2
+    \getbuffer
+\egroup
+\stoplinecorrection
+
+We can check the preamble with \type {\tracingalignments=2} and get, in \CONTEXT:
+
+\starttyping
+6:7: <alignment preamble>
+6:7: \glue[tabskip][... attributes ...] 5.0pt
+6:7: \alignrecord[normal]
+6:7: ..{}
+6:7: ..<content>
+6:7: ..{\hss \endtemplate }
+6:7: \glue[tabskip][... attributes ...] 10.0pt
+6:7: \alignrecord[normal]
+6:7: ..{\hss }
+6:7: ..<content>
+6:7: ..{\hss \endtemplate }
+6:7: \glue[tabskip][... attributes ...] 10.0pt
+6:7: \alignrecord[normal]
+6:7: ..{\hss }
+6:7: ..<content>
+6:7: ..{\endtemplate }
+6:7: \glue[tabskip][... attributes ...] 20.0pt
+\stoptyping
+
+What is most significant here is that we have alternating glue and content. You
+can consider these records to be boxes that are not yet finalized. After the
+whole alignment has been read and processed, in a first pass the dimensions are
+analyzed and in a second pass they get frozen. When you look at the specification
+you see the first \type {\tabskip} ending up in front, and after that the then
+set one is used. It you give it some thought, you might realize that not only
+there is some partial parsing going on, the preamble scanner checks if there is a
+\type {\tabskip} and remembers it, but that grouping doesn't really affect that
+variable when it is set in a cell. The current value is remembered in the
+preamble.
+
+A feature of alignments is that when a double tab is entered in the preamble, the
+preamble from then on will be used in a loop, that is, we can have more content
+entries than the preamble specifies. This is for instance used in math matrices,
+where we define one cell in the preamble and repeat that. And here you might see
+the problem: there is the final skip but nothing follows it.
+
+Now watch the next definition where instead of a double \typ {\aligntab} we use an
+equivalent \typ {\alignloop} which we consider a bit more indicative. When we
+trace an alignment and show the preamble the align records have a subtype that
+indicates if it is a \type {normal} or a \type {loop} entry. Because \TEX\
+extends the preamble for every loop cycle larger than one, we show the effective
+preamble after the alignment is scanned and indicate these as \type {extra}
+records.
+
+\startbuffer
+\bgroup \tabskip 5pt \halign nofirstskip nolastskip \bgroup
+  % preamble
+  \tabskip 10pt
+  \alignmark \unskip \alignloop \alignmark \unskip \cr
+  % content
+  one   \aligntab two    \aligntab three \aligntab four   \cr
+  first \aligntab second \aligntab third \aligntab fourth \cr
+\egroup \egroup
+\stopbuffer
+
+\typebuffer
+
+\startlinecorrection
+\showboxes
+\vpack \bgroup
+    \getbuffer
+\egroup
+\stoplinecorrection
+
+The two keywords effectively remove the outer skips. When cleaning up some code
+where an alignment could have vertical rules between cells, I wondered if we
+could do that nicer than currently done. When we have such rules there are two
+ways to do it: create a column that optionally has a rule, in which case one has
+to handle spacing on both sides, or \type {\llap} a rule into the space made
+available by \type {\tabskip} but neither of them is pretty code-wise. Just
+consider the case where rules are optional and where no rules are given. And also
+consider that we can have rules on both ends. \footnote {We could consider
+storing a rule specification in the skip as we have an unused leader field but
+that would mean quite some adaptation of the code.}
+
+I'll illustrate this with a few examples. We define two helpers:
+
+% \lastalignmentrow
+% \lastalignmentcolumn
+
+\startbuffer[TR]
+\protected\def\T
+  {[\number\currentalignmentrow,\number\currentalignmentcolumn]}
+
+\protected\def\R
+  {\llap{\hbox to \currentalignmenttabskip{\hss\darkblue \vl\hss}}}
+\stopbuffer
+
+\typebuffer[TR]
+
+\startbuffer
+\vbox \bgroup
+  \tabskip5pt % before first
+  \halign \bgroup
+    \tabskip10pt % after each cell
+    \alignmark \aligntab \alignmark \alignloop \alignmark \cr
+       \T \aligntab    \T \aligntab    \T \aligntab    \T \aligntab \R \cr
+       \T \aligntab    \T \aligntab    \T \aligntab \R \T \aligntab    \cr
+       \T \aligntab    \T \aligntab \R \T \aligntab    \T \aligntab    \cr
+       \T \aligntab \R \T \aligntab    \T \aligntab    \T \aligntab    \cr
+    \R \T \aligntab    \T \aligntab    \T \aligntab    \T \aligntab    \cr
+  \egroup
+\egroup
+\stopbuffer
+
+\start \small \typebuffer \stop
+
+\startlinecorrection
+\showboxes
+\pushoverloadmode \getbuffer[TR] \popoverloadmode
+\getbuffer
+\stoplinecorrection
+
+\startbuffer
+\vbox \bgroup
+  \tabskip5pt % before first
+  \halign nofirstskip nolastskip \bgroup
+    \tabskip10pt % after each cell
+    \alignmark \aligntab \alignmark \alignloop \alignmark \cr
+       \T \aligntab    \T \aligntab    \T \aligntab    \T \aligntab \R \cr
+       \T \aligntab    \T \aligntab    \T \aligntab \R \T \aligntab    \cr
+       \T \aligntab    \T \aligntab \R \T \aligntab    \T \aligntab    \cr
+       \T \aligntab \R \T \aligntab    \T \aligntab    \T \aligntab    \cr
+    \R \T \aligntab    \T \aligntab    \T \aligntab    \T \aligntab    \cr
+  \egroup
+\egroup
+\stopbuffer
+
+\start \small \typebuffer \stop
+
+\startlinecorrection
+\showboxes
+\pushoverloadmode \getbuffer[TR] \popoverloadmode
+\getbuffer
+\stoplinecorrection
+
+\startbuffer[TR]
+\protected\def\T
+  {[\number\currentalignmentrow,\number\currentalignmentcolumn]}
+
+\protected\def\R
+  {\llap{\hbox to \currentalignmenttabskip{\hss\vl\hss}}%
+   \ifcase\currentalignmentcolumn\or
+     \alignoption firstskip \relax
+   \fi}
+\stopbuffer
+
+\typebuffer[TR]
+
+% \startbuffer
+% \vbox \bgroup
+%   \tabskip5pt % before first
+%   \halign nofirstskip nolastskip \bgroup
+%     \tabskip10pt % after each cell
+%     \alignmark \aligntab \alignmark \alignloop \alignmark \cr
+%     \T \aligntab    \T \aligntab    \T \aligntab    \T \cr
+%     \T \aligntab    \T \aligntab    \T \aligntab \R \T \cr
+%     \T \aligntab    \T \aligntab \R \T \aligntab    \T \cr
+%     \T \aligntab \R \T \aligntab    \T \aligntab    \T \cr
+%   \egroup
+% \egroup
+% \stopbuffer
+%
+% \start \small \typebuffer \stop
+
+\startlinecorrection
+\showboxes
+\pushoverloadmode \getbuffer[TR] \popoverloadmode
+\getbuffer
+\stoplinecorrection
+
+So, now we have columns with rules in the margins. In the middle columns we use
+the tab skip area and center the rule, which means that on the edged we need to
+occupy that skip, minus the width of the rule divided by two. But we still have
+an issue at the right, where we don't know if there actually was upcoming
+content. We do however have a box at the right because that is what always gets
+appended when we have a column. We can use the following definition:
+
+\starttyping
+\protected\def\R
+  {\ifcase\currentalignmentcolumn\or
+     \alignoption firstskip \relax
+     \llap{\hbox to \currentalignmenttabskip{\vl\hss}}%
+   \else
+     \llap{\hbox to \currentalignmenttabskip{\hss\vl\hss}}%
+   \fi}
+\stoptyping
+
+But still we're stuck with the asymmetry in the left and right edges so we need
+a better solution.
+
+\startbuffer[TR]
+\protected\def\T
+  {[\number\currentalignmentrow,\number{\currentalignmentcolumn:2}]}
+
+\protected\def\N
+  {\aligntab
+   \aligntab}
+
+\protected\def\R
+  {\aligntab
+   \darkred \vrule height 1sh depth 1sd width 2pt
+   \aligntab}
+\stopbuffer
+
+\typebuffer[TR]
+
+Although we don't like it, we will use two columns per entry. This time we omit
+the first and last skips but we also prune the skips that are between the first
+and last column when these columns are empty. The result looks quite clean and
+has the advantage that we don't need to keep track of states. In order to get the
+column number right we adapted the definition of \type {\T}.
+
+\startbuffer
+\vbox \bgroup
+  \tabskip5pt
+  \halign
+    nofirstskip
+    nolastskip
+    prune
+  \bgroup
+    \ignorespaces \alignmark \removeunwantedspaces \aligntab
+    \ignorespaces \alignmark \removeunwantedspaces \alignloop
+    \ignorespaces \alignmark \removeunwantedspaces \aligntab
+    \ignorespaces \alignmark \removeunwantedspaces \cr
+    \N \T \N \T \N \T \N \T \N \cr
+    \N \T \N \T \N \T \N \T \R \cr
+    \N \T \N \T \N \T \R \T \N \cr
+    \N \T \N \T \R \T \N \T \N \cr
+    \N \T \R \T \N \T \N \T \N \cr
+    \R \T \N \T \N \T \N \T \N \cr
+  \egroup
+\egroup
+\stopbuffer
+
+\typebuffer
+
+\startlinecorrection
+\showboxes
+\pushoverloadmode \getbuffer[TR] \popoverloadmode
+\getbuffer
+\stoplinecorrection
+
+We're not there yet, just look at this:
+
+\startbuffer
+\vbox \bgroup
+  \tabskip5pt
+  \halign
+    nofirstskip
+    nolastskip
+    prune % once
+    prune % twice
+  \bgroup
+    \ignorespaces \alignmark \removeunwantedspaces \aligntab
+    \ignorespaces \alignmark \removeunwantedspaces \alignloop
+    \ignorespaces \alignmark \removeunwantedspaces \aligntab
+    \ignorespaces \alignmark \removeunwantedspaces \cr
+    \N \T \N \T \N \T \N \T \N \cr
+    \N \T \N \T \N \T \N \T \N \cr
+    \N \T \N \T \N \T \N \T \N \cr
+  \egroup
+\egroup
+\stopbuffer
+
+\typebuffer
+
+\startlinecorrection
+\showboxes
+\pushoverloadmode \getbuffer[TR] \popoverloadmode
+\getbuffer
+\stoplinecorrection
+
+We're also getting close to what has always been the \CONTEXT\ table related
+interface, commands that separate columns and a final one. But more important
+is that it is easier to explain and opens up more usage than the few times we
+do it now.
+
+One of the oldest feature of the \CONTEXT\ tabulate feature is that it can split
+over pages and this includes cells that are paragraphs. It is implemented in
+\TEX\ code (after all it comes from \MKII) but could partially be done in \LUA,
+although there is little benefit in that so we never considered it. It is one of
+the mechanisms that we preferably don't touch. However, at the brink of 2026 I
+decided to see if the engine itself could provide such a feature, mostly because
+then we can more easily use dedicated (single pass) alignments without the
+overhead of tabulate.
+
+The next example introduces a new feature triggered by \type {split}. When this
+key is passed, boxes that have an \typ {alignsplit} option passed will be split.
+The two min parameters set the minima for the height and depth of the lines
+involved.
+
+\startbuffer
+\halign
+    split
+    minheight \strutht
+    mindepth  \strutdp
+\bgroup
+    % preamble
+    \ignorespaces \alignmark \removeunwantedspaces \aligntab
+    \ignorespaces \alignmark \removeunwantedspaces \aligntab
+    \ignorespaces \alignmark \removeunwantedspaces
+\cr
+    % content
+    one
+\aligntab
+    \vtop alignsplit{\hsize 2cm two 1.1\par two 1.2}
+\aligntab
+    \vtop alignsplit{\hsize 2cm three 1.1\par three 1.2}
+\cr
+    one
+\aligntab
+    \vtop alignsplit {\hsize 2cm two 1.2\par two 2.2}
+\aligntab
+    three
+\cr
+    first
+\aligntab
+    second
+\aligntab
+    \vtop alignsplit \bgroup
+        \hsize 2cm third 3.1\par third 3.2\par third 3.3
+    \egroup
+\cr
+\egroup
+\stopbuffer
+
+\typebuffer
+
+\startlinecorrection
+\showboxes
+\vbox \bgroup
+    \forgetall
+    \getbuffer
+\egroup
+\stoplinecorrection
+
+The next example shows that we can feed long paragraphs that then will
+break across pages.
+
+\startbuffer
+\forgetall
+\halign
+    split
+    minheight \strutht
+    mindepth  \strutdp
+\bgroup
+    \showboxes
+    \vtop alignsplit \bgroup
+        \hsize .5tw \raggedright
+        \begstrut \alignmark \endstrut
+    \egroup
+\aligntab
+    \showboxes
+    \vtop alignsplit \bgroup
+        \hsize .5tw \raggedright
+        \begstrut \alignmark \endstrut
+    \egroup
+\cr
+    \samplefile{tufte} \aligntab \samplefile{ward} \cr
+    \samplefile{tufte} \aligntab \samplefile{ward} \cr
+\egroup
+\stopbuffer
+
+\typebuffer
+
+\start \forgetall \getbuffer \stop
+
+Normally one will pay attention to what goes into a cell, and in most cases that
+is only text. However, we do need to handle rules and whitespace, for as far as
+it makes sense.
+
+\startbuffer
+\tabskip10pt\relax
+\halign
+    split
+    minheight \strutht
+    mindepth  \strutdp
+    nofirstskip
+    nolastskip
+\bgroup
+    \begstrut \alignmark \endstrut
+    \aligntab
+        \vtop alignsplit \bgroup
+            \hsize .5tw \veryraggedright
+            \begstrut \alignmark \endstrut
+        \egroup
+    \aligntab
+        \vtop alignsplit \bgroup
+            \hsize .25tw \veryraggedright
+            \begstrut \alignmark \endstrut
+        \egroup
+    \cr
+    test \aligntab
+    test \par \dorecurse{2}{{\blue\vrule width 3cm height 1mm depth 1mm\crlf}} test
+    \aligntab \cr
+        test
+    \aligntab
+        test \par
+        \dorecurse{2}{{\darkblue\vrule width 3cm pair 1mm 1mm\crlf}}
+        test
+    \aligntab
+    \cr
+        test
+    \aligntab
+        test \par
+        \dorecurse{2}{{\darkred \hrule width 3cm pair 1mm 1mm\crlf}}
+        test
+    \aligntab
+    \cr
+        test
+    \aligntab
+        test 1\blank[line] test 2\par test 3\blank[line] test 4
+    \aligntab
+        test 1\blank[line] test 2           \blank[line] test 4
+    \cr
+\egroup
+\stopbuffer
+
+\typebuffer
+
+The \type {\begstrut} and \type {\endstrut} make sure we start a paragraph and
+finish one without interfering spaces.
+
+\startbuffer[show]
+    \setbox\scratchbox\vpack\bgroup
+        \forgetall
+        \showmakeup[line,vglue,vpenalty]%
+        \getbuffer
+    \egroup
+    \unvbox\scratchbox
+\stopbuffer
+
+\getbuffer[show]
+
+The default is to hide the glue in the cells so we just get a line.
+
+\startbuffer
+\halign
+    split minheight \strutht mindepth \strutdp
+\bgroup
+    \vtop alignsplit \bgroup
+        \hsize .5tw \veryraggedright \alignmark
+    \egroup
+    \cr
+        mode 0.1 \blank[line] mode 0.2 \blank[line] mode 0.3
+    \cr
+\egroup
+\stopbuffer
+
+\typebuffer \getbuffer[show]
+
+When you set \typ {gluemode} to one, when a row has only glue cells, instead of a
+row a vertical skip is inserted.
+
+\startbuffer
+\halign
+    split minheight \strutht mindepth \strutdp gluemode 1
+\bgroup
+    \vtop alignsplit \bgroup
+        \hsize .5tw \veryraggedright \alignmark
+    \egroup
+    \cr
+        mode 1.1 \blank[line] mode 1.2 \blank[line] mode 1.3
+    \cr
+\egroup
+\stopbuffer
+
+\typebuffer \getbuffer[show]
+
+When you set \typ {gluemode} to two, when a row has only glue cells, the row will
+be wrapped in penalties 10000.
+
+\startbuffer
+\halign
+    split minheight \strutht mindepth \strutdp gluemode 2
+\bgroup
+    \vtop alignsplit \bgroup
+        \hsize .5tw \veryraggedright \alignmark
+    \egroup
+    \cr
+        mode 2.1 \blank[line] mode 2.2 \blank[line] mode 2.3
+    \cr
+\egroup
+\stopbuffer
+
+\typebuffer \getbuffer[show]
+
+Feature like these are experimental and might evolve. This is why in \CONTEXT\ it
+is plugged into the tabulate mechanism as \type {P} template option. So, although
+it could be an alternative for \type {p} it currently also could lack some
+features. In \in {figure} [fig:alignment:penalties] we see that we can handle
+various penalties too.
+
+\startplacefigure[reference=fig:alignment:penalties,title={Dealing with penalties in split tabulates.}]
+\start
+    \showmakeup[vpenalty,line]
+    \starttabulate[||PA{lesswidows,flushleft}|PA{lesswidows,flushleft}|]
+      \NC Foo \NC \samplefile {ward}  \NC \samplefile {tufte} \NC \NR
+      \NC Foo \NC \samplefile {tufte} \NC \samplefile {ward}  \NC \NR
+    \stoptabulate
+\stop
+\stopplacefigure
+
+\stopchapter
+
+\stopcomponent
+
+% Written mixed with listenting to and watching Michał Łapaj CD and videos on a few
+% cold snowy winterdays around 2025/2026.

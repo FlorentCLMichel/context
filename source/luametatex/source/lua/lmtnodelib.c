@@ -3504,6 +3504,57 @@ static int nodelib_direct_setwhd(lua_State *L)
     return 0;
 }
 
+# define getnaturalwhd_usage getwhd_usage
+
+static int nodelib_direct_getnaturalwhd(lua_State *L)
+{
+    halfword n = nodelib_valid_direct_from_index(L, 1);
+    if (n) {
+      AGAIN:
+        switch (node_type(n)) {
+            case hlist_node:
+            case vlist_node:
+            case unset_node:
+                lua_pushinteger(L, box_width(n));
+                if (is_box_snapped_state(n)) {
+                    lua_pushinteger(L, box_natural_height(n));
+                    lua_pushinteger(L, box_natural_depth(n));
+                } else {
+                    lua_pushinteger(L, box_height(n));
+                    lua_pushinteger(L, box_depth(n));
+                }
+                return 3;
+            case rule_node:
+                lua_pushinteger(L, rule_width(n));
+                lua_pushinteger(L, rule_height(n));
+                lua_pushinteger(L, rule_depth(n));
+                return 3;
+            case glyph_node:
+                /* or glyph_dimensions: */
+                {
+                    int detail = lua_toboolean(L, 2);
+                    lua_pushinteger(L, tex_glyph_width(n));
+                    lua_pushinteger(L, tex_glyph_height(n));
+                    lua_pushinteger(L, tex_glyph_depth(n));
+                    if (detail) {
+                        lua_pushinteger(L, glyph_expansion(n));
+                        return 4;
+                    } else {
+                        return 3;
+                    }
+                }
+            case glue_node:
+                n = glue_leader_ptr(n);
+                if (n) {
+                    goto AGAIN;
+                } else {
+                    break;
+                }
+        }
+    }
+    return 0;
+}
+
 /* node.direct.getcornerkerns */
 
 # define getcornerkerns_usage glyph_usage
@@ -4748,6 +4799,7 @@ static int nodelib_direct_getparstate(lua_State *L)
                           lua_push_specification_at_key(L, orphanpenalties,          tex_get_par_par(p, par_orphan_penalties_code));
                           lua_push_specification_at_key(L, toddlerpenalties,         tex_get_par_par(p, par_toddler_penalties_code));
                       //  lua_push_specification_at_key(L, parpasses,                tex_get_par_par(p, par_par_passes_code));
+                      //  lua_push_specification_at_key(L, linesnapping,             tex_get_par_par(p, par_line_snapping_code));
                           lua_push_specification_at_key(L, adjacentdemerits,         tex_get_par_par(p, par_adjacent_demerits_code));
                           lua_push_specification_at_key(L, fitnessclasses,           tex_get_par_par(p, par_fitness_classes_code));
                     }
@@ -5734,7 +5786,7 @@ static int nodelib_direct_verticalbreak(lua_State *L)
     if (n) {
         scaled ht = lmt_roundnumber(L, 2);
         scaled dp = lmt_roundnumber(L, 3);
-        n = tex_vert_break(n, ht, dp, 1, 0);
+        n = tex_vert_break(n, ht, dp, 1, 0, NULL);
     }
     lua_pushinteger(L, n);
     return 1;
@@ -7207,6 +7259,37 @@ static int nodelib_direct_iszeroglue(lua_State *L)
     return 0;
 }
 
+# define issnapped_usage  (hlist_usage | vlist_usage)
+# define setsnapped_usage (hlist_usage | vlist_usage)
+
+static int nodelib_direct_issnapped(lua_State *L)
+{
+    halfword n = nodelib_valid_direct_from_index(L, 1);
+    if (n) {
+        switch (node_type(n)) {
+            case hlist_node:
+            case vlist_node:
+                lua_pushboolean(L, is_box_snapped_state(n));
+                return 1;
+        }
+    }
+    return 0;
+}
+
+static int nodelib_direct_setsnapped(lua_State *L)
+{
+    halfword n = nodelib_valid_direct_from_index(L, 1);
+    if (n) {
+        switch (node_type(n)) {
+            case hlist_node:
+            case vlist_node:
+                set_box_snapped_state(n);
+                break;
+        }
+    }
+    return 0;
+}
+
 /* direct.startofpar */
 
 # define startofpar_usage common_usage
@@ -8538,6 +8621,7 @@ static int nodelib_common_getfield(lua_State *L, int direct, halfword n)
                          // } else if (lua_key_eq(s, orphanpenalties))       { lua_push_specification(L,               tex_get_par_par(n, par_orphan_penalties_code));
                          // } else if (lua_key_eq(s, toddlerpenalties))      { lua_push_specification(L,               tex_get_par_par(n, par_toddler_penalties_code));
                       // // } else if (lua_key_eq(s, parpasses))             { lua_push_specification(L,               tex_get_par_par(n, par_par_passes_code));
+                      // // } else if (lua_key_eq(s, linesnapping))          { lua_push_specification(L,               tex_get_par_par(n, par_line_snapping_code));
                          // } else if (lua_key_eq(s, adjacentdemerits))      { lua_push_specification(L,               tex_get_par_par(n, par_adjacent_demerits_code));
                          // } else if (lua_key_eq(s, fitnessclasses))        { lua_push_specification(L,               tex_get_par_par(n, par_fitness_classes_code));
                             /* 
@@ -12758,6 +12842,7 @@ static const usage_record usage_data[] = {
     { .name = "gettotal",                .target = direct_usage_target,   .usage = gettotal_usage                },
     { .name = "getweight",               .target = direct_usage_target,   .usage = getweight_usage               },
     { .name = "getwhd",                  .target = direct_usage_target,   .usage = getwhd_usage                  },
+    { .name = "getnaturalwhd",           .target = direct_usage_target,   .usage = getnaturalwhd_usage           },
     { .name = "getwidth",                .target = direct_usage_target,   .usage = getwidth_usage                },
     { .name = "getwordrange",            .target = direct_usage_target,   .usage = getwordrange_usage            },
     { .name = "getxscale",               .target = direct_usage_target,   .usage = getxscale_usage               },
@@ -12797,6 +12882,8 @@ static const usage_record usage_data[] = {
     { .name = "isspeciallist",           .target = direct_usage_target,   .usage = isspeciallist_usage           },
     { .name = "isvalid",                 .target = direct_usage_target,   .usage = isvalid_usage                 },
     { .name = "iszeroglue",              .target = direct_usage_target,   .usage = iszeroglue_usage              },
+    { .name = "issnapped",               .target = direct_usage_target,   .usage = issnapped_usage               },
+    { .name = "setsnapped",              .target = direct_usage_target,   .usage = setsnapped_usage              },
     { .name = "kerning",                 .target = direct_usage_target,   .usage = kerning_usage                 },
     { .name = "lastnode",                .target = direct_usage_target,   .usage = lastnode_usage                },
     { .name = "length",                  .target = direct_usage_target,   .usage = length_usage                  },
@@ -13161,6 +13248,7 @@ static const struct luaL_Reg nodelib_direct_function_list[] = {
     { "getusedattributes",       nodelib_direct_getusedattributes       },
     { "getweight",               nodelib_direct_getweight               },
     { "getwhd",                  nodelib_direct_getwhd                  },
+    { "getnaturalwhd",           nodelib_direct_getnaturalwhd           },
     { "getwidth",                nodelib_direct_getwidth                },
     { "getwordrange",            nodelib_direct_getwordrange            },
     { "getxscale",               nodelib_direct_getxscale               },
@@ -13198,6 +13286,8 @@ static const struct luaL_Reg nodelib_direct_function_list[] = {
     { "isspeciallist",           nodelib_direct_isspeciallist           },
     { "isvalid",                 nodelib_direct_isvalid                 },
     { "iszeroglue",              nodelib_direct_iszeroglue              },
+    { "issnapped",               nodelib_direct_issnapped               },
+    { "setsnapped",              nodelib_direct_setsnapped              },
     { "kerning",                 nodelib_direct_kerning                 },
     { "lastnode",                nodelib_direct_lastnode                },
     { "length",                  nodelib_direct_length                  },

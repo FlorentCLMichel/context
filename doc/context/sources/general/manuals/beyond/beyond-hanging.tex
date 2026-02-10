@@ -1,0 +1,476 @@
+% language=us runpath=texruns:manuals/beyond
+
+\environment beyond-style
+
+\tracingpages1 \tracingonline1
+
+\startcomponent beyond-hanging
+
+\setupexternalfigures
+  [location={global,local,default}]
+
+\startchapter[title={Hanging},author={Hans Hagen & Mikael Sundqvist}]
+
+% Interesting, this url fits exactly in the footnote width.
+
+In the first week of January a \CONTEXT\ user wondered in a Stack Exchange post
+if it is possible to have an insert in the middle of a paragraph. \footnote
+{\hyphenatedurl
+{https://tex.stackexchange.com/questions/757885/context-inset-bible-chapter-numbers-mid-paragraph}}
+So Mikael and I decided to hack a bit and among the possible solutions is jumping
+back line height, starting the next paragraph with an hanging blob and then
+moving inwards over the last line length. However, this will only work well in
+controlled situations. Just think of lines being added to the main vertical list
+and the page builder kicking in between the paragraphs, in the middle of the hang
+shape, the possibility of that shape sticking below the page bottom, etc. It's of
+course a good opportunity to show off ones macro writing capabilities but
+whatever is cooked up, it will never be nice. Given that the question concerned
+bible chapters and verses, we're also talking of multi-page, likely unattended
+(automated) rendering (maybe from some database) without the wish to interfere
+manually.
+
+In such cases we explore and discuss and as we already extended the par builder
+significantly, it is no surprise that when we figured what a solution could be
+that we decided to just implement it in the engine. We made a prototype, slept
+over it, made it better, slept over it again and finally ended up with a solution
+that we find acceptable.
+
+Here is an example quoting Hermann Zapf:
+
+\startbuffer
+\samplefile{zapf}%
+\space
+\leftparinsert
+    [lines=3,option=depth]
+    {\externalfigure[cow.pdf][height=3lh,location=top]}%
+\rightparinsert
+    [lines=4,option=depth]
+    {\mirror{\externalfigure[cow.pdf][height=4lh,location=top]}}%
+\samplefile{zapf}%
+\space
+\rightparinsert
+    [distance=.5em,lines=3,yoffset=-1sd,option=depth]
+    {\mirror{\externalfigure[cow.pdf][height=2.5lh,location=top]}}%
+\samplefile{zapf}%
+\stopbuffer
+
+\typebuffer
+
+\startcolor[darkred]
+    \enabletrackers[parinsert]
+    \getbuffer
+    \disabletrackers[parinsert]
+\stopcolor
+
+The user macros are \typ {\leftparinsert} and \typ {\rightparinsert}, but low
+level \typ {\localhangindent} and \typ {\localhangafter} are used.
+
+The mentioned macros will lap their content into one of the margins and then set
+up the insert to accommodate that, something like:
+
+\starttyping
+                     % lap content to the left or right
+\localhangindent ... % width of the content
+\localhangafter  ... % lines occupied by the content
+\stoptyping
+
+As with \typ {\hangindent} the sign determines of we hang left or right, with
+negative being right. The after specification is always positive. You can set a
+left and right indent to values that make them overlap or extend the \type
+{\hsize} just as with the regular hang mechanism but expect similar side effects.
+We decided not to add constraints and heuristics.
+
+The lapping operation is macro package dependent so we will not go into
+details here. In \CONTEXT\ we can also insert a tracing rule to see where
+all happens.
+
+When you look at this example, you can notice a few challenges:
+
+\startitemize [packed]
+    \startitem The insert can happen left, right or at both ends. \stopitem
+    \startitem Two inserts can overlap. \stopitem
+    \startitem Inserts can extend below the end of the paragraph. \stopitem
+\stopitemize
+
+The first situation is dealt with. This insert mechanism is independent of the
+regular hang and shape feature and basically manipulates the current width as
+perceived by the par builder. This is actually a bit more complex than you might
+imagine because the engine, when it encounters an insert in the to-be-split list
+needs to backtrack over solutions so far. The line break algorithm checks for
+consistency between lines with respect to effective spacing applied and in that
+process we cannot be sure in what line we are when the insert happens. We need to
+carry a bit more information around, which adds overhead, but fortunately that is
+avoided when we don't use inserts.
+
+The second case, overlap, happens in two directions. A vertical overlap is the
+users responsibility. A later insert just overloaded a previous one, but left and
+right inserts are independent so you must be using rather extreme inserts for
+that to happen. We could implement some catch but one can wonder about how useful
+that is. A horizontal overlap is again the users responsibility. Normally the
+width of such inserts will be well below the current horizontal size so again it
+is unlikely to play an important role.
+
+The third phenomena is more interesting as that might actually happen. Here we
+have several solutions:
+
+\startitemize [packed]
+    \startitem We continue the insert in the next paragraph. \stopitem
+    \startitem We skip down over the left-over space. \stopitem
+    \startitem We adapt the depth of the last line as compensation. \stopitem
+\stopitemize
+
+The first two solutions have to be under user control so here we have to provide
+some information. How this can be done, can best be demonstrated with two macros
+that \CONTEXT\ provides. The first one sets a new insert shape, based on the
+current state. This macro has to be given at the start of a paragraph.
+
+% we can add a shaping penalty
+
+\starttyping
+\permanent\protected\def\pickupparinsert
+  {\expanded{%
+     \ifcase{\breaklasthangleftslack+\breaklasthangrightslack}\else
+       \strut
+       \ifcase\breaklasthangleftslack\else
+         \localhangindent \the\breaklasthangleftindent
+         \localhangafter  \the\breaklasthangleftslack
+       \fi
+       \ifcase\breaklasthangrightslack\else
+         \localhangindent-\the\breaklasthangrightindent
+         \localhangafter  \the\breaklasthangrightslack
+       \fi
+     \fi}}
+\stoptyping
+
+This one is a bit less picky as it just add some space. But, like the previous one
+it can only be used in controlled situations because at the end of the paragraph
+the engine can have decided that a page break made sense.
+
+\starttyping
+\permanent\protected\def\wrapupparinsert
+  {\ifvmode
+     \ifcase{\breaklasthangleftslack+\breaklasthangrightslack}\else
+       \vskip
+         \ifnum\breaklasthangleftslack>\breaklasthangrightslack
+           \breaklasthangleftslack
+         \else
+           \breaklasthangrightslack
+         \fi
+         \lineheight
+       \relax
+     \fi
+   \fi}
+\stoptyping
+
+Just for the record, we also have \typ {\breaklasthangindent} and \typ
+{\breaklasthangslack} available for the normal hanging indentation. For par
+shapes we just mention that we have a completely different \quote {pick up where
+we left} feature.
+
+That leaves the third solution as the most reliable. When the inject
+macro gets the \type {option} value \type {depth}, this will happen:
+
+\starttyping
+\paroptions 1
+\stoptyping
+
+That option signals that the current paragraph will get a depth compensation
+applied. This also means that at a page break we will not get an bottom overflow.
+
+The answer to the SE question by Mikael combines this feature with sectioning and
+for that we use an explicit section head placement. \footnote {We replaced the
+original bible quote by one that is more appropriate on the days we write this
+wrap-up, January 7--10 2025.} The \type {hidden} placement ensures all related
+features to be carried out but also demands a manual title handling (here using
+\type {\fullheadtitle}. The fake words let is test how well all works out with
+different content. We use a preset multi-pass optimization setup \type
+{mathbookpasses} which optionally also applies expansion, although here that is
+not needed. The results are shown in \in {figure} [fig:hanging:pages].
+
+\startbuffer[hanging-1]
+\usemodule[visual]
+
+\setrandomseed{123}
+
+\definefontfeature
+  [default]
+  [default]
+  [expansion=quality]
+
+\setupbodyfont
+  [dejavu]
+
+\setupindenting
+  [yes,next,medium]
+
+\setupalign
+  [mathbookpasses]
+
+\definehead
+  [InlineChapter]
+  [chapter]
+
+\setuphead
+  [InlineChapter]
+  [placehead=hidden]
+
+\definefont[MyChapterFont][SansBold sa 4]
+
+\starttexdefinition protected MyChapter #1
+    \removeunwantedspaces
+    \InlineChapter{#1}
+    \leftparinsert [
+        lines=3,
+        option=depth,
+        yoffset=-2lh-sd
+    ] {
+        \startframed[lines=3,offset=overlay,frame=no]
+            \MyChapterFont
+            \fullheadtitle
+        \stopframed
+    }
+    \quad
+    \ignorespaces
+\stoptexdefinition
+
+\dorecurse {47} { % Some should take notice!
+    \fakewords{1}{10}
+    3 Blessed are the poor in spirit: for theirs is the kingdom of heaven. 4
+    Blessed are they that mourn: for they shall be comforted. 5 Blessed are
+    the meek: for they shall inherit the earth. 6 Blessed are they which do
+    hunger and thirst after righteousness: for they shall be filled. 7 Blessed
+    are the merciful: for they shall obtain mercy.
+    \MyChapter{\recurselevel}
+    8 Blessed are the pure in heart: for they shall see God. 9 Blessed are
+    the peacemakers: for they shall be called the children of God. 10 Blessed
+    are they which are persecuted for righteousness' sake: for theirs is the
+    kingdom of heaven. 11 Blessed are ye, when men shall revile you, and
+    persecute you, and shall say all manner of evil against you falsely, for
+    my sake.
+    \par
+}
+\stopbuffer
+
+\start \small
+\typebuffer[hanging-1]
+\stop
+
+\startplacefigure[reference=fig:hanging:pages]
+    \startcombination[nx=6,ny=3]
+        {\typesetbuffer[hanging-1][frame=on,page=1, width=cx]} {}
+        {\typesetbuffer[hanging-1][frame=on,page=2, width=cx]} {}
+        {\typesetbuffer[hanging-1][frame=on,page=3, width=cx]} {}
+        {\typesetbuffer[hanging-1][frame=on,page=4, width=cx]} {}
+        {\typesetbuffer[hanging-1][frame=on,page=5, width=cx]} {}
+        {\typesetbuffer[hanging-1][frame=on,page=6, width=cx]} {}
+        {\typesetbuffer[hanging-1][frame=on,page=7, width=cx]} {}
+        {\typesetbuffer[hanging-1][frame=on,page=8, width=cx]} {}
+        {\typesetbuffer[hanging-1][frame=on,page=9, width=cx]} {}
+        {\typesetbuffer[hanging-1][frame=on,page=10,width=cx]} {}
+        {\typesetbuffer[hanging-1][frame=on,page=11,width=cx]} {}
+        {\typesetbuffer[hanging-1][frame=on,page=12,width=cx]} {}
+        {\typesetbuffer[hanging-1][frame=on,page=13,width=cx]} {}
+        {\typesetbuffer[hanging-1][frame=on,page=14,width=cx]} {}
+        {\typesetbuffer[hanging-1][frame=on,page=15,width=cx]} {}
+        {\typesetbuffer[hanging-1][frame=on,page=16,width=cx]} {}
+        {\typesetbuffer[hanging-1][frame=on,page=17,width=cx]} {}
+        {\typesetbuffer[hanging-1][frame=on,page=18,width=cx]} {}
+    \stopcombination
+\stopplacefigure
+
+It also works together with the normal hanging indentation. But we remind you
+that no checking is done with the parameters, so it is up to the user to use sane
+values.
+
+\startbuffer
+\hangindent2cm
+\hangafter 5
+\samplefile {zapf}%
+% \allowbreak
+\leftparinsert
+   [lines=3]
+   {\externalfigure[cow.pdf][height=3lh,location=top]}%
+\samplefile {ward}%
+\rightparinsert
+   [lines=3]
+   {\externalfigure[cow.pdf][height=3lh,location=top]}%
+\samplefile {ward}
+\stopbuffer
+
+\typebuffer
+
+\startcolor[darkred]
+    \enabletrackers[parinsert]
+    \getbuffer
+    \disabletrackers[parinsert]
+\stopcolor
+
+If we want the content to stick out in the margin we can use the bleed
+functionality.
+
+\startbuffer
+\samplefile {ward}%
+\leftparinsert
+   [lines=3]
+   {\bleed[height=3lh,width=1cm]
+    {\externalfigure[cow.pdf][height=3lh,location=top]}}%
+\samplefile {ward}%
+\rightparinsert
+   [lines=3]
+   {\bleed[height=3lh,width=1cm,location=r]
+   {\externalfigure[cow.pdf][height=3lh,location=top]}}%
+\samplefile {ward}
+\stopbuffer
+
+\typebuffer
+
+\startcolor[darkred]
+    \enabletrackers[parinsert]
+    \getbuffer
+    \disabletrackers[parinsert]
+\stopcolor
+
+When we put some figure left we only need to bother about that side when we add
+an insert, although with a right insert we need to make sure that we don't
+overrun and provide the par builder some decent solution space.
+
+\startbuffer
+\startplacefigure
+  [location={left,4*hang,low}]
+  \externalfigure[cow][width=0.33tw]
+\stopplacefigure
+
+\strut \leftparinsert
+    [lines=2]
+    {\externalfigure[hacker][height=2lh,location=top]}%
+\samplefile {zapf}
+% \allowbreak % otherwise bad
+% \leftparinsert
+%     [lines=2]
+%     {\externalfigure[hacker][height=2lh,location=top]}%
+\rightparinsert
+    [lines=4]
+    {\externalfigure[mill][height=4lh,location=top]}%
+\samplefile {zapf}
+\stopbuffer
+
+\typebuffer
+
+\startcolor[darkred]
+    \enabletrackers[parinsert]
+    \getbuffer
+    \disabletrackers[parinsert]
+\stopcolor
+
+The little hacker image shows that we can combine these mechanisms but one can
+get into trouble easily: clashes, confusing the builder, etc. But we can assume
+sane usage, can't we? When it comes to hanging and par shaping the anchored (in
+this case) images have to end up at the edge of the text which is something the
+engine has to take care of because at the time of definition is it unknown
+where it will end up.
+
+If we start with hanging indentation and then anchor an insert, you can think
+of trickery like this, in \CONTEXT\ speak:
+
+\starttyping
+\atrightmargin{\llap{...}}
+\atleftmargin {\rlap{...}}
+\stoptyping
+
+This works in most cases, including the SE example, but in the end we settled
+for something like this instead:
+
+\starttyping
+\localleftbox  always {...}
+\localrightbox always {...}
+\stoptyping
+
+where \type {always} makes the local box invisible for the builder but let the
+packaging routine do anchoring to the left and/or right edge of the text (inside
+the so called hang skips. \footnote {In \LUAMETATEX\ we can normalize the lines
+where every line has a guaranteed left and right hang skip that we can anchor
+to.}
+
+The \type {always} option can be illustrated as follows:
+
+\startbuffer
+\starttexdefinition Test #1#2#3#4
+    \strut test
+    \space
+    \bgroup
+    #1 always {#2{\blackrule[width=1cm,height=#3sh/3,depth=0pt,color=#4]}}
+    \egroup
+    \space
+    test
+\stoptexdefinition
+
+\start \showmakeup[par,line]
+    \hsize 15em \hangafter -1\hangindent 1em
+    \Test \localleftbox \llap 3 {gray}
+    \Test \localleftbox \llap 2 {middlegreen}
+    \Test \localleftbox \llap 1 {darkgray}
+    \par
+\stop
+
+\start \showmakeup[par,line]
+    \hsize 15em \hangafter -1\hangindent 1em
+    \Test\localrightbox \rlap 3 {gray}
+    \Test\localrightbox \rlap 2 {middleblue}
+    \Test\localrightbox \rlap 1 {darkgray}
+    \par
+\stop
+
+\start \showmakeup[par,line]
+    \hsize 15em \hangafter -1 \hangindent -1em
+    \Test \localleftbox \llap 3 {gray}
+    \Test \localleftbox \llap 2 {middlered}
+    \Test \localleftbox \llap 1 {darkgray}
+    \par
+\stop
+
+\start \showmakeup[par,line]
+    \hsize 15em \hangafter -1\hangindent -1em
+    \Test\localrightbox \rlap 3 {gray}
+    \Test\localrightbox \rlap 2 {middleyellow}
+    \Test\localrightbox \rlap 1 {darkgray}
+    \par
+\stop
+\stopbuffer
+
+\typebuffer
+
+This example shows the \quote {stacking order}. We also show the line box and the
+present par nodes. In case you wonder where these local boxes went, we use the
+(restrictive) local command but in the end the boxes are just that: wrapped
+hlists. When in addition to \type {always} we also give \type {move}, the box
+will be moved, otherwise it will be shifted (x-offset) which means that the
+content stays in order.
+
+Because this gives some possibilities for simplifying some code we currently have
+in \CONTEXT, we might explore and even extend this feature in the future.
+
+% \def\Test#1#2{\blackrule[width=1cm,height=#1sh/3,depth=0pt,color=#2]}
+%
+% \start \hsize 20em \showboxes
+%     test {\gray       [3\localleftbox always {\llap{\Test{3}       {gray}}}\localrightbox always {\llap{\Test{3}       {gray}}}]}test
+%     test {\middlegreen[2\localleftbox always {\llap{\Test{2}{middlegreen}}}\localrightbox always {\llap{\Test{2}{middlegreen}}}]}test
+%     test {\darkgray   [1\localleftbox always {\llap{\Test{1}   {darkgray}}}\localrightbox always {\llap{\Test{1}   {darkgray}}}]}test
+%     \par
+% \stop
+%
+% \start \hsize 20em \showboxes
+%     test {\gray       [3\localleftbox always keep {\llap{\Test{3}       {gray}}}\localrightbox always keep {\llap{\Test{3}       {gray}}}]}test
+%     test {\middlegreen[2\localleftbox always keep {\llap{\Test{2}{middlegreen}}}\localrightbox always keep {\llap{\Test{2}{middlegreen}}}]}test
+%     test {\darkgray   [1\localleftbox always keep {\llap{\Test{1}   {darkgray}}}\localrightbox always keep {\llap{\Test{1}   {darkgray}}}]}test
+%     \par
+% \stop
+
+\getbuffer
+
+\stopchapter
+
+% Written in the first weeks of January 2026 when the world got even more crazy. It
+% made listening to Prince's "Welcome to America" and Ghost Note's "Swagism"
+% afterwards even more relevant.
+
+\stopcomponent

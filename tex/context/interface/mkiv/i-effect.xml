@@ -4,7 +4,7 @@
 
 <cd:interface xmlns:cd="http://www.pragma-ade.com/commands">
 
-    <cd:command name="defineeffect" level="style" category="pdf" file="attr-eff.mkiv">
+    <cd:command name="defineeffect" level="style" category="pdf" file="attr-eff.mkxl">
         <cd:arguments>
             <cd:resolve name="keyword-name"/>
             <cd:resolve name="keyword-name-optional"/>
@@ -14,7 +14,7 @@
         </cd:arguments>
     </cd:command>
 
-    <cd:command name="setupeffect" level="style" category="pdf" file="attr-eff.mkiv">
+    <cd:command name="setupeffect" level="style" category="pdf" file="attr-eff.mkxl">
         <cd:arguments>
             <cd:resolve name="keyword-name-list-optional"/>
             <cd:assignments list="yes">
@@ -34,27 +34,46 @@
                     <cd:constant type="outer"/>
                     <cd:constant type="both"/>
                     <cd:constant type="hidden"/>
+                    <cd:constant type="clip"/>
                     <cd:constant type="stretch"/>
                 </cd:parameter>
             </cd:assignments>
         </cd:arguments>
     </cd:command>
 
-    <cd:command name="effect" type="environment" level="document" category="pdf" file="attr-eff.mkiv">
+    <cd:command name="effect" type="environment" level="document" category="pdf" file="attr-eff.mkxl">
         <cd:arguments>
-            <cd:resolve name="keyword-name"/>
+            <cd:keywords>
+                <cd:constant type="inner"/>
+                <cd:constant type="outer"/>
+                <cd:constant type="both"/>
+                <cd:constant type="normal"/>
+                <cd:constant type="hidden"/>
+                <cd:constant type="clip"/>
+                <cd:constant type="stretch"/>
+                <cd:constant type="cd:name"/>
+            </cd:keywords>
         </cd:arguments>
     </cd:command>
 
-    <cd:command name="effect" type="environment" generated="yes" variant="example" level="document" category="pdf" file="attr-eff.mkiv">
+    <cd:command name="effect" type="environment" generated="yes" variant="example" level="document" category="pdf" file="attr-eff.mkxl">
         <cd:sequence>
             <cd:variable value="effect"/>
         </cd:sequence>
     </cd:command>
 
-    <cd:command name="effect" level="document" category="pdf" file="attr-eff.mkiv">
+    <cd:command name="effect" level="document" category="pdf" file="attr-eff.mkxl">
         <cd:arguments>
-            <cd:resolve name="keyword-name"/>
+            <cd:keywords>
+                <cd:constant type="inner"/>
+                <cd:constant type="outer"/>
+                <cd:constant type="both"/>
+                <cd:constant type="normal"/>
+                <cd:constant type="hidden"/>
+                <cd:constant type="clip"/>
+                <cd:constant type="stretch"/>
+                <cd:constant type="cd:name"/>
+            </cd:keywords>
             <cd:content/>
         </cd:arguments>
     </cd:command>

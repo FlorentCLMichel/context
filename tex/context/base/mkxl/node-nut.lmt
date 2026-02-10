@@ -173,6 +173,7 @@ local nuts = {
     getvalue                = direct.getdata, -- obsolete
     getweight               = direct.getweight,
     getwhd                  = direct.getwhd,
+    getnaturalwhd           = direct.getnaturalwhd,
     getwidth                = direct.getwidth,
     getwordrange            = direct.getwordrange,
     getxscale               = direct.getxscale,
@@ -206,6 +207,9 @@ local nuts = {
     setfontcheck            = direct.setfontcheck,
     getfontcheck            = direct.getfontcheck,
     newfontcheck            = direct.newfontcheck,
+
+    issnapped               = direct.issnapped,
+    setsnapped              = direct.setsnapped,
 
     isnextglyph             = direct.isnextglyph,
     isnode                  = isnode,

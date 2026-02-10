@@ -503,6 +503,129 @@ void tex_tail_append(halfword p)
 
 /*tex
 
+    Splitting and some redundancy is cleaner than combining with several target checks, also
+    because we don't know what we'll add in the future. We migh talso add some more specific
+    tracing.
+
+    We assume that the callback manages the nodes and cleans up if needed.
+
+*/
+
+static void tex_aux_tail_cleanup(halfword current)
+{
+    while (current) {
+        if (node_type(current) == glue_node && (glue_options(current) & glue_option_delay)) {
+            tex_remove_glue_option(current, glue_option_delay);
+        }
+        current = node_next(current);
+    }
+}
+
+void tex_delayed_glue_check(int target, int location)
+{
+    switch (target) {
+        case delayed_glue_target_unknown:
+            if (lmt_nest_state.nest_data.ptr == 1) {
+                goto MVL;
+            } else {
+                goto CURRENT;
+            }
+        case delayed_glue_target_current:
+          CURRENT:
+            {
+                halfword current = cur_list.tail;
+                if (node_type(current) == temp_node) {
+                    return;
+                } else {
+                    int callback_id = lmt_callback_defined(delayed_glue_callback);
+                    if (callback_id > 0) {
+                        halfword tail = current;
+                        if (node_type(current) == glue_node && node_subtype(current) == par_skip_glue) {
+                            current = node_prev(current);
+                        }
+                        if (current && node_type(current) == glue_node && (glue_options(current) & glue_option_delay)) {
+                            halfword result = null;
+                            halfword head = current;
+                            while (1) {
+                                halfword prev = node_prev(head);
+                                if (node_type(prev) == glue_node && (glue_options(prev) & glue_option_delay)) {
+                                    head = prev;
+                                } else {
+                                    node_next(prev) = null;
+                                    node_prev(head) = null;
+                                    cur_list.tail = prev;
+                                    break;
+                                }
+                            }
+                            lmt_run_callback(lmt_lua_state.lua_instance, callback_id, "ddNN->N", delayed_glue_target_current, location, head, tail, &result);
+                            if (result) {
+                                tex_aux_tail_cleanup(result);
+                                tex_tail_append(result);
+                                cur_list.tail = tex_tail_of_node_list(result);
+                            }
+                        }
+                    }
+                }
+            }
+            break;
+        case delayed_glue_target_mvl:
+          MVL:
+            {
+                halfword current = contribute_tail;
+                if (node_type(current) == temp_node) {
+                    return;
+                } else {
+                    int callback_id = lmt_callback_defined(delayed_glue_callback);
+                    if (callback_id > 0) {
+                        halfword tail = current;
+                        if (node_type(current) == glue_node && node_subtype(current) == par_skip_glue) {
+                            current = node_prev(current);
+                        }
+                        if (current && node_type(current) == glue_node && (glue_options(current) & glue_option_delay)) {
+                            halfword result = null;
+                            halfword head = current;
+                            while (1) {
+                                halfword prev = node_prev(head);
+                                if (node_type(prev) == glue_node && (glue_options(prev) & glue_option_delay)) {
+                                    head = prev;
+                                } else {
+                                    node_next(prev) = null;
+                                    node_prev(head) = null;
+                                    contribute_tail = prev;
+                                    break;
+                                }
+                            }
+                            lmt_run_callback(lmt_lua_state.lua_instance, callback_id, "ddNN->N", delayed_glue_target_mvl, location, head, tail, &result);
+                            if (result) {
+                                tex_aux_tail_cleanup(result);
+                                tex_couple_nodes(contribute_tail, result);
+                                contribute_tail = tex_tail_of_node_list(result);
+                            }
+                        }
+                    }
+                }
+            }
+            break;
+    }
+}
+
+int tex_delayed_glue_par_skipped(void)
+{
+    halfword tail;
+    if (lmt_nest_state.nest_data.ptr > 1) {
+        tail = cur_list.tail;
+    } else if (node_type(contribute_tail) != temp_node) {
+        tail = contribute_tail;
+    } else if (node_type(page_tail) != temp_node) {
+        tail = page_tail;
+    } else {
+        return 0;
+    }
+    return node_type(tail) == glue_node && (glue_options(tail) & glue_option_has_parskip);
+}
+
+/*tex
+
     In the end this is nicer than the ugly look back and set extensible properties on a last node, 
     although that is a bit more generic. So we're back at an old \MKIV\ feature that looks ahead 
     but this time selective and therefore currently only for a few math node types. Math has a 
@@ -716,7 +839,7 @@ void tex_start_mvl(void)
         }
         if (tracing_mvl_par) { 
             tex_begin_diagnostic();
-            tex_print_format("[mvl: index %i, options %x, prevdepth %p, %s]", index, options, prevdepth, start ? "start" : "restart");
+            tex_print_format("%l[mvl: index %i, options %x, prevdepth %p, %s]", index, options, prevdepth, start ? "start" : "restart");
             tex_end_diagnostic();
         }
         if (start) { 
@@ -738,7 +861,7 @@ void tex_stop_mvl(void)
         int something = mvl->tail != mvl->head;
         if (tracing_mvl_par) { 
             tex_begin_diagnostic();
-            tex_print_format("[mvl: index %i, options %x, stop with%s contributions]", index, mvl->options, something ? "" : "out");
+            tex_print_format("%l[mvl: index %i, options %x, stop with%s contributions]", index, mvl->options, something ? "" : "out");
             tex_end_diagnostic();
         }
         if (something && (mvl->options & mvl_discard_bottom)) {
@@ -788,7 +911,7 @@ halfword tex_flush_mvl(halfword index)
         tex_aux_reset_mvl(index);
         if (tracing_mvl_par) { 
             tex_begin_diagnostic();
-            tex_print_format("[mvl: index %i, %s]", index, "flush");
+            tex_print_format("%l[mvl: index %i, %s]", index, "flush");
             tex_end_diagnostic();
         }
         node_prev(head) = null;
@@ -836,7 +959,7 @@ int tex_appended_mvl(halfword context, halfword boundary)
             if (contribute_head != contribute_tail && first) {
                 if (tracing_mvl_par) { 
                     tex_begin_diagnostic();
-                    tex_print_format("[mvl: index %i, %s]", lmt_mvl_state.slot, assign ? "assign" : "append");
+                    tex_print_format("%l[mvl: index %i, %s]", lmt_mvl_state.slot, assign ? "assign" : "append");
                     tex_end_diagnostic();
                 }
                 if (assign) { 

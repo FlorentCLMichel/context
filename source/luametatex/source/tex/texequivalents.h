@@ -393,6 +393,9 @@ typedef enum specification_codes {
     balance_shape_code,
     balance_passes_code,
     balance_final_penalties_code,
+    line_snapping_code,
+    math_snapping_code,
+    align_snapping_code,
     inter_line_penalties_code,    /*tex additional penalties between lines */
     club_penalties_code,          /*tex penalties for creating club lines */
     widow_penalties_code,         /*tex penalties for creating widow lines */
@@ -451,8 +454,10 @@ typedef enum page_property_codes {
     page_last_depth_code,  /*tex These might become unsettable */
     dead_cycles_code,
     insert_penalties_code,
+    insert_only_count_code,
     insert_heights_code,
     insert_storing_code, /* page */
+    insert_category_code,
     insert_distance_code,
     insert_multiplier_code,
     insert_limit_code,
@@ -467,6 +472,8 @@ typedef enum page_property_codes {
     insert_stretch_code,
     insert_shrink_code,
     insert_direction_code,
+    insert_maxplaced_code,
+    insert_placed_code,
     /*tex These can't be set: */
     page_stretch_code,
     page_fistretch_code,
@@ -588,6 +595,7 @@ typedef enum int_codes {
     tracing_lost_chars_code,            /*tex show characters that aren't in the font */
     tracing_commands_code,              /*tex show command codes at |big_switch| */
     tracing_restores_code,              /*tex show equivalents when they are restored */
+    tracing_snapping_code,              /*tex show applied snapping */
  // tracing_fonts_code,
     tracing_assigns_code,               /*tex show assignments */
     tracing_groups_code,                /*tex show save/restore groups */
@@ -632,7 +640,9 @@ typedef enum int_codes {
     right_hyphen_min_code,              /*tex minimum right hyphenation fragment size */
     holding_inserts_code,               /*tex do not remove insertion nodes from |\box255| */
     holding_migrations_code,
+    insert_options_code,
     error_context_lines_code,           /*tex maximum intermediate line pairs shown */
+    error_recovery_mode_code,
  // local_interline_penalty_code,       /*tex local |\interlinepenalty| */
  // local_broken_penalty_code,          /*tex local |\brokenpenalty| */
  // local_tolerance_code,
@@ -716,7 +726,6 @@ typedef enum int_codes {
     right_twin_demerits_code,
     alignment_cell_source_code,
     alignment_wrap_source_code,
- /* page_boundary_penalty_code, */
     line_break_passes_code,
     line_break_optional_code,
     line_break_checks_code,
@@ -748,6 +757,8 @@ typedef enum int_codes {
     script_space_before_factor_code,
     script_space_between_factor_code,
     script_space_after_factor_code,
+    line_snapping_ht_factor_code,
+    line_snapping_dp_factor_code,
     /* those below these are not interfaced via primitives */
     internal_par_state_code,
     internal_dir_state_code,
@@ -777,7 +788,7 @@ typedef enum int_codes {
 } int_codes;
 
 # define first_integer_code pre_tolerance_code
-# define last_integer_code  script_space_after_factor_code
+# define last_integer_code  line_snapping_dp_factor_code
 
 typedef enum dimension_codes {
     /* normal ones */
@@ -816,12 +827,13 @@ typedef enum dimension_codes {
     balance_vsize_code,
     balance_line_height_code,
     local_hang_indent_code,
+    line_snapping_tolerance_code,
     /*tex total number of dimension parameters */
     number_dimension_pars,
 } dimension_codes;
 
 # define first_dimension_code par_indent_code
-# define last_dimension_code  local_hang_indent_code
+# define last_dimension_code  line_snapping_tolerance_code
 
 typedef enum attribute_codes {
     /*tex total number of attribute parameters */
@@ -1455,6 +1467,7 @@ extern int  tex_overload_permitted (halfword flags);
 # define vfuzz_par                        dimension_parameter(vfuzz_code)
 # define vsize_par                        dimension_parameter(vsize_code)
 # define local_hang_indent_par            dimension_parameter(local_hang_indent_code)
+# define line_snapping_tolerance_par      dimension_parameter(line_snapping_tolerance_code)
 
 # define additional_page_skip_par         glue_parameter(additional_page_skip_code)
 # define balance_bottom_skip_par          glue_parameter(balance_bottom_skip_code)
@@ -1515,6 +1528,7 @@ extern int  tex_overload_permitted (halfword flags);
 # define double_penalty_mode_par          integer_parameter(double_penalty_mode_code)
 # define end_line_char_par                integer_parameter(end_line_char_code)
 # define error_context_lines_par          integer_parameter(error_context_lines_code)
+# define error_recovery_mode_par          integer_parameter(error_recovery_mode_code)
 # define escape_char_par                  integer_parameter(escape_char_code)
 # define etex_expr_mode_par               integer_parameter(etex_expr_mode_code)
 # define eu_factor_par                    integer_parameter(eu_factor_code)
@@ -1544,6 +1558,7 @@ extern int  tex_overload_permitted (halfword flags);
 # define hbadness_mode_par                integer_parameter(hbadness_mode_code)
 # define holding_inserts_par              integer_parameter(holding_inserts_code)
 # define holding_migrations_par           integer_parameter(holding_migrations_code)
+# define insert_options_par               integer_parameter(insert_options_code)
 # define hyphen_penalty_par               integer_parameter(hyphen_penalty_code)
 # define hyphenation_mode_par             integer_parameter(hyphenation_mode_code)
 # define inter_line_penalty_par           integer_parameter(inter_line_penalty_code)
@@ -1673,6 +1688,7 @@ extern int  tex_overload_permitted (halfword flags);
 # define tracing_passes_par               integer_parameter(tracing_passes_code)
 # define tracing_penalties_par            integer_parameter(tracing_penalties_code)
 # define tracing_restores_par             integer_parameter(tracing_restores_code)
+# define tracing_snapping_par             integer_parameter(tracing_snapping_code)
 # define tracing_stats_par                integer_parameter(tracing_stats_code)
 # define tracing_toddlers_par             integer_parameter(tracing_toddlers_code)
 # define uc_hyph_par                      integer_parameter(uc_hyph_code)
@@ -1682,6 +1698,9 @@ extern int  tex_overload_permitted (halfword flags);
 # define vsplit_checks_par                integer_parameter(vsplit_checks_code)
 # define widow_penalty_par                integer_parameter(widow_penalty_code)
 # define year_par                         integer_parameter(year_code)
+
+# define line_snapping_ht_factor_par      integer_parameter(line_snapping_ht_factor_code)
+# define line_snapping_dp_factor_par      integer_parameter(line_snapping_dp_factor_code)
 
 # define med_muskip_par                   muglue_parameter(med_muskip_code)
 # define petty_muskip_par                 muglue_parameter(petty_muskip_code)
@@ -1721,6 +1740,9 @@ extern int  tex_overload_permitted (halfword flags);
 # define orphan_penalties_par             specification_parameter(orphan_penalties_code)
 # define par_passes_exception_par         specification_parameter(par_passes_exception_code)
 # define par_passes_par                   specification_parameter(par_passes_code)
+# define line_snapping_par                specification_parameter(line_snapping_code)
+# define math_snapping_par                specification_parameter(math_snapping_code)
+# define align_snapping_par               specification_parameter(align_snapping_code)
 # define par_shape_par                    specification_parameter(par_shape_code)
 # define toddler_penalties_par            specification_parameter(toddler_penalties_code)
 # define widow_penalties_par              specification_parameter(widow_penalties_code)
@@ -1990,6 +2012,7 @@ extern halfword tex_explicit_disc_penalty  (halfword mode);
 # define update_tex_orphan_line_factors_code(v) tex_eq_define(internal_specification_location(orphan_line_factors_code),     specification_reference_cmd, v)
 # define update_tex_orphan_penalties(v)         tex_eq_define(internal_specification_location(orphan_penalties_code),        specification_reference_cmd, v)
 # define update_tex_par_passes(v)               tex_eq_define(internal_specification_location(par_passes_code),              specification_reference_cmd, v)
+# define update_tex_line_snapping(v)            tex_eq_define(internal_specification_location(line_snapping_code),           specification_reference_cmd, v)
 # define update_tex_par_passes_exception(v)     tex_eq_define(internal_specification_location(par_passes_exception_code),    specification_reference_cmd, v)
 # define update_tex_par_shape(v)                tex_eq_define(internal_specification_location(par_shape_code),               specification_reference_cmd, v)
 # define update_tex_toddler_penalties(v)        tex_eq_define(internal_specification_location(toddler_penalties_code),       specification_reference_cmd, v)

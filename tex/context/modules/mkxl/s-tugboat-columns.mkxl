@@ -182,62 +182,9 @@
   [packed]
 
 %D This a good opportunity to play with the additional passes in the par builder.
-%D The following values are experimental
 
-% \setupalign
-%   [tolerant]
-
-\startsetups align:pass:quality:1
-\parpasses    6
-    classes              \indecentparpassclasses
-    threshold            0.025pt
-    tolerance             250
-    extrahyphenpenalty     50
-    orphanpenalty        5000
-  % font driven
-  next ifadjustspacing
-    threshold            0.025pt
-    classes              \tightparpassclasses
-    tolerance             300
-    adjustspacing           3
-    orphanpenalty        5000
-  next ifadjustspacing
-    threshold            0.025pt
-    tolerance            350
-    adjustspacing           3
-    adjustspacingstep       1
-    adjustspacingshrink    20
-    adjustspacingstretch   40
-    orphanpenalty        5000
-    emergencystretch     .25\bodyfontsize
-  % otherwise, factors 1000
-  next
-    threshold            0.025pt
-    classes              \tightparpassclasses
-    tolerance             300
-    adjustspacing           3
-    adjustspacingstep       1
-    adjustspacingshrink    10
-    adjustspacingstretch   15
-    orphanpenalty        5000
-  next
-    threshold            0.025pt
-    tolerance             350
-    adjustspacing           3
-    adjustspacingstep       1
-    adjustspacingshrink    20
-    adjustspacingstretch   40
-    orphanpenalty        5000
-    emergencystretch     .25\bodyfontsize
-  % whatever
-  next
-    threshold            0.025pt
-    tolerance            3000
-    orphanpenalty        5000
-    emergencystretch     .25\bodyfontsize
-\relax\stopsetups
-
-\setupalignpass[quality:1]
+\setupalignpass
+  [quality]
 
 %D We don't want this ugly extreme stretching between elements when we end a page
 %D and package it.

@@ -169,6 +169,7 @@ typedef struct linebreak_state_info {
     scaled       local_hang_r_indent;
     halfword     local_hang_r_after;
     int          local_hang_r_index;
+    int          local_n_of_always;
     int          has_orphans;
     int          has_toddlers; /* < 0: not found, == 0: tobechecked, > 0: #found */
     int          trace_counter[linebreak_n_of_trace_counters]; 

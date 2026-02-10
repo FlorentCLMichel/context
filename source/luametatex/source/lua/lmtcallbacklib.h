@@ -52,7 +52,8 @@ typedef enum callback_types {
     append_line_callback,
  /* pre_line_callback, */
     insert_distance_callback,
- /* fire_up_output_callback, */
+    insert_boundary_callback,
+    insert_check_split_callback,
     wrapup_run_callback,
     begin_paragraph_callback,
     paragraph_context_callback,
@@ -78,6 +79,8 @@ typedef enum callback_types {
     tail_append_callback,
     balance_boundary_callback,
     balance_insert_callback,
+    page_boundary_callback,
+    delayed_glue_callback,
     total_callbacks,
 } callback_types;
 

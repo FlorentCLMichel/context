@@ -33,6 +33,11 @@
     \definetypescriptprefix [n:narrowplexsans]  [IBMPlexSansCondensed]
     \definetypescriptprefix [n:narrowplexmono]  [IBMPlexMono]
 
+    \definetypescriptprefix [n:jpplexsans]      [IBMPlexSansJP]
+    \definetypescriptprefix [n:krplexsans]      [IBMPlexSansKR]
+    \definetypescriptprefix [n:tcplexsans]      [IBMPlexSansTC]
+    \definetypescriptprefix [n:scplexsans]      [IBMPlexSansSC]
+
     \definetypescriptprefix [f:plexserif]       [\s!default]
     \definetypescriptprefix [f:plexsans]        [\s!default]
     \definetypescriptprefix [f:plexmono]        [\s!none]
@@ -141,7 +146,7 @@
 
     % done
 
-    \starttypescript[plex,plex-thin,plex-extralight,plex-light,plex,plex-text,plex-medium,plex-semibold,plex-bold]
+    \starttypescript[plex,plex-thin,plex-extralight,plex-light,plex,plex-text,plex-medium,plex-semibold,plex-bold,jpplex,krplex,tcplex,scplex]
         \definetypeface [\typescriptone] [\s!rm] [\s!serif] [\typescriptone] [\s!default]
         \definetypeface [\typescriptone] [\s!ss] [\s!sans]  [\typescriptone] [\s!default]
         \definetypeface [\typescriptone] [\s!tt] [\s!mono]  [\typescriptone] [\s!default]
@@ -157,6 +162,23 @@
         \definetypeface [\typescriptone] [\s!ss] [\s!sans]  [plex-nt] [\s!default]
         \definetypeface [\typescriptone] [\s!tt] [\s!mono]  [plex-nt] [\s!default]
         \definetypeface [\typescriptone] [\s!mm] [\s!math]  [plex-nt] [\s!default]
+    \stoptypescript
+
+    % CJK
+
+    \starttypescript [\s!sans] [jpplex,krplex,tcplex,scplex] [\s!name]
+        \setups[\s!font:\s!fallback:\typescriptone]
+        \edefinefontsynonym [\typescriptprefix{\typescriptone}]              [\s!file:\typescriptprefix{n:jpplex\typescriptone}-regular]      [\s!features=\typescriptprefix{f:plex\typescriptone}]
+        \edefinefontsynonym [\typescriptprefix{\typescriptone}\s!Italic]     [\s!file:\typescriptprefix{n:jpplex\typescriptone}-italic]       [\s!features=\typescriptprefix{f:plex\typescriptone}]
+        \edefinefontsynonym [\typescriptprefix{\typescriptone}\s!Bold]       [\s!file:\typescriptprefix{n:jpplex\typescriptone}-bold]         [\s!features=\typescriptprefix{f:plex\typescriptone}]
+        \edefinefontsynonym [\typescriptprefix{\typescriptone}\s!BoldItalic] [\s!file:\typescriptprefix{n:jpplex\typescriptone}-mediumitalic] [\s!features=\typescriptprefix{f:plex\typescriptone}]
+    \stoptypescript
+
+    \starttypescript[jpplex,krplex,tcplex,scplex]
+        \definetypeface [\typescriptone] [\s!ss] [\s!sans]  [\typescriptone] [\s!default]
+        \definetypeface [\typescriptone] [\s!rm] [\s!serif] [plex]           [\s!default]
+        \definetypeface [\typescriptone] [\s!tt] [\s!mono]  [plex]           [\s!default]
+        \definetypeface [\typescriptone] [\s!mm] [\s!math]  [plex]           [\s!default]
     \stoptypescript
 
     % Here's Taco's variant as used in the ConTeXt Group Journal.

@@ -193,4 +193,18 @@
         </cd:arguments>
     </cd:command>
 
+    <cd:command name="gridcorrection" type="environment" file="spac-ver.mkxl">
+        <cd:arguments>
+            <cd:keywords optional="yes">
+                <cd:constant type="reset"/>
+                <cd:constant type="T" method="prefix" prefix="[+-]"/>
+                <cd:constant type="L" method="prefix" prefix="[+-]"/>
+                <cd:constant type="H" method="prefix" prefix="[+-]"/>
+                <cd:constant type="Q" method="prefix" prefix="[+-]"/>
+                <cd:constant type="Z" method="prefix" prefix="[+-]"/>
+                <cd:constant type="I" method="prefix" prefix="[+-]"/>
+            </cd:keywords>
+        </cd:arguments>
+    </cd:command>
+
 </cd:interface>

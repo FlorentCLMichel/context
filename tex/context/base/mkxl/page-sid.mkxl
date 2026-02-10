@@ -447,13 +447,10 @@
  % \fi
    % flush what we have and check
    \forcestrutdepth
-   % trigger pagebuilder, \pageboundary gives nicer tracing
    \iffalse
      \penalty\zerocount % works too
    \else
-    %\tracingpages\plusone \tracingonline\plustwo
-     \pageboundary\plustenthousand % becomes a penalty (after triggering the callback) (experimental!)
-    %\tracingpages\zerocount
+     \spac_trigger_page_builder
    \fi
    \page_otr_command_set_vsize} % new, no longer really needed
 
@@ -663,7 +660,7 @@
      \global\c_page_sides_short\conditionalfalse
    \else
      \global\d_page_sides_vsize\d_page_sides_vsize_reset
-     \global\c_page_sides_n_of_lines\zerocount
+   % \global\c_page_sides_n_of_lines\zerocount % we need to have this next page
    \fi}
 
 \def\page_sides_place_float
@@ -672,7 +669,10 @@
    \ifconditional\c_page_sides_shape_down
      \page_sides_place_float_normal
    \else
-     \ifgridsnapping
+     \ifgridlinesnapping
+       % gridlinesnapping: to be decided
+       \page_sides_place_float_grid
+     \orelse\ifgridsnapping
        \page_sides_place_float_grid
      \else
        \page_sides_place_float_normal
@@ -704,12 +704,29 @@
 %D This is a hack: we will pick up on this after we're done with the mvl
 %D balancer.
 
+% \def\page_sides_place_snap_to_grid#1%
+%   {\begingroup % todo: prevent snapping
+%    \setbox\scratchbox\hpack{#1}%
+%    \dp\scratchbox\strutdp
+%    \ht\scratchbox\dimexpr\d_page_sides_height-\strutdp\relax
+%    \boxyoffset\scratchbox-\strutdp
+%    \box\scratchbox
+%    \endgroup}
+%
+% \def\page_sides_place_float_grid
+%   {\getrawnoflines\d_page_sides_height % raw ?
+%    \d_page_sides_height\noflines\lineheight
+%    \vkern-\strutht
+%    \page_sides_push_float_inline\page_sides_place_snap_to_grid}
+
+% a next iteration:
+
 \def\page_sides_place_snap_to_grid#1%
   {\begingroup % todo: prevent snapping
-%    \setbox\scratchbox\hpack{\vrule width 1mm #1}%
    \setbox\scratchbox\hpack{#1}%
+   \getnoflines{\htdp\scratchbox}% no raw here
+   \ht\scratchbox\dimexpr\noflines\lineheight-\strutdp\relax
    \dp\scratchbox\strutdp
-   \ht\scratchbox\dimexpr\d_page_sides_height-\strutdp\relax
    \boxyoffset\scratchbox-\strutdp
    \box\scratchbox
    \endgroup}
@@ -755,17 +772,41 @@
 %    \fi
 %    \endgroup}
 
+% \def\page_sides_push_float_inline_indeed#1%
+%   {\ifcase\c_page_sides_float_type
+%      % invalid
+%    \or % backspace
+%      \noindent#1{\llap{\rlap{\box\floatbox}\kern\d_page_sides_leftskip}}\hfill
+%    \or % leftedge
+%      \noindent#1{\llap{\box\floatbox\kern\d_page_sides_leftskip}}\hfill
+%    \or % leftmargin
+%      \noindent#1{\llap{\box\floatbox\kern\d_page_sides_leftskip}}\hfill
+%    \or % leftside
+%      \noindent#1{\box\floatbox}\hfill
+%    \or % rightside
+%      \hfill#1{\box\floatbox}%
+%    \or % rightmargin
+%      \hfill#1{\rlap{\kern\d_page_sides_rightskip\box\floatbox}}%
+%    \or % rightedge
+%      \hfill#1{\rlap{\kern\d_page_sides_rightskip\box\floatbox}}%
+%    \or % cutspace
+%      \hfill#1{\rlap{\kern\d_page_sides_rightskip\llap{\box\floatbox}}}%
+%    \fi}
+
 \def\page_sides_push_float_inline_indeed#1%
-  {\ifcase\c_page_sides_float_type
+  {\noindent
+   \hpack to \availablehsize\bgroup
+   \strut
+   \ifcase\c_page_sides_float_type
      % invalid
    \or % backspace
-     \noindent#1{\llap{\rlap{\box\floatbox}\kern\d_page_sides_leftskip}}\hfill
+     #1{\llap{\rlap{\box\floatbox}\kern\d_page_sides_leftskip}}\hfill
    \or % leftedge
-     \noindent#1{\llap{\box\floatbox\kern\d_page_sides_leftskip}}\hfill
+     #1{\llap{\box\floatbox\kern\d_page_sides_leftskip}}\hfill
    \or % leftmargin
-     \noindent#1{\llap{\box\floatbox\kern\d_page_sides_leftskip}}\hfill
+     #1{\llap{\box\floatbox\kern\d_page_sides_leftskip}}\hfill
    \or % leftside
-     \noindent#1{\box\floatbox}\hfill
+     #1{\box\floatbox}\hfill
    \or % rightside
      \hfill#1{\box\floatbox}%
    \or % rightmargin
@@ -774,7 +815,10 @@
      \hfill#1{\rlap{\kern\d_page_sides_rightskip\box\floatbox}}%
    \or % cutspace
      \hfill#1{\rlap{\kern\d_page_sides_rightskip\llap{\box\floatbox}}}%
-   \fi}
+   \fi
+   \strut
+   \egroup
+   }
 
 \def\page_sides_push_float_inline#1%
   {\ifconditional\c_page_sides_shape_down
@@ -1158,16 +1202,19 @@
           \toksapp\privatescratchtoks{\d_page_sides_width\privatescratchdimen}%
         \fi}%
    \fi
+   \global\c_page_sides_n_of_lines\zerocount
    \parshape
      \numexpr\privatescratchcounter+\plusone\relax
      \the\privatescratchtoks
      \zeropoint \hsize
    \relax}
 
-\protected\def\page_sides_check_floats_set_hang
+\protected\def\page_sides_check_floats_set_hang % redefined
   {\hangindent \ifnum\c_page_sides_float_type>\plusfour -\fi\d_page_sides_width
    \hangafter-\c_page_sides_n_of_hang
-   \global\c_page_sides_hangafter\hangafter}
+   \global\c_page_sides_hangafter\hangafter
+   \global\c_page_sides_n_of_lines\zerocount
+   }
 
 % feel free to test this: \settrue \c_page_sides_protect_shape
 

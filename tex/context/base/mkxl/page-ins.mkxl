@@ -250,4 +250,42 @@
 \def\page_inserts_attach
   {\strc_notes_process\page_inserts_attach_indeed}
 
+%D Tracing:
+%D
+%D \starttyping
+%D \enabletrackers[inserts.split]
+%D
+%D \definenote[foonote]
+%D \definenote[fonote]
+%D
+%D \starttext
+%D     \setupnote[footnote][height=4cm]
+%D     \setupnote[foonote] [height=4cm]
+%D     \setupnote[fonote]  [height=4cm]
+%D     \dorecurse{40}{
+%D         Test #1.
+%D         \footnote{footnote #1}
+%D         \footnote{footnote #1}
+%D         \ifodd#1\relax
+%D             \foonote{foonote #1}
+%D             \foonote{foonote #1}
+%D             \fonote{fonote #1}
+%D         \fi
+%D         \par
+%D     }
+%D     \page[note] \page % needed otherwise empty page
+%D
+%D     \setupnote[footnote][height=\maxdimen]
+%D     \setupnote[foonote] [height=\maxdimen]
+%D     \setupnote[fonote]  [height=\maxdimen]
+%D     tufte    \footnote{\dorecurse{10}{\samplefile{tufte}}}
+%D     ward     \foonote {\dorecurse{10}{\samplefile{ward}}}
+%D     zelensky \fonote  {\dorecurse{10}{\samplefile{zelensky}}}
+%D     \page[note] \page % needed otherwise empty page
+%D \stoptext
+%D \stoptyping
+
+\permanent\protected\def\insertchecksplitfirst#1{\setbox\scratchbox\hpack{\llap{\tttf\darkred#1 <<<\quad}}\ht\scratchbox\zeropoint\dp\scratchbox\zeropoint} % artifact
+\permanent\protected\def\insertchecksplitlast #1{\setbox\scratchbox\hpack{\rlap{\tttf\darkred\quad>>> #1}}\ht\scratchbox\zeropoint\dp\scratchbox\zeropoint} % artifact
+
 \protect \endinput
