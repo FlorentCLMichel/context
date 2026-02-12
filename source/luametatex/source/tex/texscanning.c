@@ -9209,7 +9209,7 @@ static void tex_aux_scan_expression(int level, int braced)
                             case bit_expression_ceil : { v = stack.tail ? tex_aux_function_result(&stack, ceil (tex_aux_function_argument(&stack))) : 0; } break;
                             case bit_expression_floor: { v = stack.tail ? tex_aux_function_result(&stack, floor(tex_aux_function_argument(&stack))) : 0; } break;
                             case bit_expression_round: { v = stack.tail ? tex_aux_function_result(&stack, round(tex_aux_function_argument(&stack))) : 0; } break;
-                            case bit_expression_abs  : { v = stack.tail ? tex_aux_function_result(&stack, abs  (tex_aux_function_argument(&stack))) : 0; } break;
+                            case bit_expression_abs  : { v = stack.tail ? tex_aux_function_result(&stack, fabs (tex_aux_function_argument(&stack))) : 0; } break;
                             case bit_expression_sqrt : { v = stack.tail ? tex_aux_function_result(&stack, sqrt (tex_aux_function_argument(&stack))) : 0; } break;
                             case bit_expression_log  : { v = stack.tail ? tex_aux_function_result(&stack, log10(tex_aux_function_argument(&stack))) : 0; } break;
                             case bit_expression_ln   : { v = stack.tail ? tex_aux_function_result(&stack, log  (tex_aux_function_argument(&stack))) : 0; } break;

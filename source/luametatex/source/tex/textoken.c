@@ -2255,13 +2255,6 @@ void tex_get_next(void)
             /*tex Parameter needs to be expanded. */
             continue;
         }
-     // if ((! lmt_input_state.align_state) && (cur_cmd == alignment_tab_cmd || cur_cmd == alignment_cmd)) {
-     //     /*tex If an alignment entry has just ended, take appropriate action. */
-     //     tex_insert_alignment_template();
-     //     continue;
-     // } else {
-     //     break;
-     // }
         switch (cur_cmd) {
             case alignment_tab_cmd:
             case alignment_cmd:

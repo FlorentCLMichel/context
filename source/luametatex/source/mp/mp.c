@@ -237,7 +237,7 @@ definitions as these are in the header file.
 
 */
 
-# define odd(A) (abs(A) % 2 == 1)
+# define odd(A) (labs(A) % 2 == 1)
 
 /*tex
 

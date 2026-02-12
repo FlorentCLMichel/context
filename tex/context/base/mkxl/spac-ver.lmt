@@ -3194,11 +3194,11 @@ do
         if v then
             disableaction("vboxbuilders", "builders.vspacing.vboxhandler")
             disableaction("mvlbuilders",  "builders.vspacing.pagehandler")
-context.sprint(tex.prtcatcodes,"\\global\\c_spac_delay\\conditionaltrue")
+            context.sprint(tex.prtcatcodes,"\\global\\c_spac_delay\\conditionaltrue") -- for now
         else
             enableaction("vboxbuilders", "builders.vspacing.vboxhandler")
             enableaction("mvlbuilders",  "builders.vspacing.pagehandler")
-context.sprint(tex.prtcatcodes,"\\global\\c_spac_delay\\conditionalfalse")
+            context.sprint(tex.prtcatcodes,"\\global\\c_spac_delay\\conditionalfalse") -- for now
         end
     end)
 

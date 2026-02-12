@@ -275,6 +275,7 @@ function checkers.png(data) -- same as jpg (for now)
             if found then
                 found = false
                 local ok, result = pcall(backends.codeinjections.png,t)
+--                 local ok, result = backends.codeinjections.png(t)
                 if ok then
                     return result
                 else

@@ -3420,7 +3420,6 @@ local openfile, closefile  do
                             return
                         end
                     end
---                     f:close()
                 end
             end
             os.remove(abort)

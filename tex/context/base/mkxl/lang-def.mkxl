@@ -190,36 +190,29 @@
    \c!default=\s!en,
    \s!patterns=\s!us]
 
-\installlanguage
-  [en-gb]
-  [\c!define=\v!no,
-   \c!default=\s!en,
-   \s!patterns=\s!gb,
-   \s!lefthyphenmin=3,
-   \s!righthyphenmin=3,
-   % the reverse of american (or maybe the american did it the reverse)
-   \c!leftquote=\upperleftdoublesixquote,
-   \c!rightquote=\upperrightdoubleninequote,
-   \c!leftquotation=\upperleftsinglesixquote,
-   \c!rightquotation=\upperrightsingleninequote]
-
 %D In 2026 we also added Canadian English due to the desintegration of its
 %D neighbouring country and as preparation for whatever further drastic changes
 %D might happen as the result of that.
 
 \installlanguage
   [en-ca]
-  [\c!define=\v!no,
-   \c!default=\s!gb,
-   \s!patterns=\s!gb,
-   % to be decided
-   \s!lefthyphenmin=3,
+  [en-gb]
+
+\setuplanguage
+  [en-ca]
+  [\s!lefthyphenmin=2,
    \s!righthyphenmin=3,
-   % to be decided
    \c!leftquote=\upperleftsinglesixquote,
    \c!rightquote=\upperrightsingleninequote,
    \c!leftquotation=\upperleftdoublesixquote,
    \c!rightquotation=\upperrightdoubleninequote]
+
+% \ruledhbox{c\hskip3ci i}
+% \canadianinch 1in
+% \ruledhbox{c\hskip3ci i}
+
+\newdimension \canadianinch \canadianinch 1es
+\newuserunit  \canadianinch ci
 
 \installlanguage [\s!uk] [\s!en-\s!gb]
 \installlanguage [\s!us] [\s!en-\s!us]

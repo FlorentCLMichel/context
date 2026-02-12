@@ -206,6 +206,8 @@ nodes.specialskipcodes = {
     [gluecodes.correctionskip]                       = true,
 }
 
+-- at this time mathematics is not yet defined but it will be
+
 table.setmetatableindex(listcodes,function(t,k)
     local v
  -- if mathematics then

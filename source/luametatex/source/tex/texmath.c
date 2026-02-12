@@ -6316,7 +6316,7 @@ void tex_initialize_math_spacing(void)
 
     /* */
 
-//    math_parameter_spacing_pair(ordinary_noad_subtype,ordinary_noad_subtype)
+ // math_parameter_spacing_pair(ordinary_noad_subtype,ordinary_noad_subtype)
 
     tex_set_all_styles   (math_parameter_spacing_pair(ordinary_noad_subtype,    operator_noad_subtype),    thin_muskip_code,  level_one, indirect_math_regular);
     tex_set_split_styles (math_parameter_spacing_pair(ordinary_noad_subtype,    binary_noad_subtype),      med_muskip_code,   level_one, indirect_math_regular);

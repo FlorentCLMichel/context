@@ -349,7 +349,7 @@ static int pnglib_expand(lua_State *L)
         tex_normal_warning ("png expand", "not enough memory");
         return 0;
     }
-    /* we could use on branch and factor variables ,, saves code, costs cycles */
+    /* we could use on branch and factor variables, saves code, costs cycles */
     if (factor) {
         switch (parts) {
             case 4:
@@ -357,8 +357,8 @@ static int pnglib_expand(lua_State *L)
                     k = i * xsize;
                     for (int j = n; j < n + xline; j++) {
                         unsigned char v = t[j];
-                        o[k++] = (unsigned char) extract4 (v, 4) * 0x11;
-                        o[k++] = (unsigned char) extract4 (v, 0) * 0x11;
+                        o[k++] = (unsigned char) extract4(v, 4) * 0x11;
+                        o[k++] = (unsigned char) extract4(v, 0) * 0x11;
                     }
                     n = n + xline;
                 }
@@ -369,7 +369,7 @@ static int pnglib_expand(lua_State *L)
                     for (int j = n; j < n + xline; j++) {
                         unsigned char v = t[j];
                         for (int b = 6; b >= 0; b -= 2) {
-                            o[k++] = (unsigned char) extract2 (v, b) * 0x55;
+                            o[k++] = (unsigned char) extract2(v, b) * 0x55;
                         }
                     }
                     n = n + xline;
@@ -381,7 +381,7 @@ static int pnglib_expand(lua_State *L)
                     for (int j = n; j < n + xline; j++) {
                         unsigned char v = t[j];
                         for (int b = 7; b >= 0; b--) {
-                            o[k++] = (unsigned char) extract1 (v, b) * 0xFF;
+                            o[k++] = (unsigned char) extract1(v, b) * 0xFF;
                         }
                     }
                     n = n + xline;
@@ -395,8 +395,8 @@ static int pnglib_expand(lua_State *L)
                     k = i * xsize;
                     for (int j = n; j < n + xline; j++) {
                         unsigned char v = t[j];
-                        o[k++] = (unsigned char) extract4 (v, 4);
-                        o[k++] = (unsigned char) extract4 (v, 0);
+                        o[k++] = (unsigned char) extract4(v, 4);
+                        o[k++] = (unsigned char) extract4(v, 0);
                     }
                     n = n + xline;
                 }
@@ -407,7 +407,7 @@ static int pnglib_expand(lua_State *L)
                     for (int j = n; j < n + xline; j++) {
                         unsigned char v = t[j];
                         for (int b = 6; b >= 0; b -= 2) {
-                            o[k++] = (unsigned char) extract2 (v, b);
+                            o[k++] = (unsigned char) extract2(v, b);
                         }
                     }
                     n = n + xline;
@@ -419,7 +419,7 @@ static int pnglib_expand(lua_State *L)
                     for (int j = n; j < n + xline; j++) {
                         unsigned char v = t[j];
                         for (int b = 7; b >= 0; b--) {
-                            o[k++] = (unsigned char) extract1 (v, b);
+                            o[k++] = (unsigned char) extract1(v, b);
                         }
                     }
                     n = n + xline;
@@ -430,6 +430,66 @@ static int pnglib_expand(lua_State *L)
     lua_pushlstring(L, o, size);
     lmt_memory_free(o);
     return 1;
+}
+
+/*tex
+     For now we only expand indexed rgba. I'll do the rest when we have one.
+*/
+
+static int pnglib_frompalette(lua_State *L)
+{
+    size_t csize, psize;
+    const char *content = luaL_checklstring(L, 1, &csize);
+    const char *palette = luaL_checklstring(L, 2, &psize);
+    if (csize > 0 && psize > 0) {
+        size_t tsize;
+        const char *transparent = lua_gettop(L) > 4 ? luaL_checklstring(L, 5, &tsize) : NULL;
+        int bytes = lua_tointeger(L, 3);
+        int paths = lua_tointeger(L, 4);
+        switch (bytes) {
+            case 3:
+                switch (paths) {
+                    case 4:
+                        break;
+                    case 2:
+                        break;
+                    default:
+                        if (psize <= (256 * 3)) {
+                            char *expand = lmt_memory_malloc(csize * 3);
+                            if (expand) {
+                                unsigned char indexmap[256 * 3] = { 0x00 };
+                                size_t esize = 0;
+                                memcpy(indexmap, palette, psize);
+                                for (size_t i = 0; i < csize; i++) {
+                                    size_t index = 3 * (unsigned char) content[i];
+                                    expand[esize++] = indexmap[index++];
+                                    expand[esize++] = indexmap[index++];
+                                    expand[esize++] = indexmap[index  ];
+                                }
+                                lua_pushlstring(L, expand, esize);
+                                lmt_memory_free(expand);
+                                if (transparent && tsize <= 256) {
+                                    char *mask = lmt_memory_malloc(csize);
+                                    if (mask) {
+                                        unsigned char alphamap[256] = { 0x00 };
+                                        memcpy(alphamap, transparent, tsize);
+                                        for (size_t i = 0; i < csize; i++) {
+                                            mask[i] = alphamap[(unsigned char) content[i]];
+                                        }
+                                        lua_pushlstring(L, mask, csize);
+                                        lmt_memory_free(mask);
+                                        return 2;
+                                    }
+                                }
+                                return 1;
+                            }
+                        }
+                        break;
+                }
+                break;
+        }
+    }
+    return 0;
 }
 
 /*tex
@@ -513,7 +573,7 @@ static int pnglib_tomask(lua_State *L) /* for palette */
     size_t ysize   = lmt_tosizet(L, 4);
     int colordepth = lmt_tointeger(L, 5);
     size_t osize   = xsize * ysize;
-    if (osize  == tsize) {
+    if (osize == tsize) {
         char *o    = lmt_memory_malloc(osize);
         char *v    = lmt_memory_calloc(256,1);
         size_t len = xsize * colordepth / 8; // ceil
@@ -568,6 +628,7 @@ static int pnglib_tomask(lua_State *L) /* for palette */
     }
     return 1;
 }
+
 static int pnglib_makemask(lua_State *L) /* for palette */
 {
     size_t size;
@@ -708,6 +769,7 @@ static const struct luaL_Reg pngdecodelib_function_list[] = {
     { "tomask",      pnglib_tomask      },
     { "makemask",    pnglib_makemask    },
     { "reduce",      pnglib_reduce      },
+    { "frompalette", pnglib_frompalette },
     { NULL,          NULL               },
 };
 

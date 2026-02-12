@@ -169,6 +169,12 @@
 \permanent\protected\def\usebidiparameter#1%
   {\begincsname\??bidi#1\c!bidi\endcsname}
 
+%D Moved here:
+
+\appendtoks
+    \usebidiparameter\languageparameter
+\to \everylanguage
+
 \permanent\protected\def\showdirections
   {\dontleavehmode
    \begingroup\infofont\textdirection\directionlefttoright[\space

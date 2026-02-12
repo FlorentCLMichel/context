@@ -204,20 +204,20 @@ typedef enum field_types {
     attribute_field,
 } field_types;
 
-extern halfword tex_get_node                    (int size);
-extern halfword tex_get_node_type               (int size, quarterword type);
-extern void     tex_free_node                   (halfword p, int size);
-extern void     tex_dump_node_mem               (dumpstream f);
-extern void     tex_undump_node_mem             (dumpstream f);
-extern int      tex_used_node_count             (void);
-extern int      tex_free_node_count             (void);
-extern void     tex_initialize_node_mem         (void);
-extern void     tex_initialize_nodes            (void);
+extern halfword tex_get_node                  (int size);
+extern halfword tex_get_node_type             (int size, quarterword type);
+extern void     tex_free_node                 (halfword p, int size);
+extern void     tex_dump_node_mem             (dumpstream f);
+extern void     tex_undump_node_mem           (dumpstream f);
+extern int      tex_used_node_count           (void);
+extern int      tex_free_node_count           (void);
+extern void     tex_initialize_node_mem       (void);
+extern void     tex_initialize_nodes          (void);
 
-extern void     lmt_nodelib_initialize          (void); /* name ? */
+extern void     lmt_nodelib_initialize        (void); /* name ? */
 
-extern void     tex_dump_specification_data     (dumpstream f);
-extern void     tex_undump_specification_data   (dumpstream f);
+extern void     tex_dump_specification_data   (dumpstream f);
+extern void     tex_undump_specification_data (dumpstream f);
 
 /*tex
 
@@ -280,9 +280,9 @@ extern void     tex_undump_specification_data   (dumpstream f);
 
 */
 
-# define mvalue(a,b)  lmt_node_memory_state.nodes[a+b].P
-# define lvalue(a,b)  lmt_node_memory_state.nodes[a+b].L
-# define dvalue(a,b)  lmt_node_memory_state.nodes[a+b].D
+# define mvalue(a,b)   lmt_node_memory_state.nodes[a+b].P
+# define lvalue(a,b)   lmt_node_memory_state.nodes[a+b].L
+# define dvalue(a,b)   lmt_node_memory_state.nodes[a+b].D
 
 # define memone(a,b)   lmt_node_memory_state.nodes[a+b].half0
 # define memtwo(a,b)   lmt_node_memory_state.nodes[a+b].half1
@@ -292,10 +292,10 @@ extern void     tex_undump_specification_data   (dumpstream f);
 # define memtwo0(a,b)  lmt_node_memory_state.nodes[a+b].quart10
 # define memtwo1(a,b)  lmt_node_memory_state.nodes[a+b].quart11
 
-# define memone0s(a,b)  lmt_node_memory_state.nodes[a+b].short00
-# define memone1s(a,b)  lmt_node_memory_state.nodes[a+b].short01
-# define memtwo0s(a,b)  lmt_node_memory_state.nodes[a+b].short10
-# define memtwo1s(a,b)  lmt_node_memory_state.nodes[a+b].short11
+# define memone0s(a,b) lmt_node_memory_state.nodes[a+b].short00
+# define memone1s(a,b) lmt_node_memory_state.nodes[a+b].short01
+# define memtwo0s(a,b) lmt_node_memory_state.nodes[a+b].short10
+# define memtwo1s(a,b) lmt_node_memory_state.nodes[a+b].short11
 
 # define memone00(a,b) lmt_node_memory_state.nodes[a+b].single00
 # define memone01(a,b) lmt_node_memory_state.nodes[a+b].single01
@@ -520,7 +520,7 @@ typedef enum penalty_subtypes {
     before_display_penalty_subtype,
     after_display_penalty_subtype,
     equation_number_penalty_subtype,
-    discretionary_penalty_subtype,      /* not (yet) used */
+    discretionary_penalty_subtype, /* not (yet) used */
 } penalty_subtypes;
 
 # define last_penalty_subtype discretionary_penalty_subtype
@@ -890,7 +890,7 @@ typedef enum disc_option_codes {
 # define set_disc_processing(a,b) disc_processing(a) = (singleword) b
 # define set_disc_protected(a,b)  disc_protected(a) = (singleword) b
 
-# define has_disc_option(a,b) ((disc_options(a) & b) == b)
+# define has_disc_option(a,b) ((disc_options(a) & (b)) == (b))
 
 # define unset_disc_class -1
 
@@ -924,8 +924,8 @@ typedef enum uleader_locations {
     uleader_post_linebreak,
 } uleader_locations;
 
-extern int      tex_flatten_leaders         (halfword box, int grp, int just_pack, int location, int checkline);
-extern halfword tex_harden_spaces           (halfword head, halfword tolerance, int *count);
+extern int      tex_flatten_leaders (halfword box, int grp, int just_pack, int location, int checkline);
+extern halfword tex_harden_spaces   (halfword head, halfword tolerance, int *count);
 
 /*tex
     Lists need a rather large node, also because the have quite some extra possibilities, like the
@@ -952,14 +952,14 @@ extern halfword tex_harden_spaces           (halfword head, halfword tolerance, 
 
 typedef enum list_subtypes {
     unknown_list,
-    line_list,                 /*tex paragraph lines */
-    hbox_list,                 /*tex |\hbox| */
-    indent_list,               /*tex indentation box */
-    container_list,            /*tex container box */
-    align_row_list,            /*tex row from a |\halign| or |\valign| */
-    align_cell_list,           /*tex cell from a |\halign| or |\valign| */
-    equation_list,             /*tex display equation */
-    equation_number_list,      /*tex display equation number */
+    line_list,            /*tex paragraph lines */
+    hbox_list,            /*tex |\hbox| */
+    indent_list,          /*tex indentation box */
+    container_list,       /*tex container box */
+    align_row_list,       /*tex row from a |\halign| or |\valign| */
+    align_cell_list,      /*tex cell from a |\halign| or |\valign| */
+    equation_list,        /*tex display equation */
+    equation_number_list, /*tex display equation number */
     math_list_list,
     math_char_list,
     math_pack_list,
@@ -1663,7 +1663,7 @@ typedef enum adjust_options {
 # define adjust_depth_before(a) memone(a,4)
 # define adjust_depth_after(a)  memtwo(a,4)
 
-# define has_adjust_option(p,o) ((adjust_options(p) & o) == o)
+# define has_adjust_option(p,o) ((adjust_options(p) & (o)) == (o))
 
 /*tex
     Inserts are more complicated. The |ins| node stores an insert in the list while |inserting|
@@ -2146,7 +2146,7 @@ typedef enum simple_choice_subtypes {
 # define noad_has_superscripts(a)      (noad_supprescr(a) || noad_supscr(a) || noad_prime(a))
 # define noad_has_subscripts(a)        (noad_subprescr(a) || noad_subscr(a))
 
-# define noad_has_scriptstate(a,s)     ((noad_script_state(a) & s) == s)
+# define noad_has_scriptstate(a,s)     ((noad_script_state(a) & (s)) == (s)
 
 # define unset_noad_class 0xFE
 

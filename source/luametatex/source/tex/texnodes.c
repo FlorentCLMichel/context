@@ -189,7 +189,7 @@ void lmt_nodelib_initialize(void) {
     set_value_entry_key(subtypes_penalty, after_display_penalty_subtype,   afterdisplaypenalty)
     set_value_entry_key(subtypes_penalty, equation_number_penalty_subtype, equationnumberpenalty)
 
-    subtypes_kern = lmt_aux_allocate_value_info(vertical_math_kern_subtype);
+    subtypes_kern = lmt_aux_allocate_value_info(line_snapping_kern_subtype);
 
     set_value_entry_key(subtypes_kern, font_kern_subtype,            fontkern)
     set_value_entry_key(subtypes_kern, explicit_kern_subtype,        userkern)
@@ -266,7 +266,7 @@ void lmt_nodelib_initialize(void) {
     set_value_entry_key(subtypes_fence, left_operator_side,  key_operator)
     set_value_entry_key(subtypes_fence, no_fence_side,       no)
 
-    subtypes_list = lmt_aux_allocate_value_info(spacing_list);
+    subtypes_list = lmt_aux_allocate_value_info(dummy_list);
 
     set_value_entry_key(subtypes_list, unknown_list,              unknown)
     set_value_entry_key(subtypes_list, line_list,                 line)
@@ -869,8 +869,8 @@ void lmt_nodelib_initialize(void) {
     lmt_interface.node_data[fence_noad]          = (node_info) { .id = fence_noad,          .size = fence_noad_size,          .first = 0, .last = last_fence_subtype,         .subtypes = subtypes_fence,        .fields = lmt_node_fields_fence,          .name = lua_key(fence),          .lua = lua_key_index(fence),           .visible = 1, .definable = 1 };
     lmt_interface.node_data[math_char_node]      = (node_info) { .id = math_char_node,      .size = math_kernel_node_size,    .first = 0, .last = 0,                          .subtypes = NULL,                  .fields = lmt_node_fields_math_kernel,    .name = lua_key(mathchar),       .lua = lua_key_index(mathchar),        .visible = 1, .definable = 1 };
     lmt_interface.node_data[math_text_char_node] = (node_info) { .id = math_text_char_node, .size = math_kernel_node_size,    .first = 0, .last = 0,                          .subtypes = NULL,                  .fields = lmt_node_fields_math_kernel,    .name = lua_key(mathtextchar),   .lua = lua_key_index(mathtextchar),    .visible = 1, .definable = 1 };
-    lmt_interface.node_data[sub_box_node]        = (node_info) { .id = sub_box_node,        .size = math_kernel_node_size,    .first = 0, .last = 0,                          .subtypes = NULL,                  .fields = lmt_node_fields_math_sub,       .name = lua_key(subbox),        .lua = lua_key_index(subbox),          .visible = 1, .definable = 1 };
-    lmt_interface.node_data[sub_mlist_node]      = (node_info) { .id = sub_mlist_node,      .size = math_kernel_node_size,    .first = 0, .last = 0,                          .subtypes = NULL,                  .fields = lmt_node_fields_math_sub,       .name = lua_key(submlist),        .lua = lua_key_index(submlist),        .visible = 1, .definable = 1 };
+    lmt_interface.node_data[sub_box_node]        = (node_info) { .id = sub_box_node,        .size = math_kernel_node_size,    .first = 0, .last = 0,                          .subtypes = NULL,                  .fields = lmt_node_fields_math_sub,       .name = lua_key(subbox),         .lua = lua_key_index(subbox),          .visible = 1, .definable = 1 };
+    lmt_interface.node_data[sub_mlist_node]      = (node_info) { .id = sub_mlist_node,      .size = math_kernel_node_size,    .first = 0, .last = 0,                          .subtypes = NULL,                  .fields = lmt_node_fields_math_sub,       .name = lua_key(submlist),       .lua = lua_key_index(submlist),        .visible = 1, .definable = 1 };
     lmt_interface.node_data[delimiter_node]      = (node_info) { .id = delimiter_node,      .size = math_delimiter_node_size, .first = 0, .last = 0,                          .subtypes = NULL,                  .fields = lmt_node_fields_delimiter,      .name = lua_key(delimiter),      .lua = lua_key_index(delimiter),       .visible = 1, .definable = 1 };
     lmt_interface.node_data[glyph_node]          = (node_info) { .id = glyph_node,          .size = glyph_node_size,          .first = 0, .last = last_glyph_subtype,         .subtypes = subtypes_glyph,        .fields = lmt_node_fields_glyph,          .name = lua_key(glyph),          .lua = lua_key_index(glyph),           .visible = 1, .definable = 1 };
 

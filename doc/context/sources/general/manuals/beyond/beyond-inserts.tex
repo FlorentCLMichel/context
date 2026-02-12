@@ -67,7 +67,7 @@ bottom float, and footnote inserts. If we assume at most one top and bottom floa
 the spacing model works ok; when we assemble a page for shipping out we put the
 space after the top and before the bottom float. \footnote {There is no concept
 of a \quote {midinsert}: when there is space on the page (something that is hard
-to determine reliable) it can be something place immediately, or it can become a
+to determine reliably) it can be something place immediately, or it can become a
 top insert.} But multiple floats and multiple note classes introduce the problem
 of deciding where to put other space. In \in {figure}
 [fig:inserts:traditional:more] we see this problem. What if we don't want \type
@@ -90,8 +90,8 @@ handle with a bit of manual help.
     \framed[background=color,backgroundcolor=darkgreen,foregroundcolor=white,frame=off]{note 2.2}
 \stopplacefigure
 
-So we face two problems: there is space between the text and notes do deal with
-and there (normally) is that rule before the notes which also takes some space.
+So we face two problems: there is space between the text and notes to deal with,
+and there (normally) is that the rule before the notes which also takes some space.
 As we already mentioned, the engine does have the concept of a space but not of a
 rule. This means that we need to include the rule dimension in the space. If the
 space has stretch or shrink, we might want to adapt the fixed part but not the

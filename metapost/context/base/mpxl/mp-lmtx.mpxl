@@ -2505,7 +2505,7 @@ newscriptindex mfid_hwbtorgb ; mfid_hwbtorgb := scriptindex "hwbtorgb" ;
 def labtorgb(expr l, a, b) = runscript mfid_labtorgb l a b enddef ;
 def xyztorgb(expr x, y, z) = runscript mfid_xyztorgb x y z enddef ;
 def lchtorgb(expr l, c, h) = runscript mfid_lchtorgb l c h enddef ;
-def hsvtorgb(expr h, s, v) = runscript mfid_hsvtorgb h s b enddef ;
+def hsvtorgb(expr h, s, v) = runscript mfid_hsvtorgb h s v enddef ;
 def hwbtorgb(expr h, w, b) = runscript mfid_hwbtorgb h w b enddef ;
 
 permanent labtorgb, xyztorgb, lchtorgb, hsvtorgb, hwbtorgb ;

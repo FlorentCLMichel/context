@@ -304,6 +304,7 @@ do
     local pngtocmyk      = pngdecode.tocmyk
     local pngtomask      = pngdecode.tomask
     local pngmakemask    = pngdecode.makemask
+    local frompalette    = pngdecode.frompalette
 
     local createmask, filtermask, decodemask, decodestrip, transpose, expand, tocmyk
 
@@ -1089,29 +1090,35 @@ do
         local xsize       = specification.xsize
         local ysize       = specification.ysize
         local colordepth  = specification.colordepth or 8
+        local devicespace = false
         local mask        = false
         local transparent = false
         local palette     = false
         local enforcecmyk = specification.enforcecmyk
         local colors      = 1
         if     colorspace == 0 then    -- gray | image b
+            devicespace = "DeviceGray"
             colorspace  = "DeviceGray"
             transparent = true
         elseif colorspace == 2 then    -- rgb | image c
+            devicespace = "DeviceRGB"
             colorspace  = "DeviceRGB"
             colors      = 3
             transparent = true
         elseif colorspace == 3 then    -- palette | image c+i
-            colorspace  = "DeviceRGB"
+            devicespace = "DeviceRGB"
+            devicespace = "DeviceRGB"
             palette     = true
             transparent = true
         elseif colorspace == 4 then    -- gray | alpha | image b
-            colorspace = "DeviceGray"
-            mask       = true
+            colorspace  = "DeviceGray"
+            devicespace = "DeviceGray"
+            mask        = true
         elseif colorspace == 6 then    -- rgb | alpha | image c
-            colorspace = "DeviceRGB"
-            colors     = 3
-            mask       = true
+            devicespace = "DeviceRGB"
+            colorspace  = "DeviceRGB"
+            colors      = 3
+            mask        = true
         else
             report_png("unknown colorspace %i",colorspace)
             return
@@ -1171,7 +1178,7 @@ do
         end
         --
         if interlace then
-            local r, p = deinterlace(content,xsize,ysize,colordepth,colorspace,palette,mask)
+            local r, p = deinterlace(content,xsize,ysize,colordepth,devicespace,palette,mask)
             if not r then
                 return
             end
@@ -1180,15 +1187,32 @@ do
             end
             if mask then
                 if not (colordepth == 8 or colordepth == 16) then
-                    report_png("mask can't be split from the image")
+                    report_png("mask can't be split from the image (%s)","depth")
                     return
                 end -- get rid of bpp:
-                content, mask = filtermask(r,xsize,ysize,colordepth,colorspace,false)
+                content, mask = filtermask(r,xsize,ysize,colordepth,devicespace,false)
+            elseif frompalette and transparent and palette then
+                if devicespace == "DeviceRGB" and colordepth == 8 then
+                    local bytes = 3 -- index -> mapped -> r g b
+                    local parts = 1 -- whole byte
+                    local c, m = frompalette(r,palette,bytes,parts,transparent)
+                    if c and m then
+                        content = c
+                        mask    = m
+                        palette = false
+                    else
+                        report_png("mask can't be split from the image (%s)","error")
+                        content = convert(r) -- can be in deinterlace if needed
+                    end
+                else
+                    report_png("mask can't be split from the image (%s)","colorspace")
+                    content = convert(r) -- can be in deinterlace if needed
+                end
             else
                 content = convert(r) -- can be in deinterlace if needed
             end
             if enforcecmyk then
-                content, colorspace = converttocmyk(content,colorspace,colordepth)
+                content, devicespace = converttocmyk(content,devicespace,colordepth)
             end
             if compresslevel > 0 then
                 content = zlibcompress(content,compresslevel)
@@ -1202,9 +1226,9 @@ do
                 return
             end
             content = zlibdecompress(content)
-            content, mask = decodemask(content,xsize,ysize,colordepth,colorspace)
+            content, mask = decodemask(content,xsize,ysize,colordepth,devicespace)
             if enforcecmyk and not palette then
-                content, colorspace = converttocmyk(content,colorspace,colordepth)
+                content, devicespace = converttocmyk(content,devicespace,colordepth)
             end
             if compresslevel > 0 then
                 content = zlibcompress(content,compresslevel)
@@ -1216,18 +1240,18 @@ do
             -- in test suite
             -- how about decode/recompress here
             if palette then
-                mask = createmask(content,palette,transparent,xsize,ysize,colordepth,colorspace)
+                mask = createmask(content,palette,transparent,xsize,ysize,colordepth,devicespace)
             else
                 pallette = false
             end
         elseif decode or (enforcecmyk and not palette) then
             -- this one needs checking
-            local bytes = analyze(colordepth,colorspace)
+            local bytes = analyze(colordepth,devicespace)
             if bytes then
                 content = zlibdecompress(content)
                 content = decodestrip(openstring(content),xsize,ysize,bytes)
                 if enforcecmyk and not palette then
-                    content, colorspace = converttocmyk(content,colorspace,colordepth)
+                    content, devicespace = converttocmyk(content,devicespace,colordepth)
                 end
                 if compresslevel > 0 then
                     content = zlibcompress(content,compresslevel)
@@ -1238,8 +1262,8 @@ do
                 return
             end
             decode = true -- due to enforcecmyk
-        elseif newmask and colordepth == 8 and colorspace == "DeviceGray" then
-            local bytes = analyze(colordepth,colorspace)
+        elseif newmask and colordepth == 8 and devicespace == "DeviceGray" then
+            local bytes = analyze(colordepth,devicespace)
             if bytes then
                 content = zlibdecompress(content)
                 content = decodestrip(openstring(content),xsize,ysize,bytes)
@@ -1257,16 +1281,16 @@ do
          -- print("PASS ON")
         end
         if palette then
-            local colorspace = "DeviceRGB"
-            local nofbytes   = 3
+            local devicespace = "DeviceRGB"
+            local nofbytes    = 3
             if enforcecmyk then
-                palette    = converttocmyk(palette,colorspace,8)
-                colorspace = "DeviceCMYK"
-                nofbytes   = 4
+                palette     = converttocmyk(palette,devicespace,8)
+                devicespace = "DeviceCMYK"
+                nofbytes    = 4
             end
             palette = pdfarray {
                 pdfconstant("Indexed"),
-                pdfconstant(colorspace),
+                pdfconstant(devicespace),
                 #palette // nofbytes,
                 pdfreference(pdfflushstreamobject(palette)),
             }
@@ -1280,7 +1304,7 @@ do
             Height           = ysize,
             BitsPerComponent = colordepth,
             Filter           = filter,
-            ColorSpace       = palette or pdfconstant(colorspace),
+            ColorSpace       = palette or pdfconstant(devicespace),
             Length           = #content,
             Decode           = newranges and pdfarray(newranges) or nil,
         } + specification.attr

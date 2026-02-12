@@ -575,12 +575,6 @@
     \fi
 \to \everylanguage
 
-% new
-
-\appendtoks
-    \usebidiparameter\languageparameter
-\to \everylanguage
-
 % this will move to core-spa !
 
 \appendtoks
@@ -953,5 +947,7 @@
 % \starttext
 %     fiets fiots fiats fioot this that
 % \stoptext
+
+% new
 
 \protect \endinput

@@ -553,6 +553,8 @@
    +\checkkernpairclassoptioncode
 \relax
 
+\copymathatomrule\mathintegralcode\mathoperatorcode
+
 % we tweak away weird italics so only special cases see this:
 %
 % \def\IntOr{\Umathchar\mathordinarycode"00"00222B }
@@ -647,6 +649,8 @@
    +\noitaliccorrectionclassoptioncode
    +\shortinlineclassoptioncode
 \relax
+
+\copymathatomrule\mathvariablecode\mathordinarycode
 
 \setmathoptions\mathactivecode\numexpr
     \zerocount
@@ -766,6 +770,11 @@
     \zerocount
    +\shortinlineclassoptioncode
 \relax
+
+\copymathatomrule\mathexponentialcode \mathordinarycode
+\copymathatomrule\mathimaginarycode   \mathordinarycode
+\copymathatomrule\mathdifferentialcode\mathordinarycode
+\copymathatomrule\mathdigitcode       \mathordinarycode
 
 % test case for \lefttopkernclassoptioncode and \leftbottomkernclassoptioncode in cambria close:
 %

@@ -1009,7 +1009,7 @@
   {\ifcstok{\columnsetparameter\c!state}\v!start
      \clf_registercolumnsetsheet{\currentcolumnset}{\askedsheet}{\askedsheetoption}\relax
    \else
-     \rawbuffer{page:mvl:temp}% no real need for usung a buffer in this case
+     \rawbuffer{page:mvl:temp}% no real need for using a buffer in this case
    \fi
    \endgroup}
 

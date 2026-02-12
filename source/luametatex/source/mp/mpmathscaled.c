@@ -76,7 +76,7 @@
 # define negative_one_eighty_deg -0x0B400000
 # define three_sixty_deg          0x16800000
 
-# define odd(A)                   (abs(A) % 2 == 1)
+# define odd(A)                   (labs(A) % 2 == 1)
 # define two_to_the(A)            (1 << (unsigned)(A))
 # define set_cur_cmd(A)           mp->cur_mod_->command = (A)
 # define set_cur_mod(A)           mp->cur_mod_->data.n.data.val = (A)
@@ -115,7 +115,7 @@ static void mp_scaled_allocate_abs(MP mp, mp_number *n, mp_number_type t, mp_num
 {
     (void) mp;
     n->type = t;
-    n->data.val = abs(v->data.val);
+    n->data.val = labs(v->data.val);
 }
 
 static void mp_scaled_allocate_div(MP mp, mp_number *n, mp_number_type t, mp_number *a, mp_number *b)
@@ -268,7 +268,7 @@ static void mp_scaled_divide_int(mp_number *A, mp_scaled_t B)
 
 static void mp_scaled_abs(mp_number *A)
 {
-    A->data.val = abs(A->data.val);
+    A->data.val = labs(A->data.val);
 }
 
 static void mp_scaled_clone(mp_number *A, mp_number *B)
@@ -283,7 +283,7 @@ static void mp_scaled_negated_clone(mp_number *A, mp_number *B)
 
 static void mp_scaled_abs_clone(mp_number *A, mp_number *B)
 {
-    A->data.val = abs(B->data.val);
+    A->data.val = labs(B->data.val);
 }
 
 static void mp_scaled_swap(mp_number *A, mp_number *B)
@@ -362,7 +362,7 @@ static int mp_scaled_less(mp_number *A, mp_number *B)
 
 static int mp_scaled_non_equal_abs(mp_number *A, mp_number *B)
 {
-    return abs(A->data.val) != abs(B->data.val);
+    return labs(A->data.val) != labs(B->data.val);
 }
 
 /*tex 
@@ -1079,8 +1079,8 @@ static void mp_scaled_sqrt(MP mp, mp_number *ret, mp_number *x_orig)
 
 static void mp_scaled_pyth_add(MP mp, mp_number *ret, mp_number *a_orig, mp_number *b_orig)
 {
-    mp_scaled_t a = abs(a_orig->data.val);
-    mp_scaled_t b = abs(b_orig->data.val);
+    mp_scaled_t a = labs(a_orig->data.val);
+    mp_scaled_t b = labs(b_orig->data.val);
     if (a < b) {
         int r = b;
         b = a;
@@ -1133,8 +1133,8 @@ static void mp_scaled_pyth_add(MP mp, mp_number *ret, mp_number *a_orig, mp_numb
 
 static void mp_scaled_pyth_sub(MP mp, mp_number *ret, mp_number *a_orig, mp_number *b_orig)
 {
-    mp_scaled_t a = abs(a_orig->data.val);
-    mp_scaled_t b = abs(b_orig->data.val);
+    mp_scaled_t a = labs(a_orig->data.val);
+    mp_scaled_t b = labs(b_orig->data.val);
     if (a <= b) {
         /*tex Handle erroneous |pyth_sub| and set |a:=0|: */
         if (a < b) {
@@ -1512,7 +1512,7 @@ static void mp_scaled_n_sin_cos(MP mp, mp_number *z_orig, mp_number *n_cos, mp_n
 static void mp_scaled_init_randoms(MP mp, int seed)
 {
     int k = 1; /* more or less random integers */
-    int j = abs(seed);
+    int j = labs(seed);
     while (j >= fraction_one) {
         j = j/2;
     }
