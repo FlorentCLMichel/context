@@ -395,7 +395,7 @@ static halfword tex_aux_scan_specification_penalties(quarterword code)
     int pairs = 0;
     switch (code) { 
         case broken_penalties_code: 
-            if (count > 1) {
+            if lmt_unlikely(count > 1) {
                 tex_handle_error(
                     normal_error_type,
                     "count has to be 1 for \\brokenpenalties",
@@ -403,6 +403,7 @@ static halfword tex_aux_scan_specification_penalties(quarterword code)
                 );
                 count = 1;
             }
+            FALLTHROUGH
         case balance_final_penalties_code: 
         case club_penalties_code: 
         case widow_penalties_code: 
@@ -548,8 +549,8 @@ static halfword tex_aux_scan_specification_par_passes(void)
                             default:
                                 goto NOTDONE1;
                         }
-                    } else { 
-                        NOTDONE1:
+                    } else {
+                      NOTDONE1:
                         tex_aux_show_keyword_error("adjdemerits|adjacentdemerits|adjustspacing|adjustspacingstep|adjustspacingshrink|adjustspacingstretch");
                         goto DONE;
                     }
@@ -650,7 +651,7 @@ static halfword tex_aux_scan_specification_par_passes(void)
                                     default:
                                         goto NOTDONE4;
                                 }
-                            } else { 
+                            } else {
                                 NOTDONE4:
                                 tex_aux_show_keyword_error("emergencyfactor|emergencystretch|emergencypercentage|emergencyleftextra|emergencyunit|emergencyrightextra");
                                 goto DONE;
@@ -685,8 +686,8 @@ static halfword tex_aux_scan_specification_par_passes(void)
                             default:
                                 goto NOTDONE2;
                         }
-                    } else { 
-                        NOTDONE2:
+                    } else {
+                      NOTDONE2:
                         tex_aux_show_keyword_error("finalhyphendemetits|fitnessclasses");
                         goto DONE;
                     }
@@ -929,7 +930,7 @@ static halfword tex_aux_scan_specification_par_passes(void)
                             }
                             break;
                         default:
-                            NOTDONE3:
+                          NOTDONE3:
                             tex_aux_show_keyword_error("threshold|tolerance|toddlerpenalties");
                             goto DONE;
                     }
@@ -944,7 +945,7 @@ static halfword tex_aux_scan_specification_par_passes(void)
             }
         }
         DONE:
-        if (n < count) {
+        if lmt_unlikely(n < count) {
             tex_handle_error(
                 normal_error_type,
                 "there %s only %i of %i %s specified for \\parpasses",
@@ -1161,7 +1162,7 @@ static halfword tex_aux_scan_specification_balance_passes(void)
             }
         }
       DONE:
-        if (n < count) {
+        if lmt_unlikely(n < count) {
             tex_handle_error(
                 normal_error_type,
                 "there %s only %i of %i %s specified for \\parpasses",
@@ -1258,7 +1259,7 @@ static halfword tex_aux_scan_specification_balance_shape(void)
             }
         }
       DONE:
-        if (n < count) {
+        if lmt_unlikely(n < count) {
             tex_handle_error(
                 normal_error_type,
                 "there %s only %i of %i %s specified for \\balanceshape",
@@ -1367,7 +1368,7 @@ static halfword tex_aux_scan_specification_line_snapping(quarterword code)
             }
         }
       DONE:
-        if (n < count) {
+        if lmt_unlikely(n < count) {
             tex_handle_error(
                 normal_error_type,
                 "there %s only %i of %i %s specified for \\linesnapspec",
@@ -1486,14 +1487,14 @@ void tex_run_specification_spec(void)
                             index = specification_count(target);
                         }
                     } 
-                    if (index >= 1 && index <= specification_count(target)) {
+                    if lmt_likely(index >= 1 && index <= specification_count(target)) {
                         if (duplex) {
                             tex_set_specification_penalty(target, index, second);
                             tex_set_specification_nepalty(target, index, first);
                         } else {
                             tex_set_specification_penalty(target, index, first);
                         }
-                    } else { 
+                    } else {
                         tex_specification_range_error(target);
                     }
                     break;
@@ -1618,7 +1619,7 @@ void tex_aux_get_specification_value(halfword specification)
                             } else {
                                 value = tex_get_specification_penalty(specification, index);
                             }
-                        } else {    
+                        } else {
                             tex_specification_range_error(specification);
                         }
                         switch (code) {

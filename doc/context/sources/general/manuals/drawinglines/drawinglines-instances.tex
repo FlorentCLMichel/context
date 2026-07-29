@@ -1,0 +1,103 @@
+% language=us
+
+\environment drawinglines-style
+
+\startcomponent drawinglines-instances
+
+\usemodule[scite]
+
+\startchapter[title=Lua instances]
+
+In various \LUAMETAFUN\ features we let \LUA\ do some calculations, in particular
+math related ones, for instance when can render functions or surfaces. That made
+me wonder if using a dedicated \LUA\ instance would make sense, because there is
+less interference of the garbage collector.
+
+So I did a quick experiment and indeed there can be some gain but it is not
+entirely trivial to integrate it in a transparent way, although most can be
+hidden for the user. Given that the gain is not really putting a dent in
+performance when we look at the whole run, for now it will not be applied. But we
+can play a bit with the experimental feature as a math only sandbox.
+
+Results can be piped back to the main instance, and one could preload functions
+but a more extensive setup would also add some overhead, which then makes little
+sense. Only the sandbox feature remains. As the experiment involves little code
+we keep it for now. Here is the test:
+
+\startbuffer
+\startluacode
+    lua.usestringcall(true)
+
+    local n = 1 * 1000 * 1000
+    local l = lua.luastringcall
+    local m = lua.mpsstringcall
+
+    local sin = math.sin
+    local
+    f = function()
+        local a = sin(12)
+        local b = sin(12)
+        local c = a + b
+     -- return 1, 2, 3, 4
+        return c
+     -- return c, true
+    end
+
+    local s = [[
+        local sin = math.sin
+     -- local
+        f = function()
+            local a = sin(12)
+            local b = sin(12)
+            local c = a + b
+         -- return 1, 2, 3, 4
+            return c
+         -- return c, true
+        end
+    ]]
+
+    -- register function (global)
+
+    l(s)
+    m(s)
+
+ -- local s = s .. " " .. [[return f()]]
+
+    local s = [[return f()]]
+    local d = string.dump(load(s),true)
+
+    s = d
+
+    local c = os.clock() for i=1,n do local a = l(s) end print("l",l(s),os.clock()-c)
+    local c = os.clock() for i=1,n do local a = m(s) end print("m",m(s),os.clock()-c)
+    local c = os.clock() for i=1,n do local a = f(s) end print("f",f(s),os.clock()-c)
+\stopluacode
+\stopbuffer
+
+\typebuffer[option=TEX]
+
+On the console we see the following. Of course every call has to load the
+(stripped) bytecode, which is why the direct call is so much more efficient.
+
+\starttyping
+l  -1.0731458360008699  0.952
+m  -1.0731458360008699  0.889
+f  -1.0731458360008699  0.159
+\stoptyping
+
+So, in order for this to work in our advantage we would have to register
+functions in the \type {mps} namespace and communicate from the main \type {lua}
+instance (where the user interface lives) that we'd like to call that specific
+one. Because we use the same \LUA\ version for both the same bytecode can be used.
+
+The only place where we trigger functions from \CCODE\ is in implicit three
+dimensional surface generation. And complicating that even more that makes little
+sense. Of course \typ {lua.luastringcall} might have some use of its own, who
+knows. As a side note: the \type {return} in \type {f} in the example is quite
+efficient because we pop return values from \type {mps} and push them to the main
+instance.
+
+\stopchapter
+
+\stopcomponent
+

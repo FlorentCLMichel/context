@@ -80,7 +80,7 @@ void tex_initialize_input_state(void)
     {
         int size = lmt_input_state.input_stack_data.minimum;
         lmt_input_state.input_stack = aux_allocate_clear_array(sizeof(in_state_record), size, reserved_input_stack_slots);
-        if (lmt_input_state.input_stack) {
+        if lmt_likely(lmt_input_state.input_stack) {
             lmt_input_state.input_stack_data.allocated = size;
         } else {
             tex_overflow_error("input",  size);
@@ -89,7 +89,7 @@ void tex_initialize_input_state(void)
     {
         int size = lmt_input_state.in_stack_data.minimum;
         lmt_input_state.in_stack = aux_allocate_clear_array(sizeof(input_stack_record), size, reserved_in_stack_slots);
-        if (lmt_input_state.in_stack) {
+        if lmt_likely(lmt_input_state.in_stack) {
             lmt_input_state.in_stack_data.allocated = size;
         } else {
             tex_overflow_error("file", size);
@@ -98,7 +98,7 @@ void tex_initialize_input_state(void)
     {
         int size = lmt_input_state.parameter_stack_data.minimum;
         lmt_input_state.parameter_stack = aux_allocate_clear_array(sizeof(halfword), size, reserved_parameter_stack_slots);
-        if (lmt_input_state.parameter_stack) {
+        if lmt_likely(lmt_input_state.parameter_stack) {
             lmt_input_state.parameter_stack_data.allocated = size;
         } else {
             tex_overflow_error("parameter", size);
@@ -111,7 +111,7 @@ static bool tex_aux_room_on_input_stack(void) /* quite similar to save_stack che
     int top = lmt_input_state.input_stack_data.ptr;
     if (top > lmt_input_state.input_stack_data.top) {
         lmt_input_state.input_stack_data.top = top;
-        if (top > lmt_input_state.input_stack_data.allocated) {
+        if lmt_unlikely(top > lmt_input_state.input_stack_data.allocated) {
             in_state_record *tmp = NULL;
             top = lmt_input_state.input_stack_data.allocated + lmt_input_state.input_stack_data.step;
             if (top > lmt_input_state.input_stack_data.size) {
@@ -137,7 +137,7 @@ static bool tex_aux_room_on_in_stack(void) /* quite similar to save_stack checke
     int top = lmt_input_state.in_stack_data.ptr;
     if (top > lmt_input_state.in_stack_data.top) {
         lmt_input_state.in_stack_data.top = top;
-        if (top > lmt_input_state.in_stack_data.allocated) {
+        if lmt_unlikely(top > lmt_input_state.in_stack_data.allocated) {
             input_stack_record *tmp = NULL;
             top = lmt_input_state.in_stack_data.allocated + lmt_input_state.in_stack_data.step;
             if (top > lmt_input_state.in_stack_data.size) {
@@ -163,7 +163,7 @@ static bool tex_aux_room_on_parameter_stack(void) /* quite similar to save_stack
     int top = lmt_input_state.parameter_stack_data.ptr;
     if (top > lmt_input_state.parameter_stack_data.top) {
         lmt_input_state.parameter_stack_data.top = top;
-        if (top > lmt_input_state.parameter_stack_data.allocated) {
+        if lmt_unlikely(top > lmt_input_state.parameter_stack_data.allocated) {
             halfword *tmp =  NULL;
             top = lmt_input_state.parameter_stack_data.allocated + lmt_input_state.parameter_stack_data.step;
             if (top > lmt_input_state.parameter_stack_data.size) {
@@ -494,6 +494,7 @@ static void tex_aux_print_valid_utf8(int q)
 {
     int l = lmt_error_state.line_limits.size;
     int c = (int) lmt_print_state.trick_buffer[q % l];
+    /*tex We know trhat we have valid code points. */
     if (c < 128) {
         tex_print_char(c);
     } else if (c < 194) {
@@ -511,7 +512,7 @@ static void tex_aux_print_valid_utf8(int q)
         tex_print_char(lmt_print_state.trick_buffer[(q + 2) % l]);
         tex_print_char(lmt_print_state.trick_buffer[(q + 3) % l]);
     } else {
-        /*tex Invalid character! */
+        /*tex Invalid character, can't really happen here, so we just ignore it! */
     }
 }
 
@@ -657,7 +658,7 @@ void tex_show_context(void)
 
 static inline void tex_aux_push_input(void)
 {
-    if (tex_aux_room_on_input_stack()) {
+    if lmt_likely(tex_aux_room_on_input_stack()) {
         lmt_input_state.input_stack[lmt_input_state.input_stack_data.ptr] = lmt_input_state.cur_input;
         ++lmt_input_state.input_stack_data.ptr;
     } else {
@@ -812,7 +813,7 @@ void tex_end_token_list(void)
         case parameter_text:
             break;
         case template_pre_text:
-            if (lmt_input_state.align_state > interwoven_alignment_threshold) {
+            if lmt_likely(lmt_input_state.align_state > interwoven_alignment_threshold) {
                 lmt_input_state.align_state = 0;
             } else {
                 tex_alignment_interwoven_error(7);
@@ -863,7 +864,7 @@ void tex_cleanup_input_state(void)
             case parameter_text:
                 break;
             case template_pre_text:
-                if (lmt_input_state.align_state > interwoven_alignment_threshold) {
+                if lmt_likely(lmt_input_state.align_state > interwoven_alignment_threshold) {
                     lmt_input_state.align_state = 0;
                 } else {
                     tex_alignment_interwoven_error(7);
@@ -991,14 +992,10 @@ void tex_append_input(halfword h)
 {
     if (h) {
         halfword n = h;
-        if (n) {
-            while (token_link(n)) {
-                n = token_link(n);
-            }
-            set_token_link(n, lmt_input_state.cur_input.loc);
-        } else {
-            set_token_link(h, lmt_input_state.cur_input.loc);
+        while (token_link(n)) {
+            n = token_link(n);
         }
+        set_token_link(n, lmt_input_state.cur_input.loc);
         lmt_input_state.cur_input.start = h;
         lmt_input_state.cur_input.loc = h;
     }

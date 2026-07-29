@@ -163,7 +163,7 @@ do
             job.variables.collected.repeatable = saved
         end
         saved[name] = seed
-        local hash = hashed(seed)
+        local hash = hashed(tostring(seed))
         if trace_random then
             report_system("repeatable %a with seed %a starts out as %a",name,seed,hash)
         end

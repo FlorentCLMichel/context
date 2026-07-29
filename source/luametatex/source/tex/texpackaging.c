@@ -365,7 +365,7 @@ static void tex_aux_scan_full_spec(halfword context, quarterword c, quarterword 
                                 if (! tex_scan_character("tT", 0, 0, 0)) {
                                     goto BADDIR;
                                 }
-                            } else { 
+                            } else {
                               BADDIR:
                                 tex_aux_show_keyword_error("tlt|trt");
                                 goto DONE;
@@ -1672,7 +1672,7 @@ halfword tex_hpack(halfword p, scaled target, int method, singleword pack_direct
     switch(method) { 
         case packing_linebreak:
             method = packing_expanded;
-            /* fall through, later we'll come back here: */
+            FALLTHROUGH
         case packing_substitute:
             adjust_spacing = tex_checked_font_adjust(
                 lmt_linebreak_state.adjust_spacing,
@@ -3503,7 +3503,7 @@ void tex_run_unpackage(void)
                             bad = 1;
                             break;
                     }
-                    if (bad) {
+                    if lmt_unlikely(bad) {
                         tex_handle_error(
                             normal_error_type,
                             "Incompatible list can't be unboxed",
@@ -3645,7 +3645,7 @@ void tex_run_unpackage(void)
                 if (tex_valid_insert_id(index)) {
                     halfword boxnode = tex_get_insert_content(index); /* also checks for id */
                     if (boxnode) {
-                        if (! is_v_mode(cur_list.mode)) {
+                        if lmt_unlikely(! is_v_mode(cur_list.mode)) {
                             tex_handle_error(
                                 normal_error_type,
                                 "Unpacking an inserts can only happen in vertical mode.",
@@ -4152,7 +4152,7 @@ halfword tex_vert_break(halfword current, scaled height, scaled depth, int callb
             case glue_node:
                 active_height[total_stretch_amount + glue_stretch_order(current)] += glue_stretch(current);
                 active_height[total_shrink_amount] += glue_shrink(current);
-                if (glue_shrink_order(current) != normal_glue_order  && glue_shrink(current)) {
+                if lmt_unlikely(glue_shrink_order(current) != normal_glue_order  && glue_shrink(current)) {
                     /*tex 
                         Other engines now can bypass this error message but we don't follow that 
                         approach here because we're more into \quote {mechanmism control}. We could 
@@ -4223,7 +4223,7 @@ halfword tex_vsplit(halfword n, scaled h, int m)
     /*tex Dispense with trivial cases of void or bad boxes. */
     if (! v) {
         return null;
-    } else if (node_type(v) != vlist_node) {
+    } else if lmt_unlikely(node_type(v) != vlist_node) {
         tex_handle_error(
             normal_error_type,
             "\\vsplit needs a \\vbox",

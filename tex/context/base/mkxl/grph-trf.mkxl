@@ -24,8 +24,6 @@
 %D We could move the calculations to \LUA\ and clean up this lot anyway. On the
 %D other hand, there is some danger of messing up so it has a real low priority.
 
-\registerctxluafile{grph-trf}{autosuffix}
-
 % See below
 
 \newdimension\d_grph_rotate_x_size
@@ -38,6 +36,8 @@
 \newdimension\d_grph_rotate_new_width
 \newdimension\d_grph_rotate_new_height
 \newdimension\d_grph_rotate_new_depth
+
+\registerctxluafile{grph-trf}{autosuffix}
 
 % local:
 

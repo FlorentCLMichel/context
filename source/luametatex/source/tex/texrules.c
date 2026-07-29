@@ -58,7 +58,7 @@ halfword tex_aux_scan_rule_spec(rule_types type, halfword code, int maysnap)
                 break;
             case v_rule_type:
                 rule_options(rule) |= rule_option_vertical;
-                /* fall through */
+                FALLTHROUGH
             case m_rule_type:
                 rule_width(rule) = default_rule;
                 break;

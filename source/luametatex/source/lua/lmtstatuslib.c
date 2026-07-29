@@ -108,7 +108,9 @@ static int statslib_texstate(lua_State *L)
         + (lua_Integer) lmt_mvl_state         .mvl_data            .allocated * (lua_Integer) lmt_mvl_state         .mvl_data            .itemsize + lmt_mvl_state         .mvl_data            .extra
     ;
     lua_createtable(L, 0, 4);
-    lua_set_integer_by_key(L, "approximate", (int) approximate);
+    lua_set_integer_by_key(L, "hashmisses",  lmt_hash_state.misses);
+    lua_set_integer_by_key(L, "hashslots",   hash_size);
+    lua_set_size_t_by_key (L, "approximate", (size_t) approximate);
     return 1;
 }
 
@@ -213,7 +215,7 @@ static int statslib_readstate(lua_State *L)
 
 static int statslib_enginestate(lua_State *L)
 {
-    lua_createtable(L, 0, 15);
+    lua_createtable(L, 0, 16);
     lua_set_string_by_key (L, "logfilename",     lmt_fileio_state.log_name);
     lua_set_string_by_key (L, "banner",          lmt_engine_state.luatex_banner);
     lua_set_number_by_key (L, "version",         lmt_version_state.luatexversion);
@@ -230,6 +232,8 @@ static int statslib_enginestate(lua_State *L)
  // lua_set_integer_by_key(L, "tex_eqtb_size",   eqtb_size);
     lua_set_integer_by_key(L, "tex_memory_mode", memory_mode);
     lua_set_string_by_key (L, "used_compiler",   lmt_version_state.compiler);
+    lua_set_integer_by_key(L, "used_cversion",   lmt_version_state.cversion);
+    lua_set_boolean_by_key(L, "used_likely",     lmt_version_state.likely);
  // lua_set_string_by_key (L, "used_libc",       lmt_version_state.libc);
     lua_set_integer_by_key(L, "run_state",       lmt_main_state.run_state);
     lua_set_integer_by_key(L, "overload_state",  lmt_main_state.overload_state);
@@ -528,6 +532,8 @@ static struct statistic_entry statslib_entries[] = {
     { .name = "luatex_verbose",     .value = (void *) &lmt_version_state.verbose,       .type = 'c' },
     /* */
     { .name = "used_compiler",      .value = (void *) &lmt_version_state.compiler,      .type = 'c' }, /* can be moved up */
+    { .name = "used_cversion",      .value = (void *) &lmt_version_state.cversion,      .type = 'g' }, /* can be moved up */
+    { .name = "used_likely",        .value = (void *) &lmt_version_state.likely,        .type = 'b' }, /* can be moved up */
     { .name = "run_state",          .value = (void *) &lmt_main_state.run_state,        .type = 'g' },
     { .name = "overload_state",     .value = (void *) &lmt_main_state.overload_state,   .type = 'g' },
     { .name = "permit_loadlib",     .value = (void *) &lmt_engine_state.permit_loadlib, .type = 'b' },
@@ -557,6 +563,8 @@ static struct statistic_entry statslib_entries_only[] = {
     { .name = "luatex_verbose",      .value = (void *) &lmt_version_state.verbose,           .type = 'c' },
     /* */                                                                                    
     { .name = "used_compiler",       .value = (void *) &lmt_version_state.compiler,          .type = 'c' },
+    { .name = "used_cversion",       .value = (void *) &lmt_version_state.cversion,          .type = 'g' },
+    { .name = "used_likely",         .value = (void *) &lmt_version_state.likely,            .type = 'b' },
 
     { .name = "lua_version_major",   .value = (void *) &lmt_version_state.luaversionmajor,   .type = 'g' },
     { .name = "lua_version_minor",   .value = (void *) &lmt_version_state.luaversionminor,   .type = 'g' },

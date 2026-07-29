@@ -417,7 +417,7 @@ static inline void lmt_lua_run(int reference, int prefix)
 
 static void tex_aux_run_lua_protected_call(void) 
 {
-    if (cur_chr > 0) {
+    if lmt_likely(cur_chr > 0) {
         lmt_lua_run(cur_chr, 0);
     } else {
         tex_normal_error("luacall", "invalid number in protected call");
@@ -427,7 +427,7 @@ static void tex_aux_run_lua_protected_call(void)
 void tex_aux_lua_call(halfword cmd, halfword chr) 
 {
     (void) cmd;
-    if (chr > 0) {
+    if lmt_likely(chr > 0) {
         lmt_lua_run(chr, 0);
     } else {
         tex_normal_error("luacall", "invalid number in unprotected call");
@@ -436,7 +436,7 @@ void tex_aux_lua_call(halfword cmd, halfword chr)
 
 static void tex_aux_set_lua_value(int a) 
 {
-    if (cur_chr > 0) {
+    if lmt_likely(cur_chr > 0) {
         lmt_lua_run(cur_chr, a);
     } else {
         tex_normal_error("luavalue", "invalid number");
@@ -1194,7 +1194,7 @@ static void tex_aux_run_begin_paragraph_hmode(void)
                 halfword par = tex_find_par_par(cur_list.head);
                 if (par) {
                     halfword h = par_end_par_tokens(par);
-                    if (tex_aux_scan_more_toks(&h)) {
+                    if lmt_likely(tex_aux_scan_more_toks(&h)) {
                         par_end_par_tokens(par) = h;
                     } else {
                         tex_handle_error(
@@ -1560,7 +1560,7 @@ static void tex_aux_run_after_something(void)
                 do {
                     tex_get_x_token();
                 } while (cur_cmd == spacer_cmd);
-                if (cur_cmd == left_brace_cmd) {
+                if lmt_likely(cur_cmd == left_brace_cmd) {
                     halfword source = tex_scan_toks_normal(1, NULL);
                     if (source) { 
                         if (token_link(source)) {
@@ -1588,7 +1588,7 @@ static void tex_aux_run_after_something(void)
                 do {
                     tex_get_x_token();
                 } while (cur_cmd == spacer_cmd);
-                if (cur_cmd == left_brace_cmd) {
+                if lmt_likely(cur_cmd == left_brace_cmd) {
                     halfword source = tex_scan_toks_normal(1, NULL);
                     if (source) {
                         /*tex Always, also when empty. */
@@ -1639,7 +1639,7 @@ static void tex_aux_run_after_something(void)
                 do {
                     tex_get_x_token();
                 } while (cur_cmd == spacer_cmd);
-                if (cur_cmd == left_brace_cmd) {
+                if lmt_likely(cur_cmd == left_brace_cmd) {
                     halfword source = tex_scan_toks_normal(1, NULL);
                     if (source) {
                         if (end_of_group_par) {
@@ -1673,7 +1673,7 @@ static void tex_aux_run_after_something(void)
         case at_end_of_filed_code:
             {
                 halfword h = tex_get_at_end_of_file();
-                if (tex_aux_scan_more_toks(&h)) {
+                if lmt_likely(tex_aux_scan_more_toks(&h)) {
                     tex_set_at_end_of_file(h);
                 } else {
                     tex_handle_error(
@@ -2834,7 +2834,7 @@ static void tex_aux_wrapup_leader_box(halfword boxcontext, halfword boxnode, hal
     do {
         tex_get_x_token();
     } while (cur_cmd == spacer_cmd || cur_cmd == relax_cmd);
-    if ((cur_cmd == hskip_cmd && cur_mode != vmode) || (cur_cmd == vskip_cmd && cur_mode == vmode)) {
+    if lmt_likely((cur_cmd == hskip_cmd && cur_mode != vmode) || (cur_cmd == vskip_cmd && cur_mode == vmode)) {
         tex_aux_run_glue(0, 0); /* uses cur_chr */
         switch (boxcontext) {
             case a_leaders_flag:
@@ -3918,6 +3918,7 @@ static void tex_aux_arithmic_register(int a, int code)
             switch (code) {
                 case advance_code:
                     tex_scan_optional_keyword("by");
+                    FALLTHROUGH
                 case advance_by_code:
                     {
                         halfword amount = tex_aux_get_register_value(level, 0);
@@ -3982,6 +3983,7 @@ static void tex_aux_arithmic_register(int a, int code)
                     }
                 case multiply_code:
                     tex_scan_optional_keyword("by");
+                    FALLTHROUGH
                 case multiply_by_code:
                     {
                         halfword amount = tex_scan_integer(0, NULL, NULL);
@@ -4029,6 +4031,7 @@ static void tex_aux_arithmic_register(int a, int code)
                 case r_divide_code:
                 case e_divide_code:
                     tex_scan_optional_keyword("by");
+                    FALLTHROUGH
                 case divide_by_code:
                 case r_divide_by_code:
                 case e_divide_by_code:
@@ -4042,9 +4045,8 @@ static void tex_aux_arithmic_register(int a, int code)
                                     if (rounded) {
                                         value = tex_quotient(original >> 16, amount, 1) << 16;
                                         break;
-                                    } else { 
-                                        /* fall through */
                                     }
+                                    FALLTHROUGH
                                 case integer_val_level:
                                 case attribute_val_level:
                                     {
@@ -4657,7 +4659,7 @@ static void tex_aux_set_box_property(void)
 static void tex_aux_set_box(int a)
 {
     halfword slot = tex_scan_box_register_number();
-    if (lmt_error_state.set_box_allowed) {
+    if lmt_likely(lmt_error_state.set_box_allowed) {
         if (tex_define_permitted(register_box_location(slot), a)) {
             tex_aux_scan_box(is_global(a) ? global_box_flag : box_flag, 1, null_flag, slot, 0, 0);
             if (is_immutable(a)) { 
@@ -4848,10 +4850,10 @@ static void tex_aux_set_association(int flags, int force)
         case unit_association_code: 
             { 
                 tex_get_r_token();
-                if (tex_valid_userunit(cur_cmd, cur_chr, cur_cs)) {
+                if lmt_likely(tex_valid_userunit(cur_cmd, cur_chr, cur_cs)) {
                     halfword cs = cur_cs;
                     halfword index = tex_scan_unit_register_number(1);
-                    if (tex_get_unit_class(index)) { 
+                    if lmt_unlikely(tex_get_unit_class(index)) {
                         tex_handle_error(
                             normal_error_type,
                             "Imvalid \\associateunit, unit %i is already taken", index, 
@@ -4860,7 +4862,7 @@ static void tex_aux_set_association(int flags, int force)
                     } else if (force || tex_define_permitted(cs, flags)) {
                         unit_parameter(index) = cs;
                     }
-                } else { 
+                } else {
                     tex_handle_error(
                         normal_error_type,
                         "Invalid \\associateunit target",
@@ -5029,19 +5031,19 @@ static void tex_aux_set_def(int flags, int force)
             break;
         case global_expanded_def_code:
             expand = 1;
-            // fall through
+            FALLTHROUGH
         case global_def_code:
             flags = add_global_flag(flags);
             break;
         case expanded_def_csname_code:
             expand = 1;
-            // fall through
+            FALLTHROUGH
         case def_csname_code:
             cur_cs = tex_create_csname();
             goto DONE;
         case global_expanded_def_csname_code:
             expand = 1;
-            // fall through
+            FALLTHROUGH
         case global_def_csname_code:
             cur_cs = tex_create_csname();
             flags = add_global_flag(flags);
@@ -5106,7 +5108,7 @@ static void tex_aux_set_let(int flags, int force)
             if (global_defs_par >= 0) {
                 flags = add_global_flag(flags);
             }
-            // fall through
+            FALLTHROUGH
         case let_code:
             /*tex |\let| */
             tex_get_r_token();
@@ -5154,7 +5156,7 @@ static void tex_aux_set_let(int flags, int force)
             /*tex |\letcharcode| (todo: protection) */
             {
                 halfword character = tex_scan_integer(0, NULL, NULL);
-                if (character > 0) {
+                if lmt_likely(character > 0) {
                     cs = tex_active_to_cs(character, 1);
                     do {
                         tex_get_token();
@@ -5237,7 +5239,7 @@ static void tex_aux_set_let(int flags, int force)
             if (global_defs_par >= 0) {
                 flags = add_global_flag(flags);
             }
-            // fall through
+            FALLTHROUGH
         case let_csname_code:
             cur_cs = tex_create_csname();
             goto LETINDEED;
@@ -5245,7 +5247,7 @@ static void tex_aux_set_let(int flags, int force)
             if (global_defs_par >= 0) {
                 flags = add_global_flag(flags);
             }
-            // fall through
+            FALLTHROUGH
         case let_to_nothing_code:
             tex_get_r_token();
          LETTONOTHING:
@@ -5531,7 +5533,7 @@ static void tex_aux_set_math_parameter(int a)
                         code = tex_to_math_rules_parameter(left, right);
                         break;
                 }
-                if (code < 0) {
+                if lmt_unlikely(code < 0) {
                     tex_handle_error(
                         normal_error_type,
                         "Invalid math class pair",
@@ -5556,7 +5558,7 @@ static void tex_aux_set_math_parameter(int a)
                 halfword text = tex_scan_math_class_number(0);
                 halfword script = tex_scan_math_class_number(0);
                 halfword scriptscript = tex_scan_math_class_number(0);
-                if (valid_math_class_code(mathclass)) {
+                if lmt_likely(valid_math_class_code(mathclass)) {
                     switch (code) {
                         case math_parameter_let_spacing:
                             code = internal_integer_location(first_math_class_code + mathclass);
@@ -5583,7 +5585,7 @@ static void tex_aux_set_math_parameter(int a)
             {
                 halfword mathclass = tex_scan_math_class_number(0);
                 halfword parent = tex_scan_math_class_number(1);
-                if (valid_math_class_code(mathclass) && valid_math_class_code(parent)) {
+                if lmt_likely(valid_math_class_code(mathclass) && valid_math_class_code(parent)) {
                     switch (code) {
                         case math_parameter_copy_spacing:
                             code = internal_integer_location(first_math_class_code + mathclass);
@@ -5615,7 +5617,7 @@ static void tex_aux_set_math_parameter(int a)
             {
                 halfword mathclass = tex_scan_math_class_number(0);
                 halfword penalty = tex_scan_integer(1, NULL, NULL);
-                if (valid_math_class_code(mathclass)) {
+                if lmt_likely(valid_math_class_code(mathclass)) {
                     switch (code) {
                         case math_parameter_set_pre_penalty:
                             code = internal_integer_location(first_math_pre_penalty_code + mathclass);
@@ -5648,7 +5650,7 @@ static void tex_aux_set_math_parameter(int a)
                 halfword post = tex_scan_math_class_number(0);
                 halfword options = tex_scan_math_class_number(0);
                 halfword reserved = tex_scan_math_class_number(0);
-                if (valid_math_class_code(mathclass)) {
+                if lmt_likely(valid_math_class_code(mathclass)) {
                     code = internal_integer_location(first_math_parent_code + mathclass);
                     value = (reserved << 24) + (options << 16) + (pre << 8) + post;
                     tex_word_define(a, code, value);
@@ -5675,7 +5677,7 @@ static void tex_aux_set_math_parameter(int a)
         case math_parameter_options:
             {
                 halfword mathclass = tex_scan_math_class_number(0);
-                if (valid_math_class_code(mathclass)) {
+                if lmt_likely(valid_math_class_code(mathclass)) {
                     code = internal_integer_location(first_math_options_code + mathclass);
                     value = tex_scan_integer(1, NULL, NULL);
                     tex_word_define(a, code, value);
@@ -5771,7 +5773,7 @@ static void tex_aux_set_math_parameter(int a)
                     }
                     break;
             }
-            if (indirect == indirect_math_regular) {
+            if lmt_unlikely(indirect == indirect_math_regular) {
                 tex_handle_error(
                     normal_error_type,
                     "Invalid inherited math parameter type",
@@ -6378,7 +6380,7 @@ void tex_assign_internal_integer_value(int a, halfword p, int val)
             }
             break;
         case cat_code_table_code:
-            if (tex_valid_catcode_table(val)) {
+            if lmt_likely(tex_valid_catcode_table(val)) {
                 if (val != cat_code_table_par) {
                     tex_word_define(a, p, val);
                 }
@@ -6410,7 +6412,7 @@ void tex_assign_internal_integer_value(int a, halfword p, int val)
         case glyph_script_scale_code:
         case glyph_scriptscript_scale_code:
             /* here zero is a signal */
-            if (val < min_math_style_scale || val > max_math_style_scale) {
+            if lmt_unlikely(val < min_math_style_scale || val > max_math_style_scale) {
                 tex_handle_error(
                     normal_error_type,
                     "Invalid \\glyph..scale",
@@ -6422,7 +6424,7 @@ void tex_assign_internal_integer_value(int a, halfword p, int val)
             tex_word_define(a, p, val);
             break;
         case space_skip_factor_code:
-            if (val < min_space_skip_factor || val > max_space_skip_factor) {
+            if lmt_unlikely(val < min_space_skip_factor || val > max_space_skip_factor) {
                 tex_handle_error(
                     normal_error_type,
                     "Invalid \\spaceskipfactor",
@@ -6442,7 +6444,7 @@ void tex_assign_internal_integer_value(int a, halfword p, int val)
             tex_word_define(a, p, val);
             break;
         case output_box_code:
-            if (val < 0 || val > max_box_index) {
+            if lmt_unlikely(val < 0 || val > max_box_index) {
                 tex_handle_error(
                     normal_error_type,
                     "Invalid \\outputbox",
@@ -6453,7 +6455,7 @@ void tex_assign_internal_integer_value(int a, halfword p, int val)
             }
             break;
         case new_line_char_code:
-            if (val > max_newline_character) {
+            if lmt_unlikely(val > max_newline_character) {
                 tex_handle_error(
                     normal_error_type,
                     "Invalid \\newlinechar",
@@ -6465,7 +6467,7 @@ void tex_assign_internal_integer_value(int a, halfword p, int val)
             }
             break;
         case end_line_char_code:
-            if (val > max_endline_character) {
+            if lmt_unlikely(val > max_endline_character) {
                tex_handle_error(
                    normal_error_type,
                    "Invalid \\endlinechar",
@@ -6480,7 +6482,7 @@ void tex_assign_internal_integer_value(int a, halfword p, int val)
             if (val < 0) {
                 val = 0;
             }
-            if (tex_is_valid_language(val)) {
+            if lmt_likely(tex_is_valid_language(val)) {
                 update_tex_language(a, val);
             } else {
                 tex_handle_error(
@@ -6494,7 +6496,7 @@ void tex_assign_internal_integer_value(int a, halfword p, int val)
             if (val < 0) {
                 val = 0;
             }
-            if (tex_is_valid_font(val)) {
+            if lmt_likely(tex_is_valid_font(val)) {
                 tex_set_cur_font(a, val);
             } else {
                 tex_handle_error(
@@ -6525,7 +6527,7 @@ void tex_assign_internal_integer_value(int a, halfword p, int val)
              } else if (val > max_local_hang_after) {
                 val = max_local_hang_after;
              }
-             /* fall through */
+            FALLTHROUGH
         case local_interline_penalty_code:
         case local_broken_penalty_code:
         case local_tolerance_code:
@@ -6642,13 +6644,13 @@ void tex_assign_internal_dimension_value(int a, halfword p, int val)
 {
     switch (internal_dimension_number(p)) {
         case local_hang_indent_code:
-             /*tex We silently recover. */
-             if (val < min_local_hang_indent) {
-                val = min_local_hang_indent;
-             } else if (val > max_local_hang_indent) {
-                val = max_local_hang_indent;
-             }
-             /* fall through */
+            /*tex We silently recover. */
+            if (val < min_local_hang_indent) {
+               val = min_local_hang_indent;
+            } else if (val > max_local_hang_indent) {
+               val = max_local_hang_indent;
+            }
+            break;
         default:
             break;
     }

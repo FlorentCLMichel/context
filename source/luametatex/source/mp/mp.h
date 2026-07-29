@@ -6,6 +6,8 @@
 # ifndef MP_H
 # define MP_H
 
+# include "auxcompiler.h"
+
 # include <errno.h>
 # include <string.h>
 # include <float.h>
@@ -729,6 +731,7 @@ typedef enum mp_name_type_type {
     mp_delta_direction_operation,     /* operation code for |deltadirection| */
     mp_delta_unit_direction_operation,/* operation code for |deltaunitdirection| */
     mp_delta_arclength_operation,     /* operation code for |deltaarclength| */
+    mp_delta_iterator_index_operation,/* operation code for |deltaiteratorindex| */
     mp_arc_length_operation,          /* operation code for |arclength| */
     mp_angle_operation,               /* operation code for |angle| */
     mp_cycle_operation,               /* operation code for |cycle| */
@@ -819,6 +822,7 @@ typedef enum mp_name_type_type {
     mp_arc_point_list_operation,      /* operation code for |arcpointlist| */
     mp_subarc_length_operation,       /* operation code for |subarclength| */
     mp_version_operation,             /* operation code for |mpversion| */
+    mp_iterator_index_operation,
     mp_envelope_operation,            /* operation code for |envelope| */
     mp_boundingpath_operation,        /* operation code for |boundingpath| */
     mp_bytemap_value_operation,
@@ -1377,13 +1381,14 @@ typedef struct mp_loop_data {
     mp_node              info;        /* iterative text of this loop */
     mp_node              type;        /* the special type of this loop, or a pointer into mem */
     mp_node              list;        /* the remaining list elements */
-    mp_node              list_start;  /* head fo the list of elements */
+    mp_node              list_start;  /* head of the list of elements */
     mp_number            old_value;   /* previous value of current arithmetic value */
     mp_number            value;       /* current arithmetic value */
     mp_number            step_size;   /* arithmetic step size */
     mp_number            final_value; /* end arithmetic value */
     struct mp_loop_data *link;        /* the enclosing loop, if any */
     mp_knot              point;
+    mp_number            index;
 } mp_loop_data;
 
 typedef struct mp_if_data {
@@ -2087,7 +2092,7 @@ extern void              mp_push_color_value           (MP mp, double r, double 
 extern void              mp_push_cmykcolor_value       (MP mp, double c, double m, double y, double k);
 extern void              mp_push_transform_value       (MP mp, double x, double y, double xx, double xy, double yx, double yy);
 extern void              mp_push_path_value            (MP mp, mp_knot k);
-//     void              mp_push_tokens_value          (MP mp, const char *str, size_t length);
+extern void              mp_push_tokens_value          (MP mp, const char *str, size_t length);
 
 extern void              mp_new_randoms                (MP mp);
 

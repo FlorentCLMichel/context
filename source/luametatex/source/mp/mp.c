@@ -3601,6 +3601,7 @@ static const char *mp_op_string_names[] = {
     [mp_delta_direction_operation]     = "deltadirection",
     [mp_delta_unit_direction_operation]= "deltaunitdirection",
     [mp_delta_arclength_operation]     = "deltaarclength",
+    [mp_delta_iterator_index_operation]= "deltaiteratorindex",
     [mp_arc_length_operation]          = "arclength",
     [mp_angle_operation]               = "angle",
     [mp_cycle_operation]               = "cycle",
@@ -3690,6 +3691,7 @@ static const char *mp_op_string_names[] = {
     [mp_arc_point_list_operation]      = "arcpointlist",
     [mp_subarc_length_operation]       = "subarclength",
     [mp_version_operation]             = "mpversion",
+    [mp_iterator_index_operation]      = "interatorindex",
     [mp_envelope_operation]            = "envelope",
     [mp_boundingpath_operation]        = "boundingpath",
     [mp_bytemap_value_operation]       = "bytemapvalue",
@@ -5690,7 +5692,7 @@ static void mp_print_path_only(MP mp, mp_knot h) /* todo: spaces, just after thi
                         }
                         goto DONE1;
                     }
-                    break;
+                 // break;
                 case mp_explicit_knot:
                     {
                         /*tex print control points between |p| and |q|, then |goto done1| */
@@ -5701,7 +5703,7 @@ static void mp_print_path_only(MP mp, mp_knot h) /* todo: spaces, just after thi
                         }
                         goto DONE1;
                     }
-                    break;
+                 // break;
                 case mp_open_knot:
                     {
                         /*tex print information for a curve that begins |open| */
@@ -7485,12 +7487,12 @@ int mp_solve_path(MP mp, mp_knot first)
         return 0;
     } else {
         int saved_arithmic_error = mp->arithmic_error;
-        int retval = 1;
         jmp_buf *saved_jump_buffer = mp->jump_buffer;
         mp->jump_buffer = mp_memory_allocate(sizeof(jmp_buf));
         if (mp->jump_buffer == NULL || setjmp(*(mp->jump_buffer)) != 0) {
             return 0;
         } else {
+            int retval = 1;
             mp->arithmic_error = 0;
             mp_make_choices(mp, first);
             if (mp->arithmic_error) {
@@ -9624,7 +9626,7 @@ static mp_node mp_new_bounds_node(MP mp, mp_knot p, int c)
                 mp_post_script(t) = NULL;
                 return (mp_node) t;
             }
-            break;
+         // break;
         case mp_stop_clip_node_type:
         case mp_stop_group_node_type:
         case mp_stop_bounds_node_type:
@@ -9634,7 +9636,7 @@ static mp_node mp_new_bounds_node(MP mp, mp_knot p, int c)
                 t->stacking = (int) mp_round_unscaled(internal_value(mp_stacking_internal));
                 return (mp_node) t;
             }
-            break;
+         // break;
         default:
             /* maybe some message */
             break;
@@ -10783,7 +10785,6 @@ void mp_set_bbox(MP mp, mp_edge_header_node h, int top_level)
             case mp_fill_node_type:
             case mp_stroked_node_type:
                 {
-                    mp_number x0a, y0a, x1a, y1a;
                     mp_path_bbox(mp, mp_path_ptr((mp_shape_node) p));
                     /*tex
                         Stroked paths always have a pen. It saves a lot of grief here to be slightly
@@ -10793,6 +10794,7 @@ void mp_set_bbox(MP mp, mp_edge_header_node h, int top_level)
                         caps.
                     */
                     if (mp_pen_ptr((mp_shape_node) p) != NULL) {
+                        mp_number x0a, y0a, x1a, y1a;
                         mp_new_number_clone(x0a, mp_minx);
                         mp_new_number_clone(y0a, mp_miny);
                         mp_new_number_clone(x1a, mp_maxx);
@@ -11892,16 +11894,12 @@ such cases we use a simple connect-the-endpoints approach that is achieved by se
 static mp_knot mp_make_envelope(MP mp, mp_knot c, mp_knot h, int linejoin, int linecap, mp_number *miterlimit)
 {
     mp_knot p, q, r, q0;                /*tex for manipulating the path */
-    mp_knot w, w0;                      /*tex the pen knot for the current offset */
-    int k, k0;                          /*tex controls pen edge insertion */
+    mp_knot w;                          /*tex the pen knot for the current offset */
     mp_number qx, qy;                   /*tex unshifted coordinates of |q| */
     mp_number dxin, dyin, dxout, dyout; /*tex directions at |q| when square or mitered */
     int join_type = 0;                  /*tex codes |0..3| for mitered, round, beveled, or square */
     mp_number tmp;                      /*tex a temporary value */
     mp_number max_ht;                   /*tex maximum height of the pen polygon above the |w0|-|w| line */
-    int kk;                             /*tex keeps track of the pen vertices being scanned */
-    mp_knot ww;                         /*tex the pen vertex being tested */
-
     mp_new_number(max_ht);
     mp_new_number(tmp);
     mp_new_fraction(dxin);
@@ -11953,6 +11951,8 @@ static mp_knot mp_make_envelope(MP mp, mp_knot c, mp_knot h, int linejoin, int l
     w = h;
     p = c;
     do {
+        mp_knot w0;
+        int k, k0; /*tex controls pen edge insertion */
         q = mp_next_knot(p);
         q0 = q;
         mp_number_clone(qx, q->x_coord);
@@ -12168,6 +12168,8 @@ static mp_knot mp_make_envelope(MP mp, mp_knot c, mp_knot h, int linejoin, int l
                         Make |r| the last of two knots inserted between |p| and |q| to form a squared
                         join.
                     */
+                    int kk;               /*tex Keeps track of the pen vertices being scanned. */
+                    mp_knot ww;           /*tex The pen vertex being tested. */
                     mp_number ht_x, ht_y; /*tex Perpendicular to the segment from |p| to |q|. */
                     mp_number ht_x_abs, ht_y_abs;
                     mp_number xtot, ytot, xsub, ysub;
@@ -16041,12 +16043,12 @@ static void mp_flush_subst_pool(MP mp)
 
 static mp_node mp_scan_toks(MP mp, mp_command_code terminator, mp_subst_node subst_list, mp_node tail_end, int suffix_count)
 {
-    int cur_data;
     int cur_data_mod = 0;
     mp_node p = mp->hold_head; /*tex tail of the token list being built */
     int balance = 1;           /*tex left delimiters minus right delimiters */
     mp->hold_head->link = NULL;
     while (1) {
+        int cur_data;
         mp_get_t_next(mp);
         cur_data = -1;
         if (cur_sym != NULL) {
@@ -17621,6 +17623,7 @@ void mp_begin_iteration(MP mp)
  // s->link = NULL;
     s->var = NULL;
     s->point = NULL;
+    mp_new_number(s->index);
     mp_new_number(s->value);
     mp_new_number(s->old_value);
     mp_new_number(s->step_size);
@@ -17818,8 +17821,9 @@ apparatus by the |resume_iteration| routine.
 
 void mp_resume_iteration(MP mp)
 {
-    mp_node p, q; /* link registers */
-    p = mp->loop_ptr->type;
+    mp_node p = mp->loop_ptr->type;
+    mp_node q; /* link registers */
+    mp_number_add(mp->loop_ptr->index, mp_unity_t);
     if (p == MP_PROGRESSION_FLAG) {
         /*
         mp_set_cur_exp_value_number(mp, &(mp->loop_ptr->value));
@@ -19980,6 +19984,10 @@ static void mp_do_command_nullary(MP mp, int c)
             cur_exp_type = mp_string_type;
             mp_set_cur_exp_str(mp, mp_intern(mp, metapost_version));
             break;
+        case mp_iterator_index_operation:
+            cur_exp_type = mp_known_type;
+            mp_set_cur_exp_value_number(mp, mp->loop_ptr ? &(mp->loop_ptr->index) : &mp_zero_t);
+            break;
         case mp_path_point_operation:
         case mp_path_precontrol_operation:
         case mp_path_postcontrol_operation:
@@ -21257,7 +21265,7 @@ static void mp_set_up_odd(MP mp, int c)
 
 static void mp_set_up_angle(MP mp, int c)
 {
-    if (mp_nice_pair (mp, cur_exp_node, cur_exp_type)) {
+    if (mp_nice_pair(mp, cur_exp_node, cur_exp_type)) {
         mp_value expr;
         mp_node p; /* for list manipulation */
         mp_number narg;
@@ -22038,26 +22046,36 @@ static void mp_set_up_delta(MP mp, int c)
         } else {
             mp_bad_unary(mp, c);
         }
-    } else {
-        if (cur_exp_type == mp_known_type) {
-            mp_set_cur_exp_value_number(mp, &cur_exp_value_number);
-            if (mp->loop_ptr && mp->loop_ptr->point != NULL) {
-                mp_knot p = mp->loop_ptr->point;
-                int n = (int) mp_round_unscaled(cur_exp_value_number);
-                if (n > 0) {
-                    while (n--) {
-                        p = mp_next_knot(p);
-                    }
-                } else if (n < 0) {
-                    while (n++) {
-                        p = mp_prev_knot(p);
-                    }
-                }
-                mp_push_of_path_result(mp, c - mp_delta_point_operation, p, mp->loop_ptr->value, mp->loop_ptr->final_value);
+    } else if (c == mp_delta_iterator_index_operation) {
+        mp_loop_node p = mp->loop_ptr->link;
+        mp_set_cur_exp_value_number(mp, &cur_exp_value_number);
+        int n = (int) mp_round_unscaled(cur_exp_value_number);
+        if (n > 0) {
+            while (p && --n > 0) {
+                p = p->link;
             }
         } else {
-            mp_bad_unary(mp, c);
+            p = NULL;
         }
+        mp_set_cur_exp_value_number(mp, p ? &p->index : &mp_zero_t);
+    } else if (cur_exp_type == mp_known_type) {
+        mp_set_cur_exp_value_number(mp, &cur_exp_value_number);
+        if (mp->loop_ptr && mp->loop_ptr->point != NULL) {
+            mp_knot p = mp->loop_ptr->point;
+            int n = (int) mp_round_unscaled(cur_exp_value_number);
+            if (n > 0) {
+                while (n--) {
+                    p = mp_next_knot(p);
+                }
+            } else if (n < 0) {
+                while (n++) {
+                    p = mp_prev_knot(p);
+                }
+            }
+            mp_push_of_path_result(mp, c - mp_delta_point_operation, p, mp->loop_ptr->value, mp->loop_ptr->final_value);
+        }
+    } else {
+        mp_bad_unary(mp, c);
     }
 }
 
@@ -22568,6 +22586,7 @@ static void mp_do_unary(MP mp, int c)
         case mp_delta_direction_operation:
         case mp_delta_unit_direction_operation:
         case mp_delta_arclength_operation:
+        case mp_delta_iterator_index_operation:
             mp_set_up_delta(mp, c);
             break;
         case mp_read_from_operation:
@@ -23419,8 +23438,8 @@ static void mp_do_pen_trans(MP mp, mp_knot p)
 
 static void mp_do_path_pen_trans(MP mp, mp_shape_node p, mp_number *sqdet, int sgndet)
 {
-    mp_number sx, sy;
     if (mp_pen_ptr(p) != NULL) {
+        mp_number sx, sy;
         mp_new_number_clone(sx, mp->tx);
         mp_new_number_clone(sy, mp->ty);
         mp_set_number_to_zero(mp->tx);
@@ -26630,7 +26649,6 @@ controlling application). It accepts two |char *|'s, even for numeric assignment
 void mp_set_internal(MP mp, char *n, char *v, int isstring)
 {
     size_t l = strlen(n);
-    char err[256];
     const char *errid = NULL;
     if (l > 0) {
         mp_symbol p = mp_id_lookup(mp, n, l, 0);
@@ -26655,6 +26673,7 @@ void mp_set_internal(MP mp, char *n, char *v, int isstring)
         }
     }
     if (errid != NULL) {
+        char err[256];
         if (isstring) {
             snprintf(err, 256, "%s=\"%s\": %s, assignment ignored.", n, v, errid);
         } else {
@@ -27293,9 +27312,12 @@ static inline unsigned char mp_valid_byte(int value) /* todo */
     }
 }
 
+// integer approximation (299*256/1000 ≈ 77, 587*256/1000 ≈ 150, 114*256/1000 ≈ 29)
+
 static inline int mp_aux_weighted(int r, int g, int b) /* todo */
 {
-    return round(0.299 * r + 0.587 * g + 0.114 * b);
+ // return round(0.299 * r + 0.587 * g + 0.114 * b);
+    return (77 * r + 150 * g + 29 * b + 128) >> 8;
 }
 
 static inline int mp_aux_bytemap_get_byte(MP mp, bytemap_data *bytemap, mp_number *source) /* todo */
@@ -27493,6 +27515,7 @@ static void mp_bytemap_new(MP mp) /* todo */
                                 }
                             }
                         }
+                        break;
                     default:
                         break;
                 }
@@ -27784,6 +27807,7 @@ static void mp_bytemap_path(MP mp, mp_node p, int c) /* no need */
                     /* what to do */
                 }
             }
+            break;
         default:
             /* error */
             break;
@@ -27821,6 +27845,7 @@ static void mp_bytemap_bounds(MP mp, mp_node p, int c, int clip) /* done */
                     mp_make_bounding_box(mp);
                 }
             }
+            break;
         default:
             /* error */
             break;
@@ -28575,6 +28600,7 @@ void mp_scan_with_list(MP mp, mp_node p, mp_node pstop)
     mp_node sp = MP_VOID;
     mp_node spstop = MP_VOID;
     mp_number ml;
+    int stacking_set = 0;
     int miterlimit = 0;
     int linecap = -1;
     int linejoin = -1;
@@ -28881,6 +28907,7 @@ void mp_scan_with_list(MP mp, mp_node p, mp_node pstop)
                             }
                             /* free ? */
                             cur_exp_type = mp_vacuous_type;
+                            stacking_set = 1;
                         }
                         break;
                     case mp_pair_type:
@@ -28900,6 +28927,7 @@ void mp_scan_with_list(MP mp, mp_node p, mp_node pstop)
                                 }
                                 /* free ? */
                                 cur_exp_type = mp_vacuous_type;
+                                stacking_set = 1;
                             } else {
                                 complain_invalid_with_list(mp, t);
                                 goto CONTINUE;
@@ -29153,7 +29181,7 @@ void mp_scan_with_list(MP mp, mp_node p, mp_node pstop)
             q = q->link;
         }
     }
-    if (mesh >= 0 ) {
+    if (mesh >= 0) {
         mp_node q = p;
         while (q != NULL) {
             switch (q->type) {
@@ -29164,6 +29192,20 @@ void mp_scan_with_list(MP mp, mp_node p, mp_node pstop)
                 default:
                     break;
             }
+            q = q->link;
+        }
+    }
+    if (stacking_set) {
+     // if (! pp && sp > MP_VOID) {
+     //     mp_node q = sp->link;
+     //     while (q != NULL) {
+     //         mp_stacking(q) = mp_stacking(sp);
+     //         q = q->link;
+     //     }
+     // }
+        mp_node q = p;
+        while (q != NULL) {
+            mp_stacking(q) = mp_stacking(sp);
             q = q->link;
         }
     }
@@ -29178,13 +29220,6 @@ void mp_scan_with_list(MP mp, mp_node p, mp_node pstop)
                 default:
                     break;
             }
-            q = q->link;
-        }
-    }
-    if (! pp && sp > MP_VOID) {
-        mp_node q = sp->link;
-        while (q != NULL) {
-            mp_stacking(q) = mp_stacking(sp);
             q = q->link;
         }
     }
@@ -30018,7 +30053,6 @@ static mp_dash_object_node mp_export_dashes(MP mp, mp_shape_node q, mp_number *w
         mp_number scf; /* scale factor */
         mp_number dashoff;
         double *dashes = NULL;
-        int num_dashes = 1;
         mp_new_number(scf);
         p = mp_get_dash_list(h);
         mp_get_pen_scale(mp, &scf, mp_pen_ptr(q));
@@ -30040,6 +30074,7 @@ static mp_dash_object_node mp_export_dashes(MP mp, mp_shape_node q, mp_number *w
         d = mp_new_dash_object_node(mp);
         mp_set_number_from_addition(mp->null_dash->start_x, p->start_x, h->dash_y);
         {
+            int num_dashes = 1;
             mp_number ret, arg1;
             mp_new_number(ret);
             mp_new_number(arg1);
@@ -30700,34 +30735,14 @@ void mp_push_path_value(MP mp, mp_knot k)
     mp_back_expr(mp);
 }
 
-// void mp_push_tokens_value(MP mp, const char *str, size_t length)
-// {
-//     /*tex
-//         THIS IS NOT YET OKAY AND NOT TO BE USED.
-//     */
-//     if (str && length > 0) {
-//         printf("push tokens is not yet implemented\n");
-//
-// //      mp_check_script_result(mp, (char *) str);
-//
-// //        cur_exp_type = mp_string_type;
-// //        mp_set_cur_exp_str(mp, mp_rtsl(mp, (char *) str, length));
-// //        mp_back_expr(mp);
-// //
-// //        set_cur_cmd(mp_scan_tokens_command);
-// //        mp_back_input(mp);
-//
-// //        mp_node p = mp_new_symbolic_node(mp);
-// //        mp_set_sym_sym(p, cur_sym);
-// //        mp_begin_token_list(mp, p, mp_backed_up_text);
-// //        /* */
-// //        set_cur_cmd(mp_scan_tokens_command);
-// //        set_cur_mod(0);
-// //        set_cur_sym(NULL);
-// //        mp_back_input(mp);
-// //        /* */
-//     }
-// }
+void mp_push_tokens_value(MP mp, const char *str, size_t length)
+{
+    (void) mp;
+    if (str && length > 0) {
+        printf("push tokens is not yet implemented\n");
+     // mp_check_script_result(mp, (char *) str);
+    }
+}
 
 /*tex
 
@@ -32471,6 +32486,7 @@ static void mp_initialize_primitives(MP mp)
     mp_primitive(mp, mp_origin_luametatex, mp_legacy_unset,    "pathxpart",             mp_nullary_command,          mp_path_xpart_operation);
     mp_primitive(mp, mp_origin_luametatex, mp_legacy_unset,    "pathypart",             mp_nullary_command,          mp_path_ypart_operation);
     mp_primitive(mp, mp_origin_luatex,     mp_legacy_unset,    "mpversion",             mp_nullary_command,          mp_version_operation);
+    mp_primitive(mp, mp_origin_luametatex, mp_legacy_unset,    "iteratorindex",         mp_nullary_command,          mp_iterator_index_operation);
 
     mp_primitive(mp, mp_origin_metapost,   mp_legacy_unset,    "readfrom",              mp_unary_command,            mp_read_from_operation);
     mp_primitive(mp, mp_origin_metapost,   mp_legacy_unset,    "closefrom",             mp_unary_command,            mp_close_from_operation);
@@ -32553,6 +32569,7 @@ static void mp_initialize_primitives(MP mp)
     mp_primitive(mp, mp_origin_luametatex, mp_legacy_unset,    "deltadirection",        mp_unary_command,            mp_delta_direction_operation);
     mp_primitive(mp, mp_origin_luametatex, mp_legacy_unset,    "deltaunitdirection",    mp_unary_command,            mp_delta_unit_direction_operation);
     mp_primitive(mp, mp_origin_luametatex, mp_legacy_unset,    "deltaarclength",        mp_unary_command,            mp_delta_arclength_operation);
+    mp_primitive(mp, mp_origin_luametatex, mp_legacy_unset,    "deltaiteratorindex",    mp_unary_command,            mp_delta_iterator_index_operation);
     mp_primitive(mp, mp_origin_metapost,   mp_legacy_unset,    "arclength",             mp_unary_command,            mp_arc_length_operation);
     mp_primitive(mp, mp_origin_metapost,   mp_legacy_unset,    "angle",                 mp_unary_command,            mp_angle_operation);
     mp_primitive(mp, mp_origin_metapost,   mp_legacy_unset,    "stroked",               mp_unary_command,            mp_stroked_operation);

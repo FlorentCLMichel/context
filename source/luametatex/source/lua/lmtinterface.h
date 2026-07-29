@@ -43,6 +43,7 @@ typedef enum lua_node_errors {
 
 typedef struct lua_state_info {
     lua_State   *lua_instance;
+    lua_State   *mps_instance;
     int          used_bytes;
     int          used_bytes_max;
     int          function_table_id;
@@ -95,6 +96,7 @@ extern int  luaopen_qrcodegen   (lua_State *L);
 extern int  luaopen_nanojpeg    (lua_State *L);
 extern int  luaopen_effects     (lua_State *L);
 extern int  luaopen_bytemap     (lua_State *L);
+extern int  luaopen_kdtree      (lua_State *L);
 extern int  luaopen_sha2        (lua_State *L);
 extern int  luaopen_sio         (lua_State *L);
 extern int  luaopen_socket_core (lua_State *L);
@@ -301,6 +303,7 @@ extern int  luaextend_xcomplex  (lua_State *L);
 # define VECTOR_METATABLE_INSTANCE   "vector"
 # define POINT_METATABLE_INSTANCE    "point"
 # define POINTS_METATABLE_INSTANCE   "points"
+# define NORMALS_METATABLE_INSTANCE  "normals"
 # define MESH_METATABLE_INSTANCE     "mesh"
 # define ZBUFFER_METATABLE_INSTANCE  "zbuffer"
 # define ZENTRY_METATABLE_INSTANCE   "zbuffer"
@@ -310,6 +313,7 @@ extern int  luaextend_xcomplex  (lua_State *L);
 # define BYTEMAP_METATABLE_INSTANCE  "bytemap"
 # define SERIAL_METATABLE_INSTANCE   "serial"
 # define INTERVAL_METATABLE_INSTANCE "interval"
+# define KDTREE_METATABLE_INSTANCE   "kdtree"
 
 /*tex Directory scanner in |lmtfilelib|  */
 
@@ -1100,6 +1104,7 @@ make_lua_key(L, NoLimitSupFactor);\
 make_lua_key(L, nomath);\
 make_lua_key(L, none);\
 make_lua_key(L, normal);\
+make_lua_key(L, normals);\
 make_lua_key(L, norule);\
 make_lua_key(L, nucleus);\
 make_lua_key(L, number);\
@@ -1593,10 +1598,11 @@ make_lua_key_alias(L, pdfe_stream_instance,     PDFE_METATABLE_STREAM);\
 make_lua_key_alias(L, pdfe_reference_instance,  PDFE_METATABLE_REFERENCE);\
 /* */ \
 make_lua_key_alias(L, bitset_instance,          BITSET_METATABLE_INSTANCE);\
-/* */ \
+make_lua_key_alias(L, kdtree_instance,          KDTREE_METATABLE_INSTANCE);\
 make_lua_key_alias(L, vector_instance,          VECTOR_METATABLE_INSTANCE);\
 make_lua_key_alias(L, point_instance,           POINT_METATABLE_INSTANCE);\
 make_lua_key_alias(L, points_instance,          POINTS_METATABLE_INSTANCE);\
+make_lua_key_alias(L, normals_instance,         NORMALS_METATABLE_INSTANCE);\
 make_lua_key_alias(L, mesh_instance,            MESH_METATABLE_INSTANCE);\
 make_lua_key_alias(L, zbuffer_instance,         ZBUFFER_METATABLE_INSTANCE);\
 make_lua_key_alias(L, zentry_instance,          ZENTRY_METATABLE_INSTANCE);\

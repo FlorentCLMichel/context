@@ -130,7 +130,7 @@ void tex_expand_current_token(void)
 {
     ++lmt_expand_state.depth;
     if (lmt_expand_state.depth > lmt_expand_state.limits.top) {
-        if (lmt_expand_state.depth >= lmt_expand_state.limits.size) {
+        if lmt_unlikely(lmt_expand_state.depth >= lmt_expand_state.limits.size) {
             tex_overflow_error("expansion depth", lmt_expand_state.limits.size);
         } else {
             lmt_expand_state.limits.top += 1;
@@ -540,7 +540,7 @@ void tex_expand_current_token(void)
                         break;
                     }
                 case lua_call_cmd:
-                    if (code > 0) {
+                    if lmt_likely(code > 0) {
                         strnumber u = tex_save_cur_string();
                         lmt_token_state.luacstrings = 0;
                         lmt_function_call(code, 0);
@@ -553,13 +553,13 @@ void tex_expand_current_token(void)
                     }
                     break;
                 case lua_local_call_cmd:
-                    if (code > 0) {
+                    if lmt_likely(code > 0) {
                         lua_State *L = lmt_lua_state.lua_instance;
                         strnumber u = tex_save_cur_string();
                         lmt_token_state.luacstrings = 0;
                         /* todo: use a private table as we can overflow, unless we register early */
                         lua_rawgeti(L, LUA_REGISTRYINDEX, code);
-                        if (lua_pcall(L, 0, 0, 0)) {
+                        if lmt_unlikely(lua_pcall(L, 0, 0, 0)) {
                             tex_formatted_warning("luacall", "local call error: %s", lua_tostring(L, -1));
                         } else {
                             tex_restore_cur_string(u);
@@ -1515,6 +1515,7 @@ static void tex_aux_macro_call(halfword cs, halfword cmd, halfword chr)
                         goto AGAIN;
                     case gobble_more_match_token:
                         gobblemore = true;
+                        FALLTHROUGH
                     case gobble_match_token:
                         matchpointer = token_link(matchpointer);
                         gobbletoken = token_info(matchpointer);
@@ -1787,24 +1788,7 @@ case integer_match_token:
                 if (match) {
                     p = tex_store_new_token(p, cur_tok);
                 }
-            } else if (cur_tok < right_brace_limit) {
-                /*tex Report an extra right brace and |goto continue|. */
-                tex_back_input(cur_tok);
-                /* moved up: */
-                ++lmt_input_state.align_state;
-                tex_insert_paragraph_token();
-                /* till here */
-                tex_handle_error(
-                    insert_error_type,
-                    "Argument of %S has an extra }",
-                    lmt_input_state.warning_index,
-                    "I've run across a '}' that doesn't seem to match anything. For example,\n"
-                    "'\\def\\a#1{...}' and '\\a}' would produce this error. The '\\par' that I've just\n"
-                    "inserted will cause me to report a runaway argument that might be the root of the\n"
-                    "problem." );
-                goto CONTINUE;
-                /*tex A white lie; the |\par| won't always trigger a runaway. */
-            } else {
+            } else if (cur_tok >= right_brace_limit) {
                 /*tex
                     Store the current token, but |goto continue| if it is a blank space that would
                     become an undelimited parameter.
@@ -1851,6 +1835,23 @@ case integer_match_token:
                         p = tex_store_new_token(p, cur_tok);
                     }
                 }
+            } else {
+                /*tex Report an extra right brace and |goto continue|. */
+                tex_back_input(cur_tok);
+                /* moved up: */
+                ++lmt_input_state.align_state;
+                tex_insert_paragraph_token();
+                /* till here */
+                tex_handle_error(
+                    insert_error_type,
+                    "Argument of %S has an extra }",
+                    lmt_input_state.warning_index,
+                    "I've run across a '}' that doesn't seem to match anything. For example,\n"
+                    "'\\def\\a#1{...}' and '\\a}' would produce this error. The '\\par' that I've just\n"
+                    "inserted will cause me to report a runaway argument that might be the root of the\n"
+                    "problem." );
+                goto CONTINUE;
+                /*tex A white lie; the |\par| won't always trigger a runaway. */
             }
             ++count;
             if (matchtoken > end_match_token || matchtoken < match_token) {

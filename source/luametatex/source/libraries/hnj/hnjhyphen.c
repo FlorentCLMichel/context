@@ -163,7 +163,11 @@ static void delete_hashiterator(hjn_hashiterator *i)
     hnj_free(i);
 }
 
-/*tex A |char*| hash function from ASU, adapted from |Gtk+|: */
+/*tex A |char*| hash function from ASU: */
+
+/*
+
+// When I asked gemini, this fix was suggested (was a bug):
 
 static unsigned int string_hash(const unsigned char *s)
 {
@@ -173,9 +177,54 @@ static unsigned int string_hash(const unsigned char *s)
         h = (h << 4) + *p;
         g = h & 0xf0000000;
         if (g) {
-            h = h ^ (g >> 24);
-            h = h ^ g;
+            h ^= (g >> 24); // fold top 4 bits down into bits 4-7
+         // h = h ^ g;      // LuaTeX: wrong, basically cripples it
+            h &= ~g;        // clear the top 4 bits (since g ^ g == 0)
         }
+    }
+    return h;
+}
+
+// Then, when discussing luatex, Luigi got this one:
+
+static unsigned int hnj_string_hash(const unsigned char *s)
+{
+    unsigned int h = 0;
+    while (*s) {
+        // By applying the bitwise operations unconditionally, we remove the if-statement and
+        // avoid branch prediction penalties. If g is 0, these operations safely do nothing.
+        h = (h << 4) + *s++;
+        unsigned int g = h & 0xF0000000;
+        h ^= g >> 24;
+        h &= ~g;
+    }
+    return h;
+}
+
+// So overall pretty unreliable because who says it won't come with the original bad one.
+
+// But anyway, we can also do this:
+
+*/
+
+/*
+
+static unsigned int string_hash(const unsigned char *s) // djb2a
+{
+    unsigned int h = 5381;
+    for (; *s != '\0'; s++) {
+        h = ((h << 5) + h) + *s; // h * 33 + *s
+    }
+    return h;
+}
+
+*/
+
+static unsigned int string_hash(const unsigned char *s) // djb2a
+{
+    unsigned int h = 5381;
+    while (*s) {
+        h = ((h << 5) + h) + *s++; // h * 33 + *s
     }
     return h;
 }

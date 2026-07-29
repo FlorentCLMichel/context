@@ -12,15 +12,15 @@ typedef struct bitset {
 
 static bitset *bitsetlib_aux_check_is_valid(lua_State *L, int n)
 {
-    bitset *o = (bitset *) lua_touserdata(L, n);
-    if (o && lua_getmetatable(L, n)) {
+    bitset *b = (bitset *) lua_touserdata(L, n);
+    if (b && lua_getmetatable(L, n)) {
         lua_get_metatablelua(bitset_instance);
         if (! lua_rawequal(L, -1, -2)) {
-            o = NULL;
+            b = NULL;
         }
         lua_pop(L, 2);
-        if (o) {
-            return o;
+        if (b) {
+            return b;
         }
     }
     tex_normal_warning("bitset lib", "lua <bitset> expected");
@@ -30,18 +30,19 @@ static bitset *bitsetlib_aux_check_is_valid(lua_State *L, int n)
 static int bitsetlib_new(lua_State *L)
 {
     int max = lmt_optinteger(L, 1, 64);
-    bitset *b = lua_newuserdatauv(L, sizeof(bitset) + (max + 1) / 8, 0);
+    bitset *b = lua_newuserdatauv(L, sizeof(bitset) + max/8 + 1, 0);
     if (b) {
         luaL_setmetatable(L, BITSET_METATABLE_INSTANCE);
         b->max = max;
-        memset(&(b->set[0]), 0, (max + 1) / 8);
+        memset(&(b->set[0]), 0, max/8 + 1);
         return 1;
     } else {
         return 0;
     }
 }
 
-static int bitsetlib_tostring(lua_State *L) {
+static int bitsetlib_tostring(lua_State *L)
+{
     bitset *b = bitsetlib_aux_check_is_valid(L, 1);
     if (b) {
         lua_pushfstring(L, "<bitset %p : %d>", b->set, b->max);
@@ -57,7 +58,7 @@ static int bitsetlib_set(lua_State *L)
     if (b) {
         int i = lmt_tointeger(L, 2);
         if (i > 0 && i <= b->max) {
-            b->set[i/8] += 1 << (i % 8); // |
+            b->set[i/8] |= 1 << (i % 8);
         }
     }
     return 0;
@@ -92,7 +93,7 @@ static int bitsetlib_wipe(lua_State *L)
 {
     bitset *b = bitsetlib_aux_check_is_valid(L, 1);
     if (b) {
-        memset(&(b->set[0]), 0, (b->max + 1) / 8);
+        memset(&(b->set[0]), 0, b->max/8 + 1);
     }
     return 0;
 }

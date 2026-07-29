@@ -276,3 +276,16 @@ end
 function metapost.filter(name)
     return name and filters[name or "default"]
 end
+
+local pointsets = { }
+
+function metapost.registerpointset(specification)
+    local name = specification.name
+    if name then
+        pointsets[name] = specification.points
+    end
+end
+
+function metapost.pointset(name)
+    return name and pointsets[name or "default"]
+end

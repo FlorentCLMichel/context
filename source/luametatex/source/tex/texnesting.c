@@ -180,7 +180,7 @@ void tex_initialize_nest_state(void)
 {
     int size = lmt_nest_state.nest_data.minimum;
     lmt_nest_state.nest = aux_allocate_clear_array(sizeof(list_state_record), size, reserved_nest_slots);
-    if (lmt_nest_state.nest) {
+    if lmt_likely(lmt_nest_state.nest) {
         lmt_nest_state.nest_data.allocated = size;
     } else {
         tex_overflow_error("nest", size);
@@ -192,7 +192,7 @@ static int tex_aux_room_on_nest_stack(void) /* quite similar to save_stack check
     int top = lmt_nest_state.nest_data.ptr;
     if (top > lmt_nest_state.nest_data.top) {
         lmt_nest_state.nest_data.top = top;
-        if (top > lmt_nest_state.nest_data.allocated) {
+        if lmt_unlikely(top > lmt_nest_state.nest_data.allocated) {
             list_state_record *tmp = NULL;
             top = lmt_nest_state.nest_data.allocated + lmt_nest_state.nest_data.step;
             if (top > lmt_nest_state.nest_data.size) {
@@ -319,7 +319,7 @@ void tex_push_nest(void)
     lmt_nest_state.nest_data.ptr += 1;
  // lmt_nest_state.shown_mode = 0; // needs checking 
     lmt_nest_state.math_mode = 0;
-    if (tex_aux_room_on_nest_stack()) {
+    if lmt_likely(tex_aux_room_on_nest_stack()) {
 # if 1
         cur_list.mode              = top->mode;
         cur_list.head              = tex_new_temp_node();
@@ -371,7 +371,7 @@ void tex_push_nest(void)
         cur_list.head = tex_new_temp_node(),
         cur_list.tail = cur_list.head;
 # endif
-    tex_aux_nesting_reset_state();
+        tex_aux_nesting_reset_state();
     } else {
         tex_overflow_error("semantic nest size", lmt_nest_state.nest_data.size);
     }
@@ -728,7 +728,7 @@ static void tex_aux_reset_mvl(int i)
 void tex_initialize_mvl_state(void)
 {
     list_state_record *tmp = aux_allocate_clear_array(sizeof(list_state_record), lmt_mvl_state.mvl_data.minimum, 1);
-    if (tmp) {
+    if lmt_likely(tmp) {
         lmt_mvl_state.mvl = tmp;
         lmt_mvl_state.mvl_data.allocated = lmt_mvl_state.mvl_data.minimum;
         lmt_mvl_state.mvl_data.top = lmt_mvl_state.mvl_data.minimum;

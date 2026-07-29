@@ -66,9 +66,9 @@ void * vectorlib_memory_realloc(void *p, size_t n, size_t m)
     if (q) {
      // printf("R + %i\n",(int) m);
         memoryused += m;
+     // printf("R - %i\n",(int) n);
+        memoryused -= n;
     }
- // printf("R - %i\n",(int) n);
-    memoryused -= n;
     return q;
 }
 
@@ -91,7 +91,7 @@ void vectorlib_memory_free(void * p, size_t n)
     }
 }
 
-static const char *mesh_names[triangle_7_mesh_type+1] = {
+static const char *mesh_names[triangle_7_mesh_type + 1] = {
     [no_mesh_type]         = "no",
     [dot_mesh_type]        = "dot",
     [line_mesh_type]       = "line",
@@ -100,13 +100,13 @@ static const char *mesh_names[triangle_7_mesh_type+1] = {
     /* these are virtual that is: point indices calculated on demand */
     [triangle_5_mesh_type] = "triangle type 5",
     [triangle_6_mesh_type] = "triangle type 6",
-    [triangle_7_mesh_type] = "triangle type 7"
+    [triangle_7_mesh_type] = "triangle type 7",
 };
 
 static int vectorlib_mesh_gettypevalues(lua_State *L)
 {
-    lua_createtable(L, 2, 5);
-    for (int i = no_mesh_type; i < triangle_7_mesh_type; i++) {
+    lua_createtable(L, 7, 1);
+    for (int i = no_mesh_type; i <= triangle_7_mesh_type; i++) {
         lua_set_string_by_index(L, i, mesh_names[i]);
     }
     return 1;
@@ -328,7 +328,8 @@ static int vectorlib_new(lua_State *L)
                         }
                         if (t > 1) {
                             for (int i = t; i < v->size; i += t) {
-                                memcpy(&(v->data[i]), v->data, sizeof(double) * t);
+                                int n = v->size - i;
+                                memcpy(&(v->data[i]), v->data, sizeof(double) * (n < t ? n : t));
                             }
                         }
                     } else {
@@ -1121,7 +1122,7 @@ static int vectorlib_aux_determinant(lua_State *L, int singular, double *d, doub
                 always catch is. We also have this issue in \METAPOST\ double mode. A |-d == 0.0| is more
                 reliable than a |d == -0.0| test it seems.
             */
-         // if (-d == 0.0) {
+         // if (d == 0.0) {
          //     d = 0.0;
          // }
           DONE:
@@ -1426,12 +1427,12 @@ static int vectorlib_homogenize(lua_State *L)
             vector v = vectorlib_aux_push(L, a->rows, a->columns, a->stacking);
             for (int r = 0; r < a->rows; r++) {
                 double d = a->data[r * a->columns + a->columns - 1];
-                long target = r * a->columns;
-                long source = r * a->columns;
+                long index = r * a->columns;
                 for (int c = 0; c < a->columns - 1; c++) {
-                    v->data[target++] = a->data[source++] / d;
+                    v->data[index] = a->data[index] / d;
+                    index++;
                 }
-                v->data[target] = 1.0;
+                v->data[index] = 1.0;
             }
             return 1;
         }
@@ -1869,7 +1870,9 @@ static inline void vectorlib_mesh_wipe_entry(mesh m, int index)
     for (int i = 0; i < m->dimension; i++) {
         m->points[n++] = 0;
     }
-    m->average[index] = 0;
+    if (m->average) {
+        m->average[index] = 0;
+    }
 }
 
 void vectorlib_mesh_aux_get_points(const mesh triangles, int index, int t[3])
@@ -2020,7 +2023,7 @@ static inline mesh vectorlib_mesh_aux_push(lua_State *L, int rows, int type)
         m->rows = rows;
         m->columns = 0;
         m->index = 0;
-        if (virtual_mesh_type(m->type)) {
+        if (is_virtual_mesh_type(m->type)) {
             m->dimension = 0;
             m->points = NULL;
             m->average = NULL;
@@ -2030,8 +2033,8 @@ static inline mesh vectorlib_mesh_aux_push(lua_State *L, int rows, int type)
             m->dimension = m->type;
             m->pointsbytes = m->rows * m->dimension * sizeof(unsigned);
             m->averagebytes = m->rows * sizeof(double);
-            m->points = vectorlib_memory_malloc(m->pointsbytes);
-            m->average = vectorlib_memory_malloc(m->averagebytes);
+            m->points = vectorlib_memory_calloc(m->rows * m->dimension, sizeof(unsigned));
+            m->average = vectorlib_memory_calloc(m->rows, sizeof(double));
         }
         lua_get_metatablelua(mesh_instance);
         lua_setmetatable(L, -2);
@@ -2045,11 +2048,6 @@ static int vectorlib_mesh_new(lua_State *L)
     int type = lmt_optinteger(L, 2, triangle_mesh_type);
     mesh m = vectorlib_mesh_aux_push(L, rows, type);
     if (m) {
-        if (m->dimension) {
-            for (int i = 0; i < m->rows; i++) {
-                vectorlib_mesh_wipe_entry(m, i);
-            }
-        }
         return 1;
     } else {
         return 0;
@@ -2144,30 +2142,36 @@ static int vectorlib_mesh_totable(lua_State *L)
                 }
             case triangle_mesh_type:
             case quad_mesh_type:
-                if (m->points && m->average) {
+                if (m->points) {
+                    int max = lua_toboolean(L, 3) ? m->index : m->size;
                     long target = 1;
                     int n = 0;
+                    int a = m->average ? 1 : 0;
                     if (lua_toboolean(L, 2)) {
-                        lua_createtable(L, m->size * (m->dimension + 1), 0);
-                        for (int r = 0; r < m->size; r++) {
+                        lua_createtable(L, max * (m->dimension + a), 0);
+                        for (int r = 0; r < max; r++) {
                             for (int i = 0; i < m->dimension; i++) {
                                 lua_pushinteger(L, m->points[n++]);
                                 lua_rawseti(L, -2, target++);
                             }
-                            lua_pushnumber(L, m->average[r]);
-                            lua_rawseti(L, -2, target++);
+                            if (a) {
+                                lua_pushnumber(L, m->average[r]);
+                                lua_rawseti(L, -2, target++);
+                            }
                         }
                     } else {
-                        lua_createtable(L, m->size, 0);
-                        for (int r = 0; r < m->size; r++) {
+                        lua_createtable(L, max, 0);
+                        for (int r = 0; r < max; r++) {
                             long index = 1;
-                            lua_createtable(L, m->dimension + 1, 0);
+                            lua_createtable(L, m->dimension + a, 0);
                             for (int i = 0; i < m->dimension; i++) {
                                 lua_pushinteger(L, m->points[n++]);
                                 lua_rawseti(L, -2, index++);
                             }
-                            lua_pushnumber(L, m->average[r]);
-                            lua_rawseti(L, -2, index);
+                            if (a) {
+                                lua_pushnumber(L, m->average[r]);
+                                lua_rawseti(L, -2, index);
+                            }
                             lua_rawseti(L, -2, target++);
                         }
                     }
@@ -2204,6 +2208,32 @@ static int vectorlib_mesh_index(lua_State *L)
     return 0;
 }
 
+static int vectorlib_mesh_copyvalue(lua_State *L) /* better have a setaverage */
+{
+    mesh m = vectorlib_mesh_aux_get(L, 1);
+    if (m) {
+        int target = lmt_tointeger(L, 2) - 1;
+        if (target >= 0 && target < m->size) {
+            if (lua_type(L, 3) == LUA_TNUMBER) {
+                int source = lmt_tointeger(L, 3) - 1;
+                if (source >= 0 && source < m->size) {
+                    if (m->average) {
+                        m->average[target] = m->average[source];
+                    }
+                    source = source * m->dimension;
+                    target = target * m->dimension;
+                    for (int i = 0; i < m->dimension; i++) {
+                        m->points[target++] = m->points[source++];
+                    }
+                }
+            } else {
+                vectorlib_mesh_wipe_entry(m, target);
+            }
+        }
+    }
+    return 0;
+}
+
 static int vectorlib_mesh_getvalue(lua_State *L)
 {
     mesh m = vectorlib_mesh_aux_get(L, 1);
@@ -2231,24 +2261,31 @@ static int vectorlib_mesh_getvalue(lua_State *L)
                         }
                     }
                 default:
-                    if (m->points && m->average) {
+                    if (m->points) {
                         int n = index * m->dimension;
+                        int a = m->average ? 1 : 0;
                         if (lua_toboolean(L, 3)) {
                             long target = 1;
-                            lua_createtable(L, m->dimension + 1, 0);
+                            lua_createtable(L, m->dimension + a, 0);
                             for (int i = 0; i < m->dimension; i++) {
                                 lua_pushinteger(L, m->points[n++]);
                                 lua_rawseti(L, -2, target++);
                             }
-                            lua_pushnumber(L, m->average[index]);
-                            lua_rawseti(L, -2, target);
+                            if (a) {
+                                lua_pushnumber(L, m->average[index]);
+                                lua_rawseti(L, -2, target);
+                            }
                             return 1;
                         } else {
                             for (int i = 0; i < m->dimension; i++) {
                                 lua_pushinteger(L, m->points[n++]);
                             }
-                            lua_pushnumber(L, m->average[index]);
-                            return m->dimension + 1;
+                            if (a) {
+                                lua_pushnumber(L, m->average[index]);
+                                return m->dimension + 1;
+                            } else {
+                                return m->dimension;
+                            }
                         }
                     } else {
                         break;
@@ -2272,7 +2309,7 @@ static int vectorlib_mesh_setvalue(lua_State *L) /* better have a setaverage */
                     /* for now we silently ignore */
                     return 0;
                 default:
-                    if (m->points && m->average) {
+                    if (m->points) {
                         int n = index * m->dimension;
                         switch (lua_type(L, 3)) {
                             case LUA_TNUMBER:
@@ -2281,9 +2318,13 @@ static int vectorlib_mesh_setvalue(lua_State *L) /* better have a setaverage */
                                         for (int i = 0; i < m->dimension; i++) {
                                             m->points[n++] = vectorlib_valid_point(L, i + 3);
                                         }
-                                        m->average[index] = lua_tonumber(L, m->dimension + 3);
+                                        if (m->average) {
+                                            m->average[index] = lua_tonumber(L, m->dimension + 3);
+                                        }
                                     } else {
-                                        m->average[index] = lua_tonumber(L, 3);
+                                        if (m->average) {
+                                            m->average[index] = lua_tonumber(L, 3);
+                                        }
                                     }
                                     break;
                                 }
@@ -2294,9 +2335,11 @@ static int vectorlib_mesh_setvalue(lua_State *L) /* better have a setaverage */
                                         m->points[n++] = vectorlib_valid_point(L, -1);
                                         lua_pop(L, 1);
                                     }
-                                    lua_rawgeti(L, 3, m->dimension + 1);
-                                    m->average[index] = lua_tonumber(L, -1);
-                                    lua_pop(L, 1);
+                                    if (m->average) {
+                                        lua_rawgeti(L, 3, m->dimension + 1);
+                                        m->average[index] = lua_tonumber(L, -1);
+                                        lua_pop(L, 1);
+                                    }
                                     break;
                                 }
                         }
@@ -2309,10 +2352,35 @@ static int vectorlib_mesh_setvalue(lua_State *L) /* better have a setaverage */
     return 0;
 }
 
+static int vectorlib_mesh_getaverage(lua_State *L)
+{
+    mesh m = vectorlib_mesh_aux_get(L, 1);
+    if (m && m->average) {
+        int index = lmt_tointeger(L, 2) - 1;
+        if (index >= 0 && index < m->size) {
+            lua_pushnumber(L, m->average[index]);
+            return 1;
+        }
+    }
+    return 0;
+}
+
+static int vectorlib_mesh_setaverage(lua_State *L)
+{
+    mesh m = vectorlib_mesh_aux_get(L, 1);
+    if (m && m->average) {
+        int index = lmt_tointeger(L, 2) - 1;
+        if (index >= 0 && index < m->size) {
+            m->average[index] = lua_tonumber(L, 3);
+        }
+    }
+    return 0;
+}
+
 static int vectorlib_mesh_setnext(lua_State *L)
 {
     mesh m = vectorlib_mesh_aux_get(L, 1);
-    if (m && m->index < m->size) {
+    if (m) {
         switch (m->type) {
             case triangle_5_mesh_type:
             case triangle_6_mesh_type:
@@ -2324,7 +2392,7 @@ static int vectorlib_mesh_setnext(lua_State *L)
                 break;
             case triangle_mesh_type:
             case quad_mesh_type:
-                if (m->points && m->average) {
+                if (m->points && m->index < m->size) {
                     int n = m->index * m->dimension;
                     switch (lua_type(L, 2)) {
                         case LUA_TNUMBER:
@@ -2332,7 +2400,9 @@ static int vectorlib_mesh_setnext(lua_State *L)
                                 for (int i = 0; i < m->dimension; i++) {
                                     m->points[n++] = vectorlib_valid_point(L, i + 2);
                                 }
-                                m->average[m->index] = lua_tonumber(L, m->dimension + 2);
+                                if (m->average) {
+                                    m->average[m->index] = lua_tonumber(L, m->dimension + 2);
+                                }
                                 break;
                             }
                         case LUA_TTABLE:
@@ -2342,9 +2412,11 @@ static int vectorlib_mesh_setnext(lua_State *L)
                                     m->points[n++] = vectorlib_valid_point(L, -1);
                                     lua_pop(L, 1);
                                 }
-                                lua_rawgeti(L, 2, m->dimension + 1);
-                                m->average[m->index] = lua_tonumber(L, -1);
-                                lua_pop(L, 1);
+                                if (m->average) {
+                                    lua_rawgeti(L, 2, m->dimension + 1);
+                                    m->average[m->index] = lua_tonumber(L, -1);
+                                    lua_pop(L, 1);
+                                }
                                 break;
                             }
                     }
@@ -2396,7 +2468,7 @@ static int vectorlib_contour_aux_is_valid(lua_State *L, vector *v, mesh *l, cons
     *v = vectorlib_get(L, 1);
     if (vectorlib_contour_aux_okay(*v && (*v)->rows > 1 && (*v)->columns > 2, what, "point list expected (x,y,z,...)")) {
         *l = vectorlib_get_mesh(L, 2);
-        if (vectorlib_contour_aux_okay(*l && ! virtual_mesh_type((*l)->type), what, "no flat triangles meshes here (yet)")) {
+        if (vectorlib_contour_aux_okay(*l && ! is_virtual_mesh_type((*l)->type), what, "no flat triangles meshes here (yet)")) {
             if (vectorlib_contour_aux_okay(*l != NULL, what, "mesh list expected ((p1 .. pN),average)")) {
                 return 1;
             }
@@ -2954,15 +3026,17 @@ int vectorlib_contour_aux_makemesh(lua_State *L, int columns, int rows, int type
             case triangle_6_mesh_type:
             case triangle_7_mesh_type:
                 size *= 2;
-                /* fall through */
+                FALLTHROUGH
             case triangle_5_mesh_type:
                 {
-                    mesh m     = vectorlib_mesh_aux_push(L, 1, type); /* we need to pass the test */
-                    m->size    = size;
-                    m->type    = type;
-                    m->columns = columns;
-                    m->rows    = rows;
-                    return 1;
+                    mesh m  = vectorlib_mesh_aux_push(L, 1, type); /* we need to pass the test */
+                    if (m) {
+                        m->size    = size;
+                        m->type    = type;
+                        m->columns = columns;
+                        m->rows    = rows;
+                        return 1;
+                    }
                 }
             default:
                 /*tex We silently recover. */
@@ -2973,52 +3047,55 @@ int vectorlib_contour_aux_makemesh(lua_State *L, int columns, int rows, int type
         /*tex When we arrived here we're okay. */
         {
             mesh m = vectorlib_mesh_aux_push(L, size, type);
-            int index = 0;
-            int offset = columns + 1;
-            for (int r = 1; r <= rows; r++) {
-                for (int c = 1; c <= columns; c++) {
-                    int p1 = (r - 1) * offset + c; // left point of current row
-                    int p2 =  r      * offset + c; // left point of next row
-                    int p11 = p1 + 1;
-                    int p21 = p2 + 1;
-                    if (p11 > max_mesh || p21 > max_mesh) {
-                        /* we clip */
-                    } else {
-                        int n = index * m->dimension;
-                        switch (type) {
-                            case triangle_mesh_type:
-                                /* first */
-                                m->points[n++] = (unsigned int) p1;
-                                m->points[n++] = (unsigned int) p11;
-                                m->points[n++] = (unsigned int) p21;
-                                m->average[index++] = 0.0;
-                                /* second */
-                                m->points[n++] = (unsigned int) p1;
-                                m->points[n++] = (unsigned int) p21;
-                                m->points[n++] = (unsigned int) p2;
-                                m->average[index++] = 0.0;
-                                break;
-                            case quad_mesh_type:
-                                m->points[n++] = (unsigned int) p1;
-                                m->points[n++] = (unsigned int) p11;
-                                m->points[n++] = (unsigned int) p21;
-                                m->points[n++] = (unsigned int) p2;
-                                m->average[index++] = 0.0;
-                                break;
-                            case line_mesh_type:
-                                m->points[n++] = (unsigned int) p1;
-                                m->points[n++] = (unsigned int) p2;
-                                m->average[index++] = 0.0;
-                                break;
+            if (m) {
+                int index = 0;
+                int offset = columns + 1;
+                m->size = size;
+                for (int r = 1; r <= rows; r++) {
+                    for (int c = 1; c <= columns; c++) {
+                        int p1 = (r - 1) * offset + c; // left point of current row
+                        int p2 =  r      * offset + c; // left point of next row
+                        int p11 = p1 + 1;
+                        int p21 = p2 + 1;
+                        if (p11 > max_mesh || p21 > max_mesh) {
+                            /* we clip */
+                        } else {
+                            int n = index * m->dimension;
+                            switch (type) {
+                                case triangle_mesh_type:
+                                    /* first */
+                                    m->points[n++] = (unsigned int) p1;
+                                    m->points[n++] = (unsigned int) p11;
+                                    m->points[n++] = (unsigned int) p21;
+                                    m->average[index++] = 0.0;
+                                    /* second */
+                                    m->points[n++] = (unsigned int) p1;
+                                    m->points[n++] = (unsigned int) p21;
+                                    m->points[n++] = (unsigned int) p2;
+                                    m->average[index++] = 0.0;
+                                    break;
+                                case quad_mesh_type:
+                                    m->points[n++] = (unsigned int) p1;
+                                    m->points[n++] = (unsigned int) p11;
+                                    m->points[n++] = (unsigned int) p21;
+                                    m->points[n++] = (unsigned int) p2;
+                                    m->average[index++] = 0.0;
+                                    break;
+                                case line_mesh_type:
+                                    m->points[n++] = (unsigned int) p1;
+                                    m->points[n++] = (unsigned int) p2;
+                                    m->average[index++] = 0.0;
+                                    break;
+                            }
                         }
                     }
                 }
+                return 1;
             }
         }
-    } else {
-        /* message */
-        lua_pushnil(L);
     }
+    /* message */
+    lua_pushnil(L);
     return 1;
 
 }
@@ -3502,23 +3579,28 @@ static int vectorlib_point_normalize(lua_State *L)
 
 /* Points */
 
-points vectorlib_points_aux_push(lua_State *L, int r, int c, int wipe)
+points vectorlib_points_aux_push(lua_State *L, int r, int c, int type, int wipe, int step)
 {
     if (r < 1 || c < 1 || r > max_vector_rows || c > max_vector_columns || r * c > max_vector) {
-        tex_formatted_error("vector lib", "you can have %i rows, %i columns and at most %i entries, requested: %i x %i = %i", max_vector_rows, max_vector_columns, max_vector, r, c, r * c);
+        tex_formatted_error("vector lib", "you can have [1..%i] rows, [1..%i] columns and at most %i entries, requested: %i x %i = %i", max_vector_rows, max_vector_columns, max_vector, r, c, r * c);
         return NULL;
     } else {
         points p = lua_newuserdatauv(L, sizeof(pointsdata), 0);
         if (p) {
+            if (type < point_type_default || type > point_type_xy) {
+                type = point_type_default;
+            }
             p->rows     = r;
             p->columns  = c;
-            p->type     = points_type;
+            p->type     = type;
             p->stacking = 0;
             p->index    = 0;
             p->size     = r * c;
-            p->bytes    = p->size * sizeof(pointdata);
+            p->pool     = p->size + 3;
+            p->step     = step;
+            p->bytes    = p->pool * sizeof(pointdata);
             if (wipe) {
-                p->data = vectorlib_memory_calloc(p->size, sizeof(pointdata));
+                p->data = vectorlib_memory_calloc(p->pool, sizeof(pointdata));
             } else {
                 p->data = vectorlib_memory_malloc(p->bytes);
             }
@@ -3532,16 +3614,50 @@ points vectorlib_points_aux_push(lua_State *L, int r, int c, int wipe)
 int vectorlib_points_aux_grow(lua_State *L, points p, int step)
 {
     (void) L;
-    p->data = vectorlib_memory_realloc(p->data, p->size * sizeof(pointdata), (p->size + step) * sizeof(pointdata));
-    if (p->data) {
-     // memset(&(p->data[p->size+1]), 0, step * sizeof(pointdata));
-        p->size += step;
-        return 1;
-    } else {
-        p->size = 0;
-        p->index = 0;
-        return 0;
+    if (p && step > 0) {
+     // if (p->size + step + 3 <= p->pool) {
+        if (p->size + step <= p->pool) {
+            memset(&(p->data[p->size]), 0, step * sizeof(pointdata));
+            p->size += step;
+            return 1;
+        } else {
+            p->data = vectorlib_memory_realloc(p->data, p->bytes, (p->pool + step) * sizeof(pointdata));
+            if (p->data) {
+                memset(&(p->data[p->size]), 0, step * sizeof(pointdata));
+                p->pool  += step;
+                p->size  += step;
+                p->bytes += step * sizeof(pointdata);
+                return 1;
+            } else {
+                p->pool  = 0;
+                p->size  = 0;
+                p->index = 0;
+            }
+        }
     }
+    return 0;
+}
+
+int vectorlib_points_aux_prune(lua_State *L, points p, int step)
+{
+    (void) L;
+    if (p && step > 0) {
+        if (p->data) {
+            p->size -= step;
+            if (p->size < 0) {
+                p->index = 0;
+            }
+            if (p->index > p->size) {
+                p->index = p->size;
+            }
+            return 1;
+        } else {
+            p->pool  = 0;
+            p->size  = 0;
+            p->index = 0;
+        }
+    }
+    return 0;
 }
 
 /* public */
@@ -3550,9 +3666,10 @@ static int vectorlib_points_new(lua_State *L)
 {
     int rows    = lmt_optinteger(L, 1, 1);
     int columns = lmt_optinteger(L, 2, 1);
-    points p    = vectorlib_points_aux_push(L, rows, columns, 1);
+    int type    = lmt_optinteger(L, 3, point_type_default);
+    int step    = lmt_optinteger(L, 4, 0);
+    points p    = vectorlib_points_aux_push(L, rows, columns, type, 1, step);
     if (p) {
-     // memset(&(p->data[0]), 0, p->size * sizeof(pointdata));
         return 1;
     } else {
         return 0;
@@ -3587,11 +3704,17 @@ static int vectorlib_points_gc(lua_State *L)
     return 0;
 }
 
+static const char *point_names[point_type_xy + 1] = {
+    [point_type_default] = "xyz+n",
+    [point_type_xyz]     = "xyz",
+    [point_type_xy]      = "xy",
+};
+
 static int vectorlib_points_tostring(lua_State *L)
 {
     points p = vectorlib_points_aux_get(L, 1);
     if (p) {
-        lua_pushfstring(L, "<points %p : %d x %d>", p, p->rows, p->columns);
+        lua_pushfstring(L, "<points %p : %d x %d %s>", p, p->rows, p->columns, point_names[p->type]);
         return 1;
     } else {
         return 0;
@@ -3615,31 +3738,89 @@ static int vectorlib_points_getlength(lua_State *L)
     }
 }
 
+static int vectorlib_points_getindex(lua_State *L)
+{
+    points p = vectorlib_points_aux_get(L, 1);
+    if (p) {
+        lua_pushinteger(L, p->index);
+        return 1;
+    } else {
+        return 0;
+    }
+}
+
+static int vectorlib_points_setindex(lua_State *L)
+{
+    points p = vectorlib_points_aux_get(L, 1);
+    if (p) {
+        p->index = lmt_tointeger(L, 2);
+        if (p->index < 0) {
+            p->index = 0;
+        } else if (p->index > p->size) {
+            p->index = p->size;
+        }
+    }
+    return 0;
+}
+
+static int vectorlib_points_getpool(lua_State *L)
+{
+    points p = vectorlib_points_aux_get(L, 1);
+    if (p) {
+        lua_pushinteger(L, p->pool);
+        return 1;
+    } else {
+        return 0;
+    }
+}
+
+static int vectorlib_points_grow(lua_State *L)
+{
+    points p = vectorlib_points_aux_get(L, 1);
+    if (p) {
+        vectorlib_points_aux_grow(L, p, lmt_tointeger(L, 2));
+    }
+    return 0;
+}
+
+static int vectorlib_points_prune(lua_State *L)
+{
+    points p = vectorlib_points_aux_get(L, 1);
+    if (p) {
+        vectorlib_points_aux_prune(L, p, lmt_optinteger(L, 2, p->size - p->index));
+    }
+    return 0;
+}
+
 static inline int vectorlib_points_aux_set(lua_State *L, int index, points p, int idx)
 {
     switch (lua_type(L, index)) {
         case LUA_TTABLE:
             {
-                lua_rawgeti(L, index, 1); p->data[idx].x  = lua_tonumber(L, -1); lua_pop(L, 1);
-                lua_rawgeti(L, index, 2); p->data[idx].y  = lua_tonumber(L, -1); lua_pop(L, 1);
-                lua_rawgeti(L, index, 3); p->data[idx].z  = lua_tonumber(L, -1); lua_pop(L, 1);
-                lua_rawgeti(L, index, 4); p->data[idx].nx = lua_tonumber(L, -1); lua_pop(L, 1);
-                lua_rawgeti(L, index, 5); p->data[idx].ny = lua_tonumber(L, -1); lua_pop(L, 1);
-                lua_rawgeti(L, index, 6); p->data[idx].nz = lua_tonumber(L, -1); lua_pop(L, 1);
-             // lua_rawgeti(L, index, 7); p->data[idx].u  = lua_tonumber(L, -1); lua_pop(L, 1);
-             // lua_rawgeti(L, index, 8); p->data[idx].v  = lua_tonumber(L, -1); lua_pop(L, 1);
+                lua_rawgeti(L, index, 1); p->data[idx].x = lua_tonumber(L, -1); lua_pop(L, 1);
+                lua_rawgeti(L, index, 2); p->data[idx].y = lua_tonumber(L, -1); lua_pop(L, 1);
+                if (p->type != point_type_xy) {
+                    lua_rawgeti(L, index, 3); p->data[idx].z = lua_tonumber(L, -1); lua_pop(L, 1);
+                    if (p->type == point_type_default) {
+                        lua_rawgeti(L, index, 4); p->data[idx].nx = lua_tonumber(L, -1); lua_pop(L, 1);
+                        lua_rawgeti(L, index, 5); p->data[idx].ny = lua_tonumber(L, -1); lua_pop(L, 1);
+                        lua_rawgeti(L, index, 6); p->data[idx].nz = lua_tonumber(L, -1); lua_pop(L, 1);
+                    }
+                }
                 return 1;
             }
         case LUA_TNUMBER:
             {
-                p->data[idx].x  = lua_tonumber(L, index++);
-                p->data[idx].y  = lua_tonumber(L, index++);
-                p->data[idx].z  = lua_tonumber(L, index++);
-                p->data[idx].nx = lua_tonumber(L, index++);
-                p->data[idx].ny = lua_tonumber(L, index++);
-                p->data[idx].nz = lua_tonumber(L, index++);
-             // p->data[idx].u  = lua_tonumber(L, index++);
-             // p->data[idx].v  = lua_tonumber(L, index++);
+                p->data[idx].x = lua_tonumber(L, index++);
+                p->data[idx].y = lua_tonumber(L, index++);
+                if (p->type != point_type_xy) {
+                    p->data[idx].z = lua_tonumber(L, index++);
+                    if (p->type == point_type_default) {
+                        p->data[idx].nx = lua_tonumber(L, index++);
+                        p->data[idx].ny = lua_tonumber(L, index++);
+                        p->data[idx].nz = lua_tonumber(L, index++);
+                    }
+                }
                 return 1;
             }
         case LUA_TUSERDATA:
@@ -3658,7 +3839,26 @@ static inline int vectorlib_points_aux_set(lua_State *L, int index, points p, in
 static int vectorlib_points_setnext(lua_State *L)
 {
     points p = vectorlib_points_aux_get(L, 1);
-    if (p && p->index < p->size) {
+ // points p = lua_touserdata(L, 1);
+    if (p) {
+        if (p->index >= p->size) {
+            if (p->step > 0) {
+                size_t b = (p->size + p->step) * sizeof(pointdata);
+                p->data = vectorlib_memory_realloc(p->data, p->bytes, b);
+                if (p->data) {
+                    memset(&(p->data[p->size]), 0, p->step * sizeof(pointdata));
+                    p->size += p->step;
+                    p->bytes = b;
+                } else {
+                    p->size = 0;
+                    p->index = 0;
+                    p->bytes = 0;
+                    return 0;
+                }
+            } else {
+                return 0;
+            }
+        }
         if (vectorlib_points_aux_set(L, 2, p, p->index)) {
             p->index++;
         }
@@ -3677,22 +3877,51 @@ static int vectorlib_points_type(lua_State *L)
     return 1;
 }
 
+static int vectorlib_points_copy(lua_State *L)
+{
+    points p = vectorlib_points_aux_get(L, 1);
+    if (p) {
+        points c = lua_newuserdatauv(L, sizeof(pointsdata), 0);
+        if (c) {
+            int extra = lmt_optinteger(L, 2, 0);
+            memcpy(c, p, sizeof(pointsdata));
+            c->data = vectorlib_memory_calloc(p->pool + extra, sizeof(pointdata));
+            if (c->data) {
+                memcpy(c->data, p->data, p->bytes);
+                c->size += extra; /* so we can again use index */
+                c->pool += extra; /* so we can again use index */
+                c->bytes += extra * sizeof(pointdata);
+                lua_get_metatablelua(points_instance);
+                lua_setmetatable(L, -2);
+                return 1;
+            } else {
+                /* fatal error */
+            }
+        }
+    }
+    return 0;
+}
+
 static int vectorlib_points_totable(lua_State *L)
 {
     points p = vectorlib_points_aux_get(L, 1);
     if (p) {
-        lua_createtable(L, p->size, 0);
-        for (int n = 0; n < p->size; n++) {
+        int max = lua_toboolean(L, 2) ? p->index : p->size;
+        lua_createtable(L, max, 0);
+        for (int n = 0; n < max; n++) {
             int i = 1;
-            lua_createtable(L, 6, 0);
+            int s = (p->type == point_type_xy) ? 2 : ((p->type == point_type_xyz) ? 3 : 6);
+            lua_createtable(L, s, 0);
             lua_pushnumber(L, p->data[n].x);  lua_rawseti(L, -2, i++);
             lua_pushnumber(L, p->data[n].y);  lua_rawseti(L, -2, i++);
-            lua_pushnumber(L, p->data[n].z);  lua_rawseti(L, -2, i++);
-            lua_pushnumber(L, p->data[n].nx); lua_rawseti(L, -2, i++);
-            lua_pushnumber(L, p->data[n].ny); lua_rawseti(L, -2, i++);
-            lua_pushnumber(L, p->data[n].nz); lua_rawseti(L, -2, i++);
-        //  lua_pushnumber(L, p->data[n].u);  lua_rawseti(L, -2, i++);
-        //  lua_pushnumber(L, p->data[n].v);  lua_rawseti(L, -2, i  );
+            if (s > 2) {
+                lua_pushnumber(L, p->data[n].z);  lua_rawseti(L, -2, i++);
+                if (s > 3) {
+                    lua_pushnumber(L, p->data[n].nx); lua_rawseti(L, -2, i++);
+                    lua_pushnumber(L, p->data[n].ny); lua_rawseti(L, -2, i++);
+                    lua_pushnumber(L, p->data[n].nz); lua_rawseti(L, -2, i++);
+                }
+            }
             lua_rawseti(L, -2, n + 1);
         }
         return 1;
@@ -3708,13 +3937,46 @@ static int vectorlib_points_get(lua_State *L)
     if (p && n >= 0 && n < p->size) {
         lua_pushnumber(L, p->data[n].x);
         lua_pushnumber(L, p->data[n].y);
-        lua_pushnumber(L, p->data[n].z);
-        lua_pushnumber(L, p->data[n].nx);
-        lua_pushnumber(L, p->data[n].ny);
-        lua_pushnumber(L, p->data[n].nz);
-     // lua_pushnumber(L, p->data[n].u);
-     // lua_pushnumber(L, p->data[n].v);
-        return 6;
+        if (p->type == point_type_xy) {
+            return 2;
+        } else {
+            lua_pushnumber(L, p->data[n].z);
+            if (p->type == point_type_xyz) {
+                return 3;
+            } else {
+                lua_pushnumber(L, p->data[n].nx);
+                lua_pushnumber(L, p->data[n].ny);
+                lua_pushnumber(L, p->data[n].nz);
+                return 6;
+            }
+        }
+    } else {
+        return 0;
+    }
+}
+
+static int vectorlib_points_getxy(lua_State *L)
+{
+    points p = vectorlib_points_aux_get(L, 1);
+    int n = lmt_tointeger(L, 2) - 1;
+    if (p && n >= 0 && n < p->size) {
+        lua_pushnumber(L, p->data[n].x);
+        lua_pushnumber(L, p->data[n].y);
+        return 2;
+    } else {
+        return 0;
+    }
+}
+
+static int vectorlib_points_getxytable(lua_State *L)
+{
+    points p = vectorlib_points_aux_get(L, 1);
+    int n = lmt_tointeger(L, 2) - 1;
+    if (p && n >= 0 && n < p->size) {
+        lua_createtable(L, 2, 0);
+        lua_pushnumber(L, p->data[n].x); lua_rawseti(L, -2, 1);
+        lua_pushnumber(L, p->data[n].y); lua_rawseti(L, -2, 2);
+        return 1;
     } else {
         return 0;
     }
@@ -3734,32 +3996,35 @@ static int vectorlib_points_getxyz(lua_State *L)
     }
 }
 
-static int vectorlib_points_getnormal(lua_State *L)
+static int vectorlib_points_getxyztable(lua_State *L)
 {
     points p = vectorlib_points_aux_get(L, 1);
     int n = lmt_tointeger(L, 2) - 1;
     if (p && n >= 0 && n < p->size) {
-        lua_pushnumber(L, p->data[n].nx);
-        lua_pushnumber(L, p->data[n].ny);
-        lua_pushnumber(L, p->data[n].nz);
-        return 3;
+        lua_createtable(L, 3, 0);
+        lua_pushnumber(L, p->data[n].x); lua_rawseti(L, -2, 1);
+        lua_pushnumber(L, p->data[n].y); lua_rawseti(L, -2, 2);
+        lua_pushnumber(L, p->data[n].z); lua_rawseti(L, -2, 3);
+        return 1;
     } else {
         return 0;
     }
 }
 
-// static int vectorlib_points_getuv(lua_State *L)
-// {
-//     points p = vectorlib_points_aux_get(L, 1);
-//     int n = lmt_tointeger(L, 2) - 1;
-//     if (p && n >= 0 && n < p->size) {
-//         lua_pushnumber(L, p->data[n].u);
-//         lua_pushnumber(L, p->data[n].v);
-//         return 2;
-//     } else {
-//         return 0;
-//     }
-// }
+static int vectorlib_points_getnormal(lua_State *L)
+{
+    points p = vectorlib_points_aux_get(L, 1);
+    if (p && p->type == point_type_default) {
+        int n = lmt_tointeger(L, 2) - 1;
+        if (n >= 0 && n < p->size) {
+            lua_pushnumber(L, p->data[n].nx);
+            lua_pushnumber(L, p->data[n].ny);
+            lua_pushnumber(L, p->data[n].nz);
+            return 3;
+        }
+    }
+    return 0;
+}
 
 static int vectorlib_points_set(lua_State *L)
 {
@@ -3767,6 +4032,18 @@ static int vectorlib_points_set(lua_State *L)
     int n = lmt_tointeger(L, 2) - 1;
     if (p && n >= 0 && n < p->size) {
         vectorlib_points_aux_set(L, 3, p, n);
+    }
+    return 0;
+}
+
+static int vectorlib_points_setxy(lua_State *L)
+{
+    points p = vectorlib_points_aux_get(L, 1);
+    int n = lmt_tointeger(L, 2) - 1;
+    if (p && n >= 0 && n < p->size) {
+        p->data[n].x = lua_tonumber(L, 3);
+        p->data[n].y = lua_tonumber(L, 4);
+        p->data[n].z = 0;
     }
     return 0;
 }
@@ -3786,25 +4063,16 @@ static int vectorlib_points_setxyz(lua_State *L)
 static int vectorlib_points_setnormal(lua_State *L)
 {
     points p = vectorlib_points_aux_get(L, 1);
-    int n = lmt_tointeger(L, 2) - 1;
-    if (p && n >= 0 && n < p->size) {
-        p->data[n].nx = lua_tonumber(L, 3);
-        p->data[n].ny = lua_tonumber(L, 4);
-        p->data[n].nz = lua_tonumber(L, 5);
+    if (p && p->type == point_type_default) {
+        int n = lmt_tointeger(L, 2) - 1;
+        if (n >= 0 && n < p->size) {
+            p->data[n].nx = lua_tonumber(L, 3);
+            p->data[n].ny = lua_tonumber(L, 4);
+            p->data[n].nz = lua_tonumber(L, 5);
+        }
     }
     return 0;
 }
-
-// static int vectorlib_points_setuv(lua_State *L)
-// {
-//     points p = vectorlib_points_aux_get(L, 1);
-//     int n = lmt_tointeger(L, 2) - 1;
-//     if (p && n >= 0 && n < p->size) {
-//         p->data[n].u = lua_tonumber(L, 3);
-//         p->data[n].v = lua_tonumber(L, 4);
-//     }
-//     return 0;
-// }
 
 static int vectorlib_points_getbounds(lua_State *L)
 {
@@ -3871,6 +4139,276 @@ static int vectorlib_points_getbounds(lua_State *L)
     } else {
         return 0;
     }
+}
+
+static int vectorlib_points_gettriangle(lua_State *L)
+{
+    points p = vectorlib_points_aux_get(L, 1);
+    if (p) {
+        int a = lmt_tointeger(L, 2) - 1;
+        int b = lmt_tointeger(L, 3) - 1;
+        int c = lmt_tointeger(L, 4) - 1;
+        if (a >= 0 && a < p->size && b >= 0 && b < p->size && c >= 0 && c < p->size) {
+            double ux, uy, r2, d;
+            double ax = p->data[a].x;
+            double ay = p->data[a].y;
+            double bx = p->data[b].x;
+            double by = p->data[b].y;
+            double cx = p->data[c].x;
+            double cy = p->data[c].y;
+            double orientation = (bx - ax) * (cy - ay) - (by - ay) * (cx - ax);
+            if (orientation < 0) {
+                int t = b;
+                b = c;
+                c = t;
+                bx = p->data[b].x;
+                by = p->data[b].y;
+                cx = p->data[c].x;
+                cy = p->data[c].y;
+            }
+            d  = 2 * (ax * (by - cy) + bx * (cy - ay) + cx * (ay - by));
+            if (fabs(d) < 1e-30) {
+                ux = 0;
+                uy = 0;
+                r2 = INFINITY;
+            } else {
+                double dx, dy;
+                double ax2ay2 = ax * ax + ay * ay;
+                double bx2by2 = bx * bx + by * by;
+                double cx2cy2 = cx * cx + cy * cy;
+                ux = (ax2ay2 * (by - cy) + bx2by2 * (cy - ay) + cx2cy2 * (ay - by)) / d;
+                uy = (ax2ay2 * (cx - bx) + bx2by2 * (ax - cx) + cx2cy2 * (bx - ax)) / d;
+                dx = ux - ax;
+                dy = uy - ay;
+                r2 = dx * dx + dy * dy;
+            }
+            lua_createtable(L, 6, 0);
+            lua_pushinteger(L, a + 1); lua_rawseti(L, -2, 1);
+            lua_pushinteger(L, b + 1); lua_rawseti(L, -2, 2);
+            lua_pushinteger(L, c + 1); lua_rawseti(L, -2, 3);
+            lua_pushnumber(L, ux); lua_rawseti(L, -2, 4);
+            lua_pushnumber(L, uy); lua_rawseti(L, -2, 5);
+            lua_pushnumber(L, r2); lua_rawseti(L, -2, 6);
+            return 1;
+        }
+    }
+    return 0;
+}
+
+/* normals */
+
+normals vectorlib_normals_aux_push(lua_State *L, int s, int wipe)
+{
+    if (s < 1 || s > max_vector_rows) {
+        tex_formatted_error("vector lib", "you can have at most %i norm entries, requested: %i", max_vector_rows, s);
+        return NULL;
+    } else {
+        normals n = lua_newuserdatauv(L, sizeof(normalsdata), 0);
+        if (n) {
+            n->index = 0;
+            n->size  = s;
+            n->bytes = n->size * sizeof(normaldata);
+            if (wipe) {
+                n->data = vectorlib_memory_calloc(n->size, sizeof(normaldata));
+            } else {
+                n->data = vectorlib_memory_malloc(n->bytes);
+            }
+            lua_get_metatablelua(normals_instance);
+            lua_setmetatable(L, -2);
+        }
+        return n;
+    }
+}
+
+static int vectorlib_normals_new(lua_State *L)
+{
+    int size  = lmt_optinteger(L, 1, 1);
+    normals n = vectorlib_normals_aux_push(L, size, 1);
+    if (n) {
+     // memset(&(n->data[0]), 0, n->size * sizeof(normaldata));
+        return 1;
+    } else {
+        return 0;
+    }
+}
+
+normals vectorlib_normals_aux_get(lua_State *L, int index)
+{
+    normals n = lua_touserdata(L, index);
+    if (n && lua_getmetatable(L, index)) {
+        lua_get_metatablelua(normals_instance);
+        if (! lua_rawequal(L, -1, -2)) {
+            n = NULL;
+        }
+        lua_pop(L, 2);
+    }
+    return n;
+}
+
+static int vectorlib_normals_gc(lua_State *L)
+{
+    normals n = vectorlib_normals_aux_get(L, 1);
+    if (n && n->data) {
+        vectorlib_memory_free(n->data, n->bytes);
+        n->data  = NULL;
+        n->bytes = 0;
+        n->size  = 0;
+        n->index = 0;
+    }
+    return 0;
+}
+
+static int vectorlib_normals_tostring(lua_State *L)
+{
+    normals n = vectorlib_normals_aux_get(L, 1);
+    if (n) {
+        lua_pushfstring(L, "<normals %p : %d>", n, n->size);
+        return 1;
+    } else {
+        return 0;
+    }
+}
+
+static int vectorlib_normals_valid(lua_State *L)
+{
+    lua_pushboolean(L, vectorlib_normals_aux_get(L, 1) ? 1 : 0);
+    return 1;
+}
+
+static int vectorlib_normals_getlength(lua_State *L)
+{
+    normals n = vectorlib_normals_aux_get(L, 1);
+    if (n) {
+        lua_pushinteger(L, n->size);
+        return 1;
+    } else {
+        return 0;
+    }
+}
+
+static inline int vectorlib_normals_aux_set(lua_State *L, int index, normals n, int idx)
+{
+    switch (lua_type(L, index)) {
+        case LUA_TTABLE:
+            {
+                lua_rawgeti(L, index, 1); n->data[idx].x = lua_tonumber(L, -1); lua_pop(L, 1);
+                lua_rawgeti(L, index, 2); n->data[idx].y = lua_tonumber(L, -1); lua_pop(L, 1);
+                lua_rawgeti(L, index, 3); n->data[idx].z = lua_tonumber(L, -1); lua_pop(L, 1);
+                return 1;
+            }
+        case LUA_TNUMBER:
+            {
+                n->data[idx].x = lua_tonumber(L, index++);
+                n->data[idx].y = lua_tonumber(L, index++);
+                n->data[idx].z = lua_tonumber(L, index++);
+                return 1;
+            }
+        default:
+            return 0;
+    }
+}
+
+static int vectorlib_normals_setnext(lua_State *L)
+{
+    normals n = vectorlib_normals_aux_get(L, 1);
+    if (n && n->index < n->size) {
+        if (vectorlib_normals_aux_set(L, 2, n, n->index)) {
+            n->index++;
+        }
+    }
+    return 0;
+}
+
+static int vectorlib_normals_type(lua_State *L)
+{
+    normals n = vectorlib_normals_aux_get(L, 1);
+    if (n) {
+        lua_push_key(normals);
+    } else {
+        lua_pushnil(L);
+    }
+    return 1;
+}
+
+static int vectorlib_normals_totable(lua_State *L)
+{
+    normals n = vectorlib_normals_aux_get(L, 1);
+    if (n) {
+        lua_createtable(L, n->size, 0);
+        for (int m = 0; m < n->size; m++) {
+            int i = 1;
+            lua_createtable(L, 3, 0);
+            lua_pushnumber(L, n->data[m].x); lua_rawseti(L, -2, i++);
+            lua_pushnumber(L, n->data[m].y); lua_rawseti(L, -2, i++);
+            lua_pushnumber(L, n->data[m].z); lua_rawseti(L, -2, i++);
+            lua_rawseti(L, -2, m + 1);
+        }
+        return 1;
+    } else {
+        return 0;
+    }
+}
+
+static int vectorlib_normals_flip(lua_State *L)
+{
+    normals n = vectorlib_normals_aux_get(L, 1);
+    if (n) {
+        for (int m = 0; m < n->size; m++) {
+            n->data[m].x = - n->data[m].x;
+            n->data[m].y = - n->data[m].y;
+            n->data[m].z = - n->data[m].z;
+        }
+    }
+    return 0;
+}
+
+static int vectorlib_normals_get(lua_State *L)
+{
+    normals n = vectorlib_normals_aux_get(L, 1);
+    int m = lmt_tointeger(L, 2) - 1;
+    if (n && m >= 0 && m < n->size) {
+        lua_pushnumber(L, n->data[m].x);
+        lua_pushnumber(L, n->data[m].y);
+        lua_pushnumber(L, n->data[m].z);
+        return 3;
+    } else {
+        return 0;
+    }
+}
+
+static int vectorlib_normals_set(lua_State *L)
+{
+    normals n = vectorlib_normals_aux_get(L, 1);
+    int m = lmt_tointeger(L, 2) - 1;
+    if (n && m >= 0 && m < n->size) {
+        vectorlib_normals_aux_set(L, 3, n, m);
+    }
+    return 0;
+}
+
+/* */
+
+static int vectorlib_getpointtypes(lua_State *L)
+{
+    lua_createtable(L, 2, 1);
+    lua_set_string_by_index(L, point_type_default, "default") ; /* x y z nx ny nz */
+    lua_set_string_by_index(L, point_type_xyz,     "xyz")     ; /* x y z          */
+    lua_set_string_by_index(L, point_type_xy,      "xy")      ; /* x y            */
+    return 1;
+}
+
+static int vectorlib_getmeshtypes(lua_State *L)
+{
+    lua_createtable(L, 2, 6);
+    lua_set_string_by_index(L, no_mesh_type,         "unset");            /* 0x00 */
+    lua_set_string_by_index(L, dot_mesh_type,        "dot");              /* 0x01 */
+    lua_set_string_by_index(L, line_mesh_type,       "line");             /* 0x02 */
+    lua_set_string_by_index(L, triangle_mesh_type,   "triangle");         /* 0x03 */
+    lua_set_string_by_index(L, quad_mesh_type,       "quad");             /* 0x04 */
+    lua_set_string_by_index(L, triangle_5_mesh_type, "virtual_123_456");  /* 0x05 */ /* [ 1 2 3 ] [ 4 5 6 ] */
+    lua_set_string_by_index(L, triangle_6_mesh_type, "virtual_u_v");      /* 0x06 */ /* [ u / v ]  */
+    lua_set_string_by_index(L, triangle_7_mesh_type, "virtual_123_134") ; /* 0x07 */ /* [ 1 2 3 ] [ 1 3 4 ] */
+    return 1;
 }
 
 /*tex
@@ -3944,6 +4482,9 @@ static const luaL_Reg vectorlib_vector_function_list[] =
     { "swap",           vectorlib_swap             },
     { "exchange",       vectorlib_exchange         },
     { "append",         vectorlib_append           },
+    /* shared */
+    { "getpointtypes",  vectorlib_getpointtypes    },
+    { "getmeshtypes",   vectorlib_getmeshtypes     },
     /* nothing more */
     { NULL,             NULL                       },
 };
@@ -3992,8 +4533,11 @@ static const luaL_Reg vectorlib_mesh_function_list[] =
     { "tostring",      vectorlib_mesh_tostring      },
     { "totable",       vectorlib_mesh_totable       },
     { "getdimensions", vectorlib_mesh_getdimensions },
+    { "copy",          vectorlib_mesh_copyvalue     }, /* wipe when only mesh and source index */
     { "get",           vectorlib_mesh_getvalue      }, /* table when third is true */
     { "set",           vectorlib_mesh_setvalue      },
+    { "getaverage",    vectorlib_mesh_getaverage    },
+    { "setaverage",    vectorlib_mesh_setaverage    },
     { "gettypevalues", vectorlib_mesh_gettypevalues },
     /* nothing more */
     { NULL,            NULL                         },
@@ -4017,20 +4561,47 @@ static const luaL_Reg vectorlib_contour_function_list[] =
 static const luaL_Reg vectorlib_points_function_list[] =
 {
     /* */
-    { "new",        vectorlib_points_new       },
-    { "ispoints",   vectorlib_points_valid     },
-    { "type",       vectorlib_points_type      },
-    { "totable",    vectorlib_points_totable   },
-    { "tostring",   vectorlib_points_tostring  },
-    { "get",        vectorlib_points_get       },
-    { "set",        vectorlib_points_set       },
-    { "getxyz",     vectorlib_points_getxyz    },
-    { "setxyz",     vectorlib_points_setxyz    },
-    { "getnormal",  vectorlib_points_getnormal },
-    { "setnormal",  vectorlib_points_setnormal },
- // { "getuv",      vectorlib_points_getuv     },
- // { "setuv",      vectorlib_points_setuv     },
-    { "getbounds",  vectorlib_points_getbounds },
+    { "new",         vectorlib_points_new         },
+    { "copy",        vectorlib_points_copy        },
+    { "grow",        vectorlib_points_grow        },
+    { "prune",       vectorlib_points_prune       },
+    { "ispoints",    vectorlib_points_valid       },
+    { "type",        vectorlib_points_type        },
+    { "size",        vectorlib_points_getlength   },
+    { "index",       vectorlib_points_getindex    },
+    { "getindex",    vectorlib_points_getindex    },
+    { "setindex",    vectorlib_points_setindex    },
+    { "getpool",     vectorlib_points_getpool     },
+    { "totable",     vectorlib_points_totable     },
+    { "tostring",    vectorlib_points_tostring    },
+    { "get",         vectorlib_points_get         },
+    { "set",         vectorlib_points_set         },
+    { "getxy",       vectorlib_points_getxy       },
+    { "getxyz",      vectorlib_points_getxyz      },
+    { "getxytable",  vectorlib_points_getxytable  },
+    { "getxyztable", vectorlib_points_getxyztable },
+    { "setxy",       vectorlib_points_setxy       },
+    { "setxyz",      vectorlib_points_setxyz      },
+    { "getnormal",   vectorlib_points_getnormal   },
+    { "setnormal",   vectorlib_points_setnormal   },
+    { "getbounds",   vectorlib_points_getbounds   },
+    /* just a helper*/
+    { "gettriangle", vectorlib_points_gettriangle },
+    /* nothing more */
+    { NULL,           NULL                         },
+};
+
+static const luaL_Reg vectorlib_normals_function_list[] =
+{
+    /* */
+    { "new",        vectorlib_normals_new      },
+    { "isnormals",  vectorlib_normals_valid    },
+    { "type",       vectorlib_normals_type     },
+    { "totable",    vectorlib_normals_totable  },
+    { "tostring",   vectorlib_normals_tostring },
+    { "get",        vectorlib_normals_get      },
+    { "set",        vectorlib_normals_set      },
+    { "flip",       vectorlib_normals_flip     },
     /* nothing more */
     { NULL,         NULL                       },
 };
@@ -4106,6 +4677,15 @@ static const luaL_Reg vectorlib_points_metatable[] =
     { NULL,         NULL                       },
 };
 
+static const luaL_Reg vectorlib_normals_metatable[] =
+{
+    { "__tostring", vectorlib_normals_tostring  },
+    { "__len",      vectorlib_normals_getlength },
+    { "__gc",       vectorlib_normals_gc        },
+    { "__call",     vectorlib_normals_setnext   },
+    { NULL,         NULL                       },
+};
+
 int luaopen_vector(lua_State *L)
 {
     luaL_newmetatable(L, VECTOR_METATABLE_INSTANCE);
@@ -4114,6 +4694,8 @@ int luaopen_vector(lua_State *L)
     luaL_setfuncs(L, vectorlib_point_metatable, 0);
     luaL_newmetatable(L, POINTS_METATABLE_INSTANCE);
     luaL_setfuncs(L, vectorlib_points_metatable, 0);
+    luaL_newmetatable(L, NORMALS_METATABLE_INSTANCE);
+    luaL_setfuncs(L, vectorlib_normals_metatable, 0);
     luaL_newmetatable(L, MESH_METATABLE_INSTANCE);
     luaL_setfuncs(L, vectorlib_mesh_metatable, 0);
     /* vector.* */
@@ -4123,6 +4705,11 @@ int luaopen_vector(lua_State *L)
     lua_pushstring(L, lua_key(point));
     lua_newtable(L);
     luaL_setfuncs(L, vectorlib_point_function_list, 0);
+    lua_rawset(L, -3);
+    /* vector.normal */
+    lua_pushstring(L, lua_key(normals));
+    lua_newtable(L);
+    luaL_setfuncs(L, vectorlib_normals_function_list, 0);
     lua_rawset(L, -3);
     /* vector.mesh */
     lua_pushstring(L, lua_key(mesh));

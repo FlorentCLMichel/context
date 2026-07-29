@@ -142,7 +142,7 @@ static inline halfword tex_posit_neg(halfword a)
 
 static inline halfword tex_posit_abs(halfword a) { 
     posit32_t p ; 
-    int mask = a >> 31; 
+    unsigned mask = (unsigned) a >> 31;
     p.v = ((a + mask) ^ mask) & 0xFFFFFFFF; 
     return p.v; 
 }

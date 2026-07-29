@@ -2249,7 +2249,7 @@ static int tex_aux_scan_math(halfword target, halfword style, int usetextfont, h
         case char_number_cmd:
             /* The |\glyph| variant is accepted but no keywords here. */
             cur_chr = tex_scan_char_number(0);
-            // fall through
+            FALLTHROUGH
         case letter_cmd:
         case other_char_cmd:
         case char_given_cmd:

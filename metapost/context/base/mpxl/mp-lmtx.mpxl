@@ -3597,7 +3597,7 @@ vardef lmt_do_lsystem =
     fi ;
     if mfun_lsystem_image :
         let mfun_lsystem_check_busy = mfun_lsystem_check_busy_do ;
-if prune : prunesingularities fi
+        if prune : prunesingularities fi
         image (
             def mfun_lsystem_draw_options = enddef ;
             mfun_lsystem_start(getparameter "iteration")
@@ -3608,7 +3608,7 @@ if prune : prunesingularities fi
         )
     else :
         let mfun_lsystem_check_busy = relax ;
-if prune : prunesingularities fi
+        if prune : prunesingularities fi
         (origin mfun_lsystem_start(getparameter "iteration"))
 
     fi

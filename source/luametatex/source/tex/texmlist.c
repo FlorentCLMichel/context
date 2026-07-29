@@ -2022,8 +2022,8 @@ static inline void tex_aux_calculate_glue(scaled m, scaled *f, scaled *n)
     *n = tex_x_over_n_r(m, unity, f);
     /*tex the new glue specification */
     if (*f < 0) {
-        --n;
-        f += unity;
+        --*n;
+        *f += unity;
     }
 }
 
@@ -5618,13 +5618,11 @@ static int tex_aux_get_sup_kern(halfword kernel, scriptdata *sup, scaled shift_u
         return found;
     }
    if (kerns && kerns->topright) {
-        *supkern = kerns->topright;
-        if (*supkern == MATH_KERN_NOT_FOUND) {
+        if (kerns->topright == MATH_KERN_NOT_FOUND) {
             *supkern = supshift;
         } else {
-            if (*supkern) {
-                tex_aux_trace_kerns(*supkern, "superscript kern", "kernset top right");
-            }
+            *supkern = kerns->topright;
+            tex_aux_trace_kerns(*supkern, "superscript kern", "kernset top right");
             *supkern += supshift;
         }
         return found;
@@ -5663,13 +5661,11 @@ static int tex_aux_get_sub_kern(halfword kernel, scriptdata *sub, scaled shift_d
         return found;
     }
     if (kerns && kerns->bottomright) {
-        *subkern = kerns->bottomright;
-        if (*subkern == MATH_KERN_NOT_FOUND) {
+        if (kerns->bottomright == MATH_KERN_NOT_FOUND) {
             *subkern = subshift;
         } else {
-            if (*subkern) {
-                tex_aux_trace_kerns(*subkern, "subscript kern", "kernset bottom right");
-            }
+            *subkern = kerns->bottomright;
+            tex_aux_trace_kerns(*subkern, "subscript kern", "kernset bottom right");
             *subkern += subshift;
         }
         return found;
@@ -6664,16 +6660,13 @@ static halfword tex_aux_math_spacing_glue(halfword ltype, halfword rtype, halfwo
                     case no_val_level:
                         break;
                     case dimension_val_level:
-                        if (x) {
-                            x = tex_aux_math_dimension(x, inter_math_skip_glue, c);
-                            if (tracing_math_par >= 2) {
-                                tex_begin_diagnostic();
-                                tex_print_format("%l[math: inter atom kern, left %n, right %n, resolved %i, amount %p]", ltype, rtype, s, kern_amount(x));
-                                tex_end_diagnostic();
-                            }
-                            return x;
+                        x = tex_aux_math_dimension(x, inter_math_skip_glue, c);
+                        if (tracing_math_par >= 2) {
+                            tex_begin_diagnostic();
+                            tex_print_format("%l[math: inter atom kern, left %n, right %n, resolved %i, amount %p]", ltype, rtype, s, kern_amount(x));
+                            tex_end_diagnostic();
                         }
-                        goto NONE;
+                        return x;
                     case glue_val_level:
                         if (! tex_glue_is_zero(x)) {
                             x = tex_aux_math_glue(x, inter_math_skip_glue, c);

@@ -1,0 +1,573 @@
+if not modules then modules = { } end modules ['mlib-rpt'] = {
+    version   = 1.001,
+    comment   = "2D stippling, Voronoi, Delaunay, and CVD helpers",
+    author    = "Mikael Sundqvist & Hans Hagen",
+    copyright = "PRAGMA ADE / ConTeXt Development Team",
+    license   = "see context related readme files",
+}
+
+local tonumber = tonumber
+local ceil, floor, sqrt, min, max, abs = math.ceil, math.floor, math.sqrt, math.min, math.max, math.abs
+local cos, sin, pi = math.cos, math.sin, math.pi
+
+-- There are some random generators but these will move to their own module. Some of
+-- these need a cleanup (like poisson) but for now are more is less kept, slightly
+-- optimized and cleaned up.
+--
+-- here are some references:
+--
+--   Adrian Secord, "Weighted Voronoi Stippling"
+--   https://www.cs.ubc.ca/labs/imager/tr/2002/secord2002b/
+--
+--   Robert Bridson, "Fast Poisson Disk Sampling in Arbitrary Dimensions"
+--   https://www.cs.ubc.ca/~rbridson/docs/bridson-siggraph07-poissondisk.pdf
+--
+--   Wolfram blog overview of computational stippling and CVD
+--   https://blog.wolfram.com/2016/05/06/computational-stippling-can-machines-do-as-well-as-humans/
+--
+-- We anyway concludes that it's way more efficient to get resources (which sometimes
+-- is hard because they are behind publishers paywalls). We already concluded that
+-- using an \LLM\ to generate production qualuty code makes no sense but one can of
+-- course explore algoritms. Actually they can be handy to track down for instance
+-- surface (texture) rendering formulas, as Keith has demonostrated.
+
+local randomizers    = randomizers or { }
+metapost.randomizers = randomizers
+
+local newindex       = lua.newindex
+
+local newpoints      = vector.points.new
+local getxy          = vector.points.getxy
+local pointsindex    = vector.points.index
+
+local xy_points <const> = 2
+
+local clamp          = number.clamp
+local round          = math.round
+
+local report = logs.reporter("metapost", "voronoi")
+
+local function randomizer(seed)
+    local state = floor(abs(tonumber(seed) or 1)) % 0x7FFFFFFF
+    if state == 0 then
+        state = 1
+    end
+    return function()
+        state = (48271 * state) % 0x7FFFFFFF
+        return state / 0x7FFFFFFF
+    end
+end
+
+-- too inefficient when we call it in loops:
+--
+-- local function randomizer(seed)
+--     utilities.randomizer.newrepeatable("MyRandom",seed)
+--     return utilities.randomizer.getrepeatable("MyRandom")
+-- end
+
+local function randominteger(rng,first,last)
+   return first + floor(rng() * (last - first + 1))
+end
+
+local function checkseed(specification)
+    if not specification.randomseed then
+        local seed = tonumber(specification.seed)
+        if not seed then
+            seed = math.random()
+        elseif seed < 0 then
+            seed = - seed
+        end
+        if seed <= 1 then
+            seed = round(seed * 0x7FFFFFFF)
+        end
+        specification.randomseed = seed -- prevent multiple calls
+        specification.seed       = seed
+    end
+end
+
+local function uniform(specification)
+    local count  = tonumber(specification.points) or 100
+    local width  = tonumber(specification.width)  or 100
+    local height = tonumber(specification.height) or 100
+    local rng    = randomizer(specification.seed)
+    local points = newpoints(count,1,xy_points)
+    for i=1,count do
+        points(rng() * width, rng() * height)
+    end
+    return points
+end
+
+local function poisson(specification)
+    local width      = tonumber(specification.width)  or 100
+    local height     = tonumber(specification.height) or 100
+    local limit      = tonumber(specification.points) or 100
+    local distance   = tonumber(specification.distance)
+    local candidates = tonumber(specification.candidates or specification.count) or 30
+    local rng        = randomizer(specification.seed)
+    if distance and distance <= 0 then
+        distance = nil
+    end
+    if not distance then
+        distance = sqrt(width * height / limit) * 0.82
+    end
+
+    local cellsize = distance / sqrt(2)
+    local gridnx   = max(1,ceil(width /cellsize))
+    local gridny   = max(1,ceil(height/cellsize))
+    local grid     = { }
+    local active   = { }
+    local points   = newpoints(limit,1,xy_points)
+    local count    = 0
+
+    -- this is really weird code .. i need to discuss it with MS
+
+    local function gridindex(gx,gy)
+        return (gy - 1) * gridnx + gx
+    end
+
+    local function gridcell(x,y)
+        return
+            clamp(floor(x/cellsize) + 1,1,gridnx),
+            clamp(floor(y/cellsize) + 1,1,gridny)
+    end
+
+    local nofactive = 0
+
+    local function insertpoint(x,y)
+        count = count + 1
+        points(x,y)
+        nofactive = nofactive + 1
+        active[nofactive] = count
+        grid[gridindex(gridcell(x,y))] = count
+    end
+
+    local function accepted(x,y)
+        if x < 0 or x > width or y < 0 or y > height then
+            return false
+        else
+            local gx, gy = gridcell(x,y)
+            local d2 = distance * distance
+            for yy=max(1,gy-2),min(gy+2,gridny) do
+                for xx=max(1,gx-2),min(gx+2,gridnx) do
+                    local index = grid[gridindex(xx,yy)]
+                    if index then
+                        local px, py = getxy(points,index)
+                        local dx = px - x
+                        local dy = py - y
+                        if dx*dx + dy*dy < d2 then
+                            return false
+                        end
+                    end
+                end
+            end
+            return true
+        end
+    end
+
+    insertpoint(
+        tonumber(specification.initialx) or rng() * width,
+        tonumber(specification.initialy) or rng() * height
+    )
+
+    while nofactive > 0 and count < limit do
+        local activeindex = randominteger(rng,1,nofactive)
+        local pointindex  = active[activeindex]
+        local px, py      = getxy(points,pointindex)
+        local found       = false
+        for i=1,candidates do
+            local radius = distance * (1 + rng())
+            local angle  = 2 * pi * rng()
+            local x      = px + radius * cos(angle)
+            local y      = py + radius * sin(angle)
+            if accepted(x,y) then
+                insertpoint(x,y)
+                found = true
+                break
+            end
+        end
+        if not found then
+            active[activeindex] = active[nofactive]
+            nofactive = nofactive - 1
+        end
+    end
+
+    -- When the requested radius was too strict, we just fill the remainder slots with
+    -- uniform points.
+
+    local count = pointsindex(points) -- this should be unchanged
+
+    if count < limit then
+        local extra = uniform {
+            points = limit - count,
+            width  = width,
+            height = height,
+            seed   = (tonumber(specification.seed) or 1) + 7919,
+        }
+        if extra then
+            for i=1,#extra do
+                points(getxy(extra,i))
+            end
+        else
+         -- prunepoints(points,limit-count)
+        end
+    end
+
+    return points
+end
+
+local unweighted, weighted, sampled, sampler, resolvedensity  do
+
+    local function finishdensity(values,nx,ny,width,height)
+        local cumulative = { }
+        local total      = 0
+        for i=1,#values do
+            total = total + values[i]
+            cumulative[i] = total
+        end
+        if not width  then width  = nx end -- does this happen
+        if not height then height = ny end -- does this happen
+        return {
+            values     = values,
+            cumulative = cumulative,
+            total      = total,
+            nx         = nx,
+            ny         = ny,
+            width      = width,
+            height     = height,
+            xscale     = width/nx,
+            yscale     = height/ny,
+        }
+    end
+
+    local function shapedensities(values,specification)
+        local gamma     = tonumber(specification and specification.gamma) or 1
+        local contrast  = tonumber(specification and specification.contrast) or 1
+        local threshold = tonumber(specification and specification.threshold) or 0
+        local low       = tonumber(specification and specification.minimumdensity) or 0
+        local high      = tonumber(specification and specification.maximumdensity) or 1
+        local invert    = specification.invert
+        local range     = high - low
+                --
+        if contrast  == 1 then contrast  = false end
+        if threshold <= 0 then threshold = false end
+        if gamma     == 1 then gamma     = false end
+        --
+        for i=1,#values do
+            local value = values[i]
+            if invert then
+                value = 1 - value
+            end
+            if contrast then
+                value = (value - 0.5) * contrast + 0.5
+                if value < 0 then
+                    value = 0
+                elseif value > 1 then
+                    value = 1
+                end
+            end
+            if threshold then
+                if value <= threshold then
+                    value = 0
+                elseif threshold < 1 then
+                    value = (value - threshold) / (1 - threshold)
+                end
+            end
+            if gamma then
+                value = value ^ gamma
+            end
+            values[i] = low + range * value
+        end
+    end
+
+    do
+
+        local methods = { }
+
+        function methods.uniform(width,height,nx,ny)
+            nx = round(tonumber(nx) or width)
+            ny = round(tonumber(ny) or height)
+            local values = newindex(nx*ny,1)
+            return finishdensity(values,nx,ny,width,height)
+        end
+
+        function methods.fromvalues(values,nx,ny,specification)
+            nx = round(tonumber(nx) or specification.nx or specification.width)
+            ny = round(tonumber(ny) or specification.ny or specification.height)
+            local width  = tonumber(specification.width)  or nx
+            local height = tonumber(specification.height) or ny
+            local result = { }
+            local r      = 0
+            local first  = values[1]
+            if type(values[1]) == "table" and #values[1] == 3 then
+                for i=1,#values do
+                    local value = values[n]
+                    r = r + 1 ; result[r] =
+                        0.2126 * value[1]
+                      + 0.7152 * value[2]
+                      + 0.0722 * value[3]
+                end
+            else
+                result = values
+            end
+            shapedensities(result,specification)
+            return finishdensity(result,nx,ny,width,height)
+        end
+
+        local getluminance = bytemap.getluminance
+
+        function methods.frombytes(bm,specification)
+            local nx, ny = bytemap.dimensions(bm)
+            local width  = tonumber(specification.width)  or nx
+            local height = tonumber(specification.height) or ny
+            local result = { }
+            local r      = 0
+            -- a huge table can't we delay ...
+            for y=0,ny-1 do
+                for x=0,nx-1 do
+                    r = r + 1 ; result[r] = getluminance(bm,x,y)
+                end
+            end
+            shapedensities(result,specification)
+            return finishdensity(result,nx,ny,width,height)
+        end
+
+        function methods.frombytemap(index,specification)
+            local bm = mp.getbytemapdirect(index)
+            if bm then
+                local density = methods.frombytes(bm,specification)
+                density.bytemap = index
+                return density
+            end
+        end
+
+        function methods.fromfile(filename,specification)
+            if filename and filename ~= "" and mp then
+                local index = specification.bytemap or 3
+                mp.loadbytemapfile(index, filename)
+                local density = methods.frombytemap(index,specification)
+                if density then
+                    density.filename = filename
+                    return density
+                end
+            end
+        end
+
+        resolvedensity = function(specification)
+            local density = specification.density
+            if type(density) == "table" and density.values and density.cumulative then
+                return density
+            elseif type(density) == "table" then
+                return methods.fromvalues(
+                    density,
+                    specification.densitywidth  or specification.nx,
+                    specification.densityheight or specification.ny,
+                    specification
+                )
+            elseif specification.filename and specification.filename ~= "" then
+                local loaded = methods.fromfile(specification.filename, specification)
+                if loaded then
+                    return loaded
+                end
+            elseif specification.bytemap and tonumber(specification.bytemap) then
+                local bytemap = methods.frombytemap(tonumber(specification.bytemap), specification)
+                if bytemap then
+                    return bytemap
+                end
+            end
+            local width  = tonumber(specification.width)  or 100
+            local height = tonumber(specification.height) or 100
+            return methods.uniform(width,height,specification.densitywidth or width,specification.densityheight or height)
+        end
+
+    end
+
+    local function pointcount(specification,density,default)
+        local points = specification.points
+        local count  = tonumber(points)
+        if count then
+            -- ok
+        elseif points == "auto" then
+            local scale = tonumber(specification.densityscale) or 0.05
+            count = density.total * scale
+        else
+            count = default or 100
+        end
+        return max(1,round(count))
+    end
+
+
+    -- Stratified targets avoid the large empty bands that pure random
+    -- inverse-CDF sampling can produce before relaxation.
+
+ -- local function densitypoint(density,index,rng)
+ --     local nx = density.nx
+ --     local id = index - 1
+ --     local x =      (id % nx) + 1
+ --     local y = floor(id / nx) + 1
+ --     return
+ --         (x - 1 + rng()) * density.xscale,
+ --         (y - 1 + rng()) * density.yscale
+ -- end
+ --
+ -- local function findcumulative(cumulative,target)
+ --     local first = 1
+ --     local last  = #cumulative
+ --     while first < last do
+ --         local middle = floor((first + last) / 2)
+ --         if cumulative[middle] < target then
+ --             first = middle + 1
+ --         else
+ --             last = middle
+ --         end
+ --     end
+ --     return first
+ -- end
+ --
+ -- sampled = function(density,count,seed) -- quite inefficient !
+ --     local points = count > 1 and newpoints(count,1,xy_points)
+ --     local total  = density.total
+ --     if total > 0 then
+ --         local cumulative = density.cumulative
+ --         local rng        = randomizer(seed)
+ --         for i=1,count do
+ --             local target = ((i - 1) + rng()) * total / count
+ --             local index  = findcumulative(cumulative,target)
+ --             local x, y   = densitypoint(density,index,rng)
+ --             if points then
+ --                 points(x,y)
+ --             else
+ --                 return x, y
+ --             end
+ --         end
+ --     end
+ --     return points
+ -- end
+
+    -- We either produce a points array of we return a (x,y) pair and the later is then
+    -- called often. So we just split the function, inline the helpers and access density
+    -- fields once. And yes, one can hardly measure the difference on a small number of
+    -- points.
+
+    sampled = function(density,count,seed)
+        local points = newpoints(count,1,xy_points)
+        local total  = density.total
+        if total > 0 then
+            local cumulative    = density.cumulative
+            local nofcumulative = #cumulative
+            local nx            = density.nx
+            local xscale        = density.xscale
+            local yscale        = density.yscale
+            local factor        = total / count
+            local rng           = randomizer(seed)
+            for i=1,count do
+                local target = ((i - 1) + rng()) * factor
+             -- find cumulative
+                local first = 1
+                local last  = nofcumulative
+                while first < last do
+                    local middle = floor((first + last) / 2)
+                    if cumulative[middle] < target then
+                        first = middle + 1
+                    else
+                        last = middle
+                    end
+                end
+                -- density point
+                local id = first - 1
+                local x  =      (id % nx) + 1
+                local y  = floor(id / nx) + 1
+                points(
+                    (x - 1 + rng()) * xscale,
+                    (y - 1 + rng()) * yscale
+                )
+            end
+        end
+        return points
+    end
+
+    sampler = function(density,seed)
+        local total         = density.total
+        local cumulative    = density.cumulative
+        local nofcumulative = #cumulative
+        local nx            = density.nx
+        local xscale        = density.xscale
+        local yscale        = density.yscale
+        if total == 0 then
+            return function()
+                return
+            end
+        else
+            return function(seed)
+                local rng    = randomizer(seed)
+                local target = rng() * total
+             -- find cumulative
+                local first  = 1
+                local last   = nofcumulative
+                while first < last do
+                    local middle = floor((first + last) / 2)
+                    if cumulative[middle] < target then
+                        first = middle + 1
+                    else
+                        last = middle
+                    end
+                end
+                -- density point
+                local id = first - 1
+                local x  =      (id % nx) + 1
+                local y  = floor(id / nx) + 1
+                return
+                    (x - 1 + rng()) * xscale,
+                    (y - 1 + rng()) * yscale
+            end
+        end
+    end
+
+    unweighted = function(specification,density)
+        local density = density or resolvedensity(specification)
+        local points  = sampled(
+            density,
+            pointcount(specification,density,100),
+            specification.seed
+        )
+        return points, density
+    end
+
+    weighted = function(specification,density)
+        local density = density or resolvedensity(specification)
+        local points = sampled(
+            density,
+            pointcount(specification,density,100),
+            specification.seed
+        )
+        return points, density
+    end
+
+end
+
+local function initial(specification,density)
+    local initializer = specification.initializer
+    checkseed(specification) -- once !
+    if initializer == "random" or initializer == "uniform" then
+        return uniform(specification)
+    elseif initializer == "density" or initializer == "unweighted" then
+        return unweighted(specification,density)
+    elseif initializer == "weighted" then
+        return weighted(specification,density)
+    else
+        return poisson(specification)
+    end
+end
+
+randomizers.checkseed  = checkseed
+
+randomizers.uniform    = uniform
+randomizers.poisson    = poisson
+randomizers.unweighted = unweighted
+randomizers.weighted   = weighted
+
+randomizers.sampled    = sampled    -- a follow up one
+randomizers.sampler    = sampler    -- a follow up one
+
+randomizers.initial    = initial
+
+randomizers.density    = resolvedensity

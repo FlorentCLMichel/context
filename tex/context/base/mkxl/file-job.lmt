@@ -462,9 +462,14 @@ local function checkinterferences()
             statistics.feedback.setstate(f.feedback,true)
         end
     end
-    if fragile and not environment.arguments.fragile then
-        logsreport("warning")
-        logsreport("warning","quitting run, use --fragile")
+    if fragile then
+        if environment.arguments.fragile then
+            fragile = false
+        else
+            logsreport("warning")
+            logsreport("warning","quitting run, use --fragile")
+            done = true
+        end
     end
     if done then
         logsreport("warning")

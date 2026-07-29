@@ -140,12 +140,18 @@ local popleaderlevel
 local pushgroup
 local popgroup
 
--- make local
+-- make local .. why round
 
-function drivers.getpos   () return round(pos_h), round(pos_v) end
-function drivers.gethvrpos() return round(pos_h), round(pos_v), pos_r end
-function drivers.gethpos  () return round(pos_h) end
-function drivers.getvpos  () return round(pos_v) end
+-- function drivers.getpos   () return round(pos_h), round(pos_v) end
+-- function drivers.gethvrpos() return round(pos_h), round(pos_v), pos_r end
+-- function drivers.gethpos  () return round(pos_h) end
+-- function drivers.getvpos  () return round(pos_v) end
+-- function drivers.getrpos  () return pos_r end
+
+function drivers.getpos   () return pos_h, pos_v end
+function drivers.gethvrpos() return pos_h, pos_v, pos_r end
+function drivers.gethpos  () return pos_h end
+function drivers.getvpos  () return pos_v end
 function drivers.getrpos  () return pos_r end
 
 -- characters

@@ -156,6 +156,8 @@ return {
         "bytemap", "loadbytemap", "loadbytemapfromfile",
         "withbytemask", "withbytemasked", "withbyteexpansion", "withreduction", "withpalette",
         "downsamplebytemap", "downgradebytemap",
+
+        "stpcount", "stpsegment", "stpvalid", "stppath",
     },
     internals = { -- we need to remove duplicates above
         --

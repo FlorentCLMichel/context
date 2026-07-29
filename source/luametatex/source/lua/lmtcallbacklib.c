@@ -172,7 +172,7 @@ static int callbacklib_aux_run(lua_State *L, int id, int special, const char *va
     lmt_lua_state.saved_callback_count++;
     {
         int i = lua_pcall(L, narg, nres, base);
-        if (i) {
+        if lmt_unlikely(i)  {
             /*tex
                 We can't be more precise here as it could be called before \TEX\ initialization is
                 complete.
@@ -333,7 +333,7 @@ static int callbacklib_aux_run(lua_State *L, int id, int special, const char *va
                         *va_arg(vl, int *) = 0;
                         break;
                     case LUA_TBOOLEAN:
-                        if (lua_toboolean(L, nres) == 0) {
+                        if lmt_likely(lua_toboolean(L, nres) == 0) {
                             *va_arg(vl, int *) = 0;
                             break;
                         } else {
@@ -393,7 +393,7 @@ int lmt_run_saved_callback_close(lua_State *L, int r)
     lua_push_key(close);
     if (lua_rawget(L, -2) == LUA_TFUNCTION) {
         ret = lua_pcall(L, 0, 0, 0);
-        if (ret) {
+        if lmt_unlikely(ret) {
             return tex_formatted_error("lua", "error in close file callback") - 1;
         }
     }
@@ -411,7 +411,7 @@ int lmt_run_saved_callback_line(lua_State *L, int r, int firstpos)
         lua_pushvalue(L, -2);
         lmt_lua_state.file_callback_count++;
         ret = lua_pcall(L, 1, 1, 0);
-        if (ret) {
+        if lmt_unlikely(ret) {
             ret = tex_formatted_error("lua", "error in read line callback") - 1;
         } else if (lua_type(L, -1) == LUA_TSTRING) {
             size_t len;
@@ -421,7 +421,7 @@ int lmt_run_saved_callback_line(lua_State *L, int r, int firstpos)
                     len--;
                 }
                 if (len > 0) {
-                    if (tex_room_in_buffer(firstpos + (int) len)) {
+                    if lmt_likely(tex_room_in_buffer(firstpos + (int) len)) {
                         strncpy((char *) (lmt_fileio_state.io_buffer + firstpos), s, len);
                         ret = firstpos + (int) len;
                     } else {
@@ -738,7 +738,7 @@ static int callbacklib_testonly(lua_State *L)
             int i; 
             lua_pushinteger(L, lmt_callback_state.items[cb].state);
             i = lmt_callback_call(L, 1, 0, top);
-            if (i) {
+            if lmt_unlikely(i) {
                 lmt_callback_error(L, top, i);
             } else {
                 lmt_callback_wrapup(L, top);

@@ -208,11 +208,11 @@ do
         local y3 = urx * sx + ury * ry
         local x4 = llx * rx + ury * sy
         local y4 = llx * sx + ury * ry
-        llx = min(x1,x2,x3,x4)
-        lly = min(y1,y2,y3,y4)
-        urx = max(x1,x2,x3,x4)
-        ury = max(y1,y2,y3,y4)
-        return llx, lly, urx, ury
+        return
+            min(x1,x2,x3,x4),
+            min(y1,y2,y3,y4),
+            max(x1,x2,x3,x4),
+            max(y1,y2,y3,y4)
     end
 
  -- function lpdf.transform(llx,lly,urx,ury) -- not yet used so unchecked
@@ -224,7 +224,7 @@ do
  --     end
  -- end
 
-    function lpdf.rectangle(width,height,depth,offset)
+    function lpdf.rectangle(width,height,depth,offset) -- is offset still used
         local tx, ty = pdfgetpos()
         if offset then
             tx     = tx     -   offset -- hm, not transformed
@@ -233,27 +233,32 @@ do
             height = height +   offset
             depth  = depth  +   offset
         end
+        local llx =  0
+        local lly = -depth
+        local urx =  width
+        local ury =  height
         if pdfhasmatrix() then
             local rx, sx, sy, ry, _, _, px, py = pdfgetmatrix()
-         -- print("tx px dx",tx*bpfactor,px*bpfactor,dx*bpfactor)
-            local llx, lly, urx, ury = bounds(0,-depth,width,height,rx,sx,sy,ry)
-         -- tx = tx + sx * height
-         -- ty = ty - rx * height + height
             local dx = tx - px
-            tx = px + sx * height + dx * rx -- kind of
-            ty = py - rx * height + dx * sx -- horrible
-            return
-                bpfactor * (tx + llx),
-                bpfactor * (ty + lly),
-                bpfactor * (tx + urx),
-                bpfactor * (ty + ury)
-        else
-            return
-                bpfactor *  tx,          -- llx
-                bpfactor * (ty - depth), -- lly
-                bpfactor * (tx + width), -- urx
-                bpfactor * (ty + height) -- ury
+            local dy = ty - py
+--             if sx == 0 and sy == 0 then
+--                 tx  = px + dx * rx
+--                 ty  = py + dy * ry
+--                 llx = tx + llx
+--                 lly = tx + ry * lly
+--                 urx = tx + rx * urx
+--                 ury = tx + ry * ury
+--             else
+                llx, lly, urx, ury = bounds(llx,lly,urx,ury,rx,sx,sy,ry)
+                tx  = px + dx * rx + dy * sy
+                ty  = py + dx * sx + dy * ry
+--             end
         end
+        return
+            bpfactor * (tx + llx),
+            bpfactor * (ty + lly),
+            bpfactor * (tx + urx),
+            bpfactor * (ty + ury)
     end
 
     function lpdf.quads(zero,width,height,depth,offset,noscale)
@@ -268,11 +273,12 @@ do
         if pdfhasmatrix() then
             local rx, sx, sy, ry, _, _, px, py = pdfgetmatrix()
             local x1, y1, x2, y2, x3, y3, x4, y4 = corners(zero,-depth,width,height,rx,sx,sy,ry)
-         -- tx = tx + sx * height
-         -- ty = ty - rx * height + height
             local dx = tx - px
-            tx = px + sx * height + dx * rx -- kind of
-            ty = py - rx * height + dx * sx -- horrible
+            local dy = ty - py
+         -- tx = px + sx * height + dx * rx -- kind of
+         -- ty = py - rx * height + dx * sx -- horrible
+            tx  = px + dx * rx + dy * sy
+            ty  = py + dx * sx + dy * ry
             return
                 bpfactor * (tx + x1), bpfactor * (ty + y1),
                 bpfactor * (tx + x2), bpfactor * (ty + y2),

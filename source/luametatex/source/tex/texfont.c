@@ -1665,7 +1665,7 @@ int tex_tex_def_font(int a)
         if (tex_scan_keyword("at")) {
             /*tex Put the positive 'at' size into |s|. */
             s = tex_scan_dimension(0, 0, 0, 0, NULL, NULL);
-            if ((s <= 0) || (s >= 0x8000000)) { 
+            if lmt_unlikely((s <= 0) || (s >= 0x8000000)) {
                 tex_handle_error(
                     normal_error_type,
                     "Improper 'at' size (%p), replaced by 10pt",
@@ -1677,7 +1677,7 @@ int tex_tex_def_font(int a)
             }
         } else if (tex_scan_keyword("scaled")) {
             s = tex_scan_integer(0, NULL, NULL);
-            if ((s <= 0) || (s > 0x8000)) {
+            if lmt_unlikely((s <= 0) || (s > 0x8000)) {
                 tex_handle_error(
                     normal_error_type,
                     "Illegal magnification has been changed to 1000 (%i)",

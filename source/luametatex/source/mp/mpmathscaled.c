@@ -77,7 +77,7 @@
 # define three_sixty_deg          0x16800000
 
 # define odd(A)                   (llabs(A) % 2 == 1)
-# define two_to_the(A)            (1 << (mp_scaled_t)(A))
+# define two_to_the(A)            ((mp_scaled_t) 1 << (mp_scaled_t)(A))
 # define set_cur_cmd(A)           mp->cur_mod_->command = (A)
 # define set_cur_mod(A)           mp->cur_mod_->data.n.data.val = (A)
 

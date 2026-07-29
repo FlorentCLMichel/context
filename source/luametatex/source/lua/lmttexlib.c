@@ -216,7 +216,7 @@ static inline spindle_rope *texlib_aux_new_rope(void)
     } else {
         rope = (spindle_rope *) lmt_memory_malloc(sizeof(spindle_rope));
         ++lmt_spindle_state.rope_count;
-        if (rope) {
+        if lmt_likely(rope) {
             rope->next = NULL;
         } else {
             tex_overflow_error("spindle", sizeof(spindle_rope));
@@ -241,7 +241,7 @@ static inline void texlib_aux_dispose_rope(spindle_rope *rope)
 static void texlib_aux_initialize(void)
 {
     lmt_spindle_state.spindles = lmt_memory_malloc(INITIAL_SIZE * sizeof(spindle));
-    if (lmt_spindle_state.spindles) {
+    if lmt_likely(lmt_spindle_state.spindles) {
         for (int i = 0; i < INITIAL_SIZE; i++) {
             texlib_aux_reset_spindle(i);
         }
@@ -829,7 +829,7 @@ void lmt_cstring_start(void)
     if (lmt_spindle_state.spindle_size == lmt_spindle_state.spindle_index) {
         int size = (lmt_spindle_state.spindle_size + 1) * sizeof(spindle);
         spindle *spindles = lmt_memory_realloc(lmt_spindle_state.spindles, (size_t) size);
-        if (spindles) {
+        if lmt_likely(spindles) {
             lmt_spindle_state.spindles = spindles;
             texlib_aux_reset_spindle(lmt_spindle_state.spindle_index);
             lmt_spindle_state.spindle_size++;
@@ -866,7 +866,7 @@ void lmt_cstring_close(void)
 
 /*tex
     The original was close to the \TEX\ original (even using |cur_val|) but there is no need to have
-    that all-in-one loop with radix magic.
+    that all-in-one loop with radix magic. We don't really use this in \CONTEXT.
 */
 
 static const char *texlib_aux_scan_integer_part(lua_State *L, const char *ss, int *ret, int *radix_ret)
@@ -1166,7 +1166,7 @@ static const char *texlib_aux_scan_dimension_part(lua_State * L, const char *ss,
         result = result * 0x10000 + fraction;
     }
   DONE:
-    if (lmt_scanner_state.arithmetic_error || (abs(result) >= 0x40000000)) {
+    if lmt_unlikely(lmt_scanner_state.arithmetic_error || (abs(result) >= 0x40000000)) {
         result = max_dimension;
         luaL_error(L, "dimension too large");
     }
@@ -1183,7 +1183,7 @@ static int texlib_aux_dimension_to_number(lua_State *L, const char *s)
 {
     int result = 0;
     const char *d = texlib_aux_scan_dimension_part(L, s, &result);
-    if (*d) {
+    if lmt_unlikely(*d) {
         return luaL_error(L, "conversion failed (trailing junk?)");
     } else {
         return result;
@@ -1195,7 +1195,7 @@ static int texlib_aux_integer_to_number(lua_State *L, const char *s)
     int result = 0;
     int radix = 10;
     const char *d = texlib_aux_scan_integer_part(L, s, &result, &radix);
-    if (*d) {
+    if lmt_unlikely(*d) {
         return luaL_error(L, "conversion failed (trailing junk?)");
     } else {
         return result;
@@ -1436,21 +1436,24 @@ static int texlib_aux_check_for_index(
                 size_t len;
                 const char *str = lua_tolstring(L, slot, &len);
                 int cs = tex_string_locate_only(str, len);
-                if (cs == undefined_control_sequence) {
+                if lmt_unlikely(cs == undefined_control_sequence) {
                     luaL_error(L, "undefined %s name", what);
                     return -1;
-                } else if (eq_type(cs) == internal_cmd) {
-                    *index = eq_value(cs) - internal_base;
-                    return 1;
-                } else if (eq_type(cs) == register_cmd) {
-                    *index = eq_value(cs) - register_base;
-                    return 0;
-                } else if (eq_type(cs) == constant_cmd) {
-                    *index = cs;
-                    return 2;
                 } else {
-                    luaL_error(L, "incorrect %s name", what);
-                    return -1;
+                    const int type = eq_type(cs);
+                    if (type == internal_cmd) {
+                        *index = eq_value(cs) - internal_base;
+                        return 1;
+                    } else if (type == register_cmd) {
+                        *index = eq_value(cs) - register_base;
+                        return 0;
+                    } else if (type == constant_cmd) {
+                        *index = cs;
+                        return 2;
+                    } else {
+                        luaL_error(L, "incorrect %s name", what);
+                        return -1;
+                    }
                 }
             }
         case LUA_TNUMBER:
@@ -1468,20 +1471,25 @@ static int texlib_aux_check_for_index(
         case LUA_TUSERDATA:
             {
                 halfword cs = lmt_get_lua_token_cs(L, 1);
-                if (cs) {
-                    if (eq_type(cs) == internal_cmd) {
+                if lmt_unlikely(! cs) {
+                    luaL_error(L, "incorrect token");
+                    return -1;
+                } else {
+                    const int type = eq_type(cs);
+                    if (type == internal_cmd) {
                         *index = eq_value(cs) - internal_base;
                         return 1;
-                    } else if (eq_type(cs) == register_cmd) {
+                    } else if (type == register_cmd) {
                         *index = eq_value(cs) - register_base;
                         return 0;
-                    } else if (eq_type(cs) == constant_cmd) {
+                    } else if (type == constant_cmd) {
                         *index = cs;
                         return 2;
+                    } else {
+                        luaL_error(L, "incorrect %s name", what);
+                        return -1;
                     }
                 }
-                luaL_error(L, "incorrect token");
-                return -1;
             }
         default:
             luaL_error(L, "%s name or valid index expected", what);
@@ -1622,7 +1630,7 @@ static halfword texlib_aux_get_glue_spec(lua_State *L, int slot)
             break;
         default:
             value = lmt_check_isnode(L, slot + 1);
-            if (node_type(value) != glue_spec_node) {
+            if lmt_unlikely(node_type(value) != glue_spec_node) {
                 value = null;
                 luaL_error(L, "glue_spec expected");
             }
@@ -2084,13 +2092,14 @@ int lmt_get_box_id(lua_State *L, int i, int report)
             }
         case LUA_TNUMBER:
             index = lmt_tointeger(L, i);
+            break;
         default:
             break;
     }
     if (index >= 0 && index <= max_box_register_index) {
         return index;
     } else {
-        if (report) {
+        if lmt_unlikely(report) {
             luaL_error(L, "string or a number within range expected");
         }
         return -1;
@@ -2124,7 +2133,7 @@ static int texlib_splitbox(lua_State *L)
                 case LUA_TNUMBER:
                     {
                         packing = lmt_tointeger(L, 3);
-                        if (packing != packing_exactly && packing != packing_additional) {
+                        if lmt_unlikely(packing != packing_exactly && packing != packing_additional) {
                             packing = packing_exactly;
                             luaL_error(L, "wrong mode in splitbox");
                         }
@@ -2195,13 +2204,13 @@ static int texlib_setlccode(lua_State *L)
         quarterword level;
         int slot = lmt_check_for_level(L, 1, &level, cur_level);
         int ch1 = lmt_checkinteger(L, slot++);
-        if (character_in_range(ch1)) {
+        if lmt_likely(character_in_range(ch1)) {
             halfword ch2 = lmt_checkhalfword(L, slot++);
-            if (character_in_range(ch2)) {
+            if lmt_likely(character_in_range(ch2)) {
                 tex_set_lc_code(ch1, ch2, level);
                 if (slot <= top) {
                     halfword ch3 = lmt_checkhalfword(L, slot);
-                    if (character_in_range(ch3)) {
+                    if lmt_likely(character_in_range(ch3)) {
                         tex_set_uc_code(ch1, ch3, level);
                     } else {
                         texlib_aux_show_character_error(L, ch3);
@@ -2224,13 +2233,13 @@ static int texlib_setuccode(lua_State *L)
         quarterword level;
         int slot = lmt_check_for_level(L, 1, &level, cur_level);
         int ch1 = lmt_checkinteger(L, slot++);
-        if (character_in_range(ch1)) {
+        if lmt_likely(character_in_range(ch1)) {
             halfword ch2 = lmt_checkhalfword(L, slot++);
-            if (character_in_range(ch2)) {
+            if lmt_likely(character_in_range(ch2)) {
                 tex_set_uc_code(ch1, ch2, level);
                 if (slot <= top) {
                     halfword ch3 = lmt_checkhalfword(L, slot);
-                    if (character_in_range(ch3)) {
+                    if lmt_likely(character_in_range(ch3)) {
                         tex_set_lc_code(ch1, ch3, level);
                     } else {
                         texlib_aux_show_character_error(L, ch3);
@@ -2253,9 +2262,9 @@ static int texlib_setsfcode(lua_State *L)
         quarterword level;
         int slot = lmt_check_for_level(L, 1, &level, cur_level);
         int ch = lmt_checkinteger(L, slot++);
-        if (character_in_range(ch)) {
+        if lmt_likely(character_in_range(ch)) {
             halfword val = lmt_checkhalfword(L, slot);
-            if (half_in_range(val)) {
+            if lmt_likely(half_in_range(val)) {
                 tex_set_sf_code(ch, val, level);
             } else {
                 texlib_aux_show_half_error(L, val);
@@ -2274,9 +2283,9 @@ static int texlib_setspcode(lua_State *L)
         quarterword level;
         int slot = lmt_check_for_level(L, 1, &level, cur_level);
         int ch = lmt_checkinteger(L, slot++);
-        if (character_in_range(ch)) {
+        if lmt_likely(character_in_range(ch)) {
             halfword val = lmt_checkhalfword(L, slot);
-            if (half_in_range(val)) {
+            if lmt_likely(half_in_range(val)) {
                 tex_set_sp_code(ch, val, level);
             } else {
                 texlib_aux_show_half_error(L, val);
@@ -2295,9 +2304,9 @@ static int texlib_sethccode(lua_State *L)
         quarterword level;
         int slot = lmt_check_for_level(L, 1, &level, cur_level);
         int ch = lmt_checkinteger(L, slot++);
-        if (character_in_range(ch)) {
+        if lmt_likely(character_in_range(ch)) {
             halfword val = lmt_checkhalfword(L, slot);
-            if (half_in_range(val)) {
+            if lmt_likely(half_in_range(val)) {
                 tex_set_hc_code(ch, val, level);
             } else {
                 texlib_aux_show_half_error(L, val);
@@ -2316,7 +2325,7 @@ static int texlib_sethmcode(lua_State *L)
         quarterword level;
         int slot = lmt_check_for_level(L, 1, &level, cur_level);
         int ch = lmt_checkinteger(L, slot++);
-        if (character_in_range(ch)) {
+        if lmt_likely(character_in_range(ch)) {
             halfword val = lmt_checkhalfword(L, slot);
             tex_set_hm_code(ch, val, level);
         } else {
@@ -2333,7 +2342,7 @@ static int texlib_setamcode(lua_State *L)
         quarterword level;
         int slot = lmt_check_for_level(L, 1, &level, cur_level);
         int ch = lmt_checkinteger(L, slot++);
-        if (character_in_range(ch)) {
+        if lmt_likely(character_in_range(ch)) {
             halfword val = lmt_checkhalfword(L, slot);
             tex_set_am_code(ch, val, level);
         } else {
@@ -2350,7 +2359,7 @@ static int texlib_setcccode(lua_State *L)
         quarterword level;
         int slot = lmt_check_for_level(L, 1, &level, cur_level);
         int ch = lmt_checkinteger(L, slot++);
-        if (character_in_range(ch)) {
+        if lmt_likely(character_in_range(ch)) {
             halfword val = lmt_checkquarterword(L, slot);
             tex_set_cc_code(ch, val, level);
         } else {
@@ -2363,7 +2372,7 @@ static int texlib_setcccode(lua_State *L)
 static int texlib_getlccode(lua_State *L)
 {
     int ch = lmt_checkinteger(L, 1);
-    if (character_in_range(ch)) {
+    if lmt_likely(character_in_range(ch)) {
         lua_pushinteger(L, tex_get_lc_code(ch));
     } else {
         texlib_aux_show_character_error(L, ch);
@@ -2375,7 +2384,7 @@ static int texlib_getlccode(lua_State *L)
 static int texlib_getuccode(lua_State *L)
 {
     int ch = lmt_checkinteger(L, 1);
-    if (character_in_range(ch)) {
+    if lmt_likely(character_in_range(ch)) {
         lua_pushinteger(L, tex_get_uc_code(ch));
     } else {
         texlib_aux_show_character_error(L, ch);
@@ -2387,7 +2396,7 @@ static int texlib_getuccode(lua_State *L)
 static int texlib_getsfcode(lua_State *L)
 {
     int ch = lmt_checkinteger(L, 1);
-    if (character_in_range(ch)) {
+    if lmt_likely(character_in_range(ch)) {
         lua_pushinteger(L, tex_get_sf_code(ch));
     } else {
         texlib_aux_show_character_error(L, ch);
@@ -2399,7 +2408,7 @@ static int texlib_getsfcode(lua_State *L)
 static int texlib_getspcode(lua_State *L)
 {
     int ch = lmt_checkinteger(L, 1);
-    if (character_in_range(ch)) {
+    if lmt_likely(character_in_range(ch)) {
         lua_pushinteger(L, tex_get_sp_code(ch));
     } else {
         texlib_aux_show_character_error(L, ch);
@@ -2411,7 +2420,7 @@ static int texlib_getspcode(lua_State *L)
 static int texlib_gethccode(lua_State *L)
 {
     int ch = lmt_checkinteger(L, 1);
-    if (character_in_range(ch)) {
+    if lmt_likely(character_in_range(ch)) {
         lua_pushinteger(L, tex_get_hc_code(ch));
     } else {
         texlib_aux_show_character_error(L, ch);
@@ -2423,7 +2432,7 @@ static int texlib_gethccode(lua_State *L)
 static int texlib_gethmcode(lua_State *L)
 {
     int ch = lmt_checkinteger(L, 1);
-    if (character_in_range(ch)) {
+    if lmt_likely(character_in_range(ch)) {
         lua_pushinteger(L, tex_get_hm_code(ch));
     } else {
         texlib_aux_show_character_error(L, ch);
@@ -2435,7 +2444,7 @@ static int texlib_gethmcode(lua_State *L)
 static int texlib_getamcode(lua_State *L)
 {
     int ch = lmt_checkinteger(L, 1);
-    if (character_in_range(ch)) {
+    if lmt_likely(character_in_range(ch)) {
         lua_pushinteger(L, tex_get_am_code(ch));
     } else {
         texlib_aux_show_character_error(L, ch);
@@ -2447,7 +2456,7 @@ static int texlib_getamcode(lua_State *L)
 static int texlib_getcccode(lua_State *L)
 {
     int ch = lmt_checkinteger(L, 1);
-    if (character_in_range(ch)) {
+    if lmt_likely(character_in_range(ch)) {
         lua_pushinteger(L, tex_get_cc_code(ch));
     } else {
         texlib_aux_show_character_error(L, ch);
@@ -2466,9 +2475,9 @@ static int texlib_setcatcode(lua_State *L)
         int slot = lmt_check_for_level(L, 1, &level, cur_level);
         int cattable = ((top - slot + 1) >= 3) ? lmt_checkinteger(L, slot++) : cat_code_table_par;
         int ch = lmt_checkinteger(L, slot++);
-        if (character_in_range(ch)) {
+        if lmt_likely(character_in_range(ch)) {
             halfword val = lmt_checkhalfword(L, slot);
-            if (catcode_in_range(val)) {
+            if lmt_likely(catcode_in_range(val)) {
                 tex_set_cat_code(cattable, ch, val, level);
             } else {
                 texlib_aux_show_catcode_error(L, val);
@@ -2487,7 +2496,7 @@ static int texlib_getcatcode(lua_State *L)
     int slot = 1;
     int cattable = (lua_gettop(L) > 1) ? lmt_checkinteger(L, slot++) : cat_code_table_par;
     int ch = lmt_checkinteger(L, slot);
-    if (character_in_range(ch)) {
+    if lmt_likely(character_in_range(ch)) {
         lua_pushinteger(L, tex_get_cat_code(cattable, ch));
     } else {
         texlib_aux_show_character_error(L, ch);
@@ -2506,7 +2515,7 @@ static int texlib_setmathcode(lua_State *L)
     quarterword level;
     int slot = lmt_check_for_level(L, 1, &level, cur_level);
     int ch = lmt_checkinteger(L, slot++);
-    if (character_in_range(ch)) {
+    if lmt_likely(character_in_range(ch)) {
         halfword cval, fval, chval;
         switch (lua_type(L, slot)) {
             case LUA_TNUMBER:
@@ -2526,9 +2535,9 @@ static int texlib_setmathcode(lua_State *L)
             default:
                 return luaL_error(L, "number of table expected");
         }
-        if (class_in_range(cval)) {
-            if (family_in_range(fval)) {
-                if (character_in_range(chval)) {
+        if lmt_likely(class_in_range(cval)) {
+            if lmt_likely(family_in_range(fval)) {
+                if lmt_likely(character_in_range(chval)) {
                     mathcodeval m;
                     m.character_value = chval;
                     m.class_value = (short) cval;
@@ -2553,7 +2562,7 @@ static int texlib_getmathcode(lua_State* L)
 {
     mathcodeval mval = tex_no_math_code();
     int ch = lmt_checkinteger(L, -1);
-    if (character_in_range(ch)) {
+    if lmt_likely(character_in_range(ch)) {
         mval = tex_get_math_code(ch);
     } else {
         texlib_aux_show_character_error(L, ch);
@@ -2572,7 +2581,7 @@ static int texlib_getmathcodes(lua_State* L)
 {
     mathcodeval mval = tex_no_math_code();
     int ch = lmt_checkinteger(L, -1);
-    if (character_in_range(ch)) {
+    if lmt_likely(character_in_range(ch)) {
         mval = tex_get_math_code(ch);
     } else {
         texlib_aux_show_character_error(L, ch);
@@ -2617,10 +2626,10 @@ static int texlib_setdelcode(lua_State* L)
             default:
                 return luaL_error(L, "number of table expected");
         }
-        if (family_in_range(sfval)) {
-            if (character_in_range(scval)) {
-                if (family_in_range(lfval)) {
-                    if (character_in_range(lcval)) {
+        if lmt_likely(family_in_range(sfval)) {
+            if lmt_likely(character_in_range(scval)) {
+                if lmt_likely(family_in_range(lfval)) {
+                    if lmt_likely(character_in_range(lcval)) {
                         delcodeval d;
                         d.small.class_value = 0;
                         d.small.family_value = (short) sfval;
@@ -2629,20 +2638,16 @@ static int texlib_setdelcode(lua_State* L)
                         d.large.family_value = (short) lfval;
                         d.large.character_value = lcval;
                         tex_set_del_code(ch, d, (quarterword) (level));
-                    }
-                    else {
+                    } else {
                         texlib_aux_show_character_error(L, lcval);
                     }
-                }
-                else {
+                } else {
                     texlib_aux_show_family_error(L, lfval);
                 }
-            }
-            else {
+            } else {
                 texlib_aux_show_character_error(L, scval);
             }
-        }
-        else {
+        } else {
             texlib_aux_show_family_error(L, sfval);
         }
     }
@@ -2656,7 +2661,7 @@ static int texlib_getdelcode(lua_State* L)
 {
     delcodeval dval = tex_no_del_code();
     int ch = lmt_checkinteger(L, -1);
-    if (character_in_range(ch)) {
+    if lmt_likely(character_in_range(ch)) {
         dval = tex_get_del_code(ch);
     } else {
         texlib_aux_show_character_error(L, ch);
@@ -2681,7 +2686,7 @@ static int texlib_getdelcodes(lua_State* L)
 {
     delcodeval dval = tex_no_del_code();
     int ch = lmt_checkinteger(L, -1);
-    if (character_in_range(ch)) {
+    if lmt_likely(character_in_range(ch)) {
         dval = tex_get_del_code(ch);
     } else {
         texlib_aux_show_character_error(L, ch);
@@ -2983,7 +2988,7 @@ static int texlib_set_item(lua_State* L, int index, int prefixes)
                         case LUA_TUSERDATA:
                             {
                                 halfword n = lmt_check_isnode(L, slot);
-                                if (node_type(n) == glue_spec_node) {
+                                if lmt_likely(node_type(n) == glue_spec_node) {
                                     if (cmd == register_glue_cmd) {
                                         tex_word_define(flags, eq_value(cs), n);
                                     } else {
@@ -4181,7 +4186,7 @@ static void texlib_aux_enableprimitive(const char *pre, size_t prel, const char 
             /* not a prefix */
             newlen = strlen(prm) + prel;
             newprm = (char *) lmt_memory_malloc((size_t) newlen + 1);
-            if (newprm) {
+            if lmt_likely(newprm) {
                 strcpy(newprm, pre);
                 strcat(newprm + prel, prm);
             } else {
@@ -4190,7 +4195,7 @@ static void texlib_aux_enableprimitive(const char *pre, size_t prel, const char 
         } else {
             newlen = strlen(prm);
             newprm = (char *) lmt_memory_malloc((size_t) newlen + 1);
-            if (newprm) {
+            if lmt_likely(newprm) {
                 strcpy(newprm, prm);
             } else {
                 tex_overflow_error("primitives", (int) newlen + 1);
@@ -4208,7 +4213,7 @@ static void texlib_aux_enableprimitive(const char *pre, size_t prel, const char 
 
 static int texlib_enableprimitives(lua_State *L)
 {
-    if (lua_gettop(L) == 2) {
+    if lmt_likely(lua_gettop(L) == 2) {
         size_t prelen;
         const char *prefix = luaL_checklstring(L, 1, &prelen);
         switch (lua_type(L, 2)) {
@@ -5337,7 +5342,7 @@ static int texlib_setlinedir(lua_State *L)
 static int texlib_getboxdir(lua_State *L)
 {
     int index = lmt_tointeger(L, 1);
-    if (index >= 0 && index <= max_box_register_index) {
+    if lmt_likely(index >= 0 && index <= max_box_register_index) {
         if (box_register(index)) {
             lua_pushinteger(L, box_direction(box_register(index)));
         } else {
@@ -5353,7 +5358,7 @@ static int texlib_getboxdir(lua_State *L)
 static int texlib_setboxdir(lua_State *L)
 {
     int index = lmt_tointeger(L, 1);
-    if (index >= 0 && index <= max_box_register_index) {
+    if lmt_likely(index >= 0 && index <= max_box_register_index) {
         tex_set_box_dir(index, lmt_tosingleword(L, 2));
     } else {
         texlib_aux_show_box_index_error(L);
@@ -5482,7 +5487,7 @@ static int texlib_chardef(lua_State *L)
         lmt_check_for_flags(L, 3, &flags, 1, 0);
         if (tex_define_permitted(cs, flags)) {
             int code = lmt_tointeger(L, 2);
-            if (code >= 0 && code <= max_character_code) {
+            if lmt_likely(code >= 0 && code <= max_character_code) {
                 tex_define(flags, cs, (quarterword) char_given_cmd, code);
             } else {
                 tex_formatted_error("lua", "chardef only accepts codes in the range 0-%i", max_character_code);
@@ -5512,7 +5517,7 @@ static int texlib_mathchardef(lua_State *L)
             dval.properties = lmt_optquarterword(L, slot++, 0);
             dval.group = lmt_optquarterword(L, slot++, 0);
             dval.index = lmt_optinteger(L, slot++, 0);
-            if (class_in_range(mval.class_value) && family_in_range(mval.family_value) && character_in_range(mval.character_value)) {
+            if lmt_likely(class_in_range(mval.class_value) && family_in_range(mval.family_value) && character_in_range(mval.character_value)) {
                 tex_define(flags, cs, mathspec_cmd, tex_new_math_dict_spec(dval, mval, umath_mathcode));
             } else {
                 tex_normal_error("lua", "mathchardef needs proper class, family and character codes");
@@ -5534,7 +5539,7 @@ static int texlib_setintegervalue(lua_State *L)
         lmt_check_for_flags(L, 3, &flags, 1, 0);
         if (tex_define_permitted(cs, flags)) {
             int value = lmt_optroundnumber(L, 2, 0);
-            if (value >= min_integer && value <= max_integer) {
+            if lmt_likely(value >= min_integer && value <= max_integer) {
                 tex_define(flags, cs, (quarterword) integer_cmd, value);
             } else {
                 tex_formatted_error("lua", "integer only accepts values in the range %i-%i", min_integer, max_integer);
@@ -5555,7 +5560,7 @@ static int texlib_setfloatvalue(lua_State *L)
         if (tex_define_permitted(cs, flags)) {
             unsigned value = tex_double_to_posit(luaL_optnumber(L, 2, 0)).v;
          /* if we check we need to do it on the double or look at something else */
-         /* if ((value >= min_posit) && (value <= max_posit)) { */ /* always true */
+         /* if lmt_likely((value >= min_posit) && (value <= max_posit)) { */ /* always true */
                 tex_define(flags, cs, (quarterword) posit_cmd, value);
          /* } else { */
          /*     tex_formatted_error("lua", "posit only accepts values in the range %i-%i", min_posit, max_posit); */
@@ -5576,7 +5581,7 @@ static int texlib_setcardinalvalue(lua_State *L)
         if (tex_define_permitted(cs, flags)) {
             unsigned value = lmt_opturoundnumber(L, 2, 0);
          /* if we check we need to do it on the double or look at something else */
-         /* if ((value >= min_cardinal) && (value <= max_cardinal)) { */ /* always true */
+         /* if lmt_likely((value >= min_cardinal) && (value <= max_cardinal)) { */ /* always true */
                 tex_define(flags, cs, (quarterword) integer_cmd, value);
          /* } else { */
          /*     tex_formatted_error("lua", "cardinal only accepts values in the range %d-%d", min_cardinal, max_cardinal); */
@@ -5596,7 +5601,7 @@ static int texlib_setdimensionvalue(lua_State *L)
         lmt_check_for_flags(L, 3, &flags, 1, 0);
         if (tex_define_permitted(cs, flags)) {
             int value = lmt_optroundnumber(L, 2, 0);
-            if (value >= min_dimension && value <= max_dimension) {
+            if lmt_likely(value >= min_dimension && value <= max_dimension) {
                 tex_define(flags, cs, (quarterword) dimension_cmd, value);
             } else {
                 tex_formatted_error("lua", "dimension only accepts values in the range %i-%i", min_dimension, max_dimension);
@@ -5830,6 +5835,7 @@ static int texlib_getoverloadstate(lua_State *L)
 
 static int texlib_setoverloadstate(lua_State *L)
 {
+    (void) L;
     lmt_main_state.overload_state = 1;
     return 0;
 }

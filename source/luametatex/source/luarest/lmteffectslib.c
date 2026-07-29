@@ -158,9 +158,9 @@ static double effectslib_perlin_noise_3(double x, double y, double z)
     double u, v, w;
     int A, B;
     /* Find unit cube that contains point: */
-    int X = lfloor(x) & 0xFF;
-    int Y = lfloor(y) & 0xFF;
-    int Z = lfloor(z) & 0xFF;
+    int X = fastfloor(x) & 0xFF;
+    int Y = fastfloor(y) & 0xFF;
+    int Z = fastfloor(z) & 0xFF;
     /* Find relative x,y,z of point in cube: */
     x -= floor(x);
     y -= floor(y);
@@ -202,23 +202,19 @@ static int effectslib_perlinnoise(lua_State *L)
     simplex noise functions as such also have different scaling.)  Note also that these noise
     functions are the most practical and useful signed version of Perlin noise. To return values
     according to the RenderMan specification from the |SLnoise()| and |pnoise()| functions, the
-    noise values need to be scaled and offset to [0,1], like this: |float SLnoise = (noise(x, y, z)
-    + 1.0) * 0.5;|.
+    noise values need to be scaled and offset to [0,1], like this: |float SLnoise = (noise(x, y,
+    z) + 1.0) * 0.5;|.
 
 */
 
 /*tex
 
     The code has been adapted to doubles because that's what we use all over the place. I also
-    reformatted it a bit. Is nowadays |FASTFLOOR| still faster than lfloor? Casting also comes
-    at a price.
+    reformatted it a bit. Is nowadays |FASTFLOOR| still faster than |lfloor|? Casting also comes
+    at a price. Anyway, we define |fastfloor| elsewhere and use that one.
 */
 
 /* # define FASTFLOOR(x) ( ((int) (x) <= (x)) ? ((int) x) : (((int) x) - 1) ) */
-
-static inline int FASTFLOOR(double x) {
-    return (int) (x) <= x ? (int) x : (int) x - 1;
-}
 
 /*
     We get a gradient value 1.0, 2.0, ..., 8.0 with a random sign, multiplied with the distance.
@@ -277,16 +273,16 @@ static inline double grad4(int hash, double  x, double y, double z, double t)
     found where this table is used, in the 4D noise method.
 */
 
-static unsigned char simplex[64][4] = {
-    {0,1,2,3}, {0,1,3,2}, {0,0,0,0}, {0,2,3,1}, {0,0,0,0}, {0,0,0,0}, {0,0,0,0}, {1,2,3,0},
-    {0,2,1,3}, {0,0,0,0}, {0,3,1,2}, {0,3,2,1}, {0,0,0,0}, {0,0,0,0}, {0,0,0,0}, {1,3,2,0},
-    {0,0,0,0}, {0,0,0,0}, {0,0,0,0}, {0,0,0,0}, {0,0,0,0}, {0,0,0,0}, {0,0,0,0}, {0,0,0,0},
-    {1,2,0,3}, {0,0,0,0}, {1,3,0,2}, {0,0,0,0}, {0,0,0,0}, {0,0,0,0}, {2,3,0,1}, {2,3,1,0},
-    {1,0,2,3}, {1,0,3,2}, {0,0,0,0}, {0,0,0,0}, {0,0,0,0}, {2,0,3,1}, {0,0,0,0}, {2,1,3,0},
-    {0,0,0,0}, {0,0,0,0}, {0,0,0,0}, {0,0,0,0}, {0,0,0,0}, {0,0,0,0}, {0,0,0,0}, {0,0,0,0},
-    {2,0,1,3}, {0,0,0,0}, {0,0,0,0}, {0,0,0,0}, {3,0,1,2}, {3,0,2,1}, {0,0,0,0}, {3,1,2,0},
-    {2,1,0,3}, {0,0,0,0}, {0,0,0,0}, {0,0,0,0}, {3,1,0,2}, {0,0,0,0}, {3,2,0,1}, {3,2,1,0}
-};
+// static unsigned char simplex[64][4] = {
+//     {0,1,2,3}, {0,1,3,2}, {0,0,0,0}, {0,2,3,1}, {0,0,0,0}, {0,0,0,0}, {0,0,0,0}, {1,2,3,0},
+//     {0,2,1,3}, {0,0,0,0}, {0,3,1,2}, {0,3,2,1}, {0,0,0,0}, {0,0,0,0}, {0,0,0,0}, {1,3,2,0},
+//     {0,0,0,0}, {0,0,0,0}, {0,0,0,0}, {0,0,0,0}, {0,0,0,0}, {0,0,0,0}, {0,0,0,0}, {0,0,0,0},
+//     {1,2,0,3}, {0,0,0,0}, {1,3,0,2}, {0,0,0,0}, {0,0,0,0}, {0,0,0,0}, {2,3,0,1}, {2,3,1,0},
+//     {1,0,2,3}, {1,0,3,2}, {0,0,0,0}, {0,0,0,0}, {0,0,0,0}, {2,0,3,1}, {0,0,0,0}, {2,1,3,0},
+//     {0,0,0,0}, {0,0,0,0}, {0,0,0,0}, {0,0,0,0}, {0,0,0,0}, {0,0,0,0}, {0,0,0,0}, {0,0,0,0},
+//     {2,0,1,3}, {0,0,0,0}, {0,0,0,0}, {0,0,0,0}, {3,0,1,2}, {3,0,2,1}, {0,0,0,0}, {3,1,2,0},
+//     {2,1,0,3}, {0,0,0,0}, {0,0,0,0}, {0,0,0,0}, {3,1,0,2}, {0,0,0,0}, {3,2,0,1}, {3,2,1,0}
+// };
 
 /*tex
     There are four variants of the simplex noise generator.
@@ -299,7 +295,7 @@ static unsigned char simplex[64][4] = {
 
 static double effectslib_simplex_noise_1(double x)
 {
-    int i0 = FASTFLOOR(x);
+    int i0 = fastfloor(x);
     int i1 = i0 + 1;
     double n0, n1;
     double x0 = x - i0;
@@ -324,8 +320,8 @@ static double effectslib_simplex_noise_2(double x, double y)
     double s = (x + y) * F2;
     double xs = x + s;
     double ys = y + s;
-    int i = FASTFLOOR(xs);
-    int j = FASTFLOOR(ys);
+    int i = fastfloor(xs);
+    int j = fastfloor(ys);
     double t = (double) (i + j) * G2;
     /* unskew the cell origin back to (x,y) space */
     double X0 = i - t;
@@ -368,20 +364,22 @@ static double effectslib_simplex_noise_2(double x, double y)
         n0 = 0.0;
     } else {
         t0 *= t0;
-        n0 = t0 * t0 * grad2(pmap[ ii + pmap[ jj ] ], x0, y0);
+     // n0 = t0 * t0 * grad2(pmap[ ii + pmap[ jj ] ], x0, y0);
+        n0 = t0 * t0 * grad2(pmap[(ii + pmap[jj]) & 0x1FF], x0, y0);
     }
     if (t1 < 0.0) {
         n1 = 0.0;
     } else {
         t1 *= t1;
-        n1 = t1 * t1 * grad2(pmap[ ii + i1 + pmap[ jj + j1 ] ], x1, y1);
+     // n1 = t1 * t1 * grad2(pmap[ ii + i1 + pmap[ jj + j1 ] ], x1, y1);
+        n1 = t1 * t1 * grad2(pmap[(ii + i1 + pmap[(jj + j1) & 0xFF]) & 0x1FF], x1, y1);
     }
     if (t2 < 0.0) {
         n2 = 0.0;
     } else {
         t2 *= t2;
-        n2 = t2 * t2 * grad2(pmap[ ii + 1 + pmap[ jj + 1 ] ], x2, y2);
-    }
+     // n2 = t2 * t2 * grad2(pmap[ ii + 1 + pmap[ jj + 1 ] ], x2, y2);
+        n2 = t2 * t2 * grad2(pmap[(ii + 1 + pmap[(jj + 1) & 0xFF]) & 0x1FF], x2, y2);    }
     /*
         Add contributions from each corner to get the final noise value. The result is scaled to
         return values in the interval [-1,1]. TODO: The scale factor is preliminary!
@@ -401,9 +399,9 @@ static double effectslib_simplex_noise_3(double x, double y, double z)
     double xs = x + s;
     double ys = y + s;
     double zs = z + s;
-    int i = FASTFLOOR(xs);
-    int j = FASTFLOOR(ys);
-    int k = FASTFLOOR(zs);
+    int i = fastfloor(xs);
+    int j = fastfloor(ys);
+    int k = fastfloor(zs);
     double t = (double) (i + j + k) * G3;
     /* unskew the cell origin back to (x,y,z) space */
     double X0 = i - t;
@@ -482,25 +480,27 @@ static double effectslib_simplex_noise_3(double x, double y, double z)
         n0 = 0.0;
     } else {
         t0 *= t0;
-        n0 = t0 * t0 * grad3(pmap[ ii + pmap[ jj + pmap[ kk ] ] ], x0, y0, z0);
-    }
+     // n0 = t0 * t0 * grad3(pmap[ ii + pmap[ jj + pmap[ kk ] ] ], x0, y0, z0);
+        n0 = t0 * t0 * grad3(pmap[(ii + pmap[(jj + pmap[kk]) & 0x1FF]) & 0x1FF], x0, y0, z0);    }
     if (t1 < 0.0) {
         n1 = 0.0;
     } else {
         t1 *= t1;
-        n1 = t1 * t1 * grad3(pmap[ ii + i1 + pmap[ jj + j1 + pmap[ kk + k1 ] ] ], x1, y1, z1);
+     // n1 = t1 * t1 * grad3(pmap[ ii + i1 + pmap[ jj + j1 + pmap[ kk + k1 ] ] ], x1, y1, z1);
+        n1 = t1 * t1 * grad3(pmap[(ii + i1 + pmap[(jj + j1 + pmap[(kk + k1) & 0xFF]) & 0x1FF]) & 0x1FF], x1, y1, z1);
     }
     if (t2 < 0.0) {
         n2 = 0.0;
     } else {
         t2 *= t2;
-        n2 = t2 * t2 * grad3(pmap[ ii + i2 + pmap[ jj + j2 + pmap[ kk + k2 ] ] ], x2, y2, z2);
-    }
+     // n2 = t2 * t2 * grad3(pmap[ ii + i2 + pmap[ jj + j2 + pmap[ kk + k2 ] ] ], x2, y2, z2);
+        n2 = t2 * t2 * grad3(pmap[(ii + i2 + pmap[(jj + j2 + pmap[(kk + k2) & 0xFF]) & 0x1FF]) & 0x1FF], x2, y2, z2);    }
     if (t3 < 0.0) {
         n3 = 0.0;
     } else {
         t3 *= t3;
-        n3 = t3 * t3 * grad3(pmap[ ii + 1 + pmap[ jj + 1 + pmap[ kk + 1 ] ] ], x3, y3, z3);
+     // n3 = t3 * t3 * grad3(pmap[ ii + 1 + pmap[ jj + 1 + pmap[ kk + 1 ] ] ], x3, y3, z3);
+        n3 = t3 * t3 * grad3(pmap[(ii + 1 + pmap[(jj + 1 + pmap[(kk + 1) & 0xFF]) & 0x1FF]) & 0x1FF], x3, y3, z3);
     }
     /*
         Add contributions from each corner to get the final noise value. The result is scaled to
@@ -542,10 +542,10 @@ static double effectslib_simplex_noise_4(double x, double y, double z, double w)
     double ys = y + s;
     double zs = z + s;
     double ws = w + s;
-    int i = FASTFLOOR(xs);
-    int j = FASTFLOOR(ys);
-    int k = FASTFLOOR(zs);
-    int l = FASTFLOOR(ws);
+    int i = fastfloor(xs);
+    int j = fastfloor(ys);
+    int k = fastfloor(zs);
+    int l = fastfloor(ws);
     /* factor for 4D unskewing */
     double t = (i + j + k + l) * G4;
     /* unskew the cell origin back to (x,y,z,w) space */
@@ -559,33 +559,54 @@ static double effectslib_simplex_noise_4(double x, double y, double z, double w)
     double z0 = z - Z0;
     double w0 = w - W0;
     /* */
-    int c1 = (x0 > y0) ? 32 : 0;
-    int c2 = (x0 > z0) ? 16 : 0;
-    int c3 = (y0 > z0) ? 8 : 0;
-    int c4 = (x0 > w0) ? 4 : 0;
-    int c5 = (y0 > w0) ? 2 : 0;
-    int c6 = (z0 > w0) ? 1 : 0;
-    int c = c1 + c2 + c3 + c4 + c5 + c6;
-    /* the integer offsets for the second, third and fourth simplex corners */
-    int i1, j1, k1, l1;
-    int i2, j2, k2, l2;
-    int i3, j3, k3, l3;
-    /* see comment above */
-    i1 = simplex[c][0] >= 3 ? 1 : 0;
-    j1 = simplex[c][1] >= 3 ? 1 : 0;
-    k1 = simplex[c][2] >= 3 ? 1 : 0;
-    l1 = simplex[c][3] >= 3 ? 1 : 0;
-    /* the number 2 in the "simplex" array is at the second largest coordinate */
-    i2 = simplex[c][0] >= 2 ? 1 : 0;
-    j2 = simplex[c][1] >= 2 ? 1 : 0;
-    k2 = simplex[c][2] >= 2 ? 1 : 0;
-    l2 = simplex[c][3] >= 2 ? 1 : 0;
-    /* the number 1 in the "simplex" array is at the second smallest coordinate */
-    i3 = simplex[c][0] >= 1 ? 1 : 0;
-    j3 = simplex[c][1] >= 1 ? 1 : 0;
-    k3 = simplex[c][2] >= 1 ? 1 : 0;
-    l3 = simplex[c][3] >= 1 ? 1 : 0;
-    /* the fifth corner has all coordinate offsets = 1, so no need to look that up */
+ // int c1 = (x0 > y0) ? 32 : 0;
+ // int c2 = (x0 > z0) ? 16 : 0;
+ // int c3 = (y0 > z0) ? 8 : 0;
+ // int c4 = (x0 > w0) ? 4 : 0;
+ // int c5 = (y0 > w0) ? 2 : 0;
+ // int c6 = (z0 > w0) ? 1 : 0;
+ // int c = c1 + c2 + c3 + c4 + c5 + c6;
+ // /* the integer offsets for the second, third and fourth simplex corners */
+ // int i1, j1, k1, l1;
+ // int i2, j2, k2, l2;
+ // int i3, j3, k3, l3;
+ // /* see comment above */
+ // i1 = simplex[c][0] >= 3 ? 1 : 0;
+ // j1 = simplex[c][1] >= 3 ? 1 : 0;
+ // k1 = simplex[c][2] >= 3 ? 1 : 0;
+ // l1 = simplex[c][3] >= 3 ? 1 : 0;
+ // /* the number 2 in the "simplex" array is at the second largest coordinate */
+ // i2 = simplex[c][0] >= 2 ? 1 : 0;
+ // j2 = simplex[c][1] >= 2 ? 1 : 0;
+ // k2 = simplex[c][2] >= 2 ? 1 : 0;
+ // l2 = simplex[c][3] >= 2 ? 1 : 0;
+ // /* the number 1 in the "simplex" array is at the second smallest coordinate */
+ // i3 = simplex[c][0] >= 1 ? 1 : 0;
+ // j3 = simplex[c][1] >= 1 ? 1 : 0;
+ // k3 = simplex[c][2] >= 1 ? 1 : 0;
+ // l3 = simplex[c][3] >= 1 ? 1 : 0;
+ // /* the fifth corner has all coordinate offsets = 1, so no need to look that up */
+    /* */
+    /* rank each coordinate by counting how many other coordinates it dominates */
+    int rank_x = (x0 >  y0) + (x0 >  z0) + (x0 >  w0);
+    int rank_y = (y0 >= x0) + (y0 >  z0) + (y0 >  w0);
+    int rank_z = (z0 >= x0) + (z0 >= y0) + (z0 >  w0);
+    int rank_w = (w0 >= x0) + (w0 >= y0) + (w0 >= z0);
+    /* corner 1: coordinates with rank >= 3, the largest coordinate */
+    int i1 = (rank_x >= 3) ? 1 : 0;
+    int j1 = (rank_y >= 3) ? 1 : 0;
+    int k1 = (rank_z >= 3) ? 1 : 0;
+    int l1 = (rank_w >= 3) ? 1 : 0;
+    /* corner 2: coordinates with rank >= 2, the top 2 largest coordinates */
+    int i2 = (rank_x >= 2) ? 1 : 0;
+    int j2 = (rank_y >= 2) ? 1 : 0;
+    int k2 = (rank_z >= 2) ? 1 : 0;
+    int l2 = (rank_w >= 2) ? 1 : 0;
+    /* corner 3: coordinates with rank >= 1, the top 3 largest coordinates */
+    int i3 = (rank_x >= 1) ? 1 : 0;
+    int j3 = (rank_y >= 1) ? 1 : 0;
+    int k3 = (rank_z >= 1) ? 1 : 0;
+    int l3 = (rank_w >= 1) ? 1 : 0;
     /* */
     /* offsets for second corner in (x,y,z,w) coords */
     double x1 = x0 - i1 + G4;
@@ -622,31 +643,35 @@ static double effectslib_simplex_noise_4(double x, double y, double z, double w)
         n0 = 0.0;
     } else {
         t0 *= t0;
-        n0 = t0 * t0 * grad4(pmap[ ii + pmap[ jj + pmap[ kk + pmap[ ll ] ] ] ], x0, y0, z0, w0);
-    }
+     // n0 = t0 * t0 * grad4(pmap[ ii + pmap[ jj + pmap[ kk + pmap[ ll ] ] ] ], x0, y0, z0, w0);
+        n0 = t0 * t0 * grad4(pmap[(ii + pmap[(jj + pmap[(kk + pmap[ll]) & 0x1FF]) & 0x1FF]) & 0x1FF], x0, y0, z0, w0);    }
     if (t1 < 0.0) {
         n1 = 0.0;
     } else {
         t1 *= t1;
-        n1 = t1 * t1 * grad4(pmap[ ii + i1 + pmap[ jj + j1 + pmap[ kk + k1 + pmap[ ll + l1 ] ] ] ], x1, y1, z1, w1);
+     // n1 = t1 * t1 * grad4(pmap[ ii + i1 + pmap[ jj + j1 + pmap[ kk + k1 + pmap[ ll + l1 ] ] ] ], x1, y1, z1, w1);
+        n1 = t1 * t1 * grad4(pmap[(ii + i1 + pmap[(jj + j1 + pmap[(kk + k1 + pmap[(ll + l1) & 0xFF]) & 0x1FF]) & 0x1FF]) & 0x1FF], x1, y1, z1, w1);
     }
     if (t2 < 0.0) {
         n2 = 0.0;
     } else {
         t2 *= t2;
-        n2 = t2 * t2 * grad4(pmap[ ii + i2 + pmap[ jj + j2 + pmap[ kk + k2 + pmap[ ll + l2 ] ] ] ], x2, y2, z2, w2);
+     // n2 = t2 * t2 * grad4(pmap[ ii + i2 + pmap[ jj + j2 + pmap[ kk + k2 + pmap[ ll + l2 ] ] ] ], x2, y2, z2, w2);
+        n2 = t2 * t2 * grad4(pmap[(ii + i2 + pmap[(jj + j2 + pmap[(kk + k2 + pmap[(ll + l2) & 0xFF]) & 0x1FF]) & 0x1FF]) & 0x1FF], x2, y2, z2, w2);
     }
     if(t3 < 0.0) {
         n3 = 0.0;
     } else {
         t3 *= t3;
-        n3 = t3 * t3 * grad4(pmap[ ii + i3 + pmap[ jj + j3 + pmap[ kk + k3 + pmap[ ll + l3 ] ] ] ], x3, y3, z3, w3);
+     // n3 = t3 * t3 * grad4(pmap[ ii + i3 + pmap[ jj + j3 + pmap[ kk + k3 + pmap[ ll + l3 ] ] ] ], x3, y3, z3, w3);
+        n3 = t3 * t3 * grad4(pmap[(ii + i3 + pmap[(jj + j3 + pmap[(kk + k3 + pmap[(ll + l3) & 0xFF]) & 0x1FF]) & 0x1FF]) & 0x1FF], x3, y3, z3, w3);
     }
     if (t4 < 0.0) {
         n4 = 0.0;
     } else {
         t4 *= t4;
-        n4 = t4 * t4 * grad4(pmap[ ii + 1 + pmap[ jj + 1 + pmap[ kk + 1 + pmap[ ll + 1 ] ] ] ], x4, y4, z4, w4);
+     // n4 = t4 * t4 * grad4(pmap[ ii + 1 + pmap[ jj + 1 + pmap[ kk + 1 + pmap[ ll + 1 ] ] ] ], x4, y4, z4, w4);
+        n4 = t4 * t4 * grad4(pmap[(ii + 1 + pmap[(jj + 1 + pmap[(kk + 1 + pmap[(ll + 1) & 0xFF]) & 0x1FF]) & 0x1FF]) & 0x1FF], x4, y4, z4, w4);
     }
     /* sum up and scale the result to cover the range [-1,1] */
     return 62.0 * (n0 + n1 + n2 + n3 + n4);
@@ -775,8 +800,8 @@ static double effectslib_simplex_detail_2(double x, double y, double sin_t, doub
     double s = (x + y) * F2; /* Hairy factor for 2D */
     double xs = x + s;
     double ys = y + s;
-    int i = FASTFLOOR(xs);
-    int j = FASTFLOOR(ys);
+    int i = fastfloor(xs);
+    int j = fastfloor(ys);
     double t = (double) (i + j) * G2;
     double X0 = i - t;
     double Y0 = j - t;
@@ -855,9 +880,9 @@ static double effectslib_simplex_detail_3(double x, double y, double z, double s
     double xs = x + s;
     double ys = y + s;
     double zs = z + s;
-    int i = FASTFLOOR(xs);
-    int j = FASTFLOOR(ys);
-    int k = FASTFLOOR(zs);
+    int i = fastfloor(xs);
+    int j = fastfloor(ys);
+    int k = fastfloor(zs);
     double t = (double) (i + j + k) * G3;
     double X0 = i - t;
     double Y0 = j - t;
@@ -1108,6 +1133,9 @@ typedef struct octave {
     int    b1;
     int    b2;
     int    b3;
+    /* */
+    double scale;
+    double offset;
 } octave;
 
 static int effectslib_octave_methods(lua_State *L)
@@ -1175,7 +1203,7 @@ static int effectslib_octave_aux_set(lua_State *L, octave *o, int direct)
      // direct  = 12;
     }
     /* check */
-    if (o->loop < first_octave_loop || o->method > last_octave_loop) {
+    if (o->loop < first_octave_loop || o->loop > last_octave_loop) {
         o->loop = first_octave_loop;
     }
     if (o->method < first_octave_method || o->method > last_octave_method) {
@@ -1195,6 +1223,9 @@ static int effectslib_octave_aux_set(lua_State *L, octave *o, int direct)
     if (o->lacunarity < 1.0) { 
         o->lacunarity = 1.0;
     }
+    /* save calculations */
+    o->scale  = (o->maximum - o->minimum) * 0.5;
+    o->offset = (o->maximum + o->minimum) * 0.5;
     /* done */
     return direct;
 }
@@ -1316,7 +1347,13 @@ static void effectslib_octave_aux_get(octave *o)
             break;
         case octave_angle:  
         case octave_detail:  
-            variant = o->count > 2 ? octave_simplex_detail_3 : octave_simplex_detail_2;
+            if (o->count >= 3) {
+                variant  = octave_simplex_detail_3;
+                o->count = 3;
+            } else {
+                variant  = octave_simplex_detail_2;
+                o->count = 2;
+            }
             break;
     }
 
@@ -1400,8 +1437,9 @@ static void effectslib_octave_aux_get(octave *o)
 
     }
     /* we normalize the result to the range minimum .. maximum */
-    noise = noise * (o->maximum - o->minimum) + (o->maximum + o->minimum); /* can be precalculated: no gain  */
-    noise = noise / 2;
+ // noise = noise * (o->maximum - o->minimum) + (o->maximum + o->minimum); /* can be precalculated: no gain  */
+ // noise = noise / 2;
+    noise = noise * o->scale + o->offset;
     /* and make sure we fit inside the range */
     if (noise > o->maximum) {
         noise = o->maximum;
@@ -1460,8 +1498,8 @@ static void effectslib_octave_aux_loop(lua_State *L, octave * o, int nx, int ny,
         o->count = 2;
     }
     if (o->loop == octave_loop_yx) { 
-        unsigned char * p = bytemap;
         for (int y = 0; y < ny; y++) {
+            unsigned char * p = bytemap + (ny - y - 1) * nx * nz;
             o->y = y;
             for (int x = 0; x < nx; x++) {
                 o->x = x;
@@ -1480,25 +1518,21 @@ static void effectslib_octave_aux_loop(lua_State *L, octave * o, int nx, int ny,
                     /* call function */
                     { 
                         int n = effectslib_octave_aux_push(L, o);
-                        if (lua_pcall(L, n, nz, 0) != 0) { 
+                        if lmt_unlikely(lua_pcall(L, n, nz, 0) != 0) {
                             tex_formatted_warning("effectslib", "run octave: %s", lua_tostring(L, -1));
-                         // lua_pushliteral(L, "error running octave");
-                         // lua_error(L);
+                            lua_error(L);
                         }
                     }
                     /* use results */
                     if (nz == 3) { 
-                        *p++ = (unsigned char) lmt_roundnumber(L, -3); /* slot + 1 */
-                        *p++ = (unsigned char) lmt_roundnumber(L, -2); /* slot + 2 */
-                     // *p++ = (unsigned char) lmt_roundnumber(L, -3); /* slot + 3 */
-                    } else { 
-                     // *p++ = (unsigned char) lmt_roundnumber(L, -1); /* slot + 1 */
+                        *p++ = valid_byte(lmt_roundnumber(L, -3)); /* slot + 1 */
+                        *p++ = valid_byte(lmt_roundnumber(L, -2)); /* slot + 2 */
                     }
-                    *p++ = (unsigned char) lmt_roundnumber(L, -1);     /* slot + . */
+                    *p++ = valid_byte(lmt_roundnumber(L, -1));     /* slot + . */
                     /* wrap up */
                     lua_settop(L, slot);
                 } else { 
-                    unsigned char c = (unsigned char) lround(o->noise);
+                    unsigned char c = valid_byte(lround(o->noise));
                     *p++ = c;
                     if (nz == 3) {
                         *p++ = c;
@@ -1519,32 +1553,38 @@ static void effectslib_octave_aux_loop(lua_State *L, octave * o, int nx, int ny,
                     lua_pushvalue(L, slot);
                     /* pass to function */
                     if (o->existing == 3) {
-                        o->b1 = (int) bytemap[p  ];
-                        o->b2 = (int) bytemap[p+1];
-                        o->b3 = (int) bytemap[p+2];
+                        if (nz == 3) {
+                            o->b1 = (int) bytemap[p];
+                            o->b2 = (int) bytemap[p+1];
+                            o->b3 = (int) bytemap[p+2];
+                        } else {
+                            o->b1 = (int) bytemap[p];
+                            o->b2 = o->b1;
+                            o->b3 = o->b2;
+                        }
                     } else if (o->existing == 1) { 
-                        o->b1 = (int) bytemap[p  ];
+                        o->b1 = (int) bytemap[p];
                     }
                     /* call function */
                     {
                         int n = effectslib_octave_aux_push(L, o);
-                        if (lua_pcall(L, n, nz, 0) != 0) { 
+                        if lmt_unlikely(lua_pcall(L, n, nz, 0) != 0) {
                          // lua_pushliteral(L, "error running octave");
                             lua_error(L);
                         }
                     }
                     /* use results */
                     if (nz == 3) { 
-                        bytemap[p  ] = (unsigned char) lmt_roundnumber(L, -3); /* slot + 1 */
-                        bytemap[p+1] = (unsigned char) lmt_roundnumber(L, -2); /* slot + 2 */
-                        bytemap[p+2] = (unsigned char) lmt_roundnumber(L, -1); /* slot + 3 */
+                        bytemap[p]   = valid_byte(lmt_roundnumber(L, -3)); /* slot + 1 */
+                        bytemap[p+1] = valid_byte(lmt_roundnumber(L, -2)); /* slot + 2 */
+                        bytemap[p+2] = valid_byte(lmt_roundnumber(L, -1)); /* slot + 3 */
                     } else { 
-                        bytemap[p  ] = (unsigned char) lmt_roundnumber(L, -1); /* slot + 1 */
+                        bytemap[p]   = valid_byte(lmt_roundnumber(L, -1)); /* slot + 1 */
                     }
                     /* wrap up */
                     lua_settop(L, slot);
                 } else { 
-                    unsigned char c = (unsigned char) lround(o->noise);
+                    unsigned char c = valid_byte(lround(o->noise));
                     bytemap[p] = c;
                     if (nz == 3) {
                         bytemap[p+1] = c;
@@ -1564,27 +1604,35 @@ static int effectslib_octave_bytemap(lua_State *L)
         int ny = lmt_tointeger(L, 3);
         int nz = lmt_tointeger(L, 4);
         if (nx > 0 && ny > 0 && (nz == 1 || nz == 3)) {
-            size_t length = nx * ny * nz; /* todo: check this for overflow */
-            unsigned char *bytemap = NULL; 
-            o->existing = 0;
-            bytemap = lmt_memory_malloc(length);
-            if (lua_type(L, 6) == LUA_TSTRING) { 
-                size_t l = 0;
-                const char *s = lua_tolstring(L, 6, &l);
-                if (l == length) { 
-                    memcpy(bytemap, s, length);
-                    o->existing = nz;
-                } else {
-                    bytemap = NULL;
+            size_t sx = (size_t) nx;
+            size_t sy = (size_t) ny;
+            size_t sz = (size_t) nz;
+            if (sx > SIZE_MAX / sy || sx * sy > SIZE_MAX / sz) {
+                return 0;
+            } else {
+                size_t length = sx * sy * sz;
+                unsigned char *bytemap = lmt_memory_malloc(length);
+                o->existing = 0;
+                if (! bytemap) {
+                    return 0;
                 }
-            }
-            if (bytemap) {
+                if (lua_type(L, 6) == LUA_TSTRING) {
+                    size_t l = 0;
+                    const char *s = lua_tolstring(L, 6, &l);
+                    if (l == length) {
+                        memcpy(bytemap, s, length);
+                        o->existing = nz;
+                    } else {
+                        lmt_memory_free(bytemap);
+                        return 0;
+                    }
+                }
                 effectslib_octave_aux_loop(L, o, nx, ny, nz, bytemap, 5);
+                lua_pushlstring(L, (char *) bytemap, length);
+                lua_pushinteger(L, length);
+                lmt_memory_free(bytemap);
+                return 2;
             }
-            lua_pushlstring(L, (char *) bytemap, length);
-            lua_pushinteger(L, length);
-            lmt_memory_free(bytemap);
-            return 2; 
         }
     }
     return 0;
@@ -1668,7 +1716,6 @@ static int effectslib_octave_tostring(lua_State *L)
     } else {
         return 0;
     }
-    return 0;
 }
 
 static const luaL_Reg effectslib_octave_metatable[] =

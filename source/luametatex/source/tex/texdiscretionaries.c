@@ -410,7 +410,7 @@ void tex_finish_discretionary(void)
                     // fall through
                 }
             default:
-                if (hyphenation_permitted(hyphenation_mode_par, permit_all_hyphenation_mode)) {
+                if lmt_likely(hyphenation_permitted(hyphenation_mode_par, permit_all_hyphenation_mode)) {
                     break;
                 } else {
                     tex_handle_error(
@@ -467,7 +467,7 @@ void tex_finish_discretionary(void)
                     |return|.
                 */
                 if (next && length > 0) {
-                    if (cur_mode == mmode && ! hyphenation_permitted(hyphenation_mode_par, permit_math_replace_hyphenation_mode)) {
+                    if lmt_unlikely(cur_mode == mmode && ! hyphenation_permitted(hyphenation_mode_par, permit_math_replace_hyphenation_mode)) {
                         tex_handle_error(
                             normal_error_type,
                             "Illegal math \\discretionary",

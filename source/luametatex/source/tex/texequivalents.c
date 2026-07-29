@@ -370,7 +370,7 @@ static void tex_undump_equivalents_mem_hash(dumpstream f)
         int u, d;
         undump_int(f, u);
         undump_int(f, d);
-        if (u != n_of_undefined || d != n_of_defined)  {
+        if (u != n_of_undefined || d != n_of_defined) {
             tex_fatal_undump_error("eqtb count mismatch");
         }
     }
@@ -810,8 +810,9 @@ void tex_show_save_groups(void)
          //     goto FOUND2;
             case math_inline_group:
                 tex_print_char('$');
+                goto FOUND2;
             case math_display_group:
-                tex_print_char('$');
+                tex_print_str("$$");
                 goto FOUND2;
             case math_equation_number_group:
                 tex_show_math_number_group();
@@ -843,6 +844,7 @@ void tex_show_save_groups(void)
                 break;
             case global_box_flag:
                 tex_print_str_esc("global");
+                FALLTHROUGH
             case box_flag:
              // tex_print_str_esc("setbox");
              // tex_print_int(tex_get_packaging_context());

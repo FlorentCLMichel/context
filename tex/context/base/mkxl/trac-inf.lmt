@@ -172,24 +172,25 @@ function statistics.show()
                 os.platform or "unknown",os.type or "unknown", environment.texos or "unknown")
         end)
         register("used engine", function()
-            return format("%s version: %s, functionality level: %s, format id: %s, memory mode: %i, compiler: %s",
+            return format("%s version: %s, functionality level: %s, format id: %s, memory mode: %i, compiler: %s, cversion: %i",
                 LUATEXENGINE, LUATEXVERBOSE, LUATEXFUNCTIONALITY, LUATEXFORMATID,
                 status.tex_memory_mode,
-                status.used_compiler)
+                status.used_compiler,
+                status.used_cversion
+            )
         end)
         register("tex properties", function()
             local t = status.gethashstate()
             local l = status.getlookupstate()
             local m = status.gettexstate()
-            return format("%s hash slots used of %s, %s control sequences, approximate memory usage: %i MB",
-                t.top, t.max, l.ptr, m.approximate // (1024 * 1024))
+            return format("%s eqtb slots used of %s, %s control sequences, %i hash slots, %i misses, approximate memory usage: %i MB",
+                t.top, t.max, l.ptr, m.hashslots, m.hashmisses, m.approximate // (1024 * 1024))
         end)
         register("callbacks", statistics.callbacks)
         -- so far
         register("lua properties",function()
          -- local hash = lua.gethashchars()
             local mask = load([[τεχ = 1]]) and "utf" or "ascii"
-         -- return format("engine: %s %s, used memory: %s, hash chars: min(%i,40), symbol mask: %s (%s)",
             return format("engine: lua %s, format %s, used memory: %s, symbol mask: %s (%s)",
                 LUAVERSION, LUAFORMAT, statistics.memused(), mask, mask == "utf" and "τεχ" or "tex")
         end)

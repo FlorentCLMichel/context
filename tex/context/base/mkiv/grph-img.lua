@@ -554,8 +554,10 @@ do
         if once then
             for i=1,#t do
                 local l = t[i]
+if l.length then
                 f:setposition(l.offset)
                 t[i] = f:readstring(l.length)
+end
             end
             local data = concat(t)
             -- t wiped in caller
@@ -564,8 +566,12 @@ do
             local data = { }
             for i=1,#t do
                 local l = t[i]
+if l.length then
                 f:setposition(l.offset)
                 data[i] = f:readstring(l.length)
+else
+                data[i] = l
+end
             end
             return concat(data)
         end

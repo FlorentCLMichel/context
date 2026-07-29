@@ -485,7 +485,7 @@ halfword tex_scan_insert_index(void)
     switch (lmt_insert_state.mode) {
         case unset_insert_mode:
             lmt_insert_state.mode = index_insert_mode;
-            // fall-through
+            FALLTHROUGH
         case index_insert_mode:
             index = tex_scan_box_register_number();
             if (index == output_box_par) {

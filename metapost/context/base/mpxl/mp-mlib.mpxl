@@ -2059,6 +2059,22 @@ enddef ;
 
 permanent mesh;
 
+newscriptindex mfid_vectorpoints ; mfid_vectorpoints := scriptindex("vectorpoints")  ;
+
+def vectorpoints(expr name, kind) = runscript mfid_vectorpoints name kind ; enddef ; % just combine with the next one
+
+vardef pointsexperiment(expr name, kind) =
+    image (
+        save p ; path p ; p := vectorpoints(name,kind) ;
+        addto currentpicture doublepath p
+            withprescript "vp_name=" & name
+            withprescript "vp_kind=" & kind
+        ;
+    )
+enddef ;
+
+permanent points;
+
 % This was the original longer version, watch the withcurvature trickery but in the
 % end we decided not to go this route as we never really mess with these paths in
 % mp apart from placement and decorating.

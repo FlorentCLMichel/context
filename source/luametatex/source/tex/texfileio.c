@@ -42,7 +42,7 @@ void tex_initialize_fileio_state(void)
 {
     int size = lmt_fileio_state.io_buffer_data.minimum;
     lmt_fileio_state.io_buffer = aux_allocate_clear_array(sizeof(unsigned char), size, reserved_io_buffer_slots);
-    if (lmt_fileio_state.io_buffer) {
+    if lmt_likely(lmt_fileio_state.io_buffer) {
         lmt_fileio_state.io_buffer_data.allocated = size;
     } else {
         tex_overflow_error("buffer", size);
@@ -70,7 +70,7 @@ bool tex_room_in_buffer(int top)
                 }
             }
             lmt_run_memory_callback("buffer", tmp ? 1 : 0);
-            if (! tmp) {
+            if lmt_unlikely(! tmp) {
                 tex_overflow_error("buffer", top);
                 return false;
             }
@@ -472,7 +472,6 @@ static char *tex_aux_pack_job_name(const char *e, int keeppath, int keepsuffix)
         int f = -1; /* first */
         int l = -1; /* last */
         char *fn = NULL;
-        int k = 0;
         for (int i = 0; i < ln; i++) {
             if (IS_DIR_SEP(n[i])) {
                 f = i;
@@ -493,6 +492,7 @@ static char *tex_aux_pack_job_name(const char *e, int keeppath, int keepsuffix)
         }
         fn = (char*) lmt_memory_malloc((l - f) + le + 2); /* a bit too much */
         if (fn) {
+            int k = 0;
             for (int i = f; i < l; i++) {
                 fn[k++] = n[i];
             }

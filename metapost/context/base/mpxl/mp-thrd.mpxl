@@ -3,7 +3,7 @@
 %D        version=2026.05.01,
 %D          title=\CONTEXT\ \METAPOST\ graphics,
 %D       subtitle=Scene based 3D plotting,
-%D         author=Mikael Sundqvist & Hans Hagen & Chat 5.5]
+%D         author=Mikael Sundqvist & Hans Hagen & Chat 5.5,
 %D           date=\currentdate,
 %D      copyright={PRAGMA ADE \& \CONTEXT\ Development Team}]
 %C
@@ -395,3 +395,39 @@ vardef lmt_scene_bounds =
 enddef ;
 
 let lmt_scene_point = lmt_scene_project_point ;
+
+%
+
+string  mfun_scene_tag ;
+pair    mfun_scene_point ;
+pair    mfun_scene_normal ;
+triplet mfun_scene_triplet ;
+
+def scenenormal primary tag = begingroup mfun_scene_tag := tag ; mfun_scenenormal enddef ;
+def scenepoint  primary tag = begingroup mfun_scene_tag := tag ; mfun_scenepoint  enddef ;
+
+def mfun_scenenormal primary pnt =
+    image (
+        mfun_scene_triplet := lmt_scene_calculate_normal(mfun_scene_tag,pnt) ;
+        mfun_scene_point   := lmt_scene_project_point pnt ;
+        mfun_scene_normal  := lmt_scene_project_point mfun_scene_triplet ;
+        drawarrow mfun_scene_point -- (mfun_scene_point shifted .1mfun_scene_normal) ;
+    )
+    endgroup
+enddef ;
+
+def mfun_scenepoint primary pnt =
+    lmt_scene_project_point pnt
+    endgroup
+enddef ;
+
+vardef lmt_scene_mesh expr name =
+    save p ;
+    picture p ;
+    p := pointsexperiment(name,"draw") ;
+    p := p yscaled -1 ;
+    p := p shifted - llcorner p ;
+  % p := p xsized bbwidth(currentpicture) ;
+    p := p xysized(lmt_final_width,lmt_final_height) ;
+    p
+enddef;

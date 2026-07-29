@@ -97,19 +97,23 @@
             LPWSTR *l = CommandLineToArgvW(GetCommandLineW(), &c);
             if (l != NULL) {
                 char **v = lmt_memory_malloc(sizeof(char *) * c);
-                for (int i = 0; i < c; i++) {
-                    v[i] = aux_utf8_from_wide(l[i]);
-                }
-                *av = v;
-                /*tex Let's be nice with path names: |c:\\foo\\etc| */
-                if (c > 1) {
-                    if ((strlen(v[c-1]) > 2) && isalpha(v[c-1][0]) && (v[c-1][1] == ':') && (v[c-1][2] == '\\')) {
-                        for (char *p = v[c-1]+2; *p; p++) {
-                            if (*p == '\\') {
-                                *p = '/';
+                if (*v) {
+                    for (int i = 0; i < c; i++) {
+                        v[i] = aux_utf8_from_wide(l[i]);
+                    }
+                    *av = v;
+                    /*tex Let's be nice with path names: |c:\\foo\\etc| */
+                    if (c > 1) {
+                        if ((strlen(v[c-1]) > 2) && isalpha(v[c-1][0]) && (v[c-1][1] == ':') && (v[c-1][2] == '\\')) {
+                            for (char *p = v[c-1]+2; *p; p++) {
+                                if (*p == '\\') {
+                                    *p = '/';
+                                }
                             }
                         }
                     }
+                } else {
+                    *av = NULL;
                 }
             }
             return c;
@@ -126,7 +130,7 @@
             char buffer[MAX_PATH];
             GetModuleFileName(NULL, buffer, sizeof(buffer));
             path = lmt_memory_strdup(buffer);
-            if (strlen(path) > 0) {
+            if (path && strlen(path) > 0) {
                 for (size_t i = 0; i < strlen(path); i++) {
                     if (path[i] == '\\') {
                         path[i] = '/';
@@ -180,14 +184,14 @@
         if (strchr(file, '/')) {
             return lmt_memory_strdup(file);
         } else {
-            const char *esp;
-            size_t prefixlen = 0;
-            size_t totallen = 0;
-            size_t filelen = strlen(file);
-            char *path = NULL;
             char *searchpath = lmt_memory_strdup(getenv("PATH"));
             const char *index = searchpath;
+            char *path = NULL;
             if (index) {
+                const char *esp;
+                size_t totallen = 0;
+                size_t filelen = strlen(file);
+                size_t prefixlen = 0;
                 do {
                     esp = strchr(index, ':');
                     if (esp) {
@@ -203,8 +207,13 @@
                         }
 # endif
                         path = lmt_memory_malloc(totallen + 1);
-                        memcpy(path, index, prefixlen);
-                        memcpy(path + prefixlen, file, filelen);
+                        if (path) {
+                            memcpy(path, index, prefixlen);
+                            memcpy(path + prefixlen, file, filelen);
+                        } else {
+                            /*tex This is an error, unlikely, but checking makes compilers happy. */
+                            goto OEPS;
+                        }
                     } else {
                         totallen = prefixlen + filelen + 1;
 # ifdef PATH_MAX
@@ -213,9 +222,14 @@
                         }
 # endif
                         path = lmt_memory_malloc(totallen + 1);
-                        memcpy(path, index, prefixlen);
-                        path[prefixlen] = '/';
-                        memcpy(path + prefixlen + 1, file, filelen);
+                        if (path) {
+                            memcpy(path, index, prefixlen);
+                            path[prefixlen] = '/';
+                            memcpy(path + prefixlen + 1, file, filelen);
+                        } else {
+                            /*tex This is an error, unlikely, but checking makes compilers happy. */
+                            goto OEPS;
+                        }
                     }
                     path[totallen] = '\0';
                     if (access(path, X_OK) >= 0) {
@@ -230,6 +244,7 @@
             if (path) {
                 return path;
             } else {
+              OEPS:
                 return lmt_memory_strdup("."); /* ok? */
             }
         }
@@ -245,7 +260,7 @@
             if (! target) {
                 break;
             } else {
-                int tsize = readlink(file, target, size);
+                ssize_t tsize = readlink(file, target, size);
                 if (tsize <= 0) {
                     lmt_memory_free(target);
                     break;

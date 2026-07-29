@@ -103,3 +103,13 @@ end
 function number.idiv(i,d)
     return i // d
 end
+
+function number.clamp(value,low,high)
+    if value < low then
+        return low
+    elseif value > high then
+        return high
+    else
+        return value
+    end
+end

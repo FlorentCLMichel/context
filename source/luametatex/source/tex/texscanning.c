@@ -967,6 +967,7 @@ static int tex_aux_set_cur_val_by_some_cmd(int code)
                 switch (cur_cmd) {
                     case specification_cmd:
                         cur_chr = eq_value(cur_chr);
+                        FALLTHROUGH
                     case specificationspec_cmd:
                         if (cur_chr) { 
                             switch (code) { 
@@ -992,9 +993,8 @@ static int tex_aux_set_cur_val_by_some_cmd(int code)
                                     return 1;
                             }
                             break;
-                        } else { 
-                           // fall through 
                         }
+                        FALLTHROUGH
                     default:
                         cur_val = 0; 
                         cur_val_level = integer_val_level;
@@ -1228,7 +1228,7 @@ static void tex_aux_set_cur_val_by_auxiliary_cmd(int code)
 {
     switch (code) {
         case space_factor_code:
-            if (is_h_mode(cur_list.mode)) {
+            if lmt_likely(is_h_mode(cur_list.mode)) {
                 cur_val = cur_list.space_factor;
             } else {
                 tex_handle_error(normal_error_type, "Improper %C", auxiliary_cmd, code,
@@ -1240,7 +1240,7 @@ static void tex_aux_set_cur_val_by_auxiliary_cmd(int code)
             cur_val_level = integer_val_level;
             break;
         case prev_depth_code:
-            if (is_v_mode(cur_list.mode)) {
+            if lmt_likely(is_v_mode(cur_list.mode)) {
                 cur_val = cur_list.prev_depth;
             } else {
                 tex_handle_error(normal_error_type, "Improper %C", auxiliary_cmd, code,
@@ -2338,9 +2338,8 @@ static halfword tex_aux_scan_something_internal(halfword cmd, halfword chr, int 
                 cur_val = 0; 
                 cur_val_level = integer_val_level;
                 break;
-            } else { 
-                // fall through 
             }
+            FALLTHROUGH
         case specificationspec_cmd:
             {
                 /*tex The next one sets |cur_val| and |cur_val_level| which can be an integer or dimen. */ 
@@ -2420,7 +2419,7 @@ void tex_scan_something_simple(halfword cmd, halfword chr)
 static inline halfword tex_aux_scan_limited_int(int optional_equal, int min, int max, const char *invalid)
 {
     halfword v = tex_scan_integer(optional_equal, NULL, NULL);
-    if (v < min || v > max) {
+    if lmt_unlikely(v < min || v > max) {
         tex_handle_error(
             normal_error_type,
             "%s (%i) should be in the range %i..%i",
@@ -2522,7 +2521,7 @@ halfword   tex_scan_math_class_number(int optional_equal)
 static void tex_aux_scan_integer_no_number(int where)
 {
     /*tex Express astonishment that no number was here. */
-    if (lmt_error_state.intercept) {
+    if lmt_likely(lmt_error_state.intercept) {
         lmt_error_state.last_intercept = 1 ;
         if (cur_cmd != spacer_cmd) {
             tex_back_input(cur_tok);
@@ -2592,7 +2591,7 @@ halfword tex_scan_integer(int optional_equal, int *radix, int *grouped)
             }
         }
         if (result > max_character_code) {
-            if (lmt_error_state.intercept) {
+            if lmt_likely(lmt_error_state.intercept) {
                 lmt_error_state.last_intercept = 1;
                 tex_back_input(cur_tok);
             } else {
@@ -2638,7 +2637,7 @@ halfword tex_scan_integer(int optional_equal, int *radix, int *grouped)
                             result = result * 8 + d;
                             if (result > max_integer) {
                                 result = max_integer;
-                                if (lmt_error_state.intercept) {
+                                if lmt_likely(lmt_error_state.intercept) {
                                     vacuous = true;
                                     goto DONE;
                                 } else {
@@ -2648,6 +2647,7 @@ halfword tex_scan_integer(int optional_equal, int *radix, int *grouped)
                             }
                         }
                     }
+                    break; /* prevent msvc fallthrough message */
                 }
             case hex_token:
                 {
@@ -2671,7 +2671,7 @@ halfword tex_scan_integer(int optional_equal, int *radix, int *grouped)
                             result = result * 16 + d;
                             if (result > max_integer) {
                                 result = max_integer;
-                                if (lmt_error_state.intercept) {
+                                if lmt_likely(lmt_error_state.intercept) {
                                     vacuous = true;
                                     goto DONE;
                                 } else {
@@ -2681,6 +2681,7 @@ halfword tex_scan_integer(int optional_equal, int *radix, int *grouped)
                             }
                         }
                     }
+                    break; /* prevent msvc fallthrough message */
                 }
             default:
                 if (radix) {
@@ -2698,7 +2699,7 @@ halfword tex_scan_integer(int optional_equal, int *radix, int *grouped)
                         result = result * 10 + d;
                         if (result > max_integer) {
                             result = max_integer;
-                            if (lmt_error_state.intercept) {
+                            if lmt_likely(lmt_error_state.intercept) {
                                 vacuous = true;
                                 goto DONE;
                             } else {
@@ -2755,7 +2756,7 @@ void tex_scan_integer_validate(void)
             }
         }
         if (result > max_character_code) {
-            if (lmt_error_state.intercept) {
+            if lmt_likely(lmt_error_state.intercept) {
                 lmt_error_state.last_intercept = 1;
                 tex_back_input(cur_tok);
             } else {
@@ -2783,6 +2784,7 @@ void tex_scan_integer_validate(void)
                     }
                     vacuous = false;
                 }
+                break; /* prevent msvc fallthrough message */
             case hex_token:
                 while (1) {
                     tex_get_x_token();
@@ -2793,6 +2795,7 @@ void tex_scan_integer_validate(void)
                     }
                     vacuous = false;
                 }
+                break; /* prevent msvc fallthrough message */
             default:
                 while (1) {
                     if (! (cur_tok >= zero_token && cur_tok <= nine_token)) {
@@ -2801,6 +2804,7 @@ void tex_scan_integer_validate(void)
                     vacuous = false;
                     tex_get_x_token();
                 }
+                break; /* prevent msvc fallthrough message */
         }
       DONE:
         if (vacuous) {
@@ -2863,6 +2867,7 @@ int tex_scan_cardinal(int optional_equal, unsigned *value, int dontbark)
                             result = max_cardinal;
                         }
                     }
+                    break; /* prevent msvc fallthrough message */
                 }
             case hex_token:
                 {
@@ -2884,6 +2889,7 @@ int tex_scan_cardinal(int optional_equal, unsigned *value, int dontbark)
                             result = max_cardinal;
                         }
                     }
+                    break; /* prevent msvc fallthrough message */
                 }
             default:
                 {
@@ -2901,11 +2907,12 @@ int tex_scan_cardinal(int optional_equal, unsigned *value, int dontbark)
                         }
                         tex_get_x_token();
                     }
+                    break; /* prevent msvc fallthrough message */
                 }
         }
       DONE:
         if (vacuous) {
-            if (dontbark) {
+            if lmt_likely(dontbark) {
                 return 0;
             } else {
                 tex_aux_missing_number_error(1);
@@ -3650,7 +3657,7 @@ halfword tex_scan_dimension(int mu, int inf, int shortcut, int optional_equal, h
 # endif
             if (mu) {
                 cur_val = tex_aux_coerced_glue(cur_val, cur_val_level);
-                if (cur_val_level == muglue_val_level) {
+                if lmt_likely(cur_val_level == muglue_val_level) {
                     goto ATTACH_SIGN;
                 } else if (cur_val_level != integer_val_level) {
                     tex_aux_mu_error(2);
@@ -3717,7 +3724,7 @@ halfword tex_scan_dimension(int mu, int inf, int shortcut, int optional_equal, h
         switch (tex_aux_scan_unit(&num, &denom, &v, &cur_order)) {
             case no_unit_scanned:
                 /* error */
-                if (lmt_error_state.intercept) {
+                if lmt_likely(lmt_error_state.intercept) {
                     lmt_error_state.last_intercept = 1;
                 } else {
                     tex_aux_scan_dimension_unknown_unit_error();
@@ -3725,7 +3732,7 @@ halfword tex_scan_dimension(int mu, int inf, int shortcut, int optional_equal, h
                 goto ATTACH_FRACTION;
             case normal_unit_scanned:
                 /* cm mm pt bp dd cc in dk */
-                if (mu) {
+                if lmt_unlikely(mu) {
                     tex_aux_scan_dimension_mu_error();
                 } else if (num) {
                     int remainder = 0;
@@ -3737,13 +3744,13 @@ halfword tex_scan_dimension(int mu, int inf, int shortcut, int optional_equal, h
                 goto ATTACH_FRACTION;
             case scaled_point_scanned:
                 /* sp */
-                if (mu) {
+                if lmt_unlikely(mu) {
                     tex_aux_scan_dimension_unknown_unit_error(); /* maybe some mu error instead */
                 }
                 goto DONE;
             case relative_unit_scanned:
                 /* ex em px */
-                if (mu) {
+                if lmt_unlikely(mu) {
                     tex_aux_scan_dimension_unknown_unit_error(); /* maybe some mu error instead */
                 }
 # if (posit_as_factor)
@@ -3759,16 +3766,16 @@ halfword tex_scan_dimension(int mu, int inf, int shortcut, int optional_equal, h
                 goto DONE;
             case math_unit_scanned:
                 /* mu (slightly different but an error anyway */
-                if (! mu) {
+                if lmt_unlikely(! mu) {
                     tex_aux_scan_dimension_unknown_unit_error();
                 }
                 goto ATTACH_FRACTION;
             case flexible_unit_scanned:
                 /* fi fil fill filll */
-                if (mu) {
+                if lmt_unlikely(mu) {
                     tex_aux_scan_dimension_unknown_unit_error();
                 } else if (! inf) {
-                    if (! order && lmt_error_state.intercept) {
+                    if lmt_likely(! order && lmt_error_state.intercept) {
                         lmt_error_state.last_intercept = 1;
                     } else {
                         tex_aux_scan_dimension_fi_error();
@@ -3780,7 +3787,7 @@ halfword tex_scan_dimension(int mu, int inf, int shortcut, int optional_equal, h
                 cur_val = tex_aux_scan_something_internal(cur_cmd, cur_chr, mu ? muglue_val_level : dimension_val_level, 0, 0, 1); /* adapts cur_val_level */
                 if (mu) {
                     cur_val = tex_aux_coerced_glue(cur_val, cur_val_level);
-                    if (cur_val_level != muglue_val_level) {
+                    if lmt_unlikely(cur_val_level != muglue_val_level) {
                         tex_aux_mu_error(3);
                     }
                 }
@@ -3809,7 +3816,7 @@ halfword tex_scan_dimension(int mu, int inf, int shortcut, int optional_equal, h
     tex_push_back(cur_tok, cur_cmd, cur_chr);
   ATTACH_SIGN:
     if (lmt_scanner_state.arithmetic_error || (abs(cur_val) >= 010000000000)) { // 0x40000000
-        if (lmt_error_state.intercept) {
+        if lmt_likely(lmt_error_state.intercept) {
             lmt_error_state.last_intercept = 1;
         } else {
             tex_aux_scan_dimension_out_of_range_error(1);
@@ -3941,7 +3948,7 @@ halfword tex_scan_glue(int level, int optional_equal, int options_too, halfword 
     if (cur_cmd >= min_internal_cmd && cur_cmd <= max_internal_cmd) {
         cur_val = tex_aux_scan_something_internal(cur_cmd, cur_chr, level, negative, 0, 1);
         if (cur_val_level >= glue_val_level) {
-            if (cur_val_level != level) {
+            if lmt_unlikely(cur_val_level != level) {
                 tex_aux_mu_error(4);
             }
             return cur_val;
@@ -4389,7 +4396,7 @@ static halfword tex_aux_scan_font_id_and_parameter(halfword *fnt, halfword *n)
         *n = tex_scan_integer(0, NULL, NULL);   
     }
     *fnt = tex_scan_font_identifier(NULL);
-    if (*n <= 0 || *n > max_integer) {
+    if lmt_unlikely(*n <= 0 || *n > max_integer) {
         tex_handle_error(
             normal_error_type,
             "Font '%s' has at most %i fontdimen parameters",
@@ -4458,7 +4465,7 @@ halfword tex_scan_math_parameter(void)
     do {
         tex_get_x_token();
     } while (cur_cmd == spacer_cmd);
-    if (cur_cmd == math_parameter_cmd && cur_chr < math_parameter_last) {
+    if lmt_likely(cur_cmd == math_parameter_cmd && cur_chr < math_parameter_last) {
         return cur_chr;
     } else {
         tex_handle_error(
@@ -4963,9 +4970,7 @@ static int tex_aux_valid_macro_preamble(halfword *p, int *counter, halfword *has
                     set_token_preamble(h, macro_with_preamble);
                     set_token_parameters(h, *counter);
                     return 1;
-                } else if (*counter == 0xF) {
-                    tex_aux_too_many_parameters_error();
-                } else {
+                } else if (*counter != 0xF) {
                     switch (cur_tok) {
                         case zero_token:
                             ++*counter;
@@ -5073,6 +5078,8 @@ case i_token_o:
                             cur_tok = match_token; /* zero */
                             break;
                     }
+                } else {
+                    tex_aux_too_many_parameters_error();
                 }
                 break;
             case end_paragraph_cmd:
@@ -5428,7 +5435,7 @@ static inline int tex_aux_add_or_sub(int x, int y, int max_answer, int operation
     switch (operation) {
         case expression_subtract:
             y = -y;
-            // fall-trough
+            FALLTHROUGH
         case expression_add:
             if (x >= 0) {
                 if (y <= max_answer - x) {
@@ -6087,6 +6094,7 @@ static void tex_aux_scan_expr(halfword level, int braced)
             case glue_val_level:
             case muglue_val_level:
                 tex_reset_glue_to_zero(expression);
+                FALLTHROUGH
             case dimension_val_level:
                 tex_aux_scan_dimension_out_of_range_error(2);
                 break;
@@ -6218,6 +6226,7 @@ static halfword tex_scan_bit_integer(int *radix)
                         }
                     }
                 }
+                break; /* prevent msvc fallthrough message */
             case hex_token:
                 {
                     if (radix) {
@@ -6246,6 +6255,7 @@ static halfword tex_scan_bit_integer(int *radix)
                         }
                     }
                 }
+                break; /* prevent msvc fallthrough message */
             default:
                 {
                     if (radix) {

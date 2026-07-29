@@ -428,7 +428,8 @@ const char *tex_clean_hyphenation(halfword id, const char *buff, char **cleaned)
             /*tex Skip. */
         } else if (u == '=') {
             unsigned c = tex_get_hj_code(id, '-');
-            uindex = aux_uni2string(uindex, (! c || c <= 32) ? '-' : c);
+         // uindex = aux_uni2string(uindex, (! c || c <= 32) ? '-' : c);
+            uindex = aux_uni2string(uindex, (c <= 32) ? '-' : c);
         } else if (u == '{') {
             u = uword_buffer[i++];
             items = 0;
@@ -451,7 +452,8 @@ const char *tex_clean_hyphenation(halfword id, const char *buff, char **cleaned)
             }
             while (u && u != '}') {
                 unsigned c = tex_get_hj_code(id, u);
-                uindex = aux_uni2string(uindex, (! c || c <= 32) ? u : c);
+             // uindex = aux_uni2string(uindex, (! c || c <= 32) ? u : c);
+                uindex = aux_uni2string(uindex, (c <= 32) ? u : c);
                 u = uword_buffer[i++];
             }
             if (u == '}') {
@@ -497,7 +499,8 @@ const char *tex_clean_hyphenation(halfword id, const char *buff, char **cleaned)
             }
         } else {
             unsigned c = tex_get_hj_code(id, u);
-            uindex = aux_uni2string(uindex, (! c || c <= 32) ? u : c);
+         // uindex = aux_uni2string(uindex, (! c || c <= 32) ? u : c);
+            uindex = aux_uni2string(uindex, (c <= 32) ? u : c);
         }
     }
     *uindex = '\0';
@@ -773,7 +776,6 @@ static void tex_aux_do_exception(halfword wordstart, halfword r, char *replaceme
             halfword replace = null;
             int count = 0;
             int alternative = null;
-            halfword penalty;
             /*tex |pre| */
             pre = tex_aux_find_exception_part(&i, uword, (int) len, wordstart, '}');
             if (i == len || uword[i + 1] != '{') {
@@ -796,6 +798,7 @@ static void tex_aux_do_exception(halfword wordstart, halfword r, char *replaceme
                 break;
             } else {
                 /*tex Let's deal with an (optional) replacement. */
+                halfword penalty;
                 if (count > 0) {
                     /*tex Assemble the replace stream. */
                     halfword q = t;
@@ -1637,7 +1640,7 @@ void tex_hyphenate_list(halfword head, halfword tail)
                                                     } else if (_valid_node_(start)) {
                                                         r = node_prev(start);
                                                     }
-                                                    if (! r) {
+                                                    if lmt_unlikely(! r) {
                                                         if (_valid_node_(head)) {
                                                             tex_normal_warning("language", "the hyphenation list is messed up, recovering");
                                                             r = head;
@@ -1662,7 +1665,8 @@ void tex_hyphenate_list(halfword head, halfword tail)
                                                 default:
                                                     if (_valid_node_(r)) { /* or word_end */
                                                         goto PICKUP;
-                                                    } else if (_valid_node_(tail)) {
+                                                    }
+                                                    if lmt_unlikely(_valid_node_(tail)) {
                                                         tex_normal_warning("language", "the hyphenation list is messed up, quitting");
                                                         goto ABORT;
                                                     } else {

@@ -416,7 +416,7 @@ void tex_line_break(int group_context, int par_context, int display_math)
                         box_search = node_next(box_search);
                     } while (box_search);
                 }
-                if (! lmt_linebreak_state.just_box) {
+                if lmt_unlikely(! lmt_linebreak_state.just_box) {
                     tex_handle_error(
                         succumb_error_type,
                         "Invalid linebreak callback",
@@ -634,14 +634,14 @@ static halfword tex_aux_find_protchar_left(halfword l, int d)
             }
             while (run && tex_protrusion_skipable(l)) {
                 while (! node_next(l) && hlist_stack_level > 0) {
-                    /*tex Don't visit this node again. */
-                    if (hlist_stack_level <= 0) {
-                        /*tex This can point to some bug. */
-                     /* return tex_normal_error("pop_node", "stack underflow (internal error)"); */
-                        return initial;
-                    } else {
+                 // /*tex Don't visit this node again. */
+                 // if (hlist_stack_level <= 0) {
+                 //     /*tex This can point to some bug. */
+                 //  /* return tex_normal_error("pop_node", "stack underflow (internal error)"); */
+                 //     return initial;
+                 // } else {
                         l = hlist_stack[--hlist_stack_level];
-                    }
+                 // }
                     run = 0;
                 }
                 if (node_next(l) && node_type(l) == boundary_node && node_subtype(l) == protrusion_boundary && (boundary_data(l) == protrusion_skip_next || boundary_data(l) == protrusion_skip_both)) {
@@ -698,15 +698,14 @@ static halfword tex_aux_find_protchar_right(halfword l, halfword r)
             }
             while (run && tex_protrusion_skipable(r)) {
                 while (r == l && hlist_stack_level > 0) {
-                    /*tex Don't visit this node again. */
-                    if (hlist_stack_level <= 0) {
-                        /*tex This can point to some bug. */
-                        /* return tex_normal_error("pop_node", "stack underflow (internal error)"); */
-                        return initial;
-                    } else {
+                 // /*tex Don't visit this node again. */
+                 // if (hlist_stack_level <= 0) {
+                 //     /*tex This can point to some bug. */
+                 //     /* return tex_normal_error("pop_node", "stack underflow (internal error)"); */
+                 //     return initial;
+                 // } else {
                         r = hlist_stack[--hlist_stack_level];
-                    }
-
+                 // }
                     if (hlist_stack_level <= 0) {
                         /*tex This can point to some bug. */
                      /* return tex_normal_error("pop_node", "stack underflow (internal error)"); */
@@ -1778,17 +1777,17 @@ halfword tex_badness(scaled t, scaled s)
 
 void tex_check_fitness_classes(halfword fitnessclasses)
 {
-    if (! fitnessclasses) {
+    if lmt_unlikely(! fitnessclasses) {
         tex_normal_error("linebreak", "unknown fitnessclasses");
         return;
     } else {
         halfword max = tex_get_specification_count(fitnessclasses);
         halfword med = 0;
-        if (max >= max_n_of_fitness_values) {
+        if lmt_unlikely(max >= max_n_of_fitness_values) {
             tex_normal_error("linebreak", "too many fitnessclasses");
             return;
         }
-        if (max < 3) {
+        if lmt_unlikely(max < 3) {
             tex_normal_error("linebreak", "less than three fitnessclasses");
             return;
         }
@@ -1797,7 +1796,7 @@ void tex_check_fitness_classes(halfword fitnessclasses)
                 break;
             }
         }
-        if ((med <= 1) || (med == max)) {
+        if lmt_unlikely((med <= 1) || (med == max)) {
             tex_normal_error("linebreak", "invalid decent slot in fitnessclasses");
         } else {
             tex_set_specification_decent(fitnessclasses, med);
@@ -1886,7 +1885,7 @@ static void tex_check_protrusion_shortfall(halfword breakpoint, halfword first, 
         halfword left = active_break_node(breakpoint) ? passive_cur_break(active_break_node(breakpoint)) : first; /* nasty */
         if (current) {
             other = node_prev(current);
-            if (node_next(other) != current) {
+            if lmt_unlikely(node_next(other) != current) {
                 tex_normal_error("linebreak", "the node list is messed up");
             }
         }
@@ -2837,6 +2836,7 @@ static scaled tex_aux_try_break(
                     }
                 } else { 
                     if (properties->tracing_paragraphs == -1) {
+                        // to be checked: old_line == lmt_linebreak_state.easy_line is always true
                         if (lmt_linebreak_state.getting_loose || (old_line == lmt_linebreak_state.easy_line)) {
                             tex_aux_trace_special_break(properties, 1, line, old_line);
                         } else {
@@ -3639,12 +3639,11 @@ static void tex_aux_fix_toddler_penalties(const line_break_properties *propertie
     tail = node_prev(start);
     while (tail) {
         if (node_type(tail) == glyph_node && tex_has_glyph_option(tail, glyph_option_is_toddler)) {
-            halfword prev = 0;
-            halfword next = 0;
-            halfword left = null;
+            halfword next = null;
             halfword right = null;
             if (duplex) {
-                prev = node_prev(tail);
+                halfword prev = node_prev(tail);
+                halfword left = null;
                 next = node_next(tail);
                 if (node_type(prev) == glue_node && node_prev(prev)) {
                     prev = node_prev(prev);
@@ -4032,13 +4031,14 @@ static inline int tex_aux_has_expansion(void) /* could be part of this identify 
         while (current) {
             if (node_type(current) == glyph_node && has_font_text_control(glyph_font(current), text_control_expansion)) {
                 lmt_linebreak_state.checked_expansion = 1;
-                break;
+                goto DONE;
             } else {
                 current = node_next(current);
             }
         }
         lmt_linebreak_state.checked_expansion = 0;
     }
+  DONE:
     return lmt_linebreak_state.checked_expansion;
 }
 
@@ -5734,8 +5734,8 @@ void tex_do_line_break(line_break_properties *properties)
                     break;
                 } else {
                     pass = linebreak_final_pass;
-                    /* fall through */
                 }
+                FALLTHROUGH
             case linebreak_final_pass:
                 lmt_linebreak_state.passes[properties->par_context].n_of_final_passes++;
                 if (properties->tracing_paragraphs > 0 || properties->tracing_passes > 0) {

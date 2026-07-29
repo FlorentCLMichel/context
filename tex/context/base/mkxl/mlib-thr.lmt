@@ -20,7 +20,7 @@ if not mp then mp = { } end -- for load testing
 -- pretty old: the second half of the previous century. The main outcomes of this
 -- experiment are that (1) one should not let an llm generate code, as it costs too
 -- much time to get it in a good state, (2) given enough background information it's
--- just easier to come up with somethign not being distracted by slop, and (3) it's
+-- just easier to come up with something not being distracted by slop, and (3) it's
 -- more fun to figure it out oneself and also way faster in the end. So, that is what
 -- we eventually ended up with. Life's too short to waste it on hypes and (4) an
 -- llm is nice for collecting information (assuming one is capable of checking it).
@@ -49,40 +49,45 @@ local stoptiming  = statistics.stoptiming
 local elapsedtime = statistics.elapsedtime
 local ioflush     = io.flush
 
-local zbuffernew       = zbuffer.new
-local zbuffergetdepth  = zbuffer.getdepth
-local zbuffertobytes   = zbuffer.tobytes
-local zbuffercrop      = zbuffer.crop
-local zbufferresolve   = zbuffer.resolve
-local zbuffertriangles = zbuffer.triangles
-local zbufferpoints    = zbuffer.points
-local zbuffercomposite = zbuffer.composite
-local zbuffersetup     = zbuffer.setup
-local zbufferproject   = zbuffer.project
-local zbuffertransform = zbuffer.transform
-local zbufferflatten   = zbuffer.flatten
-local zbuffersmoothen  = zbuffer.smoothen
-local zbufferbounds    = zbuffer.bounds
-local zbufferimplicit  = zbuffer.implicit
-local zbuffermeshmesh  = zbuffer.meshmesh
------ zbtrianglebounds = zbuffer.trianglebounds
-local zbufferedgepoint = zbuffer.edgepoint
-local zbufferprocess   = zbuffer.process
+local zbuffernew        = zbuffer.new
+local zbuffergetdepth   = zbuffer.getdepth
+local zbuffertobytes    = zbuffer.tobytes
+local zbuffercrop       = zbuffer.crop
+local zbufferresolve    = zbuffer.resolve
+local zbuffertriangles  = zbuffer.triangles
+local zbuffertriangled  = zbuffer.triangled
+local zbufferpoints     = zbuffer.points
+local zbuffercomposite  = zbuffer.composite
+local zbuffersetup      = zbuffer.setup
+local zbufferproject    = zbuffer.project
+local zbuffertransform  = zbuffer.transform
+local zbufferflatten    = zbuffer.flatten
+local zbuffersmoothen   = zbuffer.smoothen
+local zbufferbounds     = zbuffer.bounds
+local zbufferimplicit   = zbuffer.implicit
+local zbuffermeshmesh   = zbuffer.meshmesh
+----- zbtrianglebounds  = zbuffer.trianglebounds
+local zbufferedgepoint  = zbuffer.edgepoint
+local zbufferprocess    = zbuffer.process
 
-local ispoints         = vector.points.ispoints
-local newpoints        = vector.points.new
-local getpoint         = vector.points.get
-local getpointxyz      = vector.points.getxyz
-local getpointbounds   = vector.points.getbounds
+local ispoints          = vector.points.ispoints
+local newpoints         = vector.points.new
+local getpoint          = vector.points.get
+local getpointxyz       = vector.points.getxyz
+local getpointbounds    = vector.points.getbounds
 
-local ismesh           = vector.mesh.ismesh
-local vectornewmesh    = vector.mesh.new
-local vectorsetmesh    = vector.mesh.set
-local vectorgetmesh    = vector.mesh.get
+local ismesh            = vector.mesh.ismesh
+local vectornewmesh     = vector.mesh.new
+local vectorsetmesh     = vector.mesh.set
+local vectorgetmesh     = vector.mesh.get
 
-local vectormakemesh   = vector.contour.makemesh -- todo: just use vector.mesh.new
+local isnormals         = vector.normals.isnormals
+local vectornewnormals  = vector.normals.new
+local vectorflipnormals = vector.normals.flip
 
-local vectorgetmemory  = vector.getmemory
+local vectormakemesh    = vector.contour.makemesh -- todo: just use vector.mesh.new
+
+local vectorgetmemory   = vector.getmemory
 
 local mprgbcolor = attributes.colors.mprgbcolor
 
@@ -646,6 +651,22 @@ do
             -- started with a less integrated zbuffer object we might eventually decide to do this
             -- when we create it. But for now ...
             --
+if camera.eye == "auto" then
+    local bounds = scene.bounds
+    camera.eye = bounds and {
+        1.3 * (bounds.xmax - bounds.xmin),
+      - 2.4 * (bounds.ymax - bounds.ymin),
+        2.0 * (bounds.zmax - bounds.zmin),
+    } or nil
+end
+if camera.target == "auto" then
+    local bounds = scene.bounds
+    camera.target = bounds and {
+        0.5 * (bounds.xmax + bounds.xmin),
+        0.5 * (bounds.ymax + bounds.ymin),
+        0.5 * (bounds.zmax + bounds.zmin),
+    } or nil
+end
             zbuffersetup(zbuffer, {
                 target = camera.target,
                 up     = camera.up,
@@ -1503,14 +1524,18 @@ end
 local function checkedmesh(creator,name,specification,mesher)
     local nofvertices  = 0
     local noftriangles = 0
+    local nofnormals   = 0
     local bounds       = false
     starttiming("thr",true) ioflush()
     local mesh = mesher(name,specification)
     if mesh then
         local mvertices    = mesh.vertices
         local mtriangles   = mesh.triangles
+        local mnormals     = mesh.normals
         local vertices     = false
         local triangles    = false
+        local normals      = nil
+        local normalmode   = nil
         --
         if type(mvertices) == "table" then
             nofvertices = #mvertices
@@ -1563,23 +1588,48 @@ local function checkedmesh(creator,name,specification,mesher)
                 report("missing triangles")
             end
         end
+        if type(mnormals) == "table" then
+            if mtriangles and #mnormals == noftriangles then
+                normals = vectornewnormals(noftriangles)
+                if normals then
+                    nofnormals = noftriangles
+                    for i=1,noftriangles do
+                        normals(mnormals[i])
+                    end
+                end
+            end
+        elseif isnormals(mnormals) then
+            if specification.flipnormals then
+                vectorflipnormals(mnormals)
+            end
+            nofnormals = #mnormals
+            normals    = mnormals
+        end
         if vertices and triangles then
             --
-            local normalmode = validnormal(specification.normal)
+            normalmode = validnormal(specification.normal)
             if normalmode == normal_flat then
                 local v, t = zbufferflatten(vertices,triangles)
                 if v and t then
                     vertices, triangles = v, t
                 end
+                nofnormals = 0
+                normals    = false
+            elseif nofnormals > 0 then
+                normalmode = normal_smooth
+            else
+                normalmode = normal_smooth
             end
             --
             bounds = getpointbounds(vertices,true)
-            mesh = {
+            mesh   = {
                 creator      = creator,
                 vertices     = vertices,
                 triangles    = triangles,
+                normals      = normals,
                 nofvertices  = nofvertices,
                 noftriangles = noftriangles,
+                nofnormals   = nofnormals,
                 normalmode   = normalmode,
                 bounds       = bounds,
             }
@@ -1590,12 +1640,13 @@ local function checkedmesh(creator,name,specification,mesher)
   ::BAD::
     stoptiming("thr")
     if mesh then
-        report("%s mesh: name %a, %i vertices, %i triangles, runtime %s",
-            creator,name,nofvertices,noftriangles,elapsedtime("thr"))
+        report("%s mesh: name %a, %i vertices, %i triangles, %i normals, runtime %s",
+            creator,name,nofvertices,noftriangles,nofnormals,elapsedtime("thr"))
         report("%s mesh: xmin %N, xmax %N, ymin %N, ymax %N, zmin %N, zmax %N,",
             creator,bounds.xmin,bounds.xmax,bounds.ymin,bounds.ymax,bounds.zmin,bounds.zmax)
     else
-        report("internal mesh: name %a, invalid, runtime %s",name,elapsedtime("thr"))
+        report("%s mesh: name %a, invalid, runtime %s",
+            creator,name,elapsedtime("thr"))
     end
     return mesh
 end
@@ -2356,11 +2407,11 @@ do
             local meshup = process.process
             if meshup then
                 local zbuffer = scene.buffer.zbuffer
+                local method  = 0
                 starttiming("thr",true) ioflush()
                 if process.direct or process.method == "direct" then
                     meshup(zbuffer,process)
                 else
-                    local method = 0
                     if process.slot    then method = method | method_slot    end
                     if process.color   then method = method | method_color   end
                     if process.normal  then method = method | method_normal  end
@@ -2372,12 +2423,13 @@ do
                     local okay = zbufferprocess(zbuffer,meshup,method,process)
                  -- print(meshup,method,okay)
                 end
-                report("meshupper %a applied, runtime %s",name or "unset",elapsedtime("thr"))
+                report("meshupper %a applied, method 0x%02X, runtime %s",name or "unset",method,elapsedtime("thr"))
                 stoptiming("thr")
                 return
             end
+        elseif name then
+            report("unknown meshupper %a",name)
         end
-        report("unknown meshupper %a",name or "unset")
     end
 
     function rasterizers.tobytemap(buffer,index)
@@ -2498,6 +2550,30 @@ do
 
     end
 
+    local function registervector(zbuffer,mesh,object)
+        local points = zbuffertriangled(
+            zbuffer,
+            mesh.vertices,
+            mesh.triangles,
+            false,
+            mesh.normals
+        )
+        local minx, maxx, miny, maxy, minz, maxz = getpointbounds(points)
+        mp.points_register {
+            name   = object.name or object.id or "default",
+            points = points,
+            method = "triangles",
+            state  = {
+                minx = minx,
+                maxx = maxx,
+                miny = miny,
+                maxy = maxy,
+                minz = minz,
+                maxz = maxz,
+            },
+        }
+    end
+
     function rasterizers.render(scene)
         local buffer= scene.buffer
         if scene.rendered then
@@ -2513,6 +2589,16 @@ do
 
         for i=1,#objects do
             local object = objects[i]
+
+            local bitmap = true
+            local vector = false
+            if object.bitmap == false then
+                bitmap = false
+            end
+            if object.vector == true then
+                vector = true
+            end
+
             if not object.shown then
                 local mesh = object.mesh
                 if mesh then
@@ -2535,7 +2621,13 @@ do
                             report("%i %i : %-9s : %s, opacity %0.3f, id %a, method %i, runtime %s",1,i,"points",object.kind,opacity,object.id,mesh.method,elapsedtime("thr"))
                         else
                             starttiming("thr",true) ioflush()
-                            zbuffertriangles(zbuffer,mesh.vertices,mesh.triangles)
+if bitmap then
+                            zbuffertriangles(zbuffer,mesh.vertices,mesh.triangles,false,mesh.normals)
+end
+if vector then
+                            registervector(zbuffer,mesh,object)
+end
+
                             stoptiming("thr")
                             report("%i %i : %-9s : %s, opacity %0.3f, id %a, runtime %s",1,i,"triangles",object.kind,opacity,object.id,elapsedtime("thr"))
                         end
@@ -2569,7 +2661,7 @@ do
                                 report("%i %i : %-9s : %s, opacity %0.3f, id %a, method %i, runtime %s",2,i,"points",object.kind,opacity,object.id,mesh.method,elapsedtime("thr"))
                             else
                                 starttiming("thr",true) ioflush()
-                                zbuffertriangles(zbuffer,mesh.vertices,mesh.triangles,true)
+                                zbuffertriangles(zbuffer,mesh.vertices,mesh.triangles,true,mesh.normals)
                                 stoptiming("thr")
                                 report("%i %i : %-9s : %s, opacity %0.3f, id %a, runtime %s",2,i,"triangles",object.kind,opacity,object.id,elapsedtime("thr"))
                             end
@@ -2599,7 +2691,7 @@ do
                                 report("%i %i : %-9s : %s, opacity %0.3f, id %a, method %i, runtime %s",3,i,"points",object.kind,opacity,object.id,mesh.method,elapsedtime("thr"))
                             else
                                 starttiming("thr",true) ioflush()
-                                zbuffertriangles(zbuffer,mesh.vertices,mesh.triangles,true)
+                                zbuffertriangles(zbuffer,mesh.vertices,mesh.triangles,true,mesh.normals)
                                 stoptiming("thr")
                                 report("%i %i : %-9s : %s, opacity %0.3f, id %a, runtime %s",3,i,"triangles",object.kind,opacity,object.id,elapsedtime("thr"))
                             end
@@ -2866,6 +2958,7 @@ do
                             resetwhatever(mesh.vertices)
                             resetwhatever(mesh.triangles)
                             resetwhatever(mesh.meshpoints)
+                            resetwhatever(mesh.triangles)
                         end
                     end
                 end

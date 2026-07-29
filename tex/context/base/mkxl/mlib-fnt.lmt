@@ -492,6 +492,8 @@ drivers.install {
 local function boxtompposition  (i) return positions[i] or 0 end
 local function boxtompdimensions( ) return boxwidth*bpfactor, boxheight*bpfactor, boxdepth*bpfactor end
 
+local scannumeric = mp.scan.numeric
+
 metapost.registerscript("outlineposition", function()
     injectnumeric(boxtompposition(scannumeric()))
 end)

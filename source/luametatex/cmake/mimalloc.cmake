@@ -77,5 +77,12 @@ if (NOT MSVC)
     )
 endif ()
 
+if (MINGW)
+    target_compile_options(mimalloc PRIVATE
+        -Wno-array-bounds
+        -Wno-attributes
+    )
+endif()
+
 # list(APPEND mi_defines MI_LIBC_MUSL=1)
 # list(APPEND mi_cflags -Wno-static-in-inline)

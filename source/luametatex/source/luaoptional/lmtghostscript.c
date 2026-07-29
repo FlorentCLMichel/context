@@ -145,8 +145,11 @@ static int gslib_execute(lua_State * L)
                             lua_pop(L, 1);
                         }
                         arguments[m] = NULL;
+                        /* we ignore result here */
                         result = gslib_state.gsapi_set_arg_encoding(instance, GS_ARG_ENCODING_UTF8);
+                        /* and pass on the one below */
                         result = gslib_state.gsapi_init_with_args(instance, m, arguments);
+                        /* */
                         gslib_state.gsapi_delete_instance(instance);
                         /* Nothing done with the array cells! No gc done yet anyway. */
                         free((void *) arguments);

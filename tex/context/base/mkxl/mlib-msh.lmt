@@ -6,6 +6,8 @@ if not modules then modules = { } end modules ['mlib-msh'] = {
     license   = "see context related readme files",
 }
 
+-- move points to its own file : mlib-pnt.lmt
+
 -- The meshing code evolved stepwise. A first idea was to do more at the \METAPOST\
 -- end but in the end we settled for a regular \METAFUN\ plugin: we never manipulate
 -- these paths if only because the fills and draws demand synchronization so we have
@@ -215,28 +217,28 @@ contour.show        = contourshow
 
 local function mesh_convert(current,kind)
 
-    local state = current.substate or current.state
+    local state = current.substate or current.state or { }
 
-    local llx = state.minx
-    local lly = state.miny
-    local urx = state.maxx
-    local ury = state.maxy
+    local llx = state.minx or 0
+    local lly = state.miny or 0
+    local urx = state.maxx or 0
+    local ury = state.maxy or 0
 
     local rx = 1 / (urx - llx)
     local ry = 1 / (ury - lly)
     local tx = -llx * rx
     local ty = -lly * ry
 
-    local line        = current.linewidth or 0.01
-    local color       = current.color     or function(v) return v, v, v end
-    local points      = current.points
-    local list        = current.list
+    local line        = current.linewidth   or 0.01
+    local color       = current.color       or function(v) return v, v, v end
+    local points      = current.points      or { }
+    local list        = current.list        or { }
     local granularity = current.granularity or 3
     local overlap     = current.overlap
     local keep        = current.keep
-    local trace       = current.trace or 1
-    local first       = current.first or 1
-    local last        = current.last  or #list
+    local trace       = current.trace       or 1
+    local first       = current.first       or 1
+    local last        = current.last        or #list
     local trace       = current.trace
     local hash        = false
     local vmin        = current.vmin
@@ -265,6 +267,7 @@ local function mesh_convert(current,kind)
     end
 
     -- todo: we need to use the same pattern for %Z
+    -- todo: more efficient just one path
 
     local f_shape_3 = formatters["%N %N m %N %N l %N %N l %N %N l h " .. operator]
     ----- f_shape_3 = formatters["%N %N m %N %N l %N %N l %1Z %2Z l h " .. operator]
@@ -620,10 +623,24 @@ function metapost.mesh(name,kind)
 
     -- messages
 
+    if not name then
+        name = "unknown"
+    end
+
     if not current then
+        report("%s, registry %a, %s","embedding",name,"unknown")
         return
     elseif not current.meshed then
+        report("%s, registry %a, %s","embedding",name,"invalid")
         return
+    else
+        local points = current.points
+        local list   = current.list
+        report("%s, registry %a, %i points, %i meshes","embedding",
+            name,
+            #points,
+            list and #list or #points//3
+        )
     end
 
     starttiming(meshes)
@@ -631,8 +648,6 @@ function metapost.mesh(name,kind)
     if current then
         current.count = count
     end
-
-    report("%s, registry %a, %i points, %i meshes","embedding",name or "unknown",#current.points,#current.list)
 
     local result = mesh_convert(current,kind or "both")
 
@@ -705,12 +720,29 @@ local function mesh_contour()
 
     end
 
-    report("%s, registry %a, %i points, %i meshes","processing",name or "unknown",#current.points,#current.list)
+    local points = current.points
+    local list   = current.list
 
-    local state = current.state or { minx = 0, miny = 0, maxx = 0, maxy = 0 }
+    report("%s, registry %a, %i points, %i meshes","processing",
+        name or "unknown",
+        #points,
+        list and #list or #points//3
+    )
+
+    local state = current.state
+
+    if not state then
+--         local minx, miny, maxx, maxy = vector.points.getbounds(points)
+        local minx, miny, maxx, maxy = 0, 0, 0, 0
+        state = {
+            minx = minx, miny = miny,
+            maxx = maxx, maxy = maxy,
+        }
+        current.state = state
+    end
 
     if current.first and current.last then
-        state = contourbounds(current.points,current.list,current.first,current.last)
+        state = contourbounds(points,list,current.first,current.last)
         current.substate = state
     end
 

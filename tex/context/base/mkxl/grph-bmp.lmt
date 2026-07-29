@@ -7,6 +7,7 @@ if not modules then modules = { } end modules ['grph-bmp'] = {
 }
 
 local random = math.random
+local concat = table.concat
 local context = context
 
 local formatters, gsub, byte = string.formatters, string.gsub, string.byte
@@ -93,7 +94,6 @@ local function placeholder(nx,ny)
 end
 
 bitmaps.placeholder = placeholder
-
 
 -- We can load a png or jpg file in a bytemap. For the png file we use a stripped
 -- down loader and for jpg we just decode simple ones.
@@ -199,19 +199,22 @@ do
             return
         end
         local pngfile = newcontent(filename,method,true)
-        local content = idat[1]
-        if type(content) == "table" then
-            if not pngfile then
-                return
-            end
-            content = idat(pngfile,true)
-        end
+--         local content = idat[1]
+--         if type(content) == "table" then
+--             if not pngfile then
+--                 return
+--             end
+--             content = idat(pngfile,true)
+--         else
+--             content = concat(idat)
+--         end
+local content = idat(pngfile,true)
         content = zlibdecompress(content)
-if mask then
-    content, mask = decodemask(content,xsize,ysize,colordepth,colorspace)
-else
-        content = decodestrip(openstring(content),xsize,ysize,zsize)
-end
+        if mask then
+            content, mask = decodemask(content,xsize,ysize,colordepth,colorspace)
+        else
+            content = decodestrip(openstring(content),xsize,ysize,zsize)
+        end
         if not parameters.raw and zsize == 1 then
             content = simplify(content,threshold)
         end

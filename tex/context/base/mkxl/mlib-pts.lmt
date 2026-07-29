@@ -1,0 +1,159 @@
+if not modules then modules = { } end modules ['mlib-pts'] = {
+    version   = 1.001,
+    comment   = "companion to mlib-*.mkxl",
+    author    = "Hans Hagen",
+    copyright = "PRAGMA ADE / ConTeXt Development Team",
+    license   = "see context related readme files",
+}
+
+local concat     = table.concat
+local newtable   = lua.newtable
+local formatters = string.formatters
+local div        = math.div
+
+local injectpath     = mp.inject.path
+local scanstring     = mp.scan.string -- whatever
+local registerscript = metapost.registerscript
+
+local getxy          = vector.points.getxy
+local getbounds      = vector.points.getbounds
+
+local points = { }
+
+function mp.points_register(specification)
+    points[specification.name] = specification
+end
+
+local function points_convert(current,kind)
+
+    local points = current.points
+    local count  = points and #points or 0
+
+    if count > 0 then
+
+        local state = current.substate or current.state or { }
+
+        local llx = state.minx or 0
+        local lly = state.miny or 0
+        local urx = state.maxx or 0
+        local ury = state.maxy or 0
+
+        local rx = 1 / (urx - llx)
+        local ry = 1 / (ury - lly)
+        local tx = -llx * rx
+        local ty = -lly * ry
+
+        local t -- = { }
+        local n = 0
+
+     -- local k = { draw = "S", fill = "f", both = "B" }
+
+     -- local f_shape_3 = formatters["%N %N m %N %N l %N %N l %N %N l"]
+        local f_shape_0 = formatters["%N %N m"]
+        local f_shape_1 = formatters["%N %N l"]
+        local f_shape_3 = formatters["%N %N m %N %N l %N %N l h"]
+        local f_cm      = formatters["%N %N %N %N %N %N cm"]
+
+        if current.method == "triangles" then
+
+            count = 3 * div(count,3) -- not 3 * 100//3 : optimized to 100
+
+            t = newtable(count//3 + 2 + 2,0)
+
+            n = n + 1 ; t[n] = "q"
+            n = n + 1 ; t[n] = f_cm(rx,0,0,ry,tx,ty)
+
+            for i=1,count,3 do
+                local x1, y1 = getxy(points,i)
+                local x2, y2 = getxy(points,i+1)
+                local x3, y3 = getxy(points,i+2)
+             -- n = n + 1 ; t[n] = f_shape_3(x1,y1,x2,y2,x3,y3,x1,y1)
+                n = n + 1 ; t[n] = f_shape_3(x1,y1,x2,y2,x3,y3)
+            end
+
+        else -- just lines
+
+            t = newtable(count + 2 + 2,0)
+
+            n = n + 1 ; t[n] = "q"
+            n = n + 1 ; t[n] = f_cm(rx,0,0,ry,tx,ty)
+
+            n = n + 1 ; t[n] = f_shape_0(getxy(points,1))
+
+            for i=2,count do
+                n = n + 1 ; t[n] = f_shape_1(getxy(points,i))
+            end
+
+        end
+
+        n = n + 1 ; t[n] = "S"
+        n = n + 1 ; t[n] = "Q"
+
+        t = concat(t,"\n")
+
+        return t, llx, lly, urx, ury
+
+    else
+
+        return "", 0, 0, 0, 0
+
+    end
+end
+
+function metapost.points(name,kind)
+    local current = points[name]
+    if current then
+        points[name] = nil
+        return points_convert(current,kind or "draw")
+    end
+end
+
+local function vector_points()
+
+    local name    = scanstring()
+    local kind    = scanstring()
+    local current = points[name]
+
+    local llx     = 0
+    local lly     = 0
+    local urx     = 0
+    local ury     = 0
+
+    if current then
+
+        local points = current.points
+        local state  = current.state
+
+        if not state then
+            local minx, miny, maxx, maxy = getbounds(points)
+            state = {
+                minx = minx,
+                miny = miny,
+                maxx = maxx,
+                maxy = maxy,
+            }
+            current.state = state
+        end
+
+        current.substate = state -- hm
+
+        llx = state.minx
+        lly = state.miny
+        urx = state.maxx
+        ury = state.maxy
+
+    end
+
+    local bounds = {
+        { llx, lly },
+        { urx, lly },
+        { urx, ury },
+        { llx, ury },
+        close = true,
+    }
+
+    injectpath(bounds)
+
+end
+
+registerscript("vectorpoints", vector_points)

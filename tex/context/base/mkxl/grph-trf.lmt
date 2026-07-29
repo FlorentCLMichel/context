@@ -10,8 +10,8 @@ if not modules then modules = { } end modules ['grph-trf'] = {
 
 local sind, cosd, tand, abs = math.sind, math.cosd, math.tand, math.abs
 
-local isdimen      = tex.isdimen
-local setdimension = tex.setdimensionvalue
+local isdimen  = tex.isdimen
+local setdimen = tex.setdimen
 
 local d_grph_rotate_x_size     <const> = isdimen("d_grph_rotate_x_size")
 local d_grph_rotate_y_size     <const> = isdimen("d_grph_rotate_y_size")
@@ -115,15 +115,15 @@ local function analyzerotate(rotation,width,height,depth,total,notfit,obeydepth)
          -- print("case 4, done")
         end
     end
-    setdimension("d_grph_rotate_x_size",     xsize)
-    setdimension("d_grph_rotate_y_size",     ysize)
-    setdimension("d_grph_rotate_x_position", xposition)
-    setdimension("d_grph_rotate_y_position", yposition)
-    setdimension("d_grph_rotate_x_offset",   xoffset)
-    setdimension("d_grph_rotate_y_offset",   yoffset)
-    setdimension("d_grph_rotate_new_width",  newwidth)
-    setdimension("d_grph_rotate_new_height", newheight)
-    setdimension("d_grph_rotate_new_depth",  newdepth)
+    setdimen(d_grph_rotate_x_size,     xsize)
+    setdimen(d_grph_rotate_y_size,     ysize)
+    setdimen(d_grph_rotate_x_position, xposition)
+    setdimen(d_grph_rotate_y_position, yposition)
+    setdimen(d_grph_rotate_x_offset,   xoffset)
+    setdimen(d_grph_rotate_y_offset,   yoffset)
+    setdimen(d_grph_rotate_new_width,  newwidth)
+    setdimen(d_grph_rotate_new_height, newheight)
+    setdimen(d_grph_rotate_new_depth,  newdepth)
 end
 
 interfaces.implement {

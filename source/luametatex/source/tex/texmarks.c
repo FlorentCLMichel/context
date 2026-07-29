@@ -286,14 +286,16 @@ void tex_update_split_mark(halfword n)
     }
 }
 
+/*tex We could use a static mapping array instead. */
+
 void tex_delete_mark(halfword m, int what)
 {
     switch (what) {
-        case top_mark_code        : what = top_marks_code;
-        case first_mark_code      : what = first_marks_code;
-        case bot_mark_code        : what = bot_marks_code;
-        case split_first_mark_code: what = split_first_marks_code;
-        case split_bot_mark_code  : what = split_bot_marks_code;
+        case top_mark_code        : what = top_marks_code; break;
+        case first_mark_code      : what = first_marks_code; break;
+        case bot_mark_code        : what = bot_marks_code; break;
+        case split_first_mark_code: what = split_first_marks_code; break;
+        case split_bot_mark_code  : what = split_bot_marks_code; break;
     }
     tex_set_mark(m, what, null);
 }
@@ -301,11 +303,11 @@ void tex_delete_mark(halfword m, int what)
 halfword tex_get_some_mark(halfword chr, halfword val)
 {
     switch (chr) {
-        case top_mark_code        : val = top_marks_code;
-        case first_mark_code      : val = first_marks_code;
-        case bot_mark_code        : val = bot_marks_code;
-        case split_first_mark_code: val = split_first_marks_code;
-        case split_bot_mark_code  : val = split_bot_marks_code;
+        case top_mark_code        : val = top_marks_code; break;
+        case first_mark_code      : val = first_marks_code; break;
+        case bot_mark_code        : val = bot_marks_code; break;
+        case split_first_mark_code: val = split_first_marks_code; break;
+        case split_bot_mark_code  : val = split_bot_marks_code; break;
     }
     return tex_get_mark(val, chr);
 }

@@ -67,6 +67,7 @@ local injecttriplet       = injectors.color
 local injectquadruple     = injectors.cmykcolor
 local injecttransform     = injectors.transform
 local injectpath          = injectors.path
+local injecttokens        = injectors.tokens
 
 local report              = logs.reporter("metapost")
 

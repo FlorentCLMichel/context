@@ -53,7 +53,7 @@ static inline int bytemaplib_new(lua_State *L)
     int nx = lmt_tointeger(L, 1);
     int ny = lmt_optinteger(L, 2, nx);
     int nz = lmt_optinteger(L, 3, 1);
-    int nn = nx * ny * nz;
+    size_t nn = nx > 0 && ny > 0 && nz > 0 ? (size_t) nx * ny * nz : 0;
     if (bytemap_okay(nx, ny, nz)) {
         if (nn > 0) { 
             bytemap_data * bytemap = lua_newuserdatauv(L, sizeof(bytemap_data), 0);
@@ -104,7 +104,7 @@ static int bytemaplib_fill_rgb(lua_State *L)
 {
     bytemap_data *bytemap = bytemaplib_aux_valid(L, 1);
     if (bytemap) {
-        bytemap_fill_rgb(bytemap, lmt_optinteger(L, 2, 255), lmt_optinteger(L, 3, 255), lmt_optinteger(L, 3, 255));
+        bytemap_fill_rgb(bytemap, lmt_optinteger(L, 2, 255), lmt_optinteger(L, 3, 255), lmt_optinteger(L, 4, 255));
     }
     return 0;
 }
@@ -116,13 +116,13 @@ static int bytemaplib_slice_gray(lua_State *L)
         int slot = 2;
         int x, y, dx, dy, s;
         if (lua_gettop(L) == 2) {
-            x = 0;
-            y = 0;
+            x  = 0;
+            y  = 0;
             dx = bytemap->nx;
             dy = bytemap->ny;
         } else {
-            x = lmt_tointeger(L, slot++);
-            y = lmt_tointeger(L, slot++);
+            x  = lmt_tointeger(L, slot++);
+            y  = lmt_tointeger(L, slot++);
             dx = lmt_tointeger(L, slot++);
             dy = lmt_tointeger(L, slot++);
         }
@@ -139,13 +139,13 @@ static int bytemaplib_slice_rgb(lua_State *L)
         int slot = 2;
         int x, y, dx, dy, r, g, b;
         if (lua_gettop(L) == 4) {
-            x = 0;
-            y = 0;
+            x  = 0;
+            y  = 0;
             dx = bytemap->nx;
             dy = bytemap->ny;
         } else {
-            x = lmt_tointeger(L, slot++);
-            y = lmt_tointeger(L, slot++);
+            x  = lmt_tointeger(L, slot++);
+            y  = lmt_tointeger(L, slot++);
             dx = lmt_tointeger(L, slot++);
             dy = lmt_tointeger(L, slot++);
         }
@@ -161,10 +161,10 @@ static int bytemaplib_slice_range(lua_State *L)
 {
     bytemap_data *bytemap = bytemaplib_aux_valid(L, 1);
     if (bytemap) { 
-        int x = lmt_tointeger(L, 2);
-        int y = lmt_tointeger(L, 3);
-        int dx = lmt_tointeger(L, 4);
-        int dy = lmt_tointeger(L, 5);
+        int x   = lmt_tointeger(L, 2);
+        int y   = lmt_tointeger(L, 3);
+        int dx  = lmt_tointeger(L, 4);
+        int dy  = lmt_tointeger(L, 5);
         int min = lmt_tointeger(L, 6);
         int max = lmt_tointeger(L, 7);
         bytemap_slice_range(bytemap, x, y, dx, dy, min, max);
@@ -177,10 +177,10 @@ static int bytemaplib_bounds(lua_State *L)
     bytemap_data *bytemap = bytemaplib_aux_valid(L, 1);
     if (bytemap) { 
         int value = lmt_tointeger(L, 2);
-        int llx = 0;
-        int lly = 1;
-        int urx = bytemap->nx - 1;
-        int ury = bytemap->ny - 1;
+        int llx   = 0;
+        int lly   = 1;
+        int urx   = bytemap->nx - 1;
+        int ury   = bytemap->ny - 1;
         bytemap_bounds(bytemap, value, &llx, &lly, &urx, &ury, 0);
         lua_pushinteger(L, llx);
         lua_pushinteger(L, lly);
@@ -255,8 +255,10 @@ static int bytemaplib_has_byte_rgb(lua_State *L)
         int g = lmt_tointeger(L, 3);
         int b = lmt_tointeger(L, 4);
         lua_pushboolean(L, bytemap_has_byte_rgb(bytemap, r, g, b));
-    }
-    return 0;
+        return 1;
+    } else { 
+        return 0;
+}
 }
 
 static int bytemaplib_set_gray(lua_State *L)
@@ -289,8 +291,8 @@ static int bytemaplib_set_gray_add(lua_State *L)
 {
     bytemap_data *bytemap = bytemaplib_aux_valid(L, 1);
     if (bytemap) { 
-        int x = lmt_tointeger(L, 2);
-        int y = lmt_tointeger(L, 3);
+        int x  = lmt_tointeger(L, 2);
+        int y  = lmt_tointeger(L, 3);
         int s1 = lmt_tointeger(L, 4);
         int s2 = lmt_tointeger(L, 5);
         int s3 = lmt_tointeger(L, 6);
@@ -303,8 +305,8 @@ static int bytemaplib_set_gray_min(lua_State *L)
 {
     bytemap_data *bytemap = bytemaplib_aux_valid(L, 1);
     if (bytemap) { 
-        int x = lmt_tointeger(L, 2);
-        int y = lmt_tointeger(L, 3);
+        int x  = lmt_tointeger(L, 2);
+        int y  = lmt_tointeger(L, 3);
         int s1 = lmt_tointeger(L, 4);
         int s2 = lmt_tointeger(L, 5);
         int s3 = lmt_tointeger(L, 6);
@@ -319,7 +321,7 @@ static int bytemaplib_get_byte(lua_State *L)
     if (bytemap) { 
         int x = lmt_tointeger(L, 2);
         int y = lmt_tointeger(L, 3);
-        int z = lmt_tointeger(L, 3);
+        int z = lmt_tointeger(L, 4);
         lua_pushinteger(L, bytemap_get_byte(bytemap, x, y, z));
         return 1;
     }
@@ -347,15 +349,32 @@ static int bytemaplib_get_bytes(lua_State *L)
     return 0;
 }
 
+static int bytemaplib_get_luminance(lua_State *L)
+{
+    bytemap_data *bytemap = bytemaplib_aux_valid(L, 1);
+    if (bytemap) {
+        int x = lmt_tointeger(L, 2);
+        int y = lmt_tointeger(L, 3);
+        lua_pushnumber(L, bytemap_get_luminance(bytemap, x, y));
+        return 1;
+    }
+    return 0;
+}
+
+
 static int bytemaplib_get_value(lua_State *L)
 {
     bytemap_data *bytemap = bytemaplib_aux_valid(L, 1);
     if (bytemap) { 
-        int nx = 0;
-        int ny = 0;
-        int nz = 0;
-        char * s = bytemap_get_value(bytemap, &nx, &ny, &nz);
-        lua_pushlstring(L, s, nx * ny * nz);
+        int   nx = 0;
+        int   ny = 0;
+        int   nz = 0;
+        char *s  = bytemap_get_value(bytemap, &nx, &ny, &nz);
+        if (s) {
+            lua_pushlstring(L, s, nx * ny * nz);
+        } else {
+            lua_pushliteral(L, "");
+        }
         lua_pushinteger(L, nx);
         lua_pushinteger(L, ny);
         lua_pushinteger(L, nz);
@@ -384,11 +403,11 @@ static void bytemaplib_aux_loop(lua_State * L,  unsigned char * bytemap, int nx,
         int fn = lua_type(L, slot) == LUA_TFUNCTION;
         if (fn) {
             int existing = lua_toboolean(L, slot + 1) ? nz : 0;
-            int loop = lmt_tointeger(L, slot + 2);
+            int loop     = lmt_tointeger(L, slot + 2);
             lua_settop(L, slot);
             if (loop == bytemap_loop_yx) {
-                unsigned char *p = bytemap;
                 for (int y = 0; y < ny; y++) {
+                    unsigned char *p = bytemap + bm_current_y(ny,y) * nx * nz;
                     for (int x = 0; x < nx; x++) {
                         /* we need to retain the function */
                         lua_pushvalue(L, slot);
@@ -403,7 +422,7 @@ static void bytemaplib_aux_loop(lua_State * L,  unsigned char * bytemap, int nx,
                             lua_pushinteger(L, (int) *p);
                         }
                         /* call function */
-                        if (lua_pcall(L, existing + 2, nz, 0) != 0) { 
+                        if lmt_unlikely(lua_pcall(L, existing + 2, nz, 0) != 0) {
                             tex_formatted_warning("bytemaplib", "run bytemap: %s", lua_tostring(L, -1));
                         }
                         /* use results */
@@ -434,7 +453,7 @@ static void bytemaplib_aux_loop(lua_State * L,  unsigned char * bytemap, int nx,
                             lua_pushinteger(L, (int) p[i  ]);
                         }
                         /* call function */
-                        if (lua_pcall(L, existing + 2, nz, 0) != 0) { 
+                        if lmt_unlikely(lua_pcall(L, existing + 2, nz, 0) != 0) {
                             tex_formatted_warning("bytemaplib", "run bytemap: %s", lua_tostring(L, -1));
                         }
                         /* use results */
@@ -488,12 +507,12 @@ static int bytemaplib_overlay(lua_State *L)
     bytemap_data *source = bytemaplib_aux_valid(L, 1);
     bytemap_data *target = bytemaplib_aux_valid(L, 2);
     if (source && target) {
-        int sx = lua_tointeger(L, 3);
-        int sy = lua_tointeger(L, 4);
-        int tx = lua_tointeger(L, 5);
-        int ty = lua_tointeger(L, 6);
-        int nx = lua_tointeger(L, 7);
-        int ny = lua_tointeger(L, 8);
+        int sx = lmt_tointeger(L, 3);
+        int sy = lmt_tointeger(L, 4);
+        int tx = lmt_tointeger(L, 5);
+        int ty = lmt_tointeger(L, 6);
+        int nx = lmt_tointeger(L, 7);
+        int ny = lmt_tointeger(L, 8);
         bytemap_overlay(source, target, sx, sy, tx, ty, nx, ny);
     }
     return 0;
@@ -504,15 +523,15 @@ static int bytemaplib_filter(lua_State *L)
     bytemap_data *source = bytemaplib_aux_valid(L, 1);
     bytemap_data *target = bytemaplib_aux_valid(L, 2);
     if (source && target && lua_type(L, 3) == LUA_TTABLE) {
-        int wy = lua_rawlen(L, 3);
+        int wy = (int) lua_rawlen(L, 3);
         if (wy > 2 && wy % 2 == 1) {
             double factor = lmt_optdouble(L, 4,  1);
             double dflt   = lmt_optdouble(L, 5, 45);
-            int top = lua_gettop(L);
-            int wx = 0;
+            int    top    = lua_gettop(L);
+            int    wx     = 0;
             for (int y = 1; y <= wy; y++) {
                 if (lua_rawgeti(L, 3, y) == LUA_TTABLE) {
-                    int n = lua_rawlen(L, -1);
+                    int n = (int) lua_rawlen(L, -1);
                     if (y == 1) {
                         wx = n;
                     } else if (n != wx) {
@@ -576,27 +595,35 @@ static int bytemaplib_tostring(lua_State *L)
 static int bytemaplib_totable(lua_State *L)
 {
     bytemap_data *bytemap = bytemaplib_aux_valid(L, 1);
-    if (bytemap) {
+    if (bytemap && bytemap->data) {
         int n = 0;
-        lua_createtable(L, bytemap->ny, 0);
-        for (int y = 1; y <= bytemap->ny; y++) {
-            lua_createtable(L, bytemap->nx, 0);
-            if (bytemap->nz == 1) {
-                for (int x = 1; x <= bytemap->nx; x++) {
-                    lua_pushinteger(L, bytemap->data[n++]);
-                    lua_rawseti(L, -2, x);
-                }
-            } else {
-                for (int x = 1; x <= bytemap->nx; x++) {
-                    lua_createtable(L, 3, 0);
-                    for (int z = 1; z <= bytemap->nz; z++) {
+        switch (bytemap->nz) {
+            case 1:
+                lua_createtable(L, bytemap->ny, 0);
+                for (int y = 1; y <= bytemap->ny; y++) {
+                    lua_createtable(L, bytemap->nx, 0);
+                    for (int x = 1; x <= bytemap->nx; x++) {
                         lua_pushinteger(L, bytemap->data[n++]);
-                        lua_rawseti(L, -2, z);
+                        lua_rawseti(L, -2, x);
                     }
-                    lua_rawseti(L, -2, x);
+                    lua_rawseti(L, -2, y);
                 }
-            }
-            lua_rawseti(L, -2, y);
+                break;
+            case 3:
+                lua_createtable(L, bytemap->ny, 0);
+                for (int y = 1; y <= bytemap->ny; y++) {
+                    lua_createtable(L, bytemap->nx, 0);
+                    for (int x = 1; x <= bytemap->nx; x++) {
+                        lua_createtable(L, 3, 0);
+                        for (int z = 1; z <= 3; z++) {
+                            lua_pushinteger(L, bytemap->data[n++]);
+                            lua_rawseti(L, -2, z);
+                        }
+                        lua_rawseti(L, -2, x);
+                    }
+                    lua_rawseti(L, -2, y);
+                }
+                break;
         }
         return 1;
     } else {
@@ -693,6 +720,7 @@ static struct luaL_Reg bytemaplib_function_list[] = {
     { "getbyte",      bytemaplib_get_byte       },
     { "getbytes",     bytemaplib_get_bytes      },
     { "getvalue",     bytemaplib_get_value      },
+    { "getluminance", bytemaplib_get_luminance  },
     { "process",      bytemaplib_process        },
     { "downsample",   bytemaplib_downsample     },
     { "downgrade",    bytemaplib_downgrade      },

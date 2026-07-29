@@ -548,7 +548,7 @@ halfword lmt_token_list_from_lua(lua_State *L, int slot)
         case LUA_TUSERDATA:
             {
                 lua_token *t = tokenlib_aux_check_istoken(L, slot);
-                p = tex_store_new_token(p, t->token);
+                tex_store_new_token(p, t->token);
                 return h;
             }
         default:
@@ -616,7 +616,7 @@ static lua_token_package *tokenlib_aux_maybe_ispackage(lua_State *L, int ud)
 lua_token *tokenlib_aux_check_istoken(lua_State *L, int ud)
 {
     lua_token *t = tokenlib_aux_maybe_istoken(L, ud);
-    if (! t) {
+    if lmt_unlikely(! t) {
         tex_formatted_error("token lib", "lua <token> expected, not an object with type %s", luaL_typename(L, ud));
     }
     return t;
@@ -625,7 +625,7 @@ lua_token *tokenlib_aux_check_istoken(lua_State *L, int ud)
 static lua_token_package *tokenlib_aux_check_ispackage(lua_State *L, int ud)
 {
     lua_token_package *t = tokenlib_aux_maybe_ispackage(L, ud);
-    if (! t) {
+    if lmt_unlikely(! t) {
         tex_formatted_error("token lib", "lua <token package> expected, not an object with type %s", luaL_typename(L, ud));
     }
     return t;
@@ -1758,7 +1758,7 @@ static int tokenlib_scanintegerargument(lua_State *L)
     lua_pushinteger(L, (int) tex_scan_integer(wrapped ? 0 : eq, NULL, NULL));
     if (wrapped) {
         tokenlib_aux_goto_first_candidate();
-        if (cur_cmd != right_brace_cmd) {
+        if lmt_unlikely(cur_cmd != right_brace_cmd) {
             show_right_brace_error();
         }
     }
@@ -1784,7 +1784,7 @@ static int tokenlib_scandimensionargument(lua_State *L)
     lua_pushinteger(L, tex_scan_dimension(mu, inf, 0, wrapped ? 0 : eq, &order, NULL));
     if (wrapped) {
         tokenlib_aux_goto_first_candidate();
-        if (cur_cmd != right_brace_cmd) {
+        if lmt_unlikely(cur_cmd != right_brace_cmd) {
             show_right_brace_error();
         }
     }
@@ -3330,7 +3330,7 @@ static int tokenlib_tostring(lua_State* L)
             cmd = token_cmd(tok);
             chr = token_chr(tok);
         }
-        if (! cmn) {
+     // if (! cmn) {
             if (cmd >= first_cmd && cmd <= last_cmd) {
                 cmn = lmt_interface.command_names[cmd].name;
                 switch (lmt_interface.command_names[cmd].base) {
@@ -3343,7 +3343,7 @@ static int tokenlib_tostring(lua_State* L)
             } else {
                 cmn = "bad_token";
             }
-        }
+     // }
         if (csn && csn[0] != '\0') {
             if (lnk) {
                 lua_pushfstring(L, "<%s token : %d => %d : %s : %s %d>", ori, id, lnk, (char *) csn, cmn, chr);
@@ -3539,7 +3539,7 @@ static halfword tokenlib_aux_expand_macros_in_tokenlist(halfword p)
     ++lmt_input_state.align_state; /* emulates the { for the } above */
     tex_scan_toks_expand(1, NULL, 0, 0);
     tex_get_token();
-    if (cur_tok != deep_frozen_end_write_token) {
+    if lmt_unlikely(cur_tok != deep_frozen_end_write_token) {
         /*tex Recover from an unbalanced write command */
         tex_handle_error(
             normal_error_type,
@@ -3839,7 +3839,7 @@ static int tokenlib_setmacrofrommark(lua_State *L)
             int flags = 0;
             halfword cs = tex_string_locate(name, lname, 1);
             if (slot <= stacktop) {
-                slot = lmt_check_for_flags(L, slot, &flags, 1, 1);
+                lmt_check_for_flags(L, slot, &flags, 1, 1);
             }
             if (tex_define_permitted(cs, flags)) {
                 halfword head = null;
@@ -3921,10 +3921,10 @@ halfword lmt_macro_to_tok(lua_State *L, int slot, halfword *tail)
                         }
                     case LUA_TTABLE:
                         {
-                            size_t l;
-                            const char *s ;
                             int j = (int) lua_rawlen(L, i);
                             for (int k = 1; k <= j; k++) {
+                                size_t l;
+                                const char *s ;
                                 lua_rawgeti(L, i, k);
                                 s = lua_tolstring(L, -1, &l);
                                 a = tex_store_new_token(a, left_brace_token + '{');
@@ -4344,12 +4344,12 @@ void lmt_token_call(int p) /*tex The \TEX\ pointer to the token list. */
         int top = lua_gettop(L);
         lua_pushcfunction(L, lmt_traceback);
         i = lua_load(L, tokenlib_aux_reader, &ls, "=[\\directlua]", NULL);
-        if (i != 0) {
+        if lmt_unlikely(i != 0) {
             lmt_error(L, "token call, syntax", -1, i == LUA_ERRSYNTAX ? 0 : 1);
         } else {
             ++lmt_lua_state.direct_callback_count;
             i = lua_pcall(L, 0, 0, top + 1);
-            if (i != 0) {
+            if lmt_unlikely(i != 0) {
                 lua_remove(L, top + 1);
                 lmt_error(L, "token call, execute", -1, i == LUA_ERRRUN ? 0 : 1);
             }
@@ -4390,7 +4390,7 @@ void lmt_function_call(int slot, int prefix) /*tex Functions are collected in an
         }
         ++lmt_lua_state.function_callback_count;
         i = lua_pcall(L, i, 0, stacktop + 2);
-        if (i) {
+        if lmt_unlikely(i) {
             lua_remove(L, stacktop + 2);
             lua_function_error_report(L, "registered function call", slot, i);
         }
@@ -4407,7 +4407,7 @@ void lmt_local_call(int slot)
         int i;
         ++lmt_lua_state.local_callback_count;
         i = lua_pcall(L, 0, 0, stacktop + 1);
-        if (i) {
+        if lmt_unlikely(i) {
             lua_remove(L, stacktop + 1);
             lua_function_error_report(L, "local function call", slot, i);
         }
@@ -4435,7 +4435,7 @@ int lmt_function_call_by_category(int slot, int property, halfword *value)
         }
         ++lmt_lua_state.value_callback_count;
         i = lua_pcall(L, 2, 2, stacktop + 1);
-        if (i) {
+        if lmt_unlikely(i) {
             lua_remove(L, stacktop + 1);
             lmt_error(L, "function call", slot, i == LUA_ERRRUN ? 0 : 1);
         } else {
@@ -4486,7 +4486,7 @@ int lmt_function_call_by_category(int slot, int property, halfword *value)
                 case lua_value_skip_code:
                     {
                         halfword n = lmt_check_isnode(L, -1);
-                        if (n && node_type(n) == glue_spec_node) {
+                        if lmt_likely(n && node_type(n) == glue_spec_node) {
                             *value = n;
                         } else {
                             luaL_error(L, "gluespec node expected");

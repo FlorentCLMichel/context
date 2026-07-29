@@ -87,7 +87,7 @@ string_pool_info lmt_string_pool_state = {
 static inline void tex_aux_increment_pool_string(int n)
 {
     lmt_string_pool_state.string_body_data.allocated += n;
-    if (lmt_string_pool_state.string_body_data.allocated > lmt_string_pool_state.string_body_data.size) {
+    if lmt_unlikely(lmt_string_pool_state.string_body_data.allocated > lmt_string_pool_state.string_body_data.size) {
         tex_overflow_error("poolbody", lmt_string_pool_state.string_body_data.allocated);
     }
 }
@@ -110,7 +110,7 @@ static void tex_aux_flush_cur_string(void)
 void tex_reset_cur_string(void)
 {
     unsigned char *tmp = aux_allocate_clear_array(sizeof(unsigned char), initial_temp_string_slots, reserved_temp_string_slots);
-    if (tmp) {
+    if lmt_likely(tmp) {
         lmt_string_pool_state.string_temp = tmp;
         lmt_string_pool_state.string_temp_top = 0;
         lmt_string_pool_state.string_temp_allocated = initial_temp_string_slots;
@@ -132,7 +132,7 @@ static int tex_aux_room_in_string(int wsize)
             size = wsize + STRING_EXTRA_AMOUNT;
         }
         tmp = aux_reallocate_array(lmt_string_pool_state.string_temp, sizeof(unsigned char), size, reserved_temp_string_slots);
-        if (tmp) {
+        if lmt_likely(tmp) {
             lmt_string_pool_state.string_temp = tmp;
             memset(tmp + lmt_string_pool_state.string_temp_top, 0, (size_t) size - lmt_string_pool_state.string_temp_top);
         } else {
@@ -149,7 +149,7 @@ static int tex_aux_room_in_string(int wsize)
 
 void tex_initialize_string_mem(void)
 {
-    int size = lmt_string_pool_state.string_pool_data.minimum;
+    int size;
     if (lmt_main_state.run_state == initializing_state) {
         size = lmt_string_pool_state.string_pool_data.minimum;
         lmt_string_pool_state.string_pool_data.ptr = cs_offset_value;
@@ -159,7 +159,7 @@ void tex_initialize_string_mem(void)
     }
     if (size > 0) {
         lstring *pool = aux_allocate_clear_array(sizeof(lstring), size, reserved_string_slots);
-        if (pool) {
+        if lmt_likely(pool) {
             lmt_string_pool_state.string_pool = pool;
             lmt_string_pool_state.string_pool_data.allocated = size;
         } else {
@@ -398,7 +398,7 @@ strnumber tex_maketexlstring(const char *s, size_t l)
         int ptr = lmt_string_pool_state.string_pool_data.ptr;
         size_t len = l + 1;
         unsigned char *tmp = lmt_memory_malloc(len);
-        if (tmp) {
+        if lmt_likely(tmp) {
             str_length(ptr) = l;
             str_string(ptr) = tmp;
             tex_aux_increment_pool_string((int) l);
@@ -443,7 +443,7 @@ char *tex_makeclstring(int s, size_t *len)
     } else {
         size_t l = (size_t) str_length(s);
         char *tmp = lmt_memory_malloc(l + 1);
-        if (tmp) {
+        if lmt_likely(tmp) {
             memcpy(tmp, str_string(s), l);
             tmp[l] = '\0';
             *len = l;
@@ -579,7 +579,7 @@ void tex_undump_string_pool(dumpstream f)
                 /* we can overflow reserved_string_slots */
                 int n = l + 1;
                 unsigned char *s = aux_allocate_clear_array(sizeof(unsigned char), n, reserved_string_slots);
-                if (s) {
+                if lmt_likely(s) {
                     lmt_string_pool_state.string_pool[j].s = s;
                     undump_things(f, s[0], l);
                     s[l] = '\0';

@@ -1,4 +1,3 @@
-
 /*
     See license.txt in the root of this project.
 */
@@ -84,6 +83,8 @@
     are an example) and normalize vectors.
 
 */
+
+# define valid_vertices(v) ((v && v->data && v->type == point_type_default))
 
 # define fffmax(a,b,c) ((a > b) ? ((a > c) ? a : c) : ((b > c) ? b : c))
 # define fffmin(a,b,c) ((a < b) ? ((a < c) ? a : c) : ((b < c) ? b : c))
@@ -473,7 +474,7 @@ static int zbufferlib_setup(lua_State *L)
             if (lua_getfield(L, -1, "ambient")   == LUA_TNUMBER)  { zb->setup.material.ambient   = lua_tonumber (L, -1); } lua_pop(L, 1);
             if (lua_getfield(L, -1, "opacity")   == LUA_TNUMBER)  { zb->setup.material.opacity   = lua_tonumber (L, -1); } lua_pop(L, 1);
             if (lua_getfield(L, -1, "twosided")  == LUA_TBOOLEAN) { zb->setup.material.twosided  = lua_toboolean(L, -1); } lua_pop(L, 1);
-            if (lua_getfield(L, -1, "texture")   == LUA_TNUMBER)  { zb->setup.material.texture   = lua_tointeger(L, -1); } lua_pop(L, 1);
+            if (lua_getfield(L, -1, "texture")   == LUA_TNUMBER)  { zb->setup.material.texture   = lmt_tointeger(L, -1); } lua_pop(L, 1);
             if (lua_getfield(L, -1, "dx")        == LUA_TNUMBER)  { zb->setup.material.dx        = lua_tonumber (L, -1); } lua_pop(L, 1);
             if (lua_getfield(L, -1, "dy")        == LUA_TNUMBER)  { zb->setup.material.dy        = lua_tonumber (L, -1); } lua_pop(L, 1);
             if (lua_getfield(L, -1, "depth")     == LUA_TNUMBER)  { zb->setup.material.depth     = lua_tonumber (L, -1); } lua_pop(L, 1);
@@ -758,9 +759,9 @@ static int zbufferlib_resolve(lua_State *L)
         if (factor > 1 && old->columns % factor == 0 && old->rows % factor == 0) {
             int width   = old->columns / factor;
             int height  = old->rows / factor;
-            int samples = factor * factor;
             zbuffer new = zbufferlib_aux_push(L, height, width);
             if (new) {
+                int samples = factor * factor;
                 for (int y = 0; y < height; y++) {
                     for (int x = 0; x < width; x++) {
                         zcolor red     = 0;
@@ -1131,13 +1132,21 @@ static int zbufferlib_project(lua_State *L)
                 behind = 1;
             } else {
                 double z = vz * zb->setup.camera.tanhalf;
-                ndcx = vx / z;
-                ndcy = vy / z;
+                if (fabs(z) <= project_epsilon) {
+                    behind = 1;
+                } else {
+                    ndcx = vx / z;
+                    ndcy = vy / z;
+                }
             }
         } else {
             double s = zb->setup.camera.scale;
-            ndcx = vx / s;
-            ndcy = vy / s;
+            if (fabs(s) <= project_epsilon) {
+                behind = 1;
+            } else {
+                ndcx = vx / s;
+                ndcy = vy / s;
+            }
         }
         if (behind) {
             lua_pushboolean(L, 0);
@@ -1175,18 +1184,30 @@ static void zbufferproject(zbuffer zb, zbuffervectorn *target)
     target->state &= ~(zbuffer_vector_state_behind | zbuffer_vector_state_visible);
     if (zb->setup.perspective) {
         if (target->vz <= project_epsilon) {
-            target->state &= zbuffer_vector_state_behind;
+            target->state |= zbuffer_vector_state_behind;
             ndcx = 0;
             ndcy = 0;
         } else {
             double z = target->vz * zb->setup.camera.tanhalf;
-            ndcx = target->vx / z;
-            ndcy = target->vy / z;
+            if (fabs(z) <= project_epsilon) {
+                target->state |= zbuffer_vector_state_behind;
+                ndcx = 0;
+                ndcy = 0;
+            } else {
+                ndcx = target->vx / z;
+                ndcy = target->vy / z;
+            }
         }
     } else {
         double s = zb->setup.camera.scale;
-        ndcx = target->vx / s;
-        ndcy = target->vy / s;
+        if (fabs(s) <= project_epsilon) {
+            target->state |= zbuffer_vector_state_behind;
+            ndcx = 0;
+            ndcy = 0;
+        } else {
+            ndcx = target->vx / s;
+            ndcy = target->vy / s;
+        }
     }
     if (! isbehind(target->state)) {
         target->sx = zb->setup.transform.x + zb->setup.transform.scale * (ndcx + 1) * zb->setup.viewport.width  / 2;
@@ -1196,7 +1217,7 @@ static void zbufferproject(zbuffer zb, zbuffervectorn *target)
                 && target->sx >= 0 && target->sx <= zb->setup.viewport.width
                 && target->sy >= 0 && target->sy <= zb->setup.viewport.height
             ) {
-            target->state &= zbuffer_vector_state_visible;
+            target->state |= zbuffer_vector_state_visible;
         }
     } else {
         target->sx = 0;
@@ -1322,6 +1343,7 @@ static void zbuffertriangle(zbuffer zb, const zbuffervectorn *p1, const zbufferv
                 double l2 = edge(p3->sx, p3->sy, p1->sx, p1->sy, sx, sy) / area;
                 double l3 = edge(p1->sx, p1->sy, p2->sx, p2->sy, sx, sy) / area;
                 if (l1 >= raster_nepsilon && l2 >= raster_nepsilon && l3 >= raster_nepsilon) {
+                    /* we are inside the triangle */
                     double depth, w1, w2, w3;
                     int ok = interpolationweights(zb->setup.perspective, l1, l2, l3, p1->vz, p2->vz, p3->vz, &depth, &w1, &w2, &w3);
                     if (ok) {
@@ -1349,7 +1371,7 @@ static void zbuffertriangle(zbuffer zb, const zbuffervectorn *p1, const zbufferv
                                     double highlight = 0;
                                     if (zb->setup.usespecular) {
                                         double vx, vy, vz, snx, sny, snz;
-                                        double ndotv, ndotl, ndoth;
+                                        double ndotv, ndotl;
                                         if (zb->setup.perspective) {
                                             double evx = -(w1 * p1->vx + w2 * p2->vx + w3 * p3->vx);
                                             double evy = -(w1 * p1->vy + w2 * p2->vy + w3 * p3->vy);
@@ -1375,6 +1397,7 @@ static void zbuffertriangle(zbuffer zb, const zbuffervectorn *p1, const zbufferv
                                         }
                                         ndotl = snx * zb->setup.light.normal.x + sny * zb->setup.light.normal.y + snz * zb->setup.light.normal.z;
                                         if (ndotv > 0 && ndotl > 0) {
+                                            double ndoth;
                                             double hx = zb->setup.light.normal.x + vx;
                                             double hy = zb->setup.light.normal.y + vy;
                                             double hz = zb->setup.light.normal.z + vz;
@@ -1502,7 +1525,7 @@ static int zbufferlib_points(lua_State *L)
 {
     zbuffer zb       = zbufferlib_aux_get(L, 1);
     points  vertices = vectorlib_points_aux_get(L, 2);
-    if (zb && zb->data && vertices && vertices->data) {
+    if (zb && zb->data && valid_vertices(vertices)) {
         int method = lmt_tointeger(L, 3);
         int transparent = lua_toboolean(L, 4);
         double dp = zb->setup.material.depth;
@@ -1593,7 +1616,6 @@ static int zbufferlib_points(lua_State *L)
                         if (isbehind(nxt.state)) {
                             initial = 1;
                         } else if (initial) {
-                            cur = nxt;
                             initial = 0;
                             done = 0;
                         } else {
@@ -1653,7 +1675,7 @@ static int zbufferlib_trianglebounds(lua_State *L)
 {
     points vertices  = vectorlib_points_aux_get(L, 1);
     mesh   triangles = vectorlib_mesh_aux_get(L, 2);
-    if (vertices && triangles) {
+    if (triangles && valid_vertices(vertices)) {
         int index = lmt_tointeger(L, 3) - 1;
         int t[3];
         if (vectorlib_mesh_aux_get_points_okay(triangles, vertices, index, t)) {
@@ -1689,10 +1711,12 @@ static int zbufferlib_trianglebounds(lua_State *L)
 
 static int zbufferlib_triangles(lua_State *L)
 {
-    zbuffer zb        = zbufferlib_aux_get(L, 1);
-    points  vertices  = vectorlib_points_aux_get(L, 2);
-    mesh    triangles = vectorlib_mesh_aux_get(L, 3);
-    if (zb && zb->data && vertices && triangles) {
+    zbuffer zb          = zbufferlib_aux_get(L, 1);
+    points  vertices    = vectorlib_points_aux_get(L, 2);
+    mesh    triangles   = vectorlib_mesh_aux_get(L, 3);
+    int     transparent = lua_toboolean(L, 4);
+    normals tnormals    = lua_type(L, 5) == LUA_TUSERDATA ? vectorlib_normals_aux_get(L, 5) : NULL;
+    if (zb && zb->data && triangles && valid_vertices(vertices)) {
         switch (triangles->type) {
             case triangle_mesh_type:
             case triangle_5_mesh_type:
@@ -1701,9 +1725,11 @@ static int zbufferlib_triangles(lua_State *L)
                 {
                     /* 2 = vertices  3 = triangles  4 = transparent */
                     int noftriangles = triangles->size;
-                    int transparent  = lua_toboolean(L, 4);
                     if (transparent) {
                         transparent = vectorlib_aux_get_transparent(zb);
+                    }
+                    if (tnormals && tnormals->size != triangles->size) {
+                        tnormals = NULL; /* todo: report an error */
                     }
                     for (int i = 0; i < noftriangles; i++) {
                         int t[3];
@@ -1714,18 +1740,36 @@ static int zbufferlib_triangles(lua_State *L)
                             point pa = &(vertices->data[t[0]]);
                             point pb = &(vertices->data[t[1]]);
                             point pc = &(vertices->data[t[2]]);
-                            first[0] = (zbuffervectorn) {
-                                .x  = pa->x, .y = pa->y, .z = pa->z, .nx = pa->nx, .ny = pa->ny, .nz = pa->nz,
-                                .sx = 0, .sy = 0, .vx = 0, .vy = 0, .vz = 0, .state = zbuffer_vector_state_hasnormal,
-                            };
-                            first[1] = (zbuffervectorn) {
-                                .x  = pb->x, .y = pb->y, .z = pb->z, .nx = pb->nx, .ny = pb->ny, .nz = pb->nz,
-                                .sx = 0, .sy = 0, .vx = 0, .vy = 0, .vz = 0, .state = zbuffer_vector_state_hasnormal,
-                            };
-                            first[2] = (zbuffervectorn) {
-                                .x  = pc->x, .y = pc->y, .z = pc->z, .nx = pc->nx, .ny = pc->ny, .nz = pc->nz,
-                                .sx = 0, .sy = 0, .vx = 0, .vy = 0, .vz = 0, .state = zbuffer_vector_state_hasnormal,
-                            };
+                            if (tnormals) {
+                                double nx = tnormals->data[i].x ;
+                                double ny = tnormals->data[i].y ;
+                                double nz = tnormals->data[i].z ;
+                                first[0] = (zbuffervectorn) {
+                                    .x  = pa->x, .y = pa->y, .z = pa->z, .nx = nx, .ny = ny, .nz = nz,
+                                    .sx = 0, .sy = 0, .vx = 0, .vy = 0, .vz = 0, .state = zbuffer_vector_state_hasnormal,
+                                };
+                                first[1] = (zbuffervectorn) {
+                                    .x  = pb->x, .y = pb->y, .z = pb->z, .nx = nx, .ny = ny, .nz = nz,
+                                    .sx = 0, .sy = 0, .vx = 0, .vy = 0, .vz = 0, .state = zbuffer_vector_state_hasnormal,
+                                };
+                                first[2] = (zbuffervectorn) {
+                                    .x  = pc->x, .y = pc->y, .z = pc->z, .nx = nx, .ny = ny, .nz = nz,
+                                    .sx = 0, .sy = 0, .vx = 0, .vy = 0, .vz = 0, .state = zbuffer_vector_state_hasnormal,
+                                };
+                            } else {
+                                first[0] = (zbuffervectorn) {
+                                    .x  = pa->x, .y = pa->y, .z = pa->z, .nx = pa->nx, .ny = pa->ny, .nz = pa->nz,
+                                    .sx = 0, .sy = 0, .vx = 0, .vy = 0, .vz = 0, .state = zbuffer_vector_state_hasnormal,
+                                };
+                                first[1] = (zbuffervectorn) {
+                                    .x  = pb->x, .y = pb->y, .z = pb->z, .nx = pb->nx, .ny = pb->ny, .nz = pb->nz,
+                                    .sx = 0, .sy = 0, .vx = 0, .vy = 0, .vz = 0, .state = zbuffer_vector_state_hasnormal,
+                                };
+                                first[2] = (zbuffervectorn) {
+                                    .x  = pc->x, .y = pc->y, .z = pc->z, .nx = pc->nx, .ny = pc->ny, .nz = pc->nz,
+                                    .sx = 0, .sy = 0, .vx = 0, .vy = 0, .vz = 0, .state = zbuffer_vector_state_hasnormal,
+                                };
+                            }
                             n = clipdepth(zb, &first[0], &second[0], n, zb->setup.camera.nearby, 1);
                             if (n >= 3) {
                                 n = clipdepth(zb, &second[0], &first[0], n, zb->setup.camera.faraway, 0);
@@ -1756,6 +1800,114 @@ static int zbufferlib_triangles(lua_State *L)
     return 0;
 }
 
+static int zbufferlib_triangled(lua_State *L)
+{
+    zbuffer zb          = zbufferlib_aux_get(L, 1);
+    points  vertices    = vectorlib_points_aux_get(L, 2);
+    mesh    triangles   = vectorlib_mesh_aux_get(L, 3);
+    normals tnormals    = lua_type(L, 5) == LUA_TUSERDATA ? vectorlib_normals_aux_get(L, 5) : NULL;
+    if (zb && zb->data && triangles && valid_vertices(vertices)) {
+        switch (triangles->type) {
+            case triangle_mesh_type:
+            case triangle_5_mesh_type:
+            case triangle_6_mesh_type:
+            case triangle_7_mesh_type:
+                {
+                    points result = vectorlib_points_aux_push(L, 3*triangles->size, 1, 2, 1, 0);
+                    /* 2 = vertices  3 = triangles  4 = transparent */
+                    int noftriangles = triangles->size;
+                    if (tnormals && tnormals->size != triangles->size) {
+                        tnormals = NULL; /* todo: report an error */
+                    }
+                    for (int i = 0; i < noftriangles; i++) {
+                        int t[3];
+                        if (vectorlib_mesh_aux_get_points_okay(triangles, vertices, i, t)) {
+                            zbuffervectorn first [12];
+                            zbuffervectorn second[12];
+                            int n = 3;
+                            point pa = &(vertices->data[t[0]]);
+                            point pb = &(vertices->data[t[1]]);
+                            point pc = &(vertices->data[t[2]]);
+                            if (tnormals) {
+                                double nx = tnormals->data[i].x ;
+                                double ny = tnormals->data[i].y ;
+                                double nz = tnormals->data[i].z ;
+                                first[0] = (zbuffervectorn) {
+                                    .x  = pa->x, .y = pa->y, .z = pa->z, .nx = nx, .ny = ny, .nz = nz,
+                                    .sx = 0, .sy = 0, .vx = 0, .vy = 0, .vz = 0, .state = zbuffer_vector_state_hasnormal,
+                                };
+                                first[1] = (zbuffervectorn) {
+                                    .x  = pb->x, .y = pb->y, .z = pb->z, .nx = nx, .ny = ny, .nz = nz,
+                                    .sx = 0, .sy = 0, .vx = 0, .vy = 0, .vz = 0, .state = zbuffer_vector_state_hasnormal,
+                                };
+                                first[2] = (zbuffervectorn) {
+                                    .x  = pc->x, .y = pc->y, .z = pc->z, .nx = nx, .ny = ny, .nz = nz,
+                                    .sx = 0, .sy = 0, .vx = 0, .vy = 0, .vz = 0, .state = zbuffer_vector_state_hasnormal,
+                                };
+                            } else {
+                                first[0] = (zbuffervectorn) {
+                                    .x  = pa->x, .y = pa->y, .z = pa->z, .nx = pa->nx, .ny = pa->ny, .nz = pa->nz,
+                                    .sx = 0, .sy = 0, .vx = 0, .vy = 0, .vz = 0, .state = zbuffer_vector_state_hasnormal,
+                                };
+                                first[1] = (zbuffervectorn) {
+                                    .x  = pb->x, .y = pb->y, .z = pb->z, .nx = pb->nx, .ny = pb->ny, .nz = pb->nz,
+                                    .sx = 0, .sy = 0, .vx = 0, .vy = 0, .vz = 0, .state = zbuffer_vector_state_hasnormal,
+                                };
+                                first[2] = (zbuffervectorn) {
+                                    .x  = pc->x, .y = pc->y, .z = pc->z, .nx = pc->nx, .ny = pc->ny, .nz = pc->nz,
+                                    .sx = 0, .sy = 0, .vx = 0, .vy = 0, .vz = 0, .state = zbuffer_vector_state_hasnormal,
+                                };
+                            }
+                            n = clipdepth(zb, &first[0], &second[0], n, zb->setup.camera.nearby, 1);
+                            if (n >= 3) {
+                                n = clipdepth(zb, &second[0], &first[0], n, zb->setup.camera.faraway, 0);
+                                if (n >= 3) {
+                                    for (int i = 0; i < n; i++) {
+                                        zbufferproject(zb, &first[i]);
+                                    }
+                                    if (! isbehind(first[0].state)) {
+                                        for (int i = 1; i < n - 1; i++) {
+                                            if (! isbehind(first[i].state) && ! isbehind(first[i+1].state)) {
+                                                double x1 = first[0]  .sx;
+                                                double y1 = first[0]  .sy;
+                                                double x2 = first[i]  .sx;
+                                                double y2 = first[i]  .sy;
+                                                double x3 = first[i+1].sx;
+                                                double y3 = first[i+1].sy;
+                                                double area = edge(x1, y1, x2, y2, x3, y3);
+                                                if (fabs(area) > raster_epsilon) {
+                                                    if ((result->index + 3 > result->size) && ! vectorlib_points_aux_grow(L, result, 1000)) {
+                                                        return 0;
+                                                    } else {
+                                                        result->data[result->index++] = (pointdata) {
+                                                            .x = first[0].sx,
+                                                            .y = first[0].sy,
+                                                        };
+                                                        result->data[result->index++] = (pointdata) {
+                                                            .x = first[i].sx,
+                                                            .y = first[i].sy,
+                                                        };
+                                                        result->data[result->index++] = (pointdata) {
+                                                            .x = first[i+1].sx,
+                                                            .y = first[i+1].sy,
+                                                        };
+                                                    }
+                                                }
+                                            }
+                                        }
+                                    }
+                                }
+                            }
+                        }
+                    }
+                    vectorlib_points_aux_prune(L, result, result->size - result->index);
+                    return 1;
+                }
+        }
+    }
+    return 0;
+}
+
 /*tex
 
     Although this can also be done in \LUA, we dicided to optimize this. Amonmg the reasons is that
@@ -1769,7 +1921,7 @@ static int zbufferlib_flatten(lua_State *L)
 {
     points vertices  = vectorlib_points_aux_get(L, 1);
     mesh   triangles = vectorlib_mesh_aux_get(L, 2);
-    if (vertices && triangles) {
+    if (triangles && valid_vertices(vertices)) {
         switch (triangles->type) {
             case triangle_mesh_type:
             case triangle_5_mesh_type:
@@ -1777,7 +1929,7 @@ static int zbufferlib_flatten(lua_State *L)
             case triangle_7_mesh_type:
                 {
                     int noftriangles = triangles->size;
-                    points v = vectorlib_points_aux_push(L, noftriangles * 3, 1, 0);
+                    points v = vectorlib_points_aux_push(L, noftriangles * 3, 1, point_type_default, 0, 0);
                     if (v) {
                         int vi = 0;
                         for (int i = 0; i < noftriangles; i++) {
@@ -1820,11 +1972,11 @@ static int zbufferlib_flatten(lua_State *L)
 static int zbufferlib_smoothen(lua_State *L)
 {
     points vertices = vectorlib_points_aux_get(L, 1);
-    if (vertices && vertices->data) {
+    if (valid_vertices(vertices)) {
         int nv = lmt_tointeger(L, 2);
         int nu = lmt_tointeger(L, 3);
         if (nv * nu == vertices->size) {
-            points v = vectorlib_points_aux_push(L, nu, nv, 0);
+            points v = vectorlib_points_aux_push(L, nu, nv, point_type_default, 0, 0);
             if (v) {
                 memcpy(v->data, vertices->data, nu * nv * sizeof(pointdata));
                 for (int j = 1; j <= nv; j++) {
@@ -1991,7 +2143,7 @@ static int zbufferlib_transform(lua_State *L)
             case LUA_TUSERDATA:
                 {
                     points vertices = vectorlib_points_aux_get(L, 2);
-                    if (vertices && vertices->data) {
+                    if (valid_vertices(vertices)) {
                         int index = lmt_tointeger(L, 3) - 1;
                         if (index >= 0 && index < vertices->size) {
                             dx = vertices->data[index].x - zb->setup.projection.eye.x;
@@ -2045,6 +2197,7 @@ typedef enum normalmodes {
     normal_smooth = 0x0,
     normal_flat   = 0x1,
     normal_up     = 0x2,
+    normal_given  = 0x3,
 } normalmodes;
 
 typedef struct tetra {
@@ -2072,9 +2225,9 @@ static void addtriangle(lua_State *L, const points vertices, int mode, pointdata
                 break;
             case normal_flat:
                 {
-                    double nx = a.nx + b.nx + c.nx;
-                    double ny = a.ny + b.ny + c.ny;
-                    double nz = a.nz + b.nz + c.nz;
+                    nx = a.nx + b.nx + c.nx;
+                    ny = a.ny + b.ny + c.ny;
+                    nz = a.nz + b.nz + c.nz;
                     normalize(&nx, &ny, &nz);
                     a.nx = nx ; a.ny = ny ; a.nz = nz;
                     b.nx = nx ; b.ny = ny ; b.nz = nz;
@@ -2251,7 +2404,7 @@ static int zbufferlib_implicit(lua_State *L)
         lua_getfield(L, 1, "ny"); ny = lmt_tointeger(L, -1); lua_pop(L, 1);
         lua_getfield(L, 1, "nz"); nz = lmt_tointeger(L, -1); lua_pop(L, 1);
         if (nx > 1 && ny > 1 && nz > 1) {
-            points vertices = vectorlib_points_aux_push(L, nx * ny * nz * 3, 1, 1);
+            points vertices = vectorlib_points_aux_push(L, nx * ny * nz * 3, 1, point_type_default, 1, 0);
             if (vertices) {
                 double xmin, xmax, ymin, ymax, zmin, zmax, iso, step, dx, dy, dz;
                 int mode, fp, fn;
@@ -2559,7 +2712,8 @@ static int mesh_mesh_overlay(lua_State *L, const points index_vertices, const me
         lua_createtable(L, 0, 2048);
 # endif
         cells  = lua_absindex(L, -1);
-        result = vectorlib_points_aux_push(L, nofindexrecords < 2048 ? 2048 : nofindexrecords, 1, 1); /* plane is small, just 2 */
+        /* or 1024 and step 512 */
+        result = vectorlib_points_aux_push(L, nofindexrecords < 2048 ? 2048 : nofindexrecords, 1, point_type_default, 1, 0); /* plane is small, just 2 */
         if (result) {
          // memset(&(result->data[0]), 0, result->size * sizeof(pointdata));
         } else {
@@ -2644,9 +2798,9 @@ static int mesh_mesh_overlay(lua_State *L, const points index_vertices, const me
                                     if (lua_rawgeti(L, -1, j) == LUA_TNUMBER) {
                                         /* table index */
                                         int index = lmt_tointeger(L, -1);
-                                        if (! hasbit(seen, index)) {
+                                        if (! hasbit(&seen, index)) {
                                             lua_pop(L, 1);
-                                            setbit(seen, index);
+                                            setbit(&seen, index);
                                             if (mesh_boundsoverlap(&index_records[index], querybounds, tolerance)) {
                                                 int f[3], s[3];
                                                 vectorlib_mesh_aux_get_points(index_triangles, index, f);
@@ -2679,11 +2833,11 @@ static int mesh_mesh_overlay(lua_State *L, const points index_vertices, const me
                     }
                 }
                 if (found) {
-                    wipebitset(seen);
+                    wipebitset(&seen);
                 }
             }
         }
-        disposebitset(seen);
+        disposebitset(&seen);
         result->rows = result->index;
         result->size = result->index;
     }
@@ -2704,7 +2858,7 @@ static int zbufferlib_meshmesh(lua_State *L)
     points  vertices_two  = vectorlib_points_aux_get(L, 3);
     mesh    triangles_two = vectorlib_mesh_aux_get(L, 4);
     double  tolerance     = lua_tonumber(L, 5);
-    if (vertices_one && triangles_one && vertices_two && triangles_two) {
+    if (triangles_one && triangles_two && valid_vertices(vertices_one) && valid_vertices(vertices_two)) {
         if (vertices_one->data && triangles_one->points && vertices_two->data && triangles_two->points) {
             if (triangles_one->size < triangles_two->size) {
                 return mesh_mesh_overlay(L, vertices_one, triangles_one, vertices_two, triangles_two, tolerance);
@@ -2720,7 +2874,7 @@ static int zbufferlib_edgepoint(lua_State *L)
 {
     points vertices = vectorlib_points_aux_get(L, 1);
     int    hastable = lua_type(L, 7) == LUA_TTABLE;
-    if (vertices && vertices->data) {
+    if (valid_vertices(vertices)) {
         int a = lmt_tointeger(L, 2) - 1;
         int b = lmt_tointeger(L, 3) - 1;
         if (a >= 0 && a < vertices->size && b >= 0 && b < vertices->size) {
@@ -2890,11 +3044,11 @@ static inline double checkedgesyes(
 
 int comparedifference(const void *a, const void *b)
 {
-    const double * const *da = a;
-    const double * const *db = b;
-    if ((*da) > (*db)) {
+    const double *da = a;
+    const double *db = b;
+    if (*da > *db) {
         return 1;
-    } else if ((*da) < (*db)) {
+    } else if (*da < *db) {
         return -1;
     } else {
         return 0;
@@ -2949,7 +3103,7 @@ static int zbufferlib_stipple_setup(lua_State *L)
                                     .blue   = INFINITY,
                                     .green  = INFINITY
                                 };
-                                if (lua_rawgeti(L, -1, i) == LUA_TTABLE) {
+                                if (lua_rawgeti(L, -1, i + 1) == LUA_TTABLE) {
                                     if (lua_getfield(L, -1, "radius") == LUA_TNUMBER) { zb->setup.stipple.levels[i].radius = lmt_roundnumber(L, -1); } lua_pop(L, 1);
                                     if (lua_getfield(L, -1, "value" ) == LUA_TNUMBER) { zb->setup.stipple.levels[i].value  = lua_tonumber   (L, -1); } lua_pop(L, 1);
                                     if (lua_getfield(L, -1, "red"   ) == LUA_TNUMBER) { zb->setup.stipple.levels[i].red    = lua_tonumber   (L, -1); } lua_pop(L, 1);
@@ -2971,7 +3125,7 @@ static int zbufferlib_stipple_setup(lua_State *L)
                 case LUA_TNUMBER:
                     {
                         int n = lmt_roundnumber(L, -1);
-                        if (n > 2) {
+                        if (n > 2 && n <= zstipple_maxnoflevels) {
                             for (int i = 0; i < n; i++) {
                                 zb->setup.stipple.levels[i] = (zstippledata) {
                                     .value  = (double) i / ((double) n - 1),
@@ -2993,6 +3147,9 @@ static int zbufferlib_stipple_setup(lua_State *L)
             }
             lua_pop(L, 1);
             /* allocation */
+            if (zb->stipple) {
+                vectorlib_memory_free(zb->stipple, zb->stipplebytes);
+            }
             zb->stipplebytes = zb->size * sizeof(zbufferstipple);
             zb->stipple      = vectorlib_memory_calloc(zb->size, sizeof(zbufferstipple));
         }
@@ -3027,7 +3184,7 @@ static int zbufferlib_stipple_0(lua_State *L)
                             if (depthn != INFINITY) {
                                 double d = fabs(depth - depthn);
                                 if (d > 0) {
-                                    differences[++nofdifferences] = d;
+                                    differences[nofdifferences++] = d;
                                 }
                             }
                         }
@@ -3036,16 +3193,19 @@ static int zbufferlib_stipple_0(lua_State *L)
                             if (depthn != INFINITY) {
                                 double d = fabs(depth - depthn);
                                 if (d > 0) {
-                                    differences[++nofdifferences] = d;
+                                    differences[nofdifferences++] = d;
                                 }
                             }
                         }
                     }
                 }
             }
-            qsort(differences, nofdifferences, sizeof(double), comparedifference);
-            /* */
-            zb->setup.stipple.median = differences[(int) fmax(1, floor(nofdifferences * 0.5 + 0.5))];
+            if (nofdifferences) {
+                qsort(differences, nofdifferences, sizeof(double), comparedifference);
+                zb->setup.stipple.median = differences[nofdifferences / 2];
+            } else {
+                zb->setup.stipple.median = 0;
+            }
             vectorlib_memory_free(differences, sizeof(double) * zb->size * 2);
             {
                 double range = minrange == INFINITY ? 0 : maxrange - minrange;
@@ -3347,6 +3507,7 @@ static const luaL_Reg zbufferlib_function_list[] =
     { "process",        zbufferlib_process        },
     { "resolve",        zbufferlib_resolve        }, /* bad name: antialias is better */
     { "triangles",      zbufferlib_triangles      },
+    { "triangled",      zbufferlib_triangled      },
     { "flatten",        zbufferlib_flatten        },
     { "smoothen",       zbufferlib_smoothen       },
     { "points",         zbufferlib_points         },

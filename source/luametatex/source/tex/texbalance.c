@@ -1918,8 +1918,8 @@ void tex_balance(balance_properties *properties, halfword head)
                     break;
                 } else {
                     pass = balance_final_pass;
-                    /* fall through */
                 }
+                FALLTHROUGH
             case balance_final_pass:
                 lmt_balance_state.passes.n_of_final_passes++;
                 if (properties->tracing_balancing > 0 || properties->tracing_passes > 0) {
@@ -2662,7 +2662,7 @@ static halfword tex_aux_locate_balance_target(halfword n, halfword subtype, half
             }
         } 
         return null;
-    } else if (box && node_type(box) == vlist_node && node_subtype(box) == subtype) { 
+    } else if (node_type(box) == vlist_node && node_subtype(box) == subtype) {
         return box; 
     } else {
         return null;

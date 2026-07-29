@@ -1576,40 +1576,56 @@ end
 
 -- meshes
 
-local function ms_process(object,prescript,before,after)
-    local ms_name = prescript.ms_name
-    if ms_name then
-        local sx, rx, ry, sy, tx, ty = cm(object)
--- print(sx, rx, ry, sy, tx, ty)
-        before[#before+1] = f_cm_b(cm(object)) -- beware: does not use the cm stack
-        before[#before+1] = function()
-            context.MPLIBmesh(
-                ms_name,
-                prescript.ms_kind or "both",
-                prescript.ms_llx  or "0",
-                prescript.ms_lly  or "0",
-                prescript.ms_urx  or "0",
-                prescript.ms_ury  or "0",
-f_f(sx), -- bah ... %s no longer checks
-f_f(rx), -- bah ... %s no longer checks
-f_f(ry), -- bah ... %s no longer checks
-f_f(sy), -- bah ... %s no longer checks
-f_f(tx), -- bah ... %s no longer checks
-f_f(ty)  -- bah ... %s no longer checks
-            )
-        end
-        before[#before+1] = s_cm_e
-        object.path = false
-        object.grouped = true
-    end
-end
+-- local function ms_process(object,prescript,before,after)
+--     local ms_name = prescript.ms_name
+--     if ms_name then
+--         local sx, rx, ry, sy, tx, ty = cm(object)
+--      -- print(sx, rx, ry, sy, tx, ty)
+--         before[#before+1] = f_cm_b(cm(object)) -- beware: does not use the cm stack
+--         before[#before+1] = function()
+--             context.MPLIBmesh(
+--                 ms_name,
+--                 prescript.ms_kind or "both",
+--                 prescript.ms_llx  or "0",
+--                 prescript.ms_lly  or "0",
+--                 prescript.ms_urx  or "0",
+--                 prescript.ms_ury  or "0",
+--                 f_f(sx), -- bah ... %s no longer checks
+--                 f_f(rx), -- bah ... %s no longer checks
+--                 f_f(ry), -- bah ... %s no longer checks
+--                 f_f(sy), -- bah ... %s no longer checks
+--                 f_f(tx), -- bah ... %s no longer checks
+--                 f_f(ty)  -- bah ... %s no longer checks
+--             )
+--         end
+--         before[#before+1] = s_cm_e
+--         object.path = false
+--         object.grouped = true
+--     end
+-- end
 
 local function ms_process(object,prescript,before,after)
     local ms_name = prescript.ms_name
     if ms_name then
+--         print("todo: cleanup mesh")
         before[#before+1] = f_cm_b(cm(object)) -- beware: does not use the cm stack
         before[#before+1] = metapost.mesh(ms_name,prescript.ms_kind)
         before[#before+1] = s_cm_e
+        object.path    = false
+        object.grouped = true
+    end
+end
+
+local function vp_process(object,prescript,before,after)
+    local vp_name = prescript.vp_name
+    if vp_name then
+--         print("todo: cleanup points")
+        before[#before+1] = f_cm_b(cm(object)) -- beware: does not use the cm stack
+        after [#after +1] = s_cm_e
+        local result = metapost.points(vp_name,prescript.vp_kind)
+        if result then
+            insert(after,1,result)
+        end
         object.path    = false
         object.grouped = true
     end
@@ -1991,6 +2007,7 @@ installplugin { name = "box",           process = bx_process  }
 installplugin { name = "position",      process = ps_process  }
 installplugin { name = "figure",        process = fg_process  }
 installplugin { name = "mesh",          process = ms_process  }
+installplugin { name = "vectorpoints",  process = vp_process  }
 installplugin { name = "layer",         process = la_process  }
 installplugin { name = "transparency",  process = tr_process  }
 installplugin { name = "graphicstates", process = gs_process  }

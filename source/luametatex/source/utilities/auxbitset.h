@@ -13,42 +13,42 @@ typedef struct bitset {
 static bitset newbitset(int max)
 {
     bitset b; /* play safe */
-    b.set = lmt_memory_malloc((max + 1) / 8);
+    b.set = lmt_memory_malloc(max/8 + 1); // (max + 7) / 8
     if (b.set) {
         b.max = max;
-        memset(b.set, 0, (max + 1) / 8);
+        memset(b.set, 0, max/8 + 1); // (max + 7) / 8
     } else {
         b.max = 0;
     }
     return b;
 }
 
-static void disposebitset(bitset b)
+static void disposebitset(bitset * b)
 {
-    if (b.set) {
-        lmt_memory_free(b.set);
+    if (b->set) {
+        lmt_memory_free(b->set);
     }
-    b.set = NULL;
-    b.max = 0;
+    b->set = NULL;
+    b->max = 0;
 }
 
-static void wipebitset(bitset b)
+static void wipebitset(bitset * b)
 {
-    if (b.set) {
-        memset(b.set, 0, (b.max + 1) / 8);
-    }
-}
-
-inline static void setbit(bitset b, int i)
-{
-    if (b.set && i > 0 && i <= b.max) {
-        b.set[i/8] += 1 << (i % 8);
+    if (b->set) {
+        memset(b->set, 0, b->max/8 + 1);
     }
 }
 
-inline static int hasbit(bitset b, int i)
+inline static void setbit(bitset * b, int i)
 {
-    return b.set && i > 0 && i <= b.max ? (b.set[i/8] & (1 << (i % 8))) != 0 : 0;
+    if (b->set && i > 0 && i <= b->max) {
+        b->set[i/8] |= 1 << (i % 8);
+    }
+}
+
+inline static int hasbit(bitset * b, int i)
+{
+    return b->set && i > 0 && i <= b->max ? (b->set[i/8] & (1 << (i % 8))) != 0 : 0;
 }
 
 # endif 

@@ -1,0 +1,71 @@
+%D \module
+%D   [     file=mp-stip, % aka voronoi
+%D      version=0.001,
+%D        title=\METAFUN\ stippling support,
+%D     subtitle=Voronoi, Delaunay, CVD and weighted stippling,
+%D       author=Mikael Sundqvist & Hans Hagen & Chat 5.5,
+%D      comment=Temporary local interface]
+
+presetparameters "voronoi" [
+    name           = "",
+    pointset       = "",
+    filename       = "",
+  % width          = "",
+  % height         = "",
+    points         = 100,
+    distance       = 0,
+    candidates     = 30,
+    iterations     = 25,
+    alpha          = .8,
+    tolerance      = 0,
+    seed           = 1,
+    initializer    = "poisson",
+    centroid       = "discrete",
+  % bytemap        = "",
+  % densitywidth   = "",
+  % densityheight  = "",
+    invert         = true,
+  % yflip          = true,
+    gamma          = 1,
+    contrast       = 1,
+  % threshold      = "",
+    minimumdensity = 0,
+    maximumdensity = 1,
+    densityscale   = .05,
+    step           = 1,
+  % detail         = "",
+    method         = "path",
+] ;
+
+def lmt_load_voronoi =
+    runscript("lua.registercode('mlib-rpt.lmt')");
+    runscript("lua.registercode('mlib-stp.lmt')");
+
+    newscriptindex mfid_stp_voronoi  ; mfid_stp_voronoi  := scriptindex "stp_voronoi"  ;
+
+    newscriptindex mfid_stpcount     ; mfid_stpcount     := scriptindex "stpcount"   ;
+    newscriptindex mfid_stpsegment   ; mfid_stpsegment   := scriptindex "stpsegment" ;
+    newscriptindex mfid_stpvalid     ; mfid_stpvalid     := scriptindex "stpvalid"   ;
+    newscriptindex mfid_stppath      ; mfid_stppath      := scriptindex "stppath"    ;
+
+    def lmt_load_voronoi = enddef ;
+enddef ;
+
+def lmt_voronoi =
+    hide(lmt_load_voronoi ;)
+    applyparameters "voronoi" "lmt_do_voronoi"
+enddef ;
+
+def lmt_do_voronoi =
+    runscript mfid_stp_voronoi
+enddef ;
+
+def stpcount   = runscript mfid_stpcount   enddef ;
+def stpsegment = runscript mfid_stpsegment enddef ;
+def stpvalid   = runscript mfid_stpvalid   enddef ;
+def stppath    = runscript mfid_stppath    enddef ;
+
+permanent
+    lmt_voronoi,
+    stpcount, stpsegment, stpvalid, stppath
+;

@@ -1,4 +1,3 @@
-
 % language=us runpath=texruns:manuals/luametafun
 
 \usemodule[3d]
@@ -542,6 +541,9 @@ just an integer that at some point can get more meaning. For instance for
 parametric curves we might also provide so called \im {u} and \im {v} coordinates
 combined with specific options triggered by this \type {t}.
 
+{\em Here we will add some of the more advanced examples that Keith made of
+textures that also will become (example) plug-ins.}
+
 We hope that this teaser will trigger your curiosity to read the more extensive
 manual on this topic. We anyway end with a warning: rendering these graphics can
 use a lot of memory but we try to clean up when we can. The final results are
@@ -556,7 +558,217 @@ double so the gain is relatively small.
 
 You can speed up a run by setting \type {cache} to \type {true}. The settings as
 well as bytemap are then saved and reused. When a setting changes, a new bytemap
-is generated. The runtiem files can be removed with \typ {context --purge}.
+is generated. The runtime files can be removed with \typ {context --purge}.
+
+As a teaser for the more advanced manual, we show an example of what gets
+discussed there. If you watch \in {figure} [fig:threedteaser] you see how we
+start a scene, define a plane (with material), an implicit shape (also with its
+material) and finally an intersection of these two shapes. We then render the
+image so that its properties are known, for instance the normal vector that we
+draw on top.
+
+\startbuffer[K3]
+\startMPcode
+lmt_scene_start [
+    width        = 10cm,
+    resolution   = 300,
+    supersample  = 2,
+    crop         = true,
+    projection   = "perspective",
+    eye          = (-8,32,0),
+    fov          = 80,
+    light        = (0,-1,-2),
+    intensity    = 1.1,
+    cache        = true,
+    name         = "example",
+] ;
+
+lmt_scene_material [
+    name      = "plane",
+    diffuse   = (.3,.6,.6),
+    specular  = (.25,.25,.25),
+    shininess = 18,
+    opacity   = 0.5,
+] ;
+
+lmt_scene_plane [
+    id       = "plane",
+    material = "plane",
+    center   = (1,0,0),
+    normal   = (1,0,0),
+    usize    = 8.75,
+    vsize    = 8.5,
+] ;
+
+lmt_scene_material [
+    name      = "K3",
+    diffuse   = (.9,.2,.2),
+    specular  = (.5,.5,.5),
+    shininess = 25,
+    opacity   = 1,
+    ambient   = .25,
+] ;
+
+lmt_scene_implicit [
+    id       = "K3",
+    material = "K3",
+    code     = "(1+x*x)*(1+y*y)*(1+z*z)-16*x*y*z-4",
+    dfdx     = "2*x*(1+y*y)*(1+z*z)-16*y*z",
+    dfdy     = "2*y*(1+x*x)*(1+z*z)-16*x*z",
+    dfdz     = "2*z*(1+x*x)*(1+y*y)-16*x*y",
+    xmin     = -5,
+    xmax     =  5,
+    ymin     = -5,
+    ymax     =  5,
+    zmin     = -5,
+    zmax     =  5,
+    nx       = 150,
+    ny       = 150,
+    nz       = 150,
+    normal   = "smooth",
+] ;
+
+lmt_scene_material [
+    name      = "intersection",
+    diffuse   = (0,0,0),
+    diffuse   = (0,0,1),
+    specular  = (.25,.25,.25),
+    shininess = 18,
+    opacity   = 1,
+    dx        = 10,
+    dy        = 10,
+] ;
+
+lmt_scene_intersection [
+    material       = "intersection",
+    first          = "K3",
+    second         = "plane",
+] ;
+
+lmt_scene_render ;
+
+% triplet normal ; normal = lmt_scene_calculate_normal("K3",(0,1,1));
+
+% pair p ; p := lmt_scene_project_point (0,1,1) ;
+% pair q ; q := lmt_scene_project_point normal  ;
+
+% drawdot  p withpen pencircle scaled 2mm
+%     withcolor white ;
+
+% drawarrow p -- (p shifted .1q)
+%     withpen pencircle scaled .5mm
+%     withcolor white ;
+
+draw scenenormal "K3" (0,1,1)
+    withpen pencircle scaled 1pt
+    withcolor "white"
+;
+draw scenepoint "K3" (0,1,1)
+    withpen pencircle scaled 3pt
+    withcolor "white"
+;
+
+lmt_scene_stop ;
+\stopMPcode
+\stopbuffer
+
+\startplacefigure[reference=fig:threedteaser,title=Just a teaser.]
+    \getbuffer[K3]
+\stopplacefigure
+
+\typebuffer[K3][option=TEX]
+
+When you run that example the log will show something like this (on my 2018
+laptop):
+
+\starttyping[style=small]
+metapost 3D     > plane mesh: 4 vertices, 2 triangles, runtime 0.000
+metapost 3D     > implicit mesh: 937620 vertices, 312540 triangles, runtime 1.918
+metapost 3D     > mesh plane: 1752 segments, 1 chains, runtime 0.204
+metapost 3D     > unprojected dimensions: x [-4.012511376 4.012773906], y [-4.375 4.375], width 8.025285281, height 8.75
+metapost 3D     > zbuffer width 2364, height 2578, supersample 2
+metapost 3D     > 1 1 : delayed   : plane, opacity 0.500, id 'plane'
+metapost 3D     > 1 2 : triangles : implicit, opacity 1.000, id 'K3', runtime 0.456
+metapost 3D     > 1 3 : points    : points, opacity 1.000, id 'K3 plane', method 0, runtime 0.013
+metapost 3D     > 2 1 : triangles : plane, opacity 0.500, id 'plane', runtime 0.088
+metapost 3D     > composing: max levels 1, runtime 0.056
+metapost 3D     > cropping: xmin 147, ymin 10, xmax 1141, ymax 1280, width 995, height 1271, runtime 0.030
+metapost 3D     > trying to clean up 1.054.573.448 bytes of memory
+\stoptyping
+
+Assuming a more than twice as fast modern machine, these timings are quite okay
+but nevertheless we cache the image. The embedded image is less than a few
+hundred K, so that's not too bad, but you will notice that quite some memory is
+used to get there. This is a result of keeping quite a bit of dat ain \LUA, the
+use of double precision floating numbers, three dimensional meshes that can be
+covering others, and other temporary data stores. We keep track of three
+dimensions, normals, textures, etc. We might decide to compile \LUAMETATEX\ with
+single precision floats but for now we stick to the default. We clean up memory
+in-between because \LUA's garbage collector will not kick in for the relative
+small objects, even if there are many. Therefore it is no problem to generate
+many hundreds of pages with such images when (like Keith) you make animations.
+
+You can, it you like, also load a so called \type {stl} file, for instance
+produced by Mathematica or Maple. So, if the above doesn't inspire you, maybe the
+next example does: \in {figure} [fig:threedalsoteaser]. In this case it's an
+\type {stl} file exported from \CONTEXT.
+
+\startbuffer
+\startMPcode
+lmt_scene_start [
+    width        = 10cm,
+    resolution   = 300,
+    supersample  = 2,
+    crop         = true,
+    projection   = "perspective",
+    eye          = "auto",
+    target       = "auto",
+    fov          = 80,
+    light        = (0,-1,-2),
+    intensity    = 1.1,
+  % cache        = true,
+  % name         = "example",
+] ;
+
+lmt_scene_material [
+    name      = "surface",
+    diffuse   = (.8,0,0),
+    specular  = (1,.5,0),
+] ;
+
+lmt_scene_external [
+    filename    = "luametafun-threed-sphere.stl",
+  % flipnormals = true,
+  % normal      = "flat",
+    id          = "sphere",
+    material    = "surface",
+    vector      = true,
+] ;
+
+lmt_scene_render ;
+
+draw lmt_scene_mesh "sphere"
+    withpen pencircle scaled 1pt withcolor white ;
+;
+
+lmt_scene_stop ;
+\stopMPcode
+\stopbuffer
+
+In this example we show the mesh which can be handy when you want to check it all
+is right, but in practice you will never do that other than that because you get
+the whole mesh (also the hidden pieces) and it bloats the file. We've ran tests
+with exported \type {stl} files and one will be surprised by how many triangles
+are involved. Also, keep in mind that these files can have normals pointing the
+other way so you might want to flip them. Forcing flat normals is a way out. The
+\type {auto} flag tells \CONTEXT\ to come up with a reasonable \type {eye} for
+imported files.
+
+\startplacefigure[reference=fig:threedalsoteaser,title={Another teaser: rendering an \type {stl} file.}]
+    \getbuffer
+\stopplacefigure
+
+\typebuffer[option=TEX]
 
 \stopchapter
 

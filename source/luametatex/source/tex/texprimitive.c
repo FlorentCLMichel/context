@@ -41,6 +41,7 @@ hash_state_info lmt_hash_state = {
         .minimum   = min_hash_size,
         .maximum   = max_hash_size,
         .size      = siz_hash_size,
+        .size      = siz_hash_size,
         .step      = stp_hash_size,
         .allocated = 0,
         .itemsize  = sizeof(memoryword) + sizeof(memoryword),
@@ -65,7 +66,7 @@ hash_state_info lmt_hash_state = {
     },
     .eqtb        = NULL,
     .no_new_cs   = 1,
-    .padding     = 0,
+    .misses      = 0,
     .destructors = { eq_none }, 
 };
 
@@ -184,25 +185,90 @@ static int tex_aux_room_in_hash(void)
     The primitive hash lookups are needed when we initialize and when we lookup an internal
     variable.
 
+    Amyway, we now keep track of the misses and it looks like we have some 10% on the average, so
+    it is not that bad. Of course, if we really want to know it, we should keep track of how deep
+    we go in the chain but it's not worth the trouble (and more important: overhead), also because
+    there is not much that we can do about it.
+
 */
 
-static inline halfword tex_aux_compute_hash(const char *j, unsigned l)
-{
-    halfword h = (unsigned const char) j[0];
-    for (unsigned k = 1; k < l; k++) {
-        h = (h + h + (unsigned const char) j[k]) % hash_prime;
-    }
-    return h;
-}
+# if 0
 
-static inline halfword tex_aux_compute_primitive(const char *j, unsigned l)
-{
-    halfword h = (unsigned const char) j[0];
-    for (unsigned k = 1; k < l; k++) {
-        h = (h + h + (unsigned const char) j[k]) % primitives_prime;
+    /* original tex */
+
+    static inline halfword tex_aux_compute_hash(const char *j, unsigned l)
+    {
+        halfword h = (unsigned const char) j[0];
+        for (unsigned k = 1; k < l; k++) {
+            h = (h + h + (unsigned const char) j[k]) % hash_prime;
+        }
+        return h;
     }
-    return h;
-}
+
+    static inline halfword tex_aux_compute_primitive(const char *j, unsigned l)
+    {
+        halfword h = (unsigned const char) j[0];
+        for (unsigned k = 1; k < l; k++) {
+            h = (h + h + (unsigned const char) j[k]) % primitives_prime;
+        }
+        return h;
+    }
+
+    /* improved */
+
+ // static inline halfword tex_aux_compute_hash(const char *j, unsigned l)
+ // {
+ //     halfword h = (unsigned char)j[0];
+ //     for (unsigned k = 1; k < l; k++) {
+ //         h = (h * 2) + (unsigned char) j[k];
+ //         while (h >= hash_prime) {
+ //             h -= hash_prime;
+ //         }
+ //     }
+ //     return h;
+ // }
+
+ // static inline halfword tex_aux_compute_primitive(const char *j, unsigned l)
+ // {
+ //     halfword h = (unsigned char)j[0];
+ //     for (unsigned k = 1; k < l; k++) {
+ //         h = (h * 2) + (unsigned char) j[k];
+ //         while (h >= primitives_prime) {
+ //             h -= primitives_prime;
+ //         }
+ //     }
+ //     return h;
+ // }
+
+# else
+
+    /* FNV-1a / djb2a : standard seed 5381 */
+
+    static inline uint32_t tex_aux_hash_bytes(const char *s, size_t length)
+    {
+        const unsigned char *p = (const unsigned char *) s;
+        uint32_t h = UINT32_C(5381);
+
+        while (length--) {
+            h = h * UINT32_C(33) ^ *p++;
+        }
+        return h;
+    }
+
+    _Static_assert((hash_size       & (hash_size       - 1)) == 0,"hash_size must be a power of two");
+    _Static_assert((primitives_size & (primitives_size - 1)) == 0,"primitives_size must be a power of two");
+
+    static inline halfword tex_aux_compute_hash(const char *s, size_t length)
+    {
+        return (halfword) (tex_aux_hash_bytes(s, length) & (hash_size - 1));
+    }
+
+    static inline halfword tex_aux_compute_primitive(const char *s, size_t length)
+    {
+        return (halfword) (tex_aux_hash_bytes(s, length) % primitives_prime);
+    }
+
+# endif
 
 halfword tex_primitive_lookup(strnumber s)
 {
@@ -224,7 +290,7 @@ halfword tex_primitive_lookup(strnumber s)
                 return undefined_primitive;
             } else {
                 /*tex Insert a new primitive after |p|, then make |p| point to it. */
-                if (prim_text(p) > 0) {
+                 if (prim_text(p) > 0) {
                     /*tex Search for an empty location in |prim| */
                     do {
                         if (lmt_primitive_state.prim_used > primitives_base) {
@@ -343,6 +409,7 @@ void tex_dump_hashtable(dumpstream f)
         dump_things(f, lmt_hash_state.hash[eqtb_size + 1], lmt_hash_state.hash_data.ptr);
     }
     dump_int(f, lmt_hash_state.eqtb_data.ptr);
+    dump_int(f, lmt_hash_state.misses);
 }
 
 void tex_undump_hashtable(dumpstream f)
@@ -366,6 +433,7 @@ void tex_undump_hashtable(dumpstream f)
             undump_things(f, lmt_hash_state.hash[eqtb_size + 1], lmt_hash_state.hash_data.ptr);
         }
         undump_int(f, lmt_hash_state.eqtb_data.ptr);
+        undump_int(f, lmt_hash_state.misses);
         lmt_hash_state.eqtb_data.initial = lmt_hash_state.eqtb_data.ptr;
         return;
     }
@@ -481,6 +549,7 @@ void tex_primitive(int origin, int legacy, const char *str, singleword cmd, half
 static halfword tex_aux_insert_id(halfword p, const unsigned char *str, unsigned int l)
 {
     if (cs_text(p) > 0) {
+        ++lmt_hash_state.misses;
       RESTART:
         if (lmt_hash_state.hash_data.ptr < lmt_hash_state.hash_data.allocated) {
             ++lmt_hash_state.hash_data.ptr;

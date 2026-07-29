@@ -1,0 +1,1358 @@
+if not modules then modules = { } end modules ['mlib-stp'] = {
+    version   = 1.001,
+    optimize  = true,
+    comment   = "2D stippling, Voronoi, Delaunay, and CVD",
+    author    = "Mikael Sundqvist & Hans Hagen",
+    copyright = "PRAGMA ADE / ConTeXt Development Team",
+    license   = "see context related readme files",
+}
+
+-- https://people.eecs.berkeley.edu/~jrs/meshbook.html
+-- https://en.wikipedia.org/wiki/Fortune%27s_algorithm
+-- https://towardsdatascience.com/the-fascinating-world-of-voronoi-diagrams-da8fc700fa1b/
+
+-- When we were trying to get info about various scientific 3D demands and solutions
+-- Mikael generated a prototype with Chat 5, feeding it existing \CONTEXT\ and
+-- \LUAMETAFUN\ code that could serve as template; we already have interfaces
+-- between \METAPOST\ and \LUA\ after all. It actually started with zbuffering and
+-- overlapping shapes and among the features that we offer is stippling.
+--
+-- The term stippling also pops up in 2D in relation to bitmaps, and when Mikael
+-- asked the bot about that we ended up in Voronoi terriory so eventually we
+-- sidetracked once again. Below various application of this technology are
+-- combined. This is not critical code unless we find applications but still it took
+-- some time to get it into a state that performs good enough without relying on
+-- libraries. A side effect is that we now have a kdtree module and we'll see where
+-- that one comes in handy. We also played with the more or less reference qhull but
+-- in only does the mathematical part. Using that library add some 400K to tbe
+-- binary so that is not done; the command line feature works as well.
+--
+-- In the end this technology is already kind of old and one can find various
+-- approaches on the Internet and query \LLM's about it in order to get
+-- explanations. It is a real pitty that we no longer have these floors with books
+-- that can inspire development and that we have to rely on what goes online. We
+-- might win but also loose here. Anyway, in the end here it is mostly about
+-- figuring out the user interfacing and integration.
+--
+-- This module is a bit of a mess because it started with the random related code in
+-- here and mixing the basic four features. I'd have to rewrite more or less from
+-- scratch to get better code but at the moment it is not worth the effort. No one
+-- will look at it anyway as we have a higher level interface.
+
+local abs, ceil, floor, sqrt, pi, round = math.abs, math.ceil, math.floor, math.sqrt, math.pi, math.round
+local min, max = math.min, math.max
+local sort, setmetatableindex = table.sort, table.setmetatableindex
+local type, tonumber = type, tonumber
+local next = next
+local formatters = string.formatters
+local clamp = number.clamp
+
+local kdnew            = kdtree.new
+local kdnewweighted    = kdtree.newweighted
+local kdnearestindex   = kdtree.nearestindex
+local kdreset          = kdtree.reset
+local kdfound          = kdtree.found
+
+local newindex         = lua.newindex
+local newtable         = lua.newtable
+
+local newpoints        = vector.points.new
+local cpypoints        = vector.points.copy
+local getxy            = vector.points.getxy
+local getxytable       = vector.points.getxytable
+local setxy            = vector.points.setxy
+local getbounds        = vector.points.getbounds
+local gettriangle      = vector.points.gettriangle
+local pointsindex      = vector.points.index
+local growpoints       = vector.points.grow
+local prunepoints      = vector.points.prune
+
+local starttiming      = statistics.starttiming
+local stoptiming       = statistics.stoptiming
+local elapsedtime      = statistics.elapsedtime
+local ioflush          = io.flush
+
+local xy_points <const> = 2
+
+local metapost         = metapost or { }
+
+local registerpointset = metapost.registerpointset
+local pointset         = metapost.pointset
+
+----- poisson          = metapost.randomizers.poisson
+----- uniform          = metapost.randomizers.uniform
+----- weighted         = metapost.randomizers.weighted
+----- unweighted       = metapost.randomizers.unweighted
+local sampledpoint     = metapost.randomizers.sampled
+local pointsampler     = metapost.randomizers.sampler
+local initialpoints    = metapost.randomizers.initial
+local resolvedensity   = metapost.randomizers.density
+
+local report           = logs.reporter("metapost", "voronoi")
+
+local stippling = { } -- function namespace, for now
+
+local function copypoints(points,extra)
+    if type(points) == "userdata" then
+        return cpypoints(points,extra or 0)
+    else
+        local count  = #points
+        local copied = newpoints(count + (extra or 0),1,xy_points)
+        for i=1,count do
+            local p = points[i]
+            copied(p[1],p[2])
+        end
+        return copied
+    end
+end
+
+local function resolvepoints(value)
+    -- do we need to copy or not ...
+    local t = type(value)
+    if t == "userdata" then
+        return copypoints(value)
+    elseif t == "string" and value ~= "" then
+        local stored = pointset(value)
+        if stored then
+--             return copypoints(stored) -- why copy
+            return stored -- why copy
+        end
+    elseif t == "table" then
+        local stored = t.pointset and pointset(value.pointset)
+        if stored then
+            return copypoints(stored)
+        else
+            return copypoints(value)
+        end
+    end
+end
+
+do
+
+    local e_a     <const> = 1
+    local e_b     <const> = 2
+    local e_count <const> = 3 -- axis
+
+    local t_ux    <const> = 4 -- instead of hashes
+    local t_uy    <const> = 5
+    local t_r2    <const> = 6
+
+    local function buildneighbors(count,triangles)
+        local neighbors = { }
+        local edgehash  = { }
+        local edges     = { }
+        local nofedges  = 0
+     -- for i=1,count do
+     --     neighbors[i] = { }
+     -- end
+        setmetatableindex(neighbors,"table")
+
+     -- local function link(a,b)
+     --     neighbors[a][b] = true
+     --     neighbors[b][a] = true
+     --  -- local key = (a < b) and (a .. ":" .. b) or (b .. ":" .. a)
+     --     local key = (a < b) and ((a << 16) + b) or ((b << 16) + a)
+     --     if not edgehash[key] then
+     --         edgehash[key] = true
+     --         nofedges = nofedges + 1
+     --         edges[nofedges] = { a, b }
+     --     end
+     -- end
+     --
+     -- for i=1,#triangles do
+     --     local t = triangles[i]
+     --     local a = t[1]
+     --     local b = t[2]
+     --     local c = t[3]
+     --     link(a,b)
+     --     link(b,c)
+     --     link(c,a)
+     -- end
+
+--         for i=1,#triangles do
+--             local triangle = triangles[i]
+--             local t1 = triangle[1]
+--             local t2 = triangle[2]
+--             local t3 = triangle[3]
+--             local t1s = t1 << 16
+--             local t2s = t2 << 16
+--             local t3s = t3 << 16
+--             local key1  = (t1 < t2) and (t1s + t2) or (t2s + t1)
+--             local key2  = (t2 < t3) and (t2s + t3) or (t3s + t2)
+--             local key3  = (t3 < t1) and (t3s + t1) or (t1s + t3)
+--             neighbors[t1][t2] = true neighbors[t2][t1] = true
+--             neighbors[t2][t3] = true neighbors[t3][t2] = true
+--             neighbors[t3][t1] = true neighbors[t1][t3] = true
+--             if not edgehash[key1] then
+--                 edgehash[key1] = true
+--                 nofedges = nofedges + 1
+--                 edges[nofedges] = { t1, t2 }
+--             end
+--             if not edgehash[key2] then
+--                 edgehash[key2] = true
+--                 nofedges = nofedges + 1
+--                 edges[nofedges] = { t2, t3 }
+--             end
+--             if not edgehash[key3] then
+--                 edgehash[key3] = true
+--                 nofedges = nofedges + 1
+--                 edges[nofedges] = { t3, t1 }
+--             end
+--         end
+
+-- local n = neighbors
+-- local e = edges
+
+-- local neighbors = { }
+-- local edges     = { }
+-- local nofedges  = 0
+-- setmetatableindex(neighbors,"table")
+
+for i=1,#triangles do
+    local triangle = triangles[i]
+    local t1 = triangle[1]
+    local t2 = triangle[2]
+    local t3 = triangle[3]
+    if t1 < t2 then
+        if not neighbors[t1][t2] then nofedges = nofedges + 1 edges[nofedges] = { t1, t2 } end
+    else
+        if not neighbors[t2][t1] then nofedges = nofedges + 1 edges[nofedges] = { t1, t2 } end
+    end
+    if t2 < t3 then
+        if not neighbors[t2][t3] then nofedges = nofedges + 1 edges[nofedges] = { t2, t3 } end
+    else
+        if not neighbors[t3][t2] then nofedges = nofedges + 1 edges[nofedges] = { t2, t3 } end
+    end
+    if t3 < t1 then
+        if not neighbors[t3][t1] then nofedges = nofedges + 1 edges[nofedges] = { t3, t1 } end
+    else
+        if not neighbors[t1][t3] then nofedges = nofedges + 1 edges[nofedges] = { t3, t1 } end
+    end
+    neighbors[t1][t2] = true neighbors[t2][t1] = true
+    neighbors[t2][t3] = true neighbors[t3][t2] = true
+    neighbors[t3][t1] = true neighbors[t1][t3] = true
+end
+
+-- print(table.are_equal(e,edges))
+-- print(table.are_equal(n,neighbors))
+
+        setmetatableindex(neighbors,nil)
+
+        for k, v in next, neighbors do
+            local t = { }
+            local n = 0
+            for k in next, v do
+                n = n + 1
+                t[n] = k
+            end
+            if n == 0 then
+                t = nil
+            elseif n > 1 then
+                sort(t)
+            end
+            neighbors[k] = t
+        end
+
+        return neighbors, edges
+    end
+
+    function stippling.delaunay(points,specification)
+        --
+--         local points = resolvepoints(points)
+
+        local pcount = #points
+        if pcount < 3 then
+            return {
+                points    = points,
+                triangles = { },
+                neighbors = buildneighbors(pcount,{ }),
+                edges     = { },
+            }
+        end
+
+        local width  = specification.width  or 0
+        local height = specification.height or 0
+
+        local xmin, ymin, xmax, ymax
+        if width ~= 0 and height ~= 0 then
+            xmin, xmax, ymin, ymax = 0, width, 0, height
+        else
+            xmin, xmax, ymin, ymax = getbounds(points)
+        end
+
+        local dx = xmax - xmin
+        local dy = ymax - ymin
+        local cx = (xmin + xmax) / 2
+        local cy = (ymin + ymax) / 2
+
+        local delta = max(dx,dy)
+        if delta <= 0 then
+            delta = 1
+        end
+
+        local epsilon   = (tonumber(specification.epsilon) or 1e-12) * delta * delta
+        local overshoot = 20
+
+        local triangles, neighbors, edges
+
+        if false then
+--         if true then
+
+            neighbors = qhull.getneighbors(points)
+            triangles = qhull.gettriangles(points)
+            edges     = { }
+
+        else
+
+            -- I played with a few variants:
+            --
+            -- -- Using a mesh is 1.5 times slower mainly because we then need to access user
+            --    data frequently.
+            -- -- Doing that in C avoids the userdata check but then we add complexity due to
+            --    the edge and order management so although that is faster it also is more
+            --    error prone as one has to impose limits or introduce more memory management.
+            -- -- So in the end we stick to the Lua approach. I wasted more than a day on
+            --    optimizing so this is more a game (and expertise building for little purpose).
+            -- -- Of course there are a few tricks used here to keep the memory footprint low
+            --    and garbage collector happy.
+
+            do -- we need to keep the outer edges variable
+
+                local allpoints = copypoints(points)
+
+                growpoints(allpoints,3)
+
+                allpoints(cx - overshoot*delta, cy -           delta)
+                allpoints(cx,                   cy + overshoot*delta)
+                allpoints(cx + overshoot*delta, cy -           delta)
+
+                triangles = { gettriangle(allpoints,pcount+1,pcount+2,pcount+3,true) }
+
+                local order  = { }
+                local edges  = { }
+                local tcount = 1
+                local ocount = 0
+--
+--                 for index=1,pcount do
+--                     local px, py = getxy(allpoints,index)
+--                     local kcount = 0
+--                     ocount = 0
+--                     for i=1,tcount do
+--                         local triangle = triangles[i]
+--                         local qx = px - triangle[t_ux]
+--                         local qy = py - triangle[t_uy]
+--                         if qx*qx + qy*qy <= triangle[t_r2] + epsilon then
+--                             local t1 = triangle[1]
+--                             local t2 = triangle[2]
+--                             local t3 = triangle[3]
+--                             local t1s = t1 << 16
+--                             local t2s = t2 << 16
+--                             local t3s = t3 << 16
+--                             local key1  = (t1 < t2) and (t1s + t2) or (t2s + t1)
+--                             local key2  = (t2 < t3) and (t2s + t3) or (t3s + t2)
+--                             local key3  = (t3 < t1) and (t3s + t1) or (t1s + t3)
+--                             local edge = edges[key1]
+--                             if edge then
+--                                 edge[e_count] = edge[e_count] + 1
+--                             else
+--                                 edges[key1] = { t1, t2, 1 }
+--                                 ocount = ocount + 1
+--                                 order[ocount] = key1
+--                             end
+--                             edge = edges[key2]
+--                             if edge then
+--                                 edge[e_count] = edge[e_count] + 1
+--                             else
+--                                 edges[key2] = { t2, t3, 1 }
+--                                 ocount = ocount + 1
+--                                 order[ocount] = key2
+--                             end
+--                             edge = edges[key3]
+--                             if edge then
+--                                 edge[e_count] = edge[e_count] + 1
+--                             else
+--                                 edges[key3] = { t3, t1, 1 }
+--                                 ocount = ocount + 1
+--                                 order[ocount] = key3
+--                             end
+--                         else
+--                             kcount = kcount + 1
+--                             if kcount ~= i then
+--                                 triangles[kcount] = triangle
+--                             end
+--                         end
+--                     end
+--                     tcount = kcount
+--                     for i=1,ocount do
+--                         local okay = order[i]
+--                         local edge = edges[okay]
+--                         if edge[e_count] == 1 then -- axis
+--                             tcount = tcount + 1
+--                             triangles[tcount] = gettriangle(allpoints,edge[e_a],edge[e_b],index,true)
+--                         end
+--                         edges[okay] = nil
+--                     end
+--                 end
+
+--                 for index=1,pcount do
+--                     local px, py = getxy(allpoints,index)
+--                     local kcount = 0
+--                     ocount = 0
+--                     edges  = newtable(0,16) -- could be metatabled [][] and a reset
+--                     for i=1,tcount do
+--                         local triangle = triangles[i]
+--                         local qx = px - triangle[t_ux]
+--                         local qy = py - triangle[t_uy]
+--                         if qx*qx + qy*qy <= triangle[t_r2] + epsilon then
+--                             local t1 = triangle[1]
+--                             local t2 = triangle[2]
+--                             local t3 = triangle[3]
+--                             local t1s = t1 << 16
+--                             local t2s = t2 << 16
+--                             local t3s = t3 << 16
+--                             local key1  = (t1 < t2) and (t1s + t2) or (t2s + t1)
+--                             local key2  = (t2 < t3) and (t2s + t3) or (t3s + t2)
+--                             local key3  = (t3 < t1) and (t3s + t1) or (t1s + t3)
+--                             local edge = edges[key1]
+--                             if edge then
+--                                 edge[e_count] = edge[e_count] + 1
+--                             else
+--                                 local t = { t1, t2, 1 }
+--                                 edges[key1] = t
+--                                 ocount = ocount + 1
+--                                 order[ocount] = t
+--                             end
+--                             edge = edges[key2]
+--                             if edge then
+--                                 edge[e_count] = edge[e_count] + 1
+--                             else
+--                                 local t = { t2, t3, 1 }
+--                                 edges[key2] = t
+--                                 ocount = ocount + 1
+--                                 order[ocount] = t
+--                             end
+--                             edge = edges[key3]
+--                             if edge then
+--                                 edge[e_count] = edge[e_count] + 1
+--                             else
+--                                 local t = { t3, t1, 1 }
+--                                 edges[key3] = t
+--                                 ocount = ocount + 1
+--                                 order[ocount] = t
+--                             end
+--                         else
+--                             kcount = kcount + 1
+--                             if kcount ~= i then
+--                                 triangles[kcount] = triangle
+--                             end
+--                         end
+--                     end
+--                     tcount = kcount
+--                     for i=1,ocount do
+--                         local edge = order[i]
+--                         if edge[e_count] == 1 then -- axis
+--                             tcount = tcount + 1
+--                             triangles[tcount] = gettriangle(allpoints,edge[e_a],edge[e_b],index,true)
+--                         end
+--                     end
+--                 end
+
+                setmetatableindex(edges,"table")
+
+                for index=1,pcount do
+                    local px, py = getxy(allpoints,index)
+                    local kcount = 0
+                    ocount = 0
+                    for i=1,tcount do
+                        local triangle = triangles[i]
+                        local qx = px - triangle[t_ux]
+                        local qy = py - triangle[t_uy]
+                        if qx*qx + qy*qy <= triangle[t_r2] + epsilon then
+                            local t1 = triangle[1]
+                            local t2 = triangle[2]
+                            local t3 = triangle[3]
+                            if t1 < t2 then
+                                local edge = edges[t1][t2]
+                                if edge then
+                                    edge[e_count] = edge[e_count] + 1
+                                else
+                                    local t = { t1, t2, 1 } edges[t1][t2] = t ocount = ocount + 1 order[ocount] = t
+                                end
+                            else
+                                local edge = edges[t2][t1]
+                                if edge then
+                                    edge[e_count] = edge[e_count] + 1
+                                else
+                                    local t = { t1, t2, 1 } edges[t2][t1] = t ocount = ocount + 1 order[ocount] = t
+                                end
+                            end
+                            if t2 < t3 then
+                                local edge = edges[t2][t3]
+                                if edge then
+                                    edge[e_count] = edge[e_count] + 1
+                                else
+                                    local t = { t2, t3, 1 } edges[t2][t3] = t ocount = ocount + 1 order[ocount] = t
+                                end
+                            else
+                                local edge = edges[t3][t2]
+                                if edge then
+                                    edge[e_count] = edge[e_count] + 1
+                                else
+                                    local t = { t2, t3, 1 } edges[t3][t2] = t ocount = ocount + 1 order[ocount] = t
+                                end
+                            end
+                            if t3 < t1 then
+                                local edge = edges[t3][t1]
+                                if edge then
+                                    edge[e_count] = edge[e_count] + 1
+                                else
+                                    local t = { t3, t1, 1 } edges[t3][t1] = t ocount = ocount + 1 order[ocount] = t
+                                end
+                            else
+                                local edge = edges[t1][t3]
+                                if edge then
+                                    edge[e_count] = edge[e_count] + 1
+                                else
+                                    local t = { t3, t1, 1 } edges[t1][t3] = t ocount = ocount + 1 order[ocount] = t
+                                end
+                            end
+                        else
+                            kcount = kcount + 1
+                            if kcount ~= i then
+                                triangles[kcount] = triangle
+                            end
+                        end
+                    end
+                    tcount = kcount
+                    for i=1,ocount do
+                        local edge = order[i]
+                        local a = edge[e_a]
+                        local b = edge[e_b]
+                        if edge[e_count] == 1 then -- axis
+                            tcount = tcount + 1
+                            triangles[tcount] = gettriangle(allpoints,a,b,index,true)
+                        end
+                        edges[a][b] = nil
+                        edges[b][a] = nil
+                    end
+                end
+
+                setmetatableindex(edges)
+
+                local result = { }
+                local r      = 0
+                for i=1,tcount do
+                    local t = triangles[i]
+                    local a = t[1]
+                    local b = t[2]
+                    local c = t[3]
+                    if a <= pcount and b <= pcount and c <= pcount then
+                        r = r + 1 ; result[r] = { a, b, c }
+                    else
+                        -- one of the extra points used
+                    end
+                end
+                triangles = result
+
+                prunepoints(allpoints,3)
+
+            end
+
+            neighbors, edges = buildneighbors(pcount,triangles)
+        end
+
+        return {
+            kind      = "delaunay",
+            points    = points,
+            triangles = triangles,
+            neighbors = neighbors,
+            edges     = edges,
+        }
+    end
+
+end
+
+do
+
+    local function clipbisector(polygon,points,index,other,epsilon)
+        local n = pointsindex(polygon) or 0
+        if n > 0 then
+            local result = false
+            local px, py = getxy(points,index)
+            local ox, oy = getxy(points,other)
+            local a = ox - px
+            local b = oy - py
+            local c = (ox*ox + oy*oy - px*px - py*py) / 2
+            local previousx, previousy = getxy(polygon,n)
+            local previousvalue  = a*previousx + b*previousy - c
+            local previousinside = previousvalue <= epsilon
+            for i=1,n do
+                local currentx, currenty = getxy(polygon,i)
+                local currentvalue  = a*currentx + b*currenty - c
+                local currentinside = currentvalue <= epsilon
+                if currentinside ~= previousinside then
+                    local denominator = previousvalue - currentvalue
+                    if denominator ~= 0 then
+                        local t = previousvalue / denominator
+                        if not result then
+                            result = newpoints(n,1,xy_points,n)
+                        end
+                        result(
+                            previousx + t * (currentx - previousx),
+                            previousy + t * (currenty - previousy)
+                        )
+                    end
+                end
+                if currentinside then
+                    if not result then
+                        result = newpoints(n,1,xy_points,n)
+                    end
+                    result(currentx,currenty)
+                end
+             -- previous       = current
+                previousx      = currentx
+                previousy      = currenty
+                previousvalue  = currentvalue
+                previousinside = currentinside
+            end
+            if result then
+                prunepoints(result)
+            end
+            return result
+        end
+    end
+
+    -- Performance: in a loop, the burden shifts from voronoi to delaunay so even if we
+    -- optimize voronoy (in c) one can wonder abouyt the gain in the end.
+
+    function stippling.voronoi(points,specification)
+        --
+--         local points        = resolvepoints(points)
+        local width         = tonumber(specification.width)  or 100
+        local height        = tonumber(specification.height) or 100
+     -- local triangulation = specification.triangulation
+        local triangulation = stippling.delaunay(points,specification)
+        local neighbors     = triangulation.neighbors
+        local triangles     = triangulation.triangles
+        local edges         = triangulation.edges
+        local cells         = { }
+        local nofcells      = 0
+        local epsilon       = tonumber(specification.epsilon) or 1e-10
+        local count         = #points
+        local bounds        = newpoints(4,1,xy_points)
+
+        bounds(0,0) bounds(width,0) bounds(width,height) bounds(0,height)
+
+        for index=1,count do
+            local cell = bounds -- cpypoints(bounds)
+            local set  = neighbors and neighbors[index]
+            if set then
+                for j=1,#set do
+                    cell = clipbisector(cell,points,index,set[j],epsilon)
+                    if not cell then
+                        break
+                    end
+                end
+            else
+                for j=1,count do
+                    if j ~= index then
+                        cell = clipbisector(cell,points,index,j,epsilon)
+                        if not cell then
+                            break
+                        end
+                    end
+                end
+            end
+            if cell and cell ~= bound then
+                nofcells = nofcells + 1
+                cells[nofcells] = cell
+            end
+        end
+        --
+        return {
+            kind      = "voronoi",
+            points    = points,
+            cells     = cells,
+            triangles = triangles,
+            neighbors = neighbors,
+            edges     = edges,
+        }
+    end
+
+end
+
+do
+
+    local function polygoncentroid(polygon,fx,fy)
+        local n = polygon and #polygon or 0
+        if n == 0 then
+            return fx, fy
+        elseif n < 3 then
+            local sx = 0
+            local sy = 0
+            for i=1,n do
+                local px, py = getxy(polygon,i)
+                sx = sx + px
+                sy = sy + py
+            end
+            return sx/n, sy/n
+        else
+            local crossarea  = 0
+            local cx         = 0
+            local cy         = 0
+            local previousx,
+                  previousy  = getxy(polygon,n)
+            for i=1,n do
+                local currentx,
+                      currenty = getxy(polygon,i)
+                local cross    = previousx * currenty - currentx * previousy
+                crossarea      = crossarea + cross
+                cx             = cx + (previousx + currentx) * cross
+                cy             = cy + (previousy + currenty) * cross
+                previousx      = currentx
+                previousy      = currenty
+            end
+            if abs(crossarea) < 1e-30 then
+                return fx, fy
+            else
+                return cx / (3 * crossarea), cy / (3 * crossarea)
+            end
+        end
+    end
+
+    function stippling.cvd(specification)
+        specification.initial = "unweighted"
+        --
+        local width           = tonumber(specification.width)      or 100
+        local height          = tonumber(specification.height)     or 100
+        local iterations      = tonumber(specification.iterations) or 10
+        local alpha           = tonumber(specification.alpha)      or 1 -- 0.8
+        local tolerance       = tonumber(specification.tolerance)  or 0
+        --
+        local density         = resolvedensity(specification)
+        local points          = resolvepoints(specification.pointset)
+                             or initialpoints(specification,density)
+        --
+        local denominator     = max(1,#points)
+        local cells           = false
+        local triangulation   = false
+        local rms             = false
+        --
+        -- The centering could be a helper but in practice it takes very little (zero)
+        -- runtime and the voronoi basically takes all time needed.
+        --
+        for iteration=1,iterations do
+            local movement = 0
+            local diagram  = stippling.voronoi(points,specification)
+            cells          = diagram.cells
+            triangulation  = diagram.triangulation
+-- vector.points.setindex(points,0)
+            for i=1,#points do
+                local px, py = getxy(points,i)
+                local cx, cy = polygoncentroid(cells[i],px,py)
+                local nx = px + alpha * (cx - px)
+                local ny = py + alpha * (cy - py)
+                local dx = nx - px
+                local dy = ny - py
+                movement = movement + dx*dx + dy*dy
+                setxy(points,i,nx,ny)
+-- points(nx,ny)
+            end
+            rms = sqrt(movement/denominator)
+            if tolerance > 0 and rms <= tolerance then
+                break
+            end
+        end
+        --
+        return {
+            kind          = "cvd",
+            points        = points,
+            cells         = cells,
+            triangulation = triangulation, -- hm
+            triangles     = triangulation and triangulation.triangles or nil,
+            edges         = triangulation and triangulation.edges     or nil,
+            rms           = rms or 0,
+        }
+    end
+
+end
+
+do
+
+    local function accumulatediscrete(points,density,step)
+        local count  = #points
+        local mass   = newindex(count,0)
+        local mx     = newindex(count,0)
+        local my     = newindex(count,0)
+        local kd     = kdnewweighted(points)
+        local values = density.values
+        local nx     = density.nx
+        local ny     = density.ny
+        local xscale = density.xscale
+        local yscale = density.yscale
+        for y=1,ny,step do
+            local dy = (y - 1) * nx
+            for x=1,nx,step do
+                local rho = values[dy+x]
+                if rho and rho > 0 then
+                    local sx = (x - 0.5) * xscale
+                    local sy = (y - 0.5) * yscale
+                    local id = kdnearestindex(kd,sx,sy)
+                    mass[id] = mass[id] + rho
+                    mx  [id] = mx  [id] + rho * sx
+                    my  [id] = my  [id] + rho * sy
+                end
+            end
+        end
+        kdreset(kd)
+        return mass, mx, my
+    end
+
+    local function polygonbounds(polygon)
+        local first = polygon[1]
+        if first then
+            local xmin = first[1]
+            local ymin = first[2]
+            local xmax = xmin
+            local ymax = ymin
+            for i=2,#polygon do
+                local point = polygon[i]
+                local x = point[1]
+                local y = point[2]
+                if x < xmin then xmin = x elseif x > xmax then xmax = x end
+                if y < ymin then ymin = y elseif y > ymax then ymax = y end
+            end
+            return xmin, ymin, xmax, ymax
+        end
+    end
+
+    local function pointonsegment(a, b, x, y, epsilon)
+        local ax, ay = a[1], a[2]
+        local bx, by = b[1], b[2]
+        local cross = (x - ax) * (by - ay) - (y - ay) * (bx - ax)
+        if abs(cross) > epsilon then
+            return false
+        else
+            return
+                x >= min(ax,bx) - epsilon and x <= max(ax,bx) + epsilon and
+                y >= min(ay,by) - epsilon and y <= max(ay,by) + epsilon
+        end
+    end
+
+    local function pointinpolygon(polygon, x, y)
+        local n = #polygon
+        if n == 0 then
+            return false
+        else
+            local inside   = false
+            local previous = polygon[n]
+            local epsilon  = 1e-9
+            for i=1,n do
+                local current = polygon[i]
+                if pointonsegment(previous,current,x,y,epsilon) then
+                    return true
+                else
+                    local py = previous[2]
+                    local cy = current[2]
+                    if (py > y) ~= (cy > y) then
+                        local px = previous[1]
+                        local cx = current[1]
+                        local xcross = px + (y - py) * (cx - px) / (cy - py)
+                        if x < xcross then
+                            inside = not inside
+                        end
+                    end
+                    previous = current
+                end
+            end
+            return inside
+        end
+    end
+
+    -- Exact here means exact over the sampled density grid: each sample center
+    -- contributes only to its clipped bounded Voronoi cell.
+
+    local function accumulateexact(points,density,specification)
+        local diagram = stippling.voronoi(points, {
+            width   = density.width,
+            height  = density.height,
+            epsilon = specification.epsilon,
+        })
+        local count  = #points
+        local mass   = newindex(count,0)
+        local mx     = newindex(count,0)
+        local my     = newindex(count,0)
+        local values = density.values
+        local nx     = density.nx
+        local ny     = density.ny
+        local xscale = density.xscale
+        local yscale = density.yscale
+print("!!!!!!!!!!!!!!!!!!!!!!!!!")
+        for i=1,#diagram.cells do
+            local cell = diagram.cells[i]
+            local xmin, ymin, xmax, ymax = polygonbounds(cell)
+            if xmin then
+                local firstx = clamp(floor(xmin/xscale) + 1, 1, nx)
+                local lastx  = clamp(ceil (xmax/xscale)    , 1, nx)
+                local firsty = clamp(floor(ymin/yscale) + 1, 1, ny)
+                local lasty  = clamp(ceil (ymax/yscale)    , 1, ny)
+                for y=firsty,lasty do
+                    local dy = (y - 1) * nx
+                    for x=firstx,lastx do
+                        local rho = values[index+x]
+                        if rho and rho > 0 then
+                            local sx = (x - 0.5) * xscale
+                            local sy = (y - 0.5) * yscale
+                            if pointinpolygon(cell,sx,sy) then
+                                mass[i] = mass[i] + rho
+                                mx  [i] = mx  [i] + rho * sx
+                                my  [i] = my  [i] + rho * sy
+                            end
+                        end
+                    end
+                end
+            end
+        end
+        return mass, mx, my, diagram
+    end
+
+    local function moveweightedpoints(points,density,mass,mx,my,empty,specification,alpha,iteration)
+        -- here we need to copy
+        local movement = 0
+        local seed     = (tonumber(specification.seed) or 1) + iteration * 104729 -- move to rpt
+        local sample   = pointsampler(density)
+-- vector.points.setindex(points,0)
+        for i=1,#points do
+            local px, py = getxy(points,i)
+            local x, y
+            local mi = mass[i]
+            if mi > 0 then
+                empty[i] = 0
+                x = mx[i] / mi
+                y = my[i] / mi
+            else
+                local ei = empty[i]
+                if ei then
+                    empty[i] = ei + 1
+                 -- x, y = sampledpoint(seed + i)
+                    x, y = sample(seed + i)
+                    if not x then
+                        x = px
+                        y = py
+                    end
+                else
+                    empty[i] = 1
+                    x = px
+                    y = py
+                end
+            end
+            local nx = px + alpha * (x - px)
+            local ny = py + alpha * (y - py)
+            local dx = nx - px
+            local dy = ny - py
+            movement = movement + dx*dx + dy*dy
+            setxy(points,i,nx,ny)
+-- points(nx,ny)
+        end
+        return movement
+    end
+
+    -- a mess: so we voronoy here and later also in the usage
+
+    function stippling.weightedcvd(specification)
+        specification.initializer = "weighted"
+        --
+        local iterations      = tonumber(specification.iterations) or 25
+        local alpha           = tonumber(specification.alpha)      or 0.8
+        local tolerance       = tonumber(specification.tolerance)  or 0
+        local step            = max(1,round(tonumber(specification.step) or 1))
+        local centroid        = specification.centroid or "discrete"
+        --
+        local density         = resolvedensity(specification)
+        local points          = resolvepoints(specification.pointset)
+                             or initialpoints(specification,density)
+        --
+        local count           = #points
+        local empty           = { }
+        local rms             = 0
+        local count           = #points
+        local denominator     = max(1,count)
+        local cells           = false
+        local triangulation   = false
+        --
+        for iteration=1,iterations do
+            local mass, mx, my, diagram, movement
+            if centroid == "exact" then
+                mass, mx, my,
+                diagram       = accumulateexact(points,density,specification)
+                cells         = diagram.cells
+                triangulation = diagram.triangulation
+            else
+                mass, mx, my  = accumulatediscrete(points,density,step)
+            end
+            movement = moveweightedpoints(points,density,mass,mx,my,empty,specification,alpha,iteration)
+            rms      = sqrt(movement/denominator)
+            if tolerance > 0 and rms <= tolerance then
+                break
+            end
+        end
+        --
+        return {
+            kind          = "weighted",
+            points        = points,
+            density       = density,
+            cells         = cells,
+            triangulation = triangulation,
+            centroid      = centroid,
+            rms           = rms,
+        }
+    end
+
+end
+
+if mp then
+
+    local cache = { }
+
+    local scanners      = mp.scan
+    local injectors     = mp.inject
+
+    local scannumeric   = scanners.numeric
+    local scaninteger   = scanners.integer
+    local scanstring    = scanners.string
+
+    local injectnumeric = injectors.numeric
+    local injectpath    = injectors.path
+    local injectpoints  = injectors.points
+
+    local mpprint       = mp.print
+
+    -- voronoi  : points triangles neighbors edges cells
+    -- delaunay : points triangles neighbors edges
+
+    local origin = { { 0, 0 } }
+
+    local counters = {
+        default   = function(found)                           return 0 end,
+        points    = function(found) local f = found.points    return f and #f or 0 end,
+        triangles = function(found) local f = found.triangles return f and #f or 0 end,
+        edges     = function(found) local f = found.edges     return f and #f or 0 end,
+        cells     = function(found) local f = found.cells     return f and #f or 0 end,
+    }
+
+    local segments = {
+        default = function()
+            return origin
+        end,
+        points = function(found,index)
+            local points = found.points
+            return getxytable(points,index)
+        end,
+        triangles = function(found,index)
+            local points    = found.points
+            local triangles = found.triangles
+            local triangle  = triangles and triangles[index]
+            if triangle then
+                local result = {
+                    getxytable(points,triangle[1]),
+                    getxytable(points,triangle[2]),
+                    getxytable(points,triangle[3]),
+                }
+                result[4] = result[1]
+                result[5] = "close"
+                return result
+            else
+                return origin
+            end
+        end,
+        edges = function(found,index)
+            local points = found.points
+            local edges  = found.edges
+            local edge   = edges and edges[index]
+            if edge then
+                return {
+                    getxytable(points,edge[1]),
+                    getxytable(points,edge[2])
+                }
+            else
+                return origin
+            end
+        end,
+        cells = function(found,index)
+            local cells = found.cells
+            local cell  = cells and cells[index]
+            if cell then
+                local points = found.points
+                local result = { }
+                local n      = pointsindex(cell)
+                for i=1,n do
+                    result[i] = getxytable(cell,i)
+                end
+                result[n+1] = result[1]
+                result[n+2] = "close"
+                return result
+            else
+                return origin
+            end
+        end,
+    }
+
+    local valids = {
+        default = function()
+            return false
+        end,
+        points = function(found,index)
+            local points = found.points
+            return points and index > 0 and index <= #points
+        end,
+        triangles = function(found,index)
+            local triangles = found.triangles
+            return triangles and triangles[index]
+        end,
+        edges = function(found,index)
+            local edges = found.edges
+            return edges and edges[index]
+        end,
+        cells = function(found,index)
+            local cells = found.cells
+            return cells and cells[index]
+        end,
+    }
+
+    local paths = {
+        default  = function()
+            return origin
+        end,
+        points = function(found)
+            local points = found.points
+            if points then
+                return #points > 0 and points or origin
+            end
+            return origin
+        end,
+        triangles = function(found)
+            local triangles = found.triangles
+            if triangles and #triangles > 0 then
+                local points = found.points
+                local result = { }
+                local r      = 0
+                for i=1,#triangles do
+                    local triangle = triangles[i]
+                    r = r + 1 result[r] = getxytable(points,triangle[1])
+                    r = r + 1 result[r] = getxytable(points,triangle[2])
+                    r = r + 1 result[r] = getxytable(points,triangle[3])
+                    r = r + 1 result[r] = result[r-3] -- kind of stupid
+                 -- r = r + 1 result[r] = "cycle"
+                    r = r + 1 result[r] = "append"
+                end
+                return r > 0 and result or origin
+            else
+                return origin
+            end
+        end,
+        edges = function(found)
+            local edges = found.edges
+            if edges then
+                local points = found.points
+                local result = { }
+                local r      = 0
+                for i=1,#edges do
+                    local edge = edges[i]
+                    r = r + 1 result[r] = getxytable(points,edge[1])
+                    r = r + 1 result[r] = getxytable(points,edge[2])
+                    r = r + 1 result[r] = "append"
+                end
+                return r > 0 and result or origin
+            else
+                return origin
+            end
+        end,
+        cells = function(found)
+            local cells = found.cells
+            if cells then
+                local points = found.points
+                local result = { }
+                local r      = 0
+                for i=1,#cells do
+                    local c = cells[i]
+                    local n = pointsindex(c)
+                    if n > 0 then
+                        for i=1,n do
+                            r = r + 1 result[r] = getxytable(c,i) -- c[i]
+                        end
+                     -- r = r + 1 result[r] = getxytable(c,1) -- c[1] -- kind of stupid
+                        r = r + 1 result[r] = result[r-n]
+                     -- r = r + 1 result[r] = "cycle"
+                        r = r + 1 result[r] = "append"
+                    end
+                end
+                return r > 0 and result or origin
+            else
+                return origin
+            end
+        end,
+    }
+
+    -- accessors
+
+    metapost.registerdirect("stpcount", function()
+        local name    = scanstring()
+        local what    = scanstring()
+        local found   = cache[name]
+        local counter = counters[what] or counters.default
+        return counter(found)
+    end)
+
+    metapost.registerdirect("stpvalid", function()
+        local name  = scanstring()
+        local what  = scanstring()
+        local index = scaninteger()
+        local found = cache[name]
+        local valid = valids[what] or valids.default
+        return valid(found,index)
+    end)
+
+    metapost.registerdirect("stpsegment", function()
+        local name    = scanstring()
+        local what    = scanstring()
+        local index   = scaninteger()
+        local found   = cache[name]
+        local segment = segments[what] or segments.default
+        return segment(found,index)
+    end)
+
+    local function stipplingpath(name,what)
+        local found = cache[name]
+        local path  = paths[what] or paths.default
+        return path(found)
+    end
+
+    metapost.registerdirect("stppath", function()
+        return stipplingpath(scanstring(),scanstring())
+    end)
+
+    -- interfaces
+
+    --- todo: wipe after picture unless explicit store
+
+    local getparameterset = metapost.getparameterset
+
+    -- points density cells triangulation centroid rms
+
+    -- weighted cvd
+
+    local generators = { }
+
+    generators.weighted = function(specification)
+        local name    = specification.name   or "default"
+        local detail  = specification.detail or "points"
+        local method  = specification.method or "path"
+        local result  = stippling.weightedcvd(specification)
+        local output  = specification.output
+        local density = result.density
+        local points  = result.points
+        local width   = density.width
+        local height  = density.height
+        --
+        -- only density makes sense here
+        --
+        if detail == "cells" or detail == "voronoi" then
+            detail = "cells"
+            specification.width  = width
+            specification.height = height
+            cache[name] = stippling.voronoi(points,specification)
+        elseif detail == "delaunay" or detail == "edges" or detail == "triangles" then
+            if detail == "delaunay" then
+                detail = "edges"
+            end
+            specification.width  = width
+            specification.height = height
+            cache[name] = stippling.delaunay(points,specification)
+        elseif detail == "density" and density.bytemap then
+            cache[name] = { kind = result.kind, points = points }
+            local s = formatters
+                ["image(draw unitsquare xyscaled (%N,%N) withbytemap %i ;)"]
+                (density.width,density.height,density.bytemap)
+            mpprint(s)
+            if method == "path" then
+                cache[name] = nil
+            end
+            return
+        else
+            cache[name] = { kind = result.kind, points = points }
+        end
+        --
+        return method, name, detail
+    end
+
+    generators.stipple = generators.weighted
+
+    -- unweighted cvd
+
+    generators.unweighted = function(specification)
+        local name   = specification.name   or "default"
+        local detail = specification.detail or "cells"
+        local method = specification.method or "path"
+        local result = stippling.cvd(specification)
+        --
+        if detail == "cells" or detail == "triangles" or detail == "edges" then
+            cache[name] = stippling.voronoi(result.points,specification)
+        else
+            cache[name] = result
+            detail = "points"
+        end
+        --
+        return method, name, detail
+    end
+
+    generators.cvd = generators.unweighted
+
+    -- voronoi : points triangles neighbors edges cells
+
+    generators.voronoi = function(specification)
+        local name   = specification.name   or "default"
+        local detail = specification.detail or "cells"
+        local method = specification.method or "path"
+        local points = resolvepoints(specification.pointset)
+                    or initialpoints(specification)
+        cache[name]  = stippling.voronoi(points,specification)
+        --
+        return method, name, detail
+    end
+
+    -- delaunay : points triangles neighbors edges
+
+    generators.delaunay = function(specification)
+        local name   = specification.name   or "default"
+        local detail = specification.detail or "edges"
+        local method = specification.method or "path"
+        local points = resolvepoints(specification.pointset)
+                    or initialpoints(specification)
+        cache[name]  = stippling.delaunay(points,specification)
+        --
+        return method, name, detail
+    end
+
+    local function generate()
+        starttiming("stp",true) ioflush()
+        local specification = getparameterset("voronoi")
+        local solution      = specification.solution or "voronoi"
+        local generator     = generators[solution] or generators.voronoi
+        local method, name, detail = generator(specification)
+        if method == "path" then
+            local result = stipplingpath(name,detail)
+            if type(result) == "userdata" then
+                injectpoints(result)
+            else
+                injectpath(result)
+            end
+         -- cache[name] = nil
+        end
+        stoptiming("stp")
+        report("solution %a, method %a, name %a, detail %a, runtime %s",
+            solution,method,name,detail,elapsedtime("stp"))
+    end
+
+    metapost.registerscript("stp_voronoi", generate)
+
+end

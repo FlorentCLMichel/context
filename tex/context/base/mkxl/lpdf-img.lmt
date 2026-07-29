@@ -633,7 +633,7 @@ do
             return
         end
         local content = idat(pngfile,true)
-        tables.idat = false
+        tables.idat = false -- brr
         --
      -- if tables.gama then
      --     report_png("ignoring gamma correction")

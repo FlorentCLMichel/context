@@ -220,7 +220,7 @@ static int xintervallib_new(lua_State *L)
              // i.INF = 0;
              // i.SUP = 0;
             }
-         // break;
+            FALLTHROUGH
         default:
             i.INF = 0;
             i.SUP = 0;

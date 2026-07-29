@@ -474,6 +474,10 @@
 \permanent\protected\def\doapostrophes{\hyphenationmode\bitwiseflip\hyphenationmode \replaceapostrophehyphenationcode}
 \permanent\protected\def\noapostrophes{\hyphenationmode\bitwiseflip\hyphenationmode-\replaceapostrophehyphenationcode}
 
+\appendtoks
+    \nohyphens
+\to \everypreroll
+
 % \permanent\protected\def\dohyphens
 %   {\ifbitwiseand\hyphenationmode\collapsehyphenationcode
 %      \hyphenationmode\completehyphenationcode

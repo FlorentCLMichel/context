@@ -6,7 +6,27 @@ if not modules then modules = { } end modules ['back-exp'] = {
     license   = "see context related readme files"
 }
 
--- See drawinglines.tex for some about the mathmnl namespace.
+-- Comment moved from todo file (for after columnsets etc, late 2026):
+--
+-- -- check the default html rendering with the 2024-2025 lecture notes
+-- -- check the epub script that moves images and copies fonts (as it might
+--    only work well with those notes we tested with)
+-- -- investigate if xhtml works again in browsers (just like mathml it keeps
+--    changing)
+-- -- explain the xml mapping (meant for postprocessing into whatever html the
+--    user wants; we never aimed at visual compatibility) and check lecture notes
+-- -- check the default html css of the div'd output (which we went for when some
+--    became unreliable wrt xhtml + css)
+-- -- again check if in the meantime links can work on arbitrary elements
+--    without javascript
+-- -- make sure that users understand that for proper html one needs to start
+--    from xml which then can also be processed by context
+-- -- check to what extend columnsets (lecture notes again) translate into a
+--    proper export
+--
+-- -- maybe do a few manuals although there is little motivation for it
+
+-- See drawinglines.tex for some about the mathml namespace.
 
 -- Todo: share properties more with tagged pdf (or the reverse)
 

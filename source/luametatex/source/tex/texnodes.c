@@ -1078,15 +1078,25 @@ static inline void lmt_properties_pop(lua_State * L)
 
 /*tex Resetting boils down to nilling. */
 
+# define keep_properties_slot 0
+
 static inline void lmt_properties_reset(lua_State * L, halfword target)
 {
     if (lmt_node_memory_state.lua_properties_level == 0) {
         lua_rawgeti(L, LUA_REGISTRYINDEX, lmt_node_memory_state.node_properties_id);
-        lua_pushnil(L);
+        # if keep_properties_slot == 1
+            lua_pushboolean(L, 0);
+        # else
+            lua_pushnil(L);
+        # endif
         lua_rawseti(L, -2, target);
         lua_pop(L, 1);
     } else {
-        lua_pushnil(L);
+        # if keep_properties_slot == 1
+            lua_pushboolean(L, 0);
+        # else
+            lua_pushnil(L);
+        # endif
         lua_rawseti(L, -2, target);
     }
 }
@@ -1118,7 +1128,7 @@ static inline void lmt_properties_copy(lua_State *L, halfword target, halfword s
         lua_rawseti(L, -2, target);
         /* properties[target]={}->{__index=source} */
     } else {
-        /* properties nil */
+        /* properties nil or false */
         lua_pop(L, 1);
     }
     /* properties */
@@ -1147,7 +1157,7 @@ void tex_copy_node_properties(halfword target, halfword source)
 
 static void tex_aux_node_range_test(halfword a, halfword b)
 {
-    if (b < 0 || b >= lmt_node_memory_state.nodes_data.allocated) {
+    if lmt_unlikely(b < 0 || b >= lmt_node_memory_state.nodes_data.allocated) {
         tex_formatted_error("nodes", "node range test failed in %s node", lmt_interface.node_data[node_type(a)].name);
     }
 }
@@ -1349,11 +1359,13 @@ halfword tex_copy_node(halfword original)
     /*tex
         We really need a stub for copying because mem might move in the meantime due to resizing!
     */
-    if (original < 0 || original >= lmt_node_memory_state.nodes_data.allocated) {
+    if lmt_unlikely(original < 0 || original >= lmt_node_memory_state.nodes_data.allocated) {
         return tex_formatted_error("nodes", "attempt to copy an impossible node %d", (int) original);
-    } else if (original > lmt_node_memory_state.reserved && lmt_node_memory_state.nodesizes[original] == 0) {
+    }
+    if lmt_unlikely(original > lmt_node_memory_state.reserved && lmt_node_memory_state.nodesizes[original] == 0) {
         return tex_formatted_error("nodes", "attempt to copy a free %s node %d", get_node_name(node_type(original)), (int) original);
-    } else {
+    }
+    {
         /*tex type of node */
         halfword type = node_type(original);
         int size = get_node_size(type);
@@ -1376,11 +1388,11 @@ halfword tex_copy_node(halfword original)
                 case hlist_node:
                     copy_sub_list(box_pre_adjusted(copy), box_pre_adjusted(original));
                     copy_sub_list(box_post_adjusted(copy), box_post_adjusted(original));
-                    // fall through
+                    FALLTHROUGH
                 case vlist_node:
                     copy_sub_list(box_pre_migrated(copy), box_pre_migrated(original));
                     copy_sub_list(box_post_migrated(copy), box_post_migrated(original));
-                    // fall through
+                    FALLTHROUGH
                 case unset_node:
                     copy_sub_list(box_list(copy), box_list(original));
                     copy_sub_list(box_except(copy), box_except(original));
@@ -1579,16 +1591,21 @@ void tex_flush_node(halfword p)
     if (! p) {
         /*tex legal, but no-op. */
         return;
-    } else if (p <= lmt_node_memory_state.reserved || p >= lmt_node_memory_state.nodes_data.allocated) {
+    }
+    if lmt_unlikely(p <= lmt_node_memory_state.reserved || p >= lmt_node_memory_state.nodes_data.allocated) {
         tex_formatted_error("nodes", "attempt to free an impossible node %d of type %d", (int) p, node_type(p));
-    } else if (lmt_node_memory_state.nodesizes[p] == 0) {
+        return;
+    }
+    if lmt_unlikely(lmt_node_memory_state.nodesizes[p] == 0) {
         for (int i = (lmt_node_memory_state.reserved + 1); i < lmt_node_memory_state.nodes_data.allocated; i++) {
             if (lmt_node_memory_state.nodesizes[i] > 0) {
                 tex_aux_check_node(i);
             }
         }
         tex_formatted_error("nodes", "attempt to double-free %s node %d, ignored", get_node_name(node_type(p)), (int) p);
-    } else {
+        return;
+    }
+    {
         int t = node_type(p);
         if (tex_nodetype_is_complex(t)) {
             switch (t) {
@@ -1598,11 +1615,11 @@ void tex_flush_node(halfword p)
                 case hlist_node:
                     tex_aux_free_sub_node_list(box_pre_adjusted(p));
                     tex_aux_free_sub_node_list(box_post_adjusted(p));
-                    // fall through
+                    FALLTHROUGH
                 case vlist_node:
                     tex_aux_free_sub_node_list(box_pre_migrated(p));
                     tex_aux_free_sub_node_list(box_post_migrated(p));
-                    // fall through
+                    FALLTHROUGH
                 case unset_node:
                     tex_aux_free_sub_node_list(box_list(p));
                     tex_aux_free_sub_node_list(box_except(p));
@@ -1749,16 +1766,21 @@ void tex_flush_node_list(halfword l)
     if (! l) {
         /*tex Legal, but no-op. */
         return;
-    } else if (l <= lmt_node_memory_state.reserved || l >= lmt_node_memory_state.nodes_data.allocated) {
+    }
+    if lmt_unlikely(l <= lmt_node_memory_state.reserved || l >= lmt_node_memory_state.nodes_data.allocated) {
         tex_formatted_error("nodes", "attempt to free an impossible node list %d of type %d", (int) l, node_type(l));
-    } else if (lmt_node_memory_state.nodesizes[l] == 0) {
+        return;
+    }
+    if lmt_unlikely(lmt_node_memory_state.nodesizes[l] == 0) {
         for (int i = (lmt_node_memory_state.reserved + 1); i < lmt_node_memory_state.nodes_data.allocated; i++) {
             if (lmt_node_memory_state.nodesizes[i] > 0) {
                 tex_aux_check_node(i);
             }
         }
         tex_formatted_error("nodes", "attempt to double-free %s node %d, ignored", get_node_name(node_type(l)), (int) l);
-    } else {
+        return;
+    }
+    {
         /*tex Saves stack and time. */
         lua_State *L = lmt_lua_state.lua_instance;
         lmt_properties_push(L);
@@ -1782,14 +1804,14 @@ static void tex_aux_check_node(halfword p)
         case hlist_node:
             tex_aux_node_range_test(p, box_pre_adjusted(p));
             tex_aux_node_range_test(p, box_post_adjusted(p));
-            // fall through
+            FALLTHROUGH
         case vlist_node:
             tex_aux_node_range_test(p, box_pre_migrated(p));
             tex_aux_node_range_test(p, box_post_migrated(p));
-            // fall through
+            FALLTHROUGH
         case unset_node:
             tex_aux_node_range_test(p, box_except(p));
-            // fall through
+            FALLTHROUGH
         case align_record_node:
             tex_aux_node_range_test(p, box_list(p));
             break;
@@ -1903,7 +1925,7 @@ halfword fix_node_list(halfword head)
 
 halfword tex_get_node(int size)
 {
-    if (size < max_chain_size) { /*tex This test should not be needed! */
+    if lmt_likely(size < max_chain_size) { /*tex This test should not be needed! */
         halfword p = lmt_node_memory_state.free_chain[size];
         if (p) {
             lmt_node_memory_state.free_chain[size] = node_next(p);
@@ -1941,7 +1963,7 @@ halfword tex_get_node_type(int size, quarterword type)
 void tex_free_node(halfword p, int size) /* no need to pass size, we can get it here */
 {
  // if (p > lmt_node_memory_state.reserved && size < max_chain_size) {
-    if (p > lmt_node_memory_state.reserved) {
+    if lmt_likely(p > lmt_node_memory_state.reserved) {
         lmt_node_memory_state.nodesizes[p] = 0;
         node_next(p) = lmt_node_memory_state.free_chain[size];
         lmt_node_memory_state.free_chain[size] = p;
@@ -2005,9 +2027,7 @@ static void tex_aux_update_attribute_tracking(int n)
     if (n >= lmt_node_memory_state.max_tracked_attribute) {
         n += default_tracked_attributes + reserved_tracking_slots;
         unsigned int * update = lmt_memory_calloc(n, sizeof(unsigned));
-        if (! update) {
-            tex_overflow_error("attributes", (int) n * sizeof(unsigned));
-        } else { 
+        if lmt_likely(update) {
             if (lmt_node_memory_state.max_tracked_attribute) { 
                 memcpy(update, lmt_node_memory_state.attributes, lmt_node_memory_state.max_tracked_attribute * sizeof(unsigned));
             }
@@ -2018,6 +2038,8 @@ static void tex_aux_update_attribute_tracking(int n)
             lmt_node_memory_state.nodes_data.extra -=  lmt_node_memory_state.max_tracked_attribute * sizeof(unsigned);
             lmt_node_memory_state.nodes_data.extra +=  n * sizeof(unsigned);
             lmt_node_memory_state.max_tracked_attribute = n;
+        } else {
+            tex_overflow_error("attributes", (int) n * sizeof(unsigned));
         }
     } 
 }
@@ -2043,7 +2065,7 @@ void tex_initialize_node_mem()
         nodes = aux_allocate_clear_array(sizeof(memoryword), size, reserved_node_slots);
         sizes = aux_allocate_clear_array(sizeof(char), size, reserved_node_slots);
     }
-    if (nodes && sizes) {
+    if lmt_likely(nodes && sizes) {
         lmt_node_memory_state.nodes = nodes;
         lmt_node_memory_state.nodesizes = sizes;
     } else {
@@ -2147,7 +2169,7 @@ static halfword tex_aux_allocated_node(int s)
         if (lmt_node_memory_state.nodes_data.allocated + lmt_node_memory_state.nodes_data.step <= lmt_node_memory_state.nodes_data.size) {
             memoryword *nodes = aux_reallocate_array(lmt_node_memory_state.nodes, sizeof(memoryword), lmt_node_memory_state.nodes_data.allocated + lmt_node_memory_state.nodes_data.step, reserved_node_slots);
             char *sizes = aux_reallocate_array(lmt_node_memory_state.nodesizes, sizeof(char), lmt_node_memory_state.nodes_data.allocated + lmt_node_memory_state.nodes_data.step, reserved_node_slots);
-            if (nodes && sizes) {
+            if lmt_likely(nodes && sizes) {
                 lmt_node_memory_state.nodes = nodes;
                 lmt_node_memory_state.nodesizes = sizes;
                 memset((void *) (nodes + lmt_node_memory_state.nodes_data.allocated), 0, (size_t) lmt_node_memory_state.nodes_data.step * sizeof(memoryword));
@@ -2159,7 +2181,7 @@ static halfword tex_aux_allocated_node(int s)
                 tex_overflow_error("node memory size", lmt_node_memory_state.nodes_data.size);
             }
         }
-        if (new > lmt_node_memory_state.nodes_data.allocated) {
+        if lmt_unlikely(new > lmt_node_memory_state.nodes_data.allocated) {
             tex_overflow_error("node memory size", lmt_node_memory_state.nodes_data.size);
         }
      // printf("old=%i  size=%i  new=%i\n",old,s,new);
@@ -2415,8 +2437,8 @@ halfword tex_current_attribute_list(void)
 void tex_dereference_attribute_list(halfword a)
 {
     if (a && a != attribute_cache_disabled) {
-        if (node_type(a) == attribute_list_node){
-            if (attribute_list_count(a) > 0) {
+        if lmt_likely(node_type(a) == attribute_list_node){
+            if lmt_likely(attribute_list_count(a) > 0) {
                 --attribute_list_count(a);
                 if (attribute_list_count(a) == 0) {
                     if (a == current_attribute_state) {
@@ -2872,6 +2894,7 @@ void tex_print_extended_subtype(halfword p, quarterword s)
             if (s > noad_class_list_base) {
                 st -= noad_class_list_base;
             }
+            FALLTHROUGH
         case simple_noad:
         case math_char_node:
             {
@@ -3240,7 +3263,7 @@ void tex_show_node_list(halfword p, int threshold, int max)
                             if (rule_strut_character(p)) {
                                 tex_print_format(", character %U", rule_strut_character(p));
                             }
-                            /* fall through */
+                            FALLTHROUGH
                         default:
                             if (rule_left(p)) {
                                 tex_print_format(", left / top %R", rule_left(p));
@@ -3492,7 +3515,7 @@ void tex_show_node_list(halfword p, int threshold, int max)
                 case temp_node:
                     break;
                 default:
-                    if (! tex_show_math_node(p, threshold, max)) {
+                    if lmt_unlikely(! tex_show_math_node(p, threshold, max)) {
                         tex_print_format("<unknown node type %i>", node_type(p));
                     }
                     break;
@@ -5022,7 +5045,7 @@ static void *tex_aux_allocate_specification(halfword p, int n, size_t *size)
     lmt_node_memory_state.nodes_data.extra += (int) *size;
     if (n) {
         l = lmt_memory_calloc(n, sizeof(memoryword));
-        if (! l) {
+        if lmt_unlikely(! l) {
             tex_overflow_error("nodes", (int) *size);
         }
     }
@@ -5065,7 +5088,7 @@ halfword tex_new_specification_node(halfword n, quarterword s, halfword options)
 void tex_dispose_specification_list(halfword a)
 {
     if (specification_pointer(a)) {
-        if (specification_constant(a)) { 
+        if lmt_unlikely(specification_constant(a)) {
             tex_fatal_error("disposing constant specification");
         }
         switch (node_subtype(a)) {
@@ -5261,7 +5284,7 @@ void tex_dump_specification_data(dumpstream f) {
 void tex_undump_specification_data(dumpstream f) {
     int version = 0;
     undump_int(f, version);
-    if (version == specification_version) {
+    if lmt_likely(version == specification_version) {
         int total = 0;
         int check = 0;
         while (1) {
@@ -5277,8 +5300,8 @@ void tex_undump_specification_data(dumpstream f) {
              // undump_int(f, options);
              // undump_int(f, anything_1);
              // undump_int(f, anything_2);
-                if (node) { /* maybe sanity check */
-                    if (specification_size(node) == size) {
+                if lmt_likely(node) { /* maybe sanity check */
+                    if lmt_likely(specification_size(node) == size) {
                      // /* already set */
                      // specification_anything_1(node) = anything_1;
                      // specification_anything_2(node) = anything_2;
@@ -5287,9 +5310,9 @@ void tex_undump_specification_data(dumpstream f) {
                             /* todo : count mem, add to extra */
 //tex_new_specification_list(value, count);
                             specification_pointer(node) = lmt_memory_malloc(size);
-                            if (specification_pointer(node)) {
+                            if lmt_likely(specification_pointer(node)) {
                                 undump_items(f, specification_pointer(node), 1, size);
-                            } else { 
+                            } else {
                                 tex_fatal_undump_error("specifications (memory)");
                             }
                         } else {
@@ -5308,7 +5331,7 @@ void tex_undump_specification_data(dumpstream f) {
             }
         }
         undump_int(f, check);
-        if (check != total) {
+        if lmt_unlikely(check != total) {
             tex_fatal_undump_error("specifications (total)");
         }
     } else {

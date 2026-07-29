@@ -1060,12 +1060,12 @@ static int pdfelib_unencrypt(lua_State *L)
 {
     pdfe_document *p = pdfelib_aux_check_isdocument(L, 1, unencrypt_error);
     if (p) {
-        size_t u = 0;
-        size_t o = 0;
-        const char* user = NULL;
-        const char* owner = NULL;
         int top = lua_gettop(L);
         if (top > 1) {
+            size_t u = 0;
+            size_t o = 0;
+            const char* user = NULL;
+            const char* owner = NULL;
             if (lua_type(L,2) == LUA_TSTRING) {
                 user = lua_tolstring(L, 2, &u);
             } else {

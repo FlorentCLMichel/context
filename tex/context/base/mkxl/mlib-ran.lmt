@@ -7,14 +7,14 @@ if not modules then modules = { } end modules ['mlib-ran'] = {
 }
 
 local next = next
-local ceil, floor, random, sqrt, cos, sin, pi, max, min = math.ceil, math.floor, math.random, math.sqrt, math.cos, math.sin, math.pi, math.min, math.max
+local ceil, floor, random, sqrt, cos, sin, pi, min, max = math.ceil, math.floor, math.random, math.sqrt, math.cos, math.sin, math.pi, math.min, math.max
 local remove = table.remove
 
 -- Below is a bit of rainy saturday afternoon hobyism, while listening to Judith
 -- Owens redisCOVERed (came there via Leland Sklar who I have on a few live blurays;
 -- and who is also on YT). (Also nice: https://www.youtube.com/watch?v=GXqasIRaxlA)
 
--- When Aditya pointed me to an article on mazes I ended up at poison distributions
+-- When Aditya pointed me to an article on mazes I ended up at poisson distributions
 -- which to me looks nicer than what I normally do, fill a grid and then randomize
 -- the resulting positions. With some hooks this can be used for interesting patterns
 -- too. A few links:
@@ -29,7 +29,8 @@ local remove = table.remove
 -- dimensional one. The example code uses some classes dealing with points. In the
 -- process I added some more control.
 
--- we could do without the samplepoints list
+-- We could do without the samplepoints list. Anyway, per 2026 we also have a more
+-- modern date variant as part of stippling.
 
 local function poisson(width, height, mindist, newpointscount, initialx, initialy)
     local starttime       = os.clock()
@@ -54,8 +55,8 @@ local function poisson(width, height, mindist, newpointscount, initialx, initial
     local x = floor(firstx // cellsize) + 1 -- lua indices
     local y = floor(firsty // cellsize) + 1 -- lua indices
 
-    x = max(1, min(x, width  - 1))
-    y = max(1, min(y, height - 1))
+    x = min(1, max(x, width  - 1))
+    y = min(1, max(y, height - 1))
 
     grid[x][y] = firstpoint
 

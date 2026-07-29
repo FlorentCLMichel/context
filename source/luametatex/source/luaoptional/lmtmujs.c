@@ -498,12 +498,12 @@ static void mujslib_file_new(js_State *J)
                     if (id) {
                         *((int*) id) = lmt_tointeger(L, -1);
                         lua_settop(L, top);
-                        if (id) {
+                     //  if (id) { /* always true */
 	                        mujslib_state.js_currentfunction(J);
 	                        mujslib_state.js_getproperty(J, -1, "prototype");
 	                        mujslib_state.js_newuserdata(J, "File", id, mujslib_file_finalize);
                             return;
-                        }
+                     // }
                     }
                 }
                 lua_settop(L, top);

@@ -149,7 +149,7 @@ static int lualib_aux_writer(lua_State *L, const void *b, size_t size, void *B)
     if ((int) (buf->size + (int) size) > buf->alloc) {
         unsigned newalloc = (unsigned) (buf->alloc + (int) size + LOAD_BUF_SIZE);
         unsigned char *bb = lmt_memory_realloc(buf->buf, newalloc);
-        if (bb) {
+        if lmt_likely(bb) {
             buf->buf = bb;
             buf->alloc = newalloc;
         } else {
@@ -162,7 +162,7 @@ static int lualib_aux_writer(lua_State *L, const void *b, size_t size, void *B)
     return 0;
 }
 
-static const char *lualib_aux_reader(lua_State *L, void *ud, size_t *size)
+static const char *lualib_aux_bytecode_reader(lua_State *L, void *ud, size_t *size)
 {
     bytecode *buf = (bytecode *) ud;
     (void) L;
@@ -176,7 +176,7 @@ static int lualib_valid_bytecode(lua_State *L, int slot)
         return luaL_error(L, "bytecode register out of range");
     } else if (lualib_aux_bytecode_register_shadow_get(L, slot) || ! lmt_bytecode_registers[slot].buf) {
         return luaL_error(L, "undefined bytecode register");
-    } else if (lua_load(L, lualib_aux_reader, (void *) (lmt_bytecode_registers + slot), "bytecode", NULL)) {
+    } else if (lua_load(L, lualib_aux_bytecode_reader, (void *) (lmt_bytecode_registers + slot), "bytecode", NULL)) {
         return luaL_error(L, "bytecode register doesn't load well");
     } else {
         return 1;
@@ -210,7 +210,7 @@ static int lmt_handle_bytecode_call(lua_State *L, int slot)
         error = lua_pcall(L, 1, 0, stacktop);
         /*tex remove traceback function */
         lua_remove(L, stacktop);
-        if (error) {
+        if lmt_unlikely(error) {
             lua_gc(L, LUA_GCCOLLECT, 0);
             lmt_error(L, "bytecode call", slot, (error == LUA_ERRRUN ? 0 : 1));
         }
@@ -250,19 +250,19 @@ static int lualib_set_bytecode(lua_State *L)
 {
     int k = lmt_checkinteger(L, 1);
     int i = k + 1;
-    if ((k < 0) || (k > max_bytecode_index)) {
+    if lmt_unlikely((k < 0) || (k > max_bytecode_index)) {
         return luaL_error(L, "bytecode register out of range");
     } else {
         int ltype = lua_type(L, 2);
         int strip = lua_toboolean(L, 3);
-        if (ltype != LUA_TFUNCTION && ltype != LUA_TNIL) {
+        if lmt_unlikely(ltype != LUA_TFUNCTION && ltype != LUA_TNIL) {
             return luaL_error(L, "bytecode register should be a function or nil");
         } else {
             /*tex Later calls expect the function at the top of the stack. */
             lua_settop(L, 2);
             if (k > lmt_lua_state.bytecode_max) {
                 bytecode *r = lmt_memory_realloc(lmt_bytecode_registers, (size_t) i * sizeof(bytecode));
-                if (r) {
+                if lmt_likely(r) {
                     lmt_bytecode_registers = r;
                     lmt_lua_state.bytecode_bytes += ((int) sizeof(bytecode) * (k + 1 - (lmt_lua_state.bytecode_max > 0 ? lmt_lua_state.bytecode_max : 0)));
                     for (unsigned j = (unsigned) (lmt_lua_state.bytecode_max + 1); j <= (unsigned) k; j++) {
@@ -288,7 +288,7 @@ static int lualib_set_bytecode(lua_State *L)
             }
             if (ltype == LUA_TFUNCTION) {
                 lmt_bytecode_registers[k].buf = lmt_memory_calloc(1, LOAD_BUF_SIZE);
-                if (lmt_bytecode_registers[k].buf) {
+                if lmt_likely(lmt_bytecode_registers[k].buf) {
                     lmt_bytecode_registers[k].alloc = LOAD_BUF_SIZE;
                  // memset(lua_bytecode_registers[k].buf, 0, LOAD_BUF_SIZE);
                     lua_dump(L, lualib_aux_writer, (void *) (lmt_bytecode_registers + k), strip);
@@ -695,7 +695,7 @@ static int lualib_get_string_keys(lua_State *L)
     if (lua_type(L, 1) == LUA_TTABLE) {
         lua_pushnil(L);
         while (lua_next(L, 1)) {
-            if (lua_type(L, -2) != LUA_TSTRING) {
+            if (lua_type(L, -2) == LUA_TSTRING) {
                 lua_pushvalue(L, -2);
                 lua_rawseti(L, -4, ++index);
             }
@@ -713,7 +713,7 @@ static int lualib_get_numeric_keys(lua_State *L)
     if (lua_type(L, 1) == LUA_TTABLE) {
         lua_pushnil(L);
         while (lua_next(L, 1)) {
-            if (lua_type(L, -2) != LUA_TNUMBER) {
+            if (lua_type(L, -2) == LUA_TNUMBER) {
                 lua_pushvalue(L, -2);
                 lua_rawseti(L, -4, ++index);
             }
@@ -757,6 +757,85 @@ static int lualib_compare_keys(lua_State *L)
     return 1;
 }
 
+/*tex
+
+    The next one is more or less |lmt_token_call| btu it might evolve, just some playground for
+    small sandboxed instances that we plug in. We only need to define functions in such an
+    instance. It is just an experiment to see if a math only instance suffers less from garbage
+    collection. Some simple experiments demonstrate that we run 10% faster even when we pass back
+    results.
+
+*/
+
+typedef struct LoadS { // name
+    const char   *s;
+    size_t  size;
+} LoadS;
+
+static int lualib_aux_stringcall(lua_State *L, lua_State *M)
+{
+    if (M) {
+        LoadS ls;
+        ls.s = lua_tolstring(L, 1, &(ls.size));
+        if (ls.size > 0) {
+            int top = lua_gettop(M);
+            /* NULL is equivalent to "bt" : bytecode as well as text */
+            if lmt_likely(! luaL_loadbufferx(M, ls.s, ls.size, ls.s, NULL)) {
+                int t = lua_gettop(M);
+                int i = lua_pcall(M, 0, LUA_MULTRET, 0);
+                if lmt_unlikely(i) {
+                    const char *msg = lua_tostring(M, -1);
+                 // lua_pop(L, 1);
+                 // printf("string call, execute error: %s\n", msg);
+                    tex_normal_warning("string call, execute error", msg);
+                } else {
+                    t = lua_gettop(M) - t + 1;
+                    if (L != M) {
+                        if (t) {
+                            for (int s = -t; s < 0; s++) {
+                                switch (lua_type(M, s)) {
+                                    case LUA_TNUMBER:
+                                        lua_pushnumber(L, lua_tonumber(M, s));
+                                        break;
+                                    case LUA_TBOOLEAN:
+                                        lua_pushboolean(L, lua_toboolean(M, s));
+                                        break;
+                                    default:
+                                        lua_pushnil(L);
+                                        break;
+                                }
+                            }
+                        }
+                        lua_settop(M, top);
+                    }
+                    return t;
+                }
+            } else {
+             // printf("string call, syntax error: %s\n", ls.s);
+                tex_normal_warning("string call, syntax error", ls.s);
+            }
+            lua_settop(M, top);
+        }
+    }
+    return 0;
+}
+
+static int lualib_use_stringcall(lua_State *L)
+{
+    lua_pushboolean(L, tex_engine_mps_initialize(lua_toboolean(L, 1)));
+    return 1;
+}
+
+static int lualib_lua_stringcall(lua_State *L)
+{
+    return lualib_aux_stringcall(L, lmt_lua_state.lua_instance);
+}
+
+static int lualib_mps_stringcall(lua_State *L)
+{
+    return lualib_aux_stringcall(L, lmt_lua_state.mps_instance);
+}
+
 /* */
 
 static const struct luaL_Reg lualib_function_list[] = {
@@ -794,6 +873,10 @@ static const struct luaL_Reg lualib_function_list[] = {
     { "getallkeys",          lualib_get_all_keys        },
     { "getcheckedkeys",      lualib_get_checked_keys    },
     { "comparekeys",         lualib_compare_keys        },
+    /* */
+    { "usestringcall",       lualib_use_stringcall      },
+    { "mpsstringcall",       lualib_mps_stringcall      },
+    { "luastringcall",       lualib_lua_stringcall      },
     /* */
     { NULL,                  NULL                       },
 };

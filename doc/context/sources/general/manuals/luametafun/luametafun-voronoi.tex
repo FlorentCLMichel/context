@@ -1,0 +1,429 @@
+% language=us runpath=texruns:manuals/luametafun
+
+\usemodule[3d]
+
+\environment luametafun-style
+
+\startcomponent luametafun-voronoi
+
+\startchapter[title={Voronoi and Delaunay}]
+
+This is a world of its own and we can't cover everything into this chapter so
+examples have to be the introduction. It might help to search the Internet first
+in order to understand that these graphics and related methods are widely used.
+It might also become clear that we have a computational heavy mechanism here,
+although for average use performance should be okay.
+
+Before we continue it is important to stress that we don't actually extend
+\METAPOST\ with such features. It is way more natural to do these things in \LUA,
+maybe with some help from small \CCODE\ we provide, like efficiently handling
+coordinates, so that we keep the \METAPOST\ code base clean and focused. As with
+other extensions, like 3D surfaces, we try to provide a simple and consistent
+key/value interface to the \LUA\ end. Also, if you really want more fancy things,
+you should invest time in the often very rich graphical user interfaced
+applications. There is no way we can and will compete with that, if only because
+there is no place for evolving libraries in what is basically a core typesetting
+application. Also, we want user interfaces to be consistent, familiar and
+somewhat predictable in \CONTEXT.
+
+\startbuffer
+\startMPcode
+    path p ; p := lmt_voronoi [
+        solution = "voronoi",
+        method   = "path",
+        name     = "demo",
+        width    = 200,
+        height   = 100,
+        points   = 250,
+        seed     = 0.123,
+    ] xsized TextWidth ;
+    for i = 1 upto segments p :
+        fill (subpath (segment i of p) of p) && cycle
+            withcolor (.4 randomized .2,.4 randomized .2,.4 randomized .2)
+        ;
+    endfor ;
+\stopMPcode
+\stopbuffer
+
+\startplacefigure[reference=fig:voronoi:1,title=Getting the result as path]
+    \getbuffer
+\stopplacefigure
+
+% \stoptext
+
+This graphic is generated with the following code. You can provide a dataset as we will
+see later, but in this case we generate a random set of points.
+
+\typebuffer[option=TEX]
+
+\in {Figure} [fig:voronoi:2] show a similar graphic but here save the result and
+loop over the cells but we actually have better ways to do that using helpers.
+Here we show \emphasize {cells} but there are also \emphasize {triangles},
+\emphasize {points} and \emphasize {edges}.
+
+\startbuffer
+\startMPcode
+    lmt_voronoi [
+        solution = "voronoi",
+        method   = "store",
+        name     = "demo",
+        width    = 200,
+        height   = 100,
+        points   = 250,
+        seed     = 0.456,
+    ] ;
+
+    draw image (
+        for i = 1 upto stpcount "demo" "cells" :
+            fill (stpsegment "demo" "cells" i) && cycle
+                withcolor (.4 randomized .2)
+            ;
+        endfor ;
+        draw (stppath "demo" "cells") && cycle
+            withpen pencircle scaled .5mm
+            withcolor "darkgreen" ;
+        for i = 1 upto stpcount "demo" "cells" :
+            draw textext ("\infofont " & decimal i) scaled .25
+                shifted centerofmass (stpsegment "demo" "cells" i)
+                withcolor "white"
+            ;
+        endfor ;
+    ) xsized TextWidth ;
+\stopMPcode
+\stopbuffer
+
+\startplacefigure[reference=fig:voronoi:2,title=Rendering the stored result explicitly.]
+    \getbuffer
+\stopplacefigure
+
+In the next example we use a predefined set of points. Watch how we use the vector
+library! The generators use these efficient point lists.
+
+\startbuffer
+\startluacode
+ -- local random = math.random
+    local random = utilities.randomizer.get
+
+    local n    = 40
+    local nn   = n * n // 2
+    local set  = vector.points.new(nn,1,2)
+    local tree = table.setmetatableindex("table")
+
+    set(1,1) tree[1][1] = true
+    set(1,n) tree[1][n] = true
+    set(n,n) tree[n][n] = true
+    set(n,1) tree[n][1] = true
+
+    for i=1,nn do
+        while true do
+            local x = random(1,n)
+            local y = random(1,n)
+            if not tree[x][y] then
+                set(x,y)
+                tree[x][y] = true
+                break
+            end
+        end
+    end
+
+    metapost.registerpointset {
+        name   = "myset-3",
+        points = set
+    }
+\stopluacode
+\stopbuffer
+
+\typebuffer[option=TEX]
+
+These points are used in the rendering of \in {figure} [fig:voronoi:3] where we
+show the four possible results. The dimensions are important because we need an
+outer edge to be able to \quote {clip} or \quote {bound} the result. Internally
+a temporary huge triangle is used to help with this (commonly used trickery).
+
+\startbuffer
+\startMPcode
+    draw image (
+        lmt_voronoi [
+            solution = "voronoi",
+            method   = "store",
+            name     = "context",
+            pointset = "myset-3",
+            width    = 41,
+            height   = 41,
+        ] ;
+
+        draw (stppath "context" "cells")
+            withpen pencircle scaled .25
+            withcolor "darkgreen"
+        ;
+        draw (stppath "context" "edges")
+            xshifted 50
+            withpen pencircle scaled .25
+            withcolor "darkblue"
+        ;
+        draw (stppath "context" "triangles")
+            xshifted 100
+            withpen pencircle scaled .25
+            withcolor "darkred"
+        ;
+        drawdot (stppath "context" "points")
+          % xshifted 150
+            withpen pencircle scaled 1
+            withcolor "darkyellow"
+        ;
+    ) xsized TextWidth ;
+\stopMPcode
+\stopbuffer
+
+\typebuffer[option=TEX]
+
+\startplacefigure[reference=fig:voronoi:3,title=Four renderings using given points.]
+    \getbuffer
+\stopplacefigure
+
+The Voronoi renderer first does a Delaunay that collects te edges, neighbors and
+triangles, followed by cell construction. In \in {figure} [fig:voronoi:4] we see
+what we get when we ask for various paths.
+
+\startbuffer
+\startMPcode
+    draw image (
+        lmt_voronoi [
+            solution = "delaunay",
+            method   = "store",
+            name     = "context",
+            pointset = "myset-3",
+            width    = 41,
+            height   = 41,
+        ] ;
+
+        draw (stppath "context" "cells")
+            withpen pencircle scaled .25
+            withcolor "darkgreen"
+        ;
+        draw (stppath "context" "edges")
+            xshifted 50
+            withpen pencircle scaled .25
+            withcolor "darkblue"
+        ;
+        draw (stppath "context" "triangles")
+            xshifted 100
+            withpen pencircle scaled .25
+            withcolor "darkred"
+        ;
+        drawdot (stppath "context" "points")
+          % xshifted 150
+            withpen pencircle scaled 1
+            withcolor "darkyellow"
+        ;
+    ) xsized TextWidth ;
+\stopMPcode
+\stopbuffer
+
+\typebuffer[option=TEX]
+
+\startplacefigure[reference=fig:voronoi:4,title=Delaunay is just Voronoi without cells.]
+    \getbuffer
+\stopplacefigure
+
+This whole sub-project started actually by the wish to have stippled text and
+what better to use that the word \CONTEXT. The text is typeset with:
+
+\typefile[option=TEX]{luametafun-voronoi-001.tex}
+
+Because here we want to show a few variants we define a graphic. We can pass a
+bytemap number of a filename. Three variants are shown in \in {figure}
+[fig:voronoi:5].
+
+\startbuffer
+\startuseMPgraphic{context}{iterations}
+  % triplet bm ;
+  % bm := loadbytemapfromfile(5, "luametafun-voronoi-001.png") ;
+
+    drawdot lmt_voronoi [
+        solution     = "stipple",
+        filename     = "luametafun-voronoi-001.png",
+        bytemap      = 5,
+        name         = "context",
+        points       = "auto",
+        densityscale = .075,
+        iterations   = mpvarn "iterations",
+        seed         = 0.5,
+        gamma        = 1.15,
+        contrast     = 1.08,
+        step         = 1,
+    ]
+        xsized TextWidth
+        withpen pencircle scaled 1
+        withcolor "white" ;
+    addbackground
+        withcolor "darkblue" ;
+\stopuseMPgraphic
+\stopbuffer
+
+\getbuffer \typebuffer[option=TEX]
+
+The parameters \type {gamma}, \type {contrast}, \type {invert}, \type {threshold}, \type
+{minimumdensity}, \type {maximumdensity} and \type {densityscale} determine how
+the gray scale or luminance values taken from the \RGB\ components are converted.
+
+A \type {value} at a specific point is transformed as follows:
+
+\starttyping[option=LUA]
+if invert then
+    value = 1 - value
+end
+if contrast then
+    value = (value - 0.5) * contrast + 0.5
+    if value < 0 then
+        value = 0
+    elseif value > 1 then
+        value = 1
+    end
+end
+if threshold then
+    if value <= threshold then
+        value = 0
+    elseif threshold < 1 then
+        value = (value - threshold) / (1 - threshold)
+    end
+end
+if gamma then
+    value = value ^ gamma
+end
+value = minimumdensity + (maximumdensity - minimumdensity) * value
+\stoptyping
+
+just that you know it. At some point we might come up with recommendations.
+
+\startplacefigure[reference=fig:voronoi:5,title=Stippling quality is determined by iterations.]
+    \startcombination[nx=1,ny=3]
+        {\useMPgraphic{context}{iterations=0}}   {0 iterations}
+        {\useMPgraphic{context}{iterations=4}}   {4 iterations}
+        {\useMPgraphic{context}{iterations=16}} {16 iterations}
+    \stopcombination
+\stopplacefigure
+
+In this example you should notice that we use \type {drawdot} on the returned
+path. This is more efficient than looping over the points in the path and drawing
+each point separately. In the next example we use of course a regular \type
+{draw}, resulting in \in {figure} [fig:voronoi:6]. When generating this chapter,
+rendering the image takes longer than generating these paths.
+
+\startbuffer
+\startuseMPgraphic{context}{detail,color}
+    draw lmt_voronoi [
+        solution     = "stipple",
+        filename     = "luametafun-voronoi-001.png",
+        bytemap      = 5,
+        name         = "context",
+        points       = "auto",
+        densityscale = .075,
+        iterations   = 16,
+        seed         = 0.5,
+        gamma        = 1.15,
+        contrast     = 1.08,
+        step         = 1,
+        detail       = mpvars "detail"
+    ]
+        xsized TextWidth
+        withpen pencircle scaled .5
+        withcolor mpvars "color" ;        ;
+\stopuseMPgraphic
+\stopbuffer
+
+\getbuffer \typebuffer[option=TEX]
+
+\startplacefigure[reference=fig:voronoi:6,title=You can also get the triangles and cells.]
+    \startcombination[nx=1,ny=2]
+        {\useMPgraphic{context}{detail=triangles,color=darkgreen}} {triangles}
+        {\useMPgraphic{context}{detail=cells,color=darkblue}}      {cells}
+    \stopcombination
+\stopplacefigure
+
+Next we show some randomizing. Let's pretend that we immediately see which one is
+a poisson distribution; see \in {figure} [fig:voronoi:7]. The code also demonstrates
+how we can use loops to get six figures from one specification.
+
+\startbuffer[a]
+\startMPcode
+draw image (
+    numeric dy ; dy := 0;
+    for how = "poisson", "uniform" :
+        numeric dx ; dx := 0;
+        for what = "points", "cells", "triangles" :
+            if what == "points" : drawdot else : draw fi
+            lmt_voronoi [
+                solution    = "cvd",
+                name        = "context",
+                initializer = how,
+                points      = 200,
+                iterations  = 20,
+                seed        = .5,
+                detail      = what,
+            ]
+                shifted (dx,-dy)
+                withcolor if how == "poisson" : "darkred" else : "darkblue" fi
+                withpen pencircle scaled 2
+            ;
+            dx := dx + 110 ;
+        endfor ;
+        dy := dy + 110 ;
+    endfor ;
+) xsized TextWidth ;
+\stopMPcode
+\stopbuffer
+
+\startbuffer[b]
+\startMPcode
+draw image (
+    for how = "poisson", "uniform" :
+        for what = "points", "cells", "triangles" :
+            if what == "points" : drawdot else : draw fi
+            lmt_voronoi [
+                solution    = "cvd",
+                name        = "context",
+                initializer = how,
+                points      = 200,
+                iterations  = 20,
+                seed        = .5,
+                detail      = what,
+            ]
+                shifted (
+                    110 * (      iteratorindex    - 1),
+                    110 * ((deltaiteratorindex 1) - 1)
+                )
+                withcolor if odd(deltaiteratorindex 1) : "darkred" else : "darkblue" fi
+                withpen pencircle scaled 2
+            ;
+        endfor ;
+    endfor ;
+) xsized TextWidth ;
+\stopMPcode
+\stopbuffer
+
+\typebuffer[a][option=TEX]
+
+\startplacefigure[reference=fig:voronoi:7,title=Poisson versus uniform randomization.]
+    \getbuffer[b]
+\stopplacefigure
+
+Let's use this opportunity to educate you on loops. Iterating over a list of
+expressions (here strings) is a natural \METAPOST\ features but we added two
+accessors to the current position in these lists. That way we can avoid the
+temporary \type {dx} and \type {dy} variables and toggle a color on an index
+being odd.
+
+\typebuffer[b][option=TEX]
+
+So how do the methods differ? The \type {delaunay} is the simplest, it generated
+edges and triangles. With \type {voronoi} we also get (often non-triangular)
+cells. The \type {weighted} and \type {unweighted} distribute points so they do
+even more. In this stage of development we permit ourselves to be a bit vague
+and stick to examples. Feel free to play around and feedback.
+
+\stopchapter
+
+\stopcomponent
+
+% timestamp : Snarky Puppy + Metropole, North Sea Jazz 2026 (NTR: TV) https://youtu.be/kgYfBQs5_tI

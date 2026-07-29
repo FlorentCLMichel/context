@@ -120,7 +120,8 @@ local injecttransform = mplib.injecttransform
 local injectwhatever  = mplib.injectwhatever
 local injectvector    = mplib.injectvector
 local injectvectors   = mplib.injectvectors
------ injecttokens    = mplib.injecttokens
+local injectpoints    = mplib.injectpoints
+local injecttokens    = mplib.injecttokens
 
 inject.path      = function(p)               if trace then reporti("path")      end return injectpath     (currentmpx,p)               end
 inject.numeric   = function(n)               if trace then reporti("numeric")   end return injectnumeric  (currentmpx,n)               end
@@ -135,7 +136,8 @@ inject.transform = function(x,y,xx,xy,yx,yy) if trace then reporti("transform") 
 inject.whatever  = function(...)             if trace then reporti("whatever")  end return injectwhatever (currentmpx,...)             end
 inject.vector    = function(v,s)             if trace then reporti("vector")    end return injectvector   (currentmpx,v,s)             end
 inject.vectors   = function(v,t,s)           if trace then reporti("vectors")   end return injectvectors  (currentmpx,v,t,s)           end
-------.tokens    = function(s)               if trace then reporti("tokens")    end return injecttokens   (currentmpx,s)               end
+inject.points    = function(p)               if trace then reporti("points")    end return injectpoints   (currentmpx,p)               end
+inject.tokens    = function(s)               if trace then reporti("tokens")    end return injecttokens   (currentmpx,s)               end
 
 inject.triplet    = inject.color
 inject.quadruplet = inject.cmykcolor

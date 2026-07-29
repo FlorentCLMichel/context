@@ -132,8 +132,8 @@ static void tex_aux_fire_up (halfword c);
     onto the contribution list, and control will effectively pass to the user's output routine.
 
     We make |type (page_head) = glue_node|, so that an initial glue node on the current page will
-    not be considered a valid breakpoint. We keep this old tex trickery of cheating with node types
-    but have to make sure that the size is valid to do so (and we have different sizes!).
+    not be considered a valid break point. We keep this old \TEX\ trickery of cheating with node
+    types but have to make sure that the size is valid to do so (and we have different sizes!).
 
 */
 

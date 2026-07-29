@@ -100,7 +100,18 @@
 
 */
 
+# include "utilities/auxcompiler.h"
+
 # include "tex/textypes.h"
+
+/*tex
+
+    The version number can be queried with |\luatexversion| and the revision with with
+    |\luatexrevision|. Traditionally the revision can be any character and \PDFTEX\ occasionally
+    used no digits. Here we still use a character but we will stick to 0 upto 9 so users can expect
+    a number represented as string. Further comments have been moved to the manual.
+
+*/
 
 /*tex Currently LUAC_FORMAT is set to 5 awaiting an official version bump. */
 
@@ -111,7 +122,7 @@
 # define luametatex_release          8
 # define luametatex_version_string   "2.11.09"
 # define luametatex_version_number   211.9
-# define luametatex_development_id   20260705
+# define luametatex_development_id   20260727
 # define luametatex_name_camelcase   "LuaMetaTeX"
 # define luametatex_name_lowercase   "luametatex"
 # define luametatex_copyright_holder "Taco Hoekwater, Hans Hagen, Wolfgang Schuster & Mikael Sundqvist"
@@ -139,6 +150,8 @@ typedef struct version_state_info {
     const char *verbose;
     const char *banner;
     const char *compiler;
+    int         cversion;
+    int         likely;
     const char *copyright;
     int         formatid;
     int         luaversionmajor;
@@ -212,13 +225,13 @@ extern version_state_info lmt_version_state;
 
     The code in \LUAMETATEX\ is a follow up on \LUATEX\ which is itself a follow up on \PDFTEX\
     (and parts of \ALEPH). The original \PASCAL\ code has been converted \CCODE. Substantial amounts
-    of code were added over a decade. Stepwise artifacts have been removed (for instance originating
+    of code were added over a decade. Step wise artifacts have been removed (for instance originating
     in the translations from \PASCAL, or from integration in the infrastructure), parts of code has
     been rewritten. As much as possible we keep the old naming intact (so that most of the \TEX\
     documentation applies. However, as we now assume \CCODE, some things have changed. Among the
-    changes are handling datatypes and certain checks. For instance, when |null| is used this is
+    changes are handling data types and certain checks. For instance, when |null| is used this is
     now always assumed to be |0|, so a zero test is also valid. Old side effects of zero nodes for
-    zero gluespecs are gone because these have been reimplemented. Of course we keep |NULL| as
+    zero glue specs are gone because these have been reimplemented. Of course we keep |NULL| as
     abstraction for unset pointers. This way it's clear when we have a \CCODE\ pointer or a \TEX\
     managed one (where |null| or |0| means no node or token).
 
@@ -231,7 +244,7 @@ extern version_state_info lmt_version_state;
 
     In the next stage of \LUATEX\ development, we went a but further and tried to get rid of more
     dependencies. Among the rationales for this is that we depend on \LUA, and whatever works for
-    the \LUA\ codebase (which is quite portable) should also work for \LUATEX. But there are always
+    the \LUA\ code base (which is quite portable) should also work for \LUATEX. But there are always
     some overloads because (especially in \LUATEX\ where one can use \KPSE) the integration in a
     \TEX\ ecosystem expects some behavior with respect to files and running sub-processes and such.
     In \LUAMETATEX\ there is less of that because \CONTEXT\ does more of that itself.
@@ -239,7 +252,7 @@ extern version_state_info lmt_version_state;
     So, one of the biggest complications was the dependency on the \WEBC\ helpers and file system
     interface. However, because that was already kind of isolated, it could be removed. If needed
     we can always bring back \KPSE\ as an external library. In the process there can be some side
-    effects but in the end it gives a cleaner codebase and less dependencies. We suddenly don't need
+    effects but in the end it gives a cleaner code base and less dependencies. We suddenly don't need
     all kind of tweaks to get the program compiled.
 
     The \TEX\ memory model is based on packing data in memory words, but that concept is somewhat
@@ -277,20 +290,6 @@ extern version_state_info lmt_version_state;
     variables left.
 
 */
-
-/*tex This is not used (yet) as I don't expect much from it, but \LUA\ has some of it. */
-
-# if defined(__GNUC__)
-    // Lua: 
- // # define lmt_likely(x)   (__builtin_expect(((x) != 0), 1))
- // # define lmt_unlikely(x) (__builtin_expect(((x) != 0), 0))
-    // Kernel: 
-    # define lmt_likely(x)   (__builtin_expect(!!(x), 1))
-    # define lmt_unlikely(x) (__builtin_expect(!!(x), 0))
-# else
-#   define lmt_likely(x)   (x)
-#   define lmt_unlikely(x) (x)
-# endif
 
 # include "utilities/auxarithmetic.h"
 # include "utilities/auxmemory.h"

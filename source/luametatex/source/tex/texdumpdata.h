@@ -55,7 +55,7 @@
 
 */
 
-# define luametatex_format_fingerprint 730
+# define luametatex_format_fingerprint 731
 
 /* These end up in the string pool. */
 
@@ -89,11 +89,23 @@ extern void tex_initialize_dump_state  (void);
 # define   dump_int(f,x)   dump_things(f,x,1)
 # define undump_int(f,x) undump_things(f,x,1)
 
-# define   dump_char(f,x)   dump_things(f,x,1)
-# define undump_char(f,x) undump_things(f,x,1)
+# if 0
 
-# define   dump_uchar(f,x)   dump_things(f,x,1)
-# define undump_uchar(f,x) undump_things(f,x,1)
+    # define   dump_char(f,x)   dump_things(f,x,1)
+    # define undump_char(f,x) undump_things(f,x,1)
+
+    # define   dump_uchar(f,x)   dump_things(f,x,1)
+    # define undump_uchar(f,x) undump_things(f,x,1)
+
+# else
+
+    # define   dump_char(f,x)   fputc(x,f)
+    # define undump_char(f,x)   x = (char) fgetc(f)
+
+    # define   dump_uchar(f,x)  fputc(x,f)
+    # define undump_uchar(f,x)  x = (unsigned char) fgetc(f)
+
+# endif
 
 # define   dump_short(f,x)   dump_things(f,x,1)
 # define undump_short(f,x) undump_things(f,x,1)
@@ -122,17 +134,17 @@ extern void tex_initialize_dump_state  (void);
 
 # define dump_via_char(f,x) do { \
     char x_val = (x); \
-    dump_int(f,x_val); \
+    dump_char(f,x_val); \
 } while (0)
 
 # define dump_via_uchar(f,x) do { \
     unsigned char x_val = (x); \
-    dump_int(f,x_val); \
+    dump_uchar(f,x_val); \
 } while (0)
 
 # define dump_string(f,a) \
     if (a) { \
-        int x = (int)strlen(a) + 1; \
+        int x = (int) strlen(a) + 1; \
         dump_int(f,x); \
         dump_things(f,*a, x); \
     } else { \

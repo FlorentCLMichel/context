@@ -1156,10 +1156,14 @@ do
                     local ty = pos_v * (1 - ry) - pos_h * sx
                     if nofmatrices > 0 then
                         local t = matrices[nofmatrices]
-                        local r_x, s_x, s_y, r_y, te, tf = t[1], t[2], t[3], t[4], t[5], t[6]
-                        rx, sx = rx * r_x + sx * s_y, rx * s_x + sx * r_y
-                        sy, ry = sy * r_x + ry * s_y, sy * s_x + ry * r_y
-                        tx, ty = tx * r_x + ty * s_y, tx * s_x + ty * r_y
+                     -- local r_x, s_x, s_y, r_y, te, tf = t[1], t[2], t[3], t[4], t[5], t[6]
+                        local r_x, s_x, s_y, r_y = t[1], t[2], t[3], t[4]
+                        rx = rx * r_x + sx * s_y
+                        sx = rx * s_x + sx * r_y
+                        sy = sy * r_x + ry * s_y
+                        ry = sy * s_x + ry * r_y
+                        tx = tx * r_x + ty * s_y
+                        ty = tx * s_x + ty * r_y
                     end
                     nofmatrices = nofmatrices + 1
                     matrices[nofmatrices] = { rx, sx, sy, ry, tx, ty, pos_h, pos_v }

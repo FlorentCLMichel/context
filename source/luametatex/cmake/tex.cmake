@@ -12,6 +12,8 @@ set(tex_sources
     source/utilities/auxfile.c
     source/utilities/auxposit.c
     source/utilities/auxbytemaps.c
+    source/utilities/auxkdtree2d.c
+    source/utilities/auxkdtree3d.c
 
     source/libraries/hnj/hnjhyphen.c
 
@@ -59,6 +61,7 @@ set(tex_sources
     source/luarest/lmtbytemaplib.c
     source/luarest/lmteffectslib.c
     source/luarest/lmtzbufferlib.c
+    source/luarest/lmtkdtreelib.c
 
     source/tex/texalign.c
     source/tex/texarithmetic.c
@@ -125,4 +128,6 @@ target_include_directories(tex PRIVATE
     source/libraries/qrcodegen
     source/libraries/nanojpeg
     source/libraries/triangles
+
+#   source/libraries/qhull/src/libqhull_r
 )

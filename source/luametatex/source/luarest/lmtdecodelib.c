@@ -11,9 +11,35 @@
     can change any time we like without notice till we like what we have.
 
     There is some redundancy due to the fact that we also have a bytemap library so at some point
-    we might combine some. It also deopends on combining some at the \CONTEXT\ end.
+    we might combine some. It also depends on combining some at the \CONTEXT\ end.
 
 */
+
+# include <limits.h>
+# include <stddef.h>
+
+# define png_limit 0x3FFF /* we don't handle rediculous images */
+# define png_slice 0x0008 /* actually max 6 but we also need slack */
+
+static inline int outside_limits(int xsize, int ysize, int slice)
+{
+    if (xsize <= 0 || ysize <= 0 || slice <= 0) {
+        return 1;
+    } else if (xsize > png_limit || ysize > png_limit || slice > png_slice) {
+        return 2;
+    } else {
+        return 0;
+    }
+}
+
+// 0.2126 * r + 0.7152 * g + 0.0722 * b
+// 0.299  * r + 0.587  * g + 0.114  * b
+// 0.212  * r + 0.701  * g + 0.087  * b
+
+// integer approximation (299*256/1000 ≈ 77, 587*256/1000 ≈ 150, 114*256/1000 ≈ 29)
+
+//define rgb_to_gray(r,g,b) (round(0.299 * r + 0.587 * g + 0.114 * b))
+# define rgb_to_gray(r,g,b) ((77 * r + 150 * g + 29 * b + 128) >> 8)
 
 /*
     This can be done in a few more places and already gains quite a bit on a dozen extreme ones;
@@ -53,8 +79,6 @@ static void pnglib_pushlstring(lua_State *L, char *s, size_t l)
 
 /* t xsize ysize bpp (includes mask) */
 
-# if 1
-
 static int pnglib_applyfilter(lua_State *L)
 {
     size_t size;
@@ -62,229 +86,98 @@ static int pnglib_applyfilter(lua_State *L)
     int xsize     = lmt_tointeger(L, 2);
     int ysize     = lmt_tointeger(L, 3);
     int slice     = lmt_tointeger(L, 4);
-    int len       = xsize * slice + 1; /* filter byte */
-    int n         = 0;
-    int m         = len - 1;
-    unsigned char *t;
+    if (outside_limits(xsize, ysize, slice)) {
+        tex_formatted_warning("png filter", "overflow: %i x %i x %i", xsize, ysize, slice);
+        return 0;
+    }
+    int len = xsize * slice + 1; /* filter byte */
     if (ysize * len != (int) size) {
         tex_formatted_warning("png filter", "sizes don't match: %i expected, %i provided", ysize *len, size);
         return 0;
     }
-    t = pnglib_memory_malloc(size);
+    unsigned char *t = pnglib_memory_malloc(size);
     if (! t) {
         tex_normal_warning("png filter", "not enough memory");
         return 0;
     }
-    memcpy(t, s, size);
-    for (int i = 0; i < ysize; i++) {
-        switch (t[n]) {
-            case 0 :
-                break;
-            case 1 :
-                for (int j = n + slice + 1; j <= n + m; j++) {
-                    t[j] = (unsigned char) (t[j] + t[j-slice]);
-                }
-                break;
-            case 2 :
-                if (i > 0) {
-                    for (int j = n + 1; j <= n + m; j++) {
-                        t[j] = (unsigned char) (t[j] + t[j-len]);
-                    }
-                }
-                break;
-            case 3 :
-                if (i > 0) {
-                    for (int j = n + 1; j <= n + slice; j++) {
-                        t[j] = (unsigned char) (t[j] + t[j-len]/2);
-                    }
+    {
+        int n = 0;
+        int m = len - 1;
+        memcpy(t, s, size);
+        for (int i = 0; i < ysize; i++) {
+            switch (t[n]) {
+                case 0 :
+                    break;
+                case 1 :
                     for (int j = n + slice + 1; j <= n + m; j++) {
-                        t[j] = (unsigned char) (t[j] + (t[j-slice] + t[j-len])/2);
+                        t[j] = (unsigned char) (t[j] + t[j-slice]);
                     }
-                } else {
-                    for (int j = n + slice + 1; j <= n + m; j++) {
-                        t[j] = (unsigned char) (t[j] + t[j-slice]/2);
+                    break;
+                case 2 :
+                    if (i > 0) {
+                        for (int j = n + 1; j <= n + m; j++) {
+                            t[j] = (unsigned char) (t[j] + t[j-len]);
+                        }
                     }
-                }
-                break;
-            case 4 :
-                if (i > 0) {
-                    for (int j = n + 1; j <= n + slice; j++) {
-                        int p = j - len;
-                        t[j] = (unsigned char) (t[j] + t[p]);
+                    break;
+                case 3 :
+                    if (i > 0) {
+                        for (int j = n + 1; j <= n + slice; j++) {
+                            t[j] = (unsigned char) (t[j] + t[j-len]/2);
+                        }
+                        for (int j = n + slice + 1; j <= n + m; j++) {
+                            t[j] = (unsigned char) (t[j] + (t[j-slice] + t[j-len])/2);
+                        }
+                    } else {
+                        for (int j = n + slice + 1; j <= n + m; j++) {
+                            t[j] = (unsigned char) (t[j] + t[j-slice]/2);
+                        }
                     }
-                    for (int j = n + slice + 1; j <= n + m; j++) {
-                        int p = j - len;
-                        unsigned char a = t[j-slice];
-                        unsigned char b = t[p];
-                        unsigned char c = t[p-slice];
-                        int pa = b - c;
-                        int pb = a - c;
-                        int pc = pa + pb;
-                        if (pa < 0) { pa = - pa; }
-                        if (pb < 0) { pb = - pb; }
-                        if (pc < 0) { pc = - pc; }
-                        t[j] = (unsigned char) (t[j] + ((pa <= pb && pa <= pc) ? a : ((pb <= pc) ? b : c)));
+                    break;
+                case 4 :
+                    if (i > 0) {
+                        for (int j = n + 1; j <= n + slice; j++) {
+                            int p = j - len;
+                            t[j] = (unsigned char) (t[j] + t[p]);
+                        }
+                        for (int j = n + slice + 1; j <= n + m; j++) {
+                            int p = j - len;
+                            unsigned char a = t[j-slice];
+                            unsigned char b = t[p];
+                            unsigned char c = t[p-slice];
+                            int pa = b - c;
+                            int pb = a - c;
+                            int pc = pa + pb;
+                            if (pa < 0) { pa = - pa; }
+                            if (pb < 0) { pb = - pb; }
+                            if (pc < 0) { pc = - pc; }
+                            t[j] = (unsigned char) (t[j] + ((pa <= pb && pa <= pc) ? a : ((pb <= pc) ? b : c)));
+                        }
+                    } else {
+                        for (int j = n + slice + 1; j <= n + m; j++) {
+                            t[j] = (unsigned char) (t[j] + t[j - slice]);
+                        }
                     }
-                } else {
-                    /* What to do here? */
-                    /*
-                    for (int j = n + slice + 1; j <= n + m; j++) {
-                        int p = j - len;
-                        unsigned char a = t[j-slice];
-                        unsigned char b = t[p];
-                        unsigned char c = t[p-slice];
-                        int pa = b - c;
-                        int pb = a - c;
-                        int pc = pa + pb;
-                        if (pa < 0) { pa = - pa; }
-                        if (pb < 0) { pb = - pb; }
-                        if (pc < 0) { pc = - pc; }
-                        t[j] = (unsigned char) (t[j] + ((pa <= pb && pa <= pc) ? a : ((pb <= pc) ? b : c)));
-                    }
-                    */
-                }
-                break;
-            default:
-                break;
+                    break;
+                default:
+                    break;
+            }
+            n = n + len;
         }
-        n = n + len;
     }
     /* wipe out filter byte */
     {
         int j = 0; /* source */
         int m = 0; /* target */
         for (int i = 0; i < ysize; i++) {
-         // (void) memcpy(&t[m], &t[j+1], len-1); /* target source size */
             (void) memmove(&t[m], &t[j+1], (size_t) len - 1); /* target source size */
             j += len;
             m += len - 1;
         }
-        pnglib_pushlstring(L, (char *) t, size - ysize);
     }
+    pnglib_pushlstring(L, (char *) t, size - ysize);
     return 1;
 }
-
-# else
-
-/*tex
-    There is no real gain here but it's a bit less messy and needs double or even tripple
-    checking with the above which I'll do when I'm really bored.
-*/
-
-static int pnglib_applyfilter(lua_State *L)
-{
-    size_t size;
-    const char *s = luaL_checklstring(L, 1, &size);
-    int xsize     = lmt_tointeger(L, 2);
-    int ysize     = lmt_tointeger(L, 3);
-    int slice     = lmt_tointeger(L, 4);
-    int len       = xsize * slice + 1; /* filter byte */
-    int n         = 0;
-    int m         = len - 1;
-    unsigned char *t;
-    if (ysize * len != (int) size) {
-        tex_formatted_warning("png filter", "sizes don't match: %i expected, %i provided", ysize *len, size);
-        return 0;
-    }
-    t = pnglib_memory_malloc(size);
-    if (! t) {
-        tex_normal_warning("png filter", "not enough memory");
-        return 0;
-    }
-    memcpy(t, s, size);
-    for (int i = 0; i < ysize; i++) {
-        int k = n + 1;
-        switch (t[n]) {
-            case 0 :
-                break;
-            case 1 :
-                for (int j = k + slice; j <= n + m; j++) {
-                    t[j] = (unsigned char) (t[j] + t[k++]);
-                }
-                break;
-            case 2 :
-                if (i > 0) {
-                    k -= len;
-                    for (int j = k; j <= n + m; j++) {
-                        t[j] = (unsigned char) (t[j] + t[k++]);
-                    }
-                }
-                break;
-            case 3 :
-                if (i > 0) {
-                    int l = k - len;
-                    for (int j = k; j <= n + slice; j++) {
-                        t[j] = (unsigned char) (t[j] + t[l++]/2);
-                    }
-                    for (int j = k + slice; j <= n + m; j++) {
-                        t[j] = (unsigned char) (t[j] + (t[k++] + t[l++])/2);
-                    }
-                } else {
-                    for (int j = k + slice; j <= n + m; j++) {
-                        t[j] = (unsigned char) (t[j] + t[k++]/2);
-                    }
-                }
-                break;
-            case 4 :
-                if (i > 0) {
-                    int l = k - len;
-                    int o; // o = n + slice - l + 1;
-                    for (int j = k; j <= n + slice; j++) {
-                        t[j] = (unsigned char) (t[j] + t[l++]);
-                    }
-                    o = l - slice;
-                    for (int j = k + slice; j <= n + m; j++) {
-                        unsigned char a = t[k++];
-                        unsigned char b = t[l++];
-                        unsigned char c = t[o++];
-                        int pa = b - c;
-                        int pb = a - c;
-                        int pc = pa + pb;
-                        if (pa < 0) { pa = - pa; }
-                        if (pb < 0) { pb = - pb; }
-                        if (pc < 0) { pc = - pc; }
-                        t[j] = (unsigned char) (t[j] + ((pa <= pb && pa <= pc) ? a : ((pb <= pc) ? b : c)));
-                    }
-                } else {
-                    /* What to do here? */
-                    /*
-                    for (int j = n + slice + 1; j <= n + m; j++) {
-                        int p = j - len;
-                        unsigned char a = t[j-slice];
-                        unsigned char b = t[p];
-                        unsigned char c = t[p-slice];
-                        int pa = b - c;
-                        int pb = a - c;
-                        int pc = pa + pb;
-                        if (pa < 0) { pa = - pa; }
-                        if (pb < 0) { pb = - pb; }
-                        if (pc < 0) { pc = - pc; }
-                        t[j] = (unsigned char) (t[j] + ((pa <= pb && pa <= pc) ? a : ((pb <= pc) ? b : c)));
-                    }
-                    */
-                }
-                break;
-            default:
-                break;
-        }
-        n = n + len;
-    }
-    /* wipe out filter byte */
-    {
-        int j = 0; /* source */
-        int m = 0; /* target */
-        for (int i = 0; i < ysize; i++) {
-            // (void) memcpy(&t[m], &t[j+1], len-1); /* target source size */
-            (void) memmove(&t[m], &t[j+1], (size_t)len - 1); /* target source size */
-            j += len;
-            m += len - 1;
-        }
-        pnglib_pushlstring(L, (char *) t, size - ysize);
-    }
-    return 1;
-}
-
-# endif
 
 /* t xsize ysize bpp (includes mask) bytes */
 
@@ -297,26 +190,29 @@ static int pnglib_splitmask(lua_State *L)
     int bpp        = lmt_tointeger(L, 4); /* 1 or 3 */
     int bytes      = lmt_tointeger(L, 5); /* 1 or 2 */
     int slice      = (bpp + 1) * bytes;
-    int len        = xsize * slice;
-    int blen       = bpp * bytes;
-    int mlen       = bytes;
-    int nt         = 0;
-    int nb         = 0;
-    int nm         = 0;
-    int bsize      = ysize * xsize * blen;
-    int msize      = ysize * xsize * mlen;
-    char *b, *m;
+    if (outside_limits(xsize, ysize, slice)) {
+        tex_formatted_warning("png split", "overflow: %i x %i x %i", xsize, ysize, slice);
+        return 0;
+    }
+    int len = xsize * slice;
     /* we assume that the filter byte is gone */
     if (ysize * len != (int) size) {
         tex_formatted_warning("png split", "sizes don't match: %i expected, %i provided", ysize * len, size);
         return 0;
     }
-    b = pnglib_memory_malloc(bsize);
-    m = pnglib_memory_malloc(msize);
+    int blen  = bpp * bytes;
+    int mlen  = bytes;
+    int bsize = ysize * xsize * blen;
+    int msize = ysize * xsize * mlen;
+    char *b   = pnglib_memory_malloc(bsize);
+    char *m   = pnglib_memory_malloc(msize);
     if (! (b && m)) {
-        tex_normal_warning("png split mask", "not enough memory");
+        tex_normal_warning("png split", "not enough memory");
         return 0;
     }
+    int nt = 0;
+    int nb = 0;
+    int nm = 0;
     /* a bit optimized */
     switch (blen) {
         case 1:
@@ -361,49 +257,51 @@ static int pnglib_splitmask(lua_State *L)
 
 static int pnglib_interlace(lua_State *L)
 {
-    int xstarts[] = { 0, 4, 0, 2, 0, 1, 0 };
-    int ystarts[] = { 0, 0, 4, 0, 2, 0, 1 };
-    int xsteps[]  = { 8, 8, 4, 4, 2, 2, 1 };
-    int ysteps[]  = { 8, 8, 8, 4, 4, 2, 2 };
-    size_t isize = 0;
-    size_t psize = 0;
-    const char *inp;
-    const char *pre;
-    char *out;
-    int xsize, ysize, xstep, ystep, xstart, ystart, slice, pass, nx, ny;
-    int target, start, step, size;
+    int xsize = lmt_tointeger(L, 1);
+    int ysize = lmt_tointeger(L, 2);
+    int slice = lmt_tointeger(L, 3);
+    if (outside_limits(xsize, ysize, slice)) {
+        tex_formatted_warning("png interlace", "overflow: %i x %i x %i", xsize, ysize, slice);
+        return 0;
+    }
     /* dimensions */
-    xsize  = lmt_tointeger(L, 1);
-    ysize  = lmt_tointeger(L, 2);
-    slice  = lmt_tointeger(L, 3);
-    pass   = lmt_tointeger(L, 4);
+    int pass = lmt_tointeger(L, 4);
     if (pass < 1 || pass > 7) {
         tex_formatted_warning("png interlace", "bass pass: %i (1..7)", pass);
         return 0;
+    } else {
+        pass--;
     }
-    pass   = pass - 1;
     /* */
-    nx     = (xsize + xsteps[pass] - xstarts[pass] - 1) / xsteps[pass];
-    ny     = (ysize + ysteps[pass] - ystarts[pass] - 1) / ysteps[pass];
+    const int xstarts[] = { 0, 4, 0, 2, 0, 1, 0 };
+    const int ystarts[] = { 0, 0, 4, 0, 2, 0, 1 };
+    const int xsteps [] = { 8, 8, 4, 4, 2, 2, 1 };
+    const int ysteps [] = { 8, 8, 8, 4, 4, 2, 2 };
     /* */
-    xstart = xstarts[pass];
-    xstep  = xsteps[pass];
-    ystart = ystarts[pass];
-    ystep  = ysteps[pass];
+    int nx = (xsize + xsteps[pass] - xstarts[pass] - 1) / xsteps[pass];
+    int ny = (ysize + ysteps[pass] - ystarts[pass] - 1) / ysteps[pass];
+    /* */
+    int xstart = xstarts[pass];
+    int xstep  = xsteps[pass];
+    int ystart = ystarts[pass];
+    int ystep  = ysteps[pass];
     /* */
     xstep  = xstep * slice;
     xstart = xstart * slice;
     xsize  = xsize * slice;
-    target = ystart * xsize + xstart;
     ystep  = ystep * xsize;
     /* */
-    step   = nx * xstep;
-    size   = ysize * xsize;
-    start  = 0;
+    int target = ystart * xsize + xstart;
+    int step   = nx * xstep;
+    int size   = ysize * xsize;
+    int start  = 0;
     /* */
-    inp    = luaL_checklstring(L, 5, &isize);
-    pre    = NULL;
-    out    = NULL;
+    size_t      isize = 0;
+    size_t      psize = 0;
+    const char *inp   = luaL_checklstring(L, 5, &isize);
+    const char *pre   = NULL;
+    char       *out   = NULL;
+    /* */
     if (pass > 0) {
         pre = luaL_checklstring(L, 6, &psize);
         if ((int) psize < size) {
@@ -489,7 +387,11 @@ static int pnglib_expand(lua_State *L)
     int factor    = lua_toboolean(L, 6);
     int size      = ysize * xsize;
     int extra     = ysize * xsize + 16; /* probably a few bytes is enough */
-    if (xline*ysize > (int) tsize) {
+    if (outside_limits(xsize, ysize, 1)) { /* the last 1 is a cheat */
+        tex_formatted_warning("png expand", "overflow: %i x %i", xsize, ysize);
+        return 0;
+    }
+    if (xline * ysize > (int) tsize) {
         tex_formatted_warning("png expand","expand sizes don't match: %i expected, %i provided",size,parts*tsize);
         return 0;
     }
@@ -870,10 +772,6 @@ static int pnglib_tocmyk(lua_State *L)
     return 1;
 }
 
-// 0.2126 * r + 0.7152 * g + 0.0722 * b
-// 0.299  * r + 0.587  * g + 0.114  * b
-// 0.212  * r + 0.701  * g + 0.087  * b
-
 static int pnglib_togray(lua_State *L)
 {
     size_t tsize;
@@ -884,7 +782,7 @@ static int pnglib_togray(lua_State *L)
         size_t osize = 0;
         char *o = pnglib_memory_malloc(tsize/3 + 1); /*tex Plus some slack. */
         if (! o) {
-            tex_normal_warning("png tocmyk", "not enough memory");
+            tex_normal_warning("png togray", "not enough memory");
             return 0;
         } else if (depth == 8) {
             if (average) {
@@ -899,7 +797,7 @@ static int pnglib_togray(lua_State *L)
                     unsigned r = (unsigned char) t[i++];
                     unsigned g = (unsigned char) t[i++];
                     unsigned b = (unsigned char) t[i++];
-                    o[osize++] = (unsigned char) round(0.299 * r + 0.587 * g + 0.114 * b);
+                    o[osize++] = (unsigned char) rgb_to_gray(r,g,b);
                 }
             }
         } else {
@@ -917,7 +815,7 @@ static int pnglib_togray(lua_State *L)
                     unsigned r = (unsigned char) t[i++] ; r = (r * 256) + (unsigned char) t[i++];
                     unsigned g = (unsigned char) t[i++] ; g = (g * 256) + (unsigned char) t[i++];
                     unsigned b = (unsigned char) t[i++] ; b = (b * 256) + (unsigned char) t[i++];
-                    unsigned s = round(0.299 * r + 0.587 * g + 0.114 * b);
+                    unsigned s = rgb_to_gray(r,g,b);
                     o[osize++] = (unsigned char) (s / 256);
                     o[osize++] = (unsigned char) (s % 256);
                 }
@@ -930,44 +828,47 @@ static int pnglib_togray(lua_State *L)
     return 1;
 }
 
-/*tex Make a mask for a pallete. */
+/*tex Make a mask for a pallete. No need for size_t as int is large enough */
 
 static int pnglib_tomask(lua_State *L) /* for palette */
 {
     size_t tsize, ssize;
     const char *t  = luaL_checklstring(L, 1, &tsize);
     const char *s  = luaL_checklstring(L, 2, &ssize);
-    size_t xsize   = lmt_tosizet(L, 3);
-    size_t ysize   = lmt_tosizet(L, 4);
+    int xsize      = lmt_tointeger(L, 3);
+    int ysize      = lmt_tointeger(L, 4);
     int colordepth = lmt_tointeger(L, 5);
     size_t osize   = xsize * ysize;
-    if (osize == tsize) {
+    if (outside_limits(xsize, ysize, colordepth)) {
+        tex_formatted_warning("png tomask", "overflow: %i x %i x %i", xsize, ysize, colordepth);
+        return 0;
+    } else if (osize == tsize) {
         /* todo: v can be static array c[256] = { 0xFF } */
         char *o    = pnglib_memory_malloc(osize);
         char *v    = lmt_memory_malloc(256);
-        size_t len = xsize * colordepth / 8; // ceil
-        size_t k   = 0;
+        int   len  = xsize * colordepth / 8; // ceil
+        int   k    = 0;
         memset(v, 0xFF, 256);
         memcpy(v, s, ssize > 256 ? 256 : ssize);
-        for (size_t i = 0; i < ysize; i++) {
-            size_t f = i * len;
-            size_t l = f + len;
+        for (int i = 0; i < ysize; i++) {
+            int f = i * len;
+            int l = f + len;
             switch (colordepth) {
                 case 8:
-                    for (size_t j = f; j < l; j++) {
+                    for (int j = f; j < l; j++) {
                         unsigned char c = (unsigned char) t[j];
                         o[k++] = (char) v[c];
                     }
                     break;
                 case 4:
-                    for (size_t j = f; j < l; j++) {
+                    for (int j = f; j < l; j++) {
                         unsigned char c = (unsigned char) t[j];
                         o[k++] = (char) v[(c >> 4) & 0x0F];
                         o[k++] = (char) v[(c >> 0) & 0x0F];
                     }
                     break;
                 case 2:
-                    for (size_t j = f; j < l; j++) {
+                    for (int j = f; j < l; j++) {
                         unsigned char c = (unsigned char) t[j];
                         o[k++] = (char) v[(c >> 6) & 0x03];
                         o[k++] = (char) v[(c >> 4) & 0x03];
@@ -976,7 +877,7 @@ static int pnglib_tomask(lua_State *L) /* for palette */
                     }
                     break;
                 default:
-                    for (size_t j = f; j < l; j++) {
+                    for (int j = f; j < l; j++) {
                         unsigned char c = (unsigned char) t[j];
                         o[k++] = (char) v[(c >> 7) & 0x01];
                         o[k++] = (char) v[(c >> 6) & 0x01];
@@ -1002,8 +903,12 @@ static int pnglib_makemask(lua_State *L) /* for palette */
 {
     size_t size;
     const char *content  = luaL_checklstring(L, 1, &size);
-    char mapping[256] = { 0x00 };
     char *mask = pnglib_memory_malloc(size);
+    if (! mask) {
+        tex_normal_warning("png makemask", "not enough memory");
+        return 0;
+    }
+    char mapping[256] = { 0x00 };
     switch (lua_type(L, 2)) {
         case LUA_TNUMBER:
             {
@@ -1020,31 +925,34 @@ static int pnglib_makemask(lua_State *L) /* for palette */
                 for (int i = 1; i <= n; i++) {
                     if (lua_rawgeti(L, 2, i) == LUA_TTABLE) {
                         int m = (int) lua_rawlen(L, -1);
-                        if (m == 3) { 
-                            int b, e, v; 
-                            lua_rawgeti(L, -1, 1);
-                            lua_rawgeti(L, -2, 2);
-                            lua_rawgeti(L, -3, 3);
-                            b = lmt_tointeger(L, -3);
-                            e = lmt_tointeger(L, -2);
-                            v = lmt_tointeger(L, -1);
+                        if (m == 3) {
+                         // lua_rawgeti(L, -1, 1);
+                         // lua_rawgeti(L, -2, 2);
+                         // lua_rawgeti(L, -3, 3);
+                         // int b = lmt_tointeger(L, -3);
+                         // int e = lmt_tointeger(L, -2);
+                         // int v = lmt_tointeger(L, -1);
+                            lua_rawgeti(L, -1, 1); int b = lmt_tointeger(L, -1); lua_pop(L, 1);
+                            lua_rawgeti(L, -1, 2); int e = lmt_tointeger(L, -1); lua_pop(L, 1);
+                            lua_rawgeti(L, -1, 3); int v = lmt_tointeger(L, -1); lua_pop(L, 1);
                             b = b < 0 ? 0 : b > 255 ? 255 : b;
                             e = e < 0 ? 0 : e > 255 ? 255 : e;
                             v = v < 0 ? 0 : v > 255 ? 255 : v;
                             for (int i = b; i <= e; i++) {
                                 mapping[i] = (char) v;
                             }
-                            lua_pop(L, 3);
+                         // lua_pop(L, 3);
                         }
                     }
                     lua_pop(L, 1);
                 }
             }
+            break;
         case LUA_TSTRING:
             {
                 size_t l = 0;
-                const char *m  = luaL_checklstring(L, 1, &l);
-                memcpy(mask, m, l > size ? size : l);               
+                const char *m  = luaL_checklstring(L, 2, &l);
+                memcpy(mapping, m, l > 256 ? 256 : l);
             }
             break;
         default:
@@ -1072,6 +980,10 @@ static int pnglib_reduce(lua_State *L)
         int nx = lmt_tointeger(L, 2);
         int ny = lmt_tointeger(L, 3);
         int nz = lmt_tointeger(L, 4);
+        if (outside_limits(nx, ny, nz)) { /* the last 1 is a cheat */
+            tex_formatted_warning("png reduce", "overflow: %i x %i x %i", nx, ny, nz);
+            return 0;
+        }
         if (nx * ny * nz == (int) size) {
             unsigned char *result;
             int dx = nx * nz;

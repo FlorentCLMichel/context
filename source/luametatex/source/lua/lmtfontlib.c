@@ -289,7 +289,6 @@ static void fontlib_aux_font_char_from_lua(lua_State *L, halfword f, int i, int 
     if (lua_istable(L, -1)) {
         /*tex We need an intermediate veriable: */
         int target; 
-        const char *starget;
         charinfo *co = tex_get_charinfo(f, i);
         set_numeric_field_by_index(target, tag, 0);
         set_charinfo_tag(co, target ? tex_char_checked_tag(target) : 0);
@@ -324,6 +323,7 @@ static void fontlib_aux_font_char_from_lua(lua_State *L, halfword f, int i, int 
             set_charinfo_rightprotrusion(co, target);
         }
         if (has_math) {
+            const char *starget;
             tex_char_malloc_mathinfo(co);
             set_numeric_field_by_index(target, smaller, 0);
             set_charinfo_smaller(co, target);
@@ -435,7 +435,7 @@ static void fontlib_aux_font_char_from_lua(lua_State *L, halfword f, int i, int 
             if (count > 0) {
                 /*tex The kerns table is still on stack. */
                 kerninfo *ckerns = lmt_memory_calloc((size_t) count + 1, sizeof(kerninfo));
-                if (ckerns) {
+                if lmt_likely(ckerns) {
                     int ctr = 0;
                     set_charinfo_tag(co, kerns_tag);
                     /*tex Traverse the hash. */
@@ -463,7 +463,7 @@ static void fontlib_aux_font_char_from_lua(lua_State *L, halfword f, int i, int 
                                 break;
                         }
                         target = lmt_roundnumber(L, -1);
-                        if (k != non_boundary_char) {
+                        if lmt_likely(k != non_boundary_char) {
                             set_kern_item(ckerns[ctr], k, target);
                             ctr++;
                         } else {
@@ -472,7 +472,7 @@ static void fontlib_aux_font_char_from_lua(lua_State *L, halfword f, int i, int 
                         lua_pop(L, 1);
                     }
                     /*tex A guard against empty tables. */
-                    if (ctr > 0) {
+                    if lmt_likely(ctr > 0) {
                         set_kern_item(ckerns[ctr], end_kern, 0);
                         set_charinfo_kerns(co, ckerns);
                     } else {
@@ -491,7 +491,7 @@ static void fontlib_aux_font_char_from_lua(lua_State *L, halfword f, int i, int 
             if (count > 0) {
                 /*tex The ligatures table still on stack. */
                 ligatureinfo *cligs = lmt_memory_calloc((size_t) count + 1, sizeof(ligatureinfo));
-                if (cligs) {
+                if lmt_likely(cligs) {
                     int ctr = 0;
                     set_charinfo_tag(co, ligatures_tag);
                     /*tex Traverse the hash. */
@@ -523,7 +523,7 @@ static void fontlib_aux_font_char_from_lua(lua_State *L, halfword f, int i, int 
                             /*tex Ligature: */
                             set_numeric_field_by_index(r, key_char, -1);
                         }
-                        if (r != -1 && k != non_boundary_char) {
+                        if lmt_likely(r != -1 && k != non_boundary_char) {
                             int ligtarget = 0;
                             lua_push_key(type);
                             switch (lua_rawget(L, -2)) {
@@ -557,7 +557,7 @@ static void fontlib_aux_font_char_from_lua(lua_State *L, halfword f, int i, int 
                         lua_pop(L, 1);
                     }
                     /*tex A guard against empty tables. */
-                    if (ctr > 0) {
+                    if lmt_likely(ctr > 0) {
                         set_ligature_item(cligs[ctr], 0, end_of_ligature_code, 0);
                         set_charinfo_ligatures(co, cligs);
                     } else {
@@ -611,7 +611,7 @@ static int lmt_font_from_lua(lua_State *L, int f)
     const char *nstr ;
     set_string_field_by_index(nstr, name);
     tex_set_font_name(f, nstr);
-    if (nstr) {
+    if lmt_likely(nstr) {
         const char *ostr = NULL;
         int no_math = 0;
         int j;
@@ -668,7 +668,7 @@ static int lmt_font_from_lua(lua_State *L, int f)
         lmt_font_state.fonts[f]->weight = 65.536 * lmt_font_state.fonts[f]->design_size / lmt_font_state.fonts[f]->size;
         /*tex The characters. */
         lua_push_key(characters);
-        if (lua_rawget(L, -2) == LUA_TTABLE) {
+        if lmt_likely(lua_rawget(L, -2) == LUA_TTABLE) {
             /*tex Find the array size values; |num| holds the number of characters to add. */
             int num = 0;
             int last = 0;
@@ -693,7 +693,7 @@ static int lmt_font_from_lua(lua_State *L, int f)
                 }
                 lua_pop(L, 1);
             }
-            if (num > 0) {
+            if lmt_likely(num > 0) {
                 tex_font_malloc_charinfo(f, num);
                 set_font_first_character(f, first);
                 set_font_last_character(f, last);
@@ -855,7 +855,7 @@ static int fontlib_current(lua_State *L)
 {
     int i = lmt_optinteger(L, 1, 0);
     if (i > 0) {
-        if (tex_is_valid_font(i)) {
+        if lmt_likely(tex_is_valid_font(i)) {
             tex_set_cur_font(0, i);
         } else {
             luaL_error(L, "expected a valid font id");
@@ -876,11 +876,11 @@ static int fontlib_setfont(lua_State *L)
     int i = lmt_checkinteger(L, 1);
     if (i) {
         luaL_checktype(L, 2, LUA_TTABLE);
-        if (! tex_is_valid_font(i)) {
-            return luaL_error(L, "font with id %d is not a valid font", i);
-        } else {
+        if lmt_likely(tex_is_valid_font(i)) {
             lua_settop(L, 2);
             lmt_font_from_lua(L, i);
+        } else {
+            return luaL_error(L, "font with id %d is not a valid font", i);
         }
     }
     return 0;
@@ -891,7 +891,7 @@ static int fontlib_addcharacters(lua_State *L)
     int i = lmt_checkinteger(L, 1);
     if (i) {
         luaL_checktype(L, 2, LUA_TTABLE);
-        if (tex_is_valid_font(i)) {
+        if lmt_likely(tex_is_valid_font(i)) {
             lua_settop(L, 2);
             lmt_characters_from_lua(L, i);
         } else {
@@ -905,7 +905,7 @@ static int fontlib_addquality(lua_State *L)
 {
     int i = lmt_checkinteger(L, 1);
     if (i) {
-        if (tex_is_valid_font(i)) {
+        if lmt_likely(tex_is_valid_font(i)) {
             if (! has_font_text_control(i, text_control_quality_set)) {
                 luaL_checktype(L, 2, LUA_TTABLE);
                 lua_settop(L, 2);
@@ -925,13 +925,13 @@ static int fontlib_define(lua_State *L)
 {
     if (lua_type(L, 1) == LUA_TTABLE) {
         int i = lmt_optinteger(L, 2, 0);
-        if (! i) {
+        if lmt_likely(! i) {
             i = tex_new_font();
         } else if (! tex_is_valid_font(i)) {
             return luaL_error(L, "invalid font id %d passed", i);
         }
         lua_settop(L, 1);
-        if (lmt_font_from_lua(L, i)) {
+        if lmt_likely(lmt_font_from_lua(L, i)) {
             lua_pushinteger(L, i);
             return 1;
         } else {
@@ -946,12 +946,12 @@ static int fontlib_define(lua_State *L)
 
 static int fontlib_id(lua_State *L)
 {
-    if (lua_type(L, 1) == LUA_TSTRING) {
+    if lmt_likely(lua_type(L, 1) == LUA_TSTRING) {
         size_t l;
         const char *s = lua_tolstring(L, 1, &l);
         int cs = tex_string_locate_only(s, l);
         int f = -1;
-        if (cs == undefined_control_sequence || cs == undefined_cs_cmd || eq_type(cs) != set_font_cmd) {
+        if lmt_unlikely(cs == undefined_control_sequence || cs == undefined_cs_cmd || eq_type(cs) != set_font_cmd) {
             lua_pushliteral(L, "not a valid font csname");
         } else {
             f = eq_value(cs);
@@ -995,7 +995,7 @@ static int fontlib_aux_valid_fontdimen(lua_State *L, halfword *fnt, halfword *n)
 {
     *fnt = lmt_tohalfword(L, 1);
     *n = lmt_tohalfword(L, 2);
-    if (*n > 0 && *n <= font_parameter_count(*fnt)) {
+    if lmt_likely(*n > 0 && *n <= font_parameter_count(*fnt)) {
         return 1;
     } else {
         return luaL_error(L, "font with id %i has only %d fontdimens", fnt, n);

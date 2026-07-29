@@ -7,11 +7,24 @@ cmake_minimum_required(VERSION 3.10..3.28)
 
 project(luametatex VERSION 2.11 LANGUAGES C)
 
-# I need to check with Mojca of the compile farm can handle this. 
+# I need to check with Mojca of the compile farm can handle this. It currently is not that
+# critical because CMake will use a lower version if needed. But we do need to enable the
+# extensions.
 
-set(CMAKE_C_STANDARD 11)
+# set(CMAKE_C_STANDARD 11)
 # set(CMAKE_C_STANDARD 17)
-# set(CMAKE_C_STANDARD 23)
+
+if (CMAKE_VERSION VERSION_GREATER_EQUAL 3.21)
+    set(CMAKE_C_STANDARD 23)
+elseif (CMAKE_VERSION VERSION_GREATER_EQUAL 3.12)
+    set(CMAKE_C_STANDARD 11) # for debian 9 bah
+else ()
+    set(CMAKE_C_STANDARD 11)
+endif ()
+
+set(CMAKE_C_STANDARD_REQUIRED OFF) # OFF is default
+
+# set(CMAKE_C_EXTENSIONS ON) # ON is default
 
 # https://sourceforge.net/p/predef/wiki/OperatingSystems/
 # https://sourceforge.net/p/predef/wiki/Architectures/
@@ -31,7 +44,7 @@ set(LMT_HB_TOO   1) # Maybe handy for Idris' font development (old converted ffi
 # percent on runtime. When set, because we're sparse, we also strip the binary. On the manual
 # we gain 2-4 percent, so not that much.
 
-# set(LMT_OPTIMIZE 1)
+set(LMT_OPTIMIZE 1)
 
 # This makes the binary some 135K smaller so it might become the default at some point which is 
 # nice (the smaller as runner the better). After all, we don't load external (Lua) libraries 
@@ -147,6 +160,10 @@ if (MSVC)
       # endif()
 
         add_definitions(-DLMT_COMPILER_USED="msvc")
+
+        add_compile_options(
+            /utf-8
+        )
 
     endif()
 
@@ -336,5 +353,7 @@ include(cmake/potrace.cmake)
 include(cmake/qrcodegen.cmake)
 include(cmake/nanojpeg.cmake)
 include(cmake/triangles.cmake)
+
+# include(cmake/qhull.cmake)
 
 include(cmake/luametatex.cmake)

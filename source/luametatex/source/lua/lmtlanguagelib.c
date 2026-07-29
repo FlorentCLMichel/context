@@ -26,12 +26,12 @@ static int languagelib_new(lua_State *L)
     if (lua_type(L, 1) == LUA_TNUMBER) {
         halfword lualang = lmt_tohalfword(L, 1);
         ulang->lang = tex_get_language(lualang);
-        if (! ulang->lang) {
+        if lmt_unlikely(! ulang->lang) {
             return luaL_error(L, "undefined language %d", lualang);
         }
     } else {
         ulang->lang = tex_new_language(-1);
-        if (! ulang->lang) {
+        if lmt_unlikely(! ulang->lang) {
             return luaL_error(L, "no room for a new language");
         }
     }
@@ -65,7 +65,7 @@ static tex_language *languagelib_object(lua_State* L)
             }
             break;
     }
-    if (! lang) {
+    if lmt_unlikely(! lang) {
         luaL_error(L, "argument should be a valid language id, language object, or true");
     }
     return lang;
@@ -109,9 +109,9 @@ static int languagelib_hyphenation(lua_State *L)
     if (lua_gettop(L) == 1) {
         if (lang->exceptions) {
             luaL_Buffer b;
-            int done = 0;
             luaL_buffinit(L, &b);
             if (lua_rawgeti(L, LUA_REGISTRYINDEX, lang->exceptions) == LUA_TTABLE) {
+                int done = 0;
                 lua_pushnil(L);
                 while (lua_next(L, -2)) {
                     if (done) {
@@ -197,8 +197,8 @@ int lmt_handle_word(tex_language *lang, const char *original, const char *word, 
         lua_pushinteger(L, first);
         lua_pushinteger(L, last);
         res = lua_pcall(L, 6, 1, 0);
-        if (res) {
-            lua_remove(L, stacktop + 1);
+        if lmt_unlikely(res) {
+            lua_remove(L, stacktop + 1); /* really ? */
             lmt_error(L, "function call", -1, res == LUA_ERRRUN ? 0 : 1);
         }
         ++lmt_language_state.handler_count;
@@ -266,7 +266,7 @@ static int languagelib_setwordhandler(lua_State* L)
 static int languagelib_sethjcode(lua_State *L)
 {
     tex_language *lang = languagelib_object(L);
-    if (lua_type(L, 2) == LUA_TNUMBER) {
+    if lmt_likely(lua_type(L, 2) == LUA_TNUMBER) {
         halfword i = lmt_tohalfword(L, 2) ;
         if (lua_type(L, 3) == LUA_TNUMBER) {
             tex_set_hj_code(lang->id, i, lmt_tohalfword(L, 3), -1);
@@ -282,7 +282,7 @@ static int languagelib_sethjcode(lua_State *L)
 static int languagelib_gethjcode(lua_State *L)
 {
     tex_language *lang = languagelib_object(L);
-    if (lua_type(L, 2) == LUA_TNUMBER) {
+    if lmt_likely(lua_type(L, 2) == LUA_TNUMBER) {
         lua_pushinteger(L, tex_get_hj_code(lang->id, lmt_tohalfword(L, 2)));
         return 1;
     } else {
@@ -332,8 +332,8 @@ static int languagelib_clean(lua_State *L)
         tex_clean_hyphenation(cur_lang_par, lua_tostring(L, 1), &cleaned);
     } else {
         tex_language *lang = languagelib_object(L);
-        if (lang) {
-            if (lua_type(L, 2) == LUA_TSTRING) {
+        if lmt_likely(lang) {
+            if lmt_likely(lua_type(L, 2) == LUA_TSTRING) {
                 tex_clean_hyphenation(lang->id, lua_tostring(L, 2), &cleaned);
             } else {
                 return luaL_error(L, "second argument should be a string");

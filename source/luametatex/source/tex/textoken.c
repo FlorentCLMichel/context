@@ -113,7 +113,7 @@ void tex_initialize_token_mem(void)
     if (size > 0) {
         tokens = aux_allocate_clear_array(sizeof(memoryword), size, reserved_token_mem_slots);
     }
-    if (tokens) {
+    if lmt_likely(tokens) {
         lmt_token_memory_state.tokens = tokens;
         lmt_token_memory_state.tokens_data.allocated = size;
     } else {
@@ -164,12 +164,12 @@ void tex_initialize_tokens(void)
 
 void tex_compact_tokens(void)
 {
-    int nc = 0;
  // memoryword *target = allocate_array(sizeof(memoryword), (size_t) token_memory_state.tokens_data.allocated, 0);
     memoryword *target = aux_allocate_clear_array(sizeof(memoryword), lmt_token_memory_state.tokens_data.allocated, 0);
     halfword *mapper = aux_allocate_array(sizeof(halfword), lmt_token_memory_state.tokens_data.allocated, 0);
-    int nofluacmds = 0;
     if (target && mapper) {
+        int nc = 0;
+        int nofluacmds = 0;
         memoryword *tokens = lmt_token_memory_state.tokens;
         memset((void *) mapper, -1, ((size_t) lmt_token_memory_state.tokens_data.allocated) * sizeof(halfword));
         for (int cs = 0; cs < (eqtb_size + lmt_hash_state.hash_data.ptr + 1); cs++) {
@@ -1738,7 +1738,7 @@ static int tex_aux_check_expanded_code(int *kk, halfword *chr)
     } else {
         int k = *kk;
         /* chr is the ^ character or an equivalent one */
-        if (lmt_fileio_state.io_buffer[k] == *chr && k < lmt_input_state.cur_input.limit) {
+        if (k < lmt_input_state.cur_input.limit && lmt_fileio_state.io_buffer[k] == *chr ) {
             int d = 1;
             int l;
             if ((*chr == lmt_fileio_state.io_buffer[k + 1]) && (*chr == lmt_fileio_state.io_buffer[k + 2])) {
@@ -2021,12 +2021,11 @@ static inline next_line_retval tex_aux_next_line(void)
                                     /* we could link them and avoid one input level */
                                     tex_back_input(token_val(ignore_cmd, node_token_lsb(result)));
                                     tex_reinsert_token(token_val(node_cmd, node_token_msb(result)));
-                                    return next_line_restart;
                                 } else {
                                     /*tex |0x10FFFF == 1114111| */
                                     tex_back_input(token_val(node_cmd, result));
-                                    return next_line_restart;
                                 }
+                                return next_line_restart;
                             default:
                                 lmt_token_state.force_eof = 1;
                                 break;
@@ -2595,9 +2594,9 @@ halfword tex_str_scan_toks(int ct, lstring ls)
             /*tex We have a potential control sequence so we check for it. */
             int lname = 0 ;
             int s = 0 ;
-            int c = 0 ;
             unsigned char *name = k ;
             while (k < l) {
+                int c = 0 ;
                 t = (halfword) aux_str2uni_len((const unsigned char *) k, &s);
                 c = tex_get_cat_code(ct, t);
                 if (c == 11) {
@@ -3070,7 +3069,7 @@ void tex_run_convert_tokens(halfword code)
             {
              /* We can use:  tex_aux_lua_call(convert_cmd, v); */
                 halfword v = tex_scan_integer(0, NULL, NULL);
-                if (v > 0) {
+                if lmt_likely(v > 0) {
                     strnumber u = tex_save_cur_string();
                     lmt_token_state.luacstrings = 0;
                     lmt_function_call(v, 0);
@@ -3086,7 +3085,7 @@ void tex_run_convert_tokens(halfword code)
         case lua_bytecode_code:
             {
                 halfword v = tex_scan_integer(0, NULL, NULL);
-                if (v < 0 || v > 65535) {
+                if lmt_unlikely(v < 0 || v > 65535) {
                     tex_normal_error("luabytecode", "invalid number");
                 } else {
                     strnumber u = tex_save_cur_string();
@@ -3526,7 +3525,7 @@ strnumber tex_the_convert_string(halfword c, int i)
 
 strnumber tex_tokens_to_string(halfword p)
 {
-    if (lmt_print_state.selector == new_string_selector_code) {
+    if lmt_unlikely(lmt_print_state.selector == new_string_selector_code) {
         tex_normal_error("tokens", "tokens_to_string() called while selector = new_string");
         return get_nullstr();
     } else {
@@ -3657,12 +3656,12 @@ char *tex_tokenlist_to_tstring(int pp, int inhibit_par, int *siz, int skippreamb
                 skip = get_token_preamble(pp);
             }
             while (p) {
-                if (p < min || p > max) {
+                if lmt_unlikely(p < min || p > max) {
                     tex_aux_append_str_to_buffer(error_string_clobbered(31));
                     break;
                 } else {
                     int info = token_info(p);
-                    if (info < 0) {
+                    if lmt_unlikely(info < 0) {
                         /*tex Unlikely, will go after checking (maybe \LUA\ user mess up). */
                         tex_aux_append_str_to_buffer(error_string_bad(32));
                     } else if (info < cs_token_flag) {
@@ -3764,15 +3763,13 @@ char *tex_tokenlist_to_tstring(int pp, int inhibit_par, int *siz, int skippreamb
                     } else if (! (inhibit_par && info == lmt_token_state.par_token)) {
                         int q = info - cs_token_flag;
                         if (q < hash_base) {
-                            if (q == null_cs) {
+                            if lmt_likely(q == null_cs) {
                                 tex_aux_append_esc_to_buffer("csname");
                                 tex_aux_append_esc_to_buffer("endcsname");
                             } else {
                                 tex_aux_append_str_to_buffer(error_string_impossible(34));
                             }
-                        } else if (eqtb_out_of_range(q)) {
-                            tex_aux_append_str_to_buffer(error_string_impossible(35));
-                        } else {
+                        } else if (! eqtb_out_of_range(q)) {
                             strnumber txt = cs_text(q);
                             if (txt  < 0 || txt  >= lmt_string_pool_state.string_pool_data.ptr) {
                                 tex_aux_append_str_to_buffer(error_string_nonexistent(36));
@@ -3802,6 +3799,8 @@ char *tex_tokenlist_to_tstring(int pp, int inhibit_par, int *siz, int skippreamb
                                     lmt_memory_free(sh);
                                 }
                             }
+                        } else {
+                            tex_aux_append_str_to_buffer(error_string_impossible(35));
                         }
                     }
                     tail = p;

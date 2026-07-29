@@ -484,8 +484,8 @@ void tex_normal_warning(const char *t, const char *p)
 {
    if (lmt_engine_state.lua_only) {
         /*tex Normally ending up here means that we call the wrong error function. */
-        tex_emergency_message(t, p);
-    } else if (strcmp(t, "lua") == 0) {
+        tex_emergency_message(t, p ? p : "unspecified tex error");
+    } else if (t && strcmp(t, "lua") == 0) {
         int callback_id = lmt_callback_defined(intercept_lua_error_callback);
         int saved_new_line_char = new_line_char_par;
         new_line_char_par = 10;
@@ -507,8 +507,8 @@ void tex_normal_warning(const char *t, const char *p)
             /*tex Free the last ones, */
             lmt_memory_free(lmt_error_state.last_warning);
             lmt_memory_free(lmt_error_state.last_warning_tag);
-            lmt_error_state.last_warning = lmt_memory_strdup(p);
-            lmt_error_state.last_warning_tag = lmt_memory_strdup(t);
+            lmt_error_state.last_warning = p ? lmt_memory_strdup(p) : NULL;
+            lmt_error_state.last_warning_tag = t ? lmt_memory_strdup(t) : NULL;
             lmt_run_callback(lmt_lua_state.lua_instance, callback_id, "->");
         } else {
             tex_print_ln();
@@ -516,8 +516,8 @@ void tex_normal_warning(const char *t, const char *p)
             if (t) {
                 tex_print_format(" (%s)", t);
             }
-            tex_print_str(": ");
             if (p) {
+                tex_print_str(": ");
                 tex_print_str(p);
             }
             tex_print_ln();

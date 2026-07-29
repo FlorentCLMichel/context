@@ -249,7 +249,7 @@ static halfword lmt_maybe_isnode(lua_State *L, int i)
 halfword lmt_check_isnode(lua_State *L, int i)
 {
     halfword n = lmt_maybe_isnode(L, i);
-    if (! n) {
+    if lmt_unlikely(! n) {
      // formatted_error("node lib", "lua <node> expected, not an object with type %s", luaL_typename(L, i));
         luaL_error(L, "invalid node");
     }
@@ -408,13 +408,13 @@ static quarterword nodelib_aux_get_valid_node_type_id(lua_State *L, int n)
     switch (lua_type(L, n)) {
         case LUA_TSTRING:
             i = nodelib_aux_get_node_type_id_from_name(L, n, lmt_interface.node_data, 0);
-            if (i == unknown_node) {
+            if lmt_unlikely(i == unknown_node) {
                 luaL_error(L, "invalid node type id: %s", lua_tostring(L, n));
             }
             break;
         case LUA_TNUMBER:
             i = lmt_toquarterword(L, n);
-            if (! tex_nodetype_is_visible(i)) {
+            if lmt_unlikely(! tex_nodetype_is_visible(i)) {
                 luaL_error(L, "invalid node type id: %d", i);
             }
             break;
@@ -1852,6 +1852,7 @@ static int nodelib_direct_setanchors(lua_State *L)
                         if (lua_toboolean(L, 3)) {
                             break;
                         }
+                        FALLTHROUGH
                     default:
                         box_source_anchor(n) = 0;
                         break;
@@ -1864,11 +1865,13 @@ static int nodelib_direct_setanchors(lua_State *L)
                         if (lua_toboolean(L, 4)) {
                             break;
                         }
+                        FALLTHROUGH
                     default:
                         box_target_anchor(n) = 0;
                         break;
                 }
                 tex_check_box_geometry(n);
+                break;
             case simple_noad:
             case radical_noad:
             case fraction_noad:
@@ -1882,6 +1885,7 @@ static int nodelib_direct_setanchors(lua_State *L)
                         if (lua_toboolean(L, 2)) {
                             break;
                         }
+                        FALLTHROUGH
                     default:
                         noad_source(n) = 0;
                         break;
@@ -4934,7 +4938,7 @@ static halfword nodelib_new_node(lua_State *L)
             i = nodelib_aux_get_node_type_id_from_name(L, 1, lmt_interface.node_data, 0);
             break;
     }
-    if (tex_nodetype_is_definable(i) || (lmt_lua_state.ignore_node_error && tex_nodetype_is_visible(i))) {
+    if lmt_likely(tex_nodetype_is_definable(i) || (lmt_lua_state.ignore_node_error && tex_nodetype_is_visible(i))) {
         quarterword j = unknown_subtype;
         switch (lua_type(L, 2)) {
             case LUA_TNUMBER:
@@ -4946,7 +4950,7 @@ static halfword nodelib_new_node(lua_State *L)
         }
         lmt_lua_state.last_node_error = lua_no_node_error;
         return tex_new_node(i, (j == unknown_subtype) ? 0 : j);
-    } else { 
+    } else  {
         lmt_lua_state.last_node_error = lua_new_node_error;
         if (! lmt_lua_state.ignore_node_error) {
             luaL_error(L, "invalid node id for creating new node");
@@ -5126,7 +5130,7 @@ static int nodelib_direct_flushlist(lua_State *L)
 
 static int nodelib_userdata_remove(lua_State *L)
 {
-    if (lua_gettop(L) < 2) {
+    if lmt_unlikely(lua_gettop(L) < 2) {
         return luaL_error(L, "Not enough arguments for node.remove()");
     } else {
         halfword head = lmt_check_isnode(L, 1);
@@ -5147,7 +5151,7 @@ static int nodelib_userdata_remove(lua_State *L)
                 current = node_next(current);
             } else {
                 halfword t = node_prev(current);
-                if (t) {
+                if lmt_likely(t) {
                     node_next(t) = node_next(current);
                     if (node_next(current)) {
                         node_prev(node_next(current)) = t;
@@ -5285,7 +5289,7 @@ static int nodelib_direct_removefromlist(lua_State *L)
 
 static int nodelib_userdata_insertbefore(lua_State *L)
 {
-    if (lua_gettop(L) < 3) {
+    if lmt_unlikely(lua_gettop(L) < 3) {
         return luaL_error(L, "Not enough arguments for node.insertbefore()");
     } else if (lua_isnil(L, 3)) {
         lua_settop(L, 2);
@@ -5306,7 +5310,7 @@ static int nodelib_userdata_insertbefore(lua_State *L)
             }
             if (head != current) {
                 halfword t = node_prev(current);
-                if (t) {
+                if lmt_likely(t) {
                     tex_couple_nodes(t, n);
                 } else {
                     return luaL_error(L, "Bad arguments to node.insertbefore()");
@@ -5364,7 +5368,7 @@ static int nodelib_direct_insertbefore(lua_State *L)
 
 static int nodelib_userdata_insertafter(lua_State *L)
 {
-    if (lua_gettop(L) < 3) {
+    if lmt_unlikely(lua_gettop(L) < 3) {
         return luaL_error(L, "Not enough arguments for node.insertafter()");
     } else if (lua_isnil(L, 3)) {
         lua_settop(L, 2);
@@ -5935,7 +5939,7 @@ static int nodelib_direct_vpack(lua_State *L)
 static int nodelib_direct_dimensions(lua_State *L)
 {
     int top = lua_gettop(L);
-    if (top > 0) {
+    if lmt_likely(top > 0) {
         scaledwhd siz = { .wd = 0, .ht = 0, .dp = 0, .ns = 0 };
         glueratio g_mult = normal_glue_multiplier;
         int vertical = 0;
@@ -5982,7 +5986,7 @@ static int nodelib_direct_dimensions(lua_State *L)
 static int nodelib_direct_rangedimensions(lua_State *L)
 {
     int top = lua_gettop(L);
-    if (top > 1) {
+    if lmt_likely(top > 1) {
         scaledwhd siz = { .wd = 0, .ht = 0, .dp = 0, .ns = 0 };
         int vertical = 0;
         int nsizetoo = 0;
@@ -6023,7 +6027,7 @@ static int nodelib_direct_rangedimensions(lua_State *L)
 static int nodelib_direct_naturalwidth(lua_State *L)
 {
     int top = lua_gettop(L);
-    if (top > 1) {
+    if lmt_likely(top > 1) {
         scaled wd = 0;
         halfword parent = nodelib_valid_direct_from_index(L, 1);
         halfword first = nodelib_valid_direct_from_index(L, 2);
@@ -8307,7 +8311,7 @@ static inline int nodelib_getattribute_value(lua_State *L, halfword n, int index
 
 static inline void nodelib_setattribute_value(lua_State *L, halfword n, int kindex, int vindex)
 {
-    if (lua_gettop(L) >= kindex) {
+    if lmt_likely(lua_gettop(L) >= kindex) {
         halfword key = lmt_tohalfword(L, kindex);
         halfword val = lmt_opthalfword(L, vindex, unused_attribute_value);
         if (val == unused_attribute_value) {
@@ -13726,7 +13730,7 @@ void lmt_begin_paragraph_callback(
             lmt_push_par_trigger(L, context);
             i = lmt_callback_call(L, 3, 1, top);
             /* done */
-            if (i) {
+            if lmt_unlikely(i) {
                 lmt_callback_error(L, top, i);
             }
             else {
@@ -13750,10 +13754,9 @@ void lmt_paragraph_context_callback(
             int i;
             lmt_push_par_context(L, context);
             i = lmt_callback_call(L, 1, 1, top);
-            if (i) {
+            if lmt_unlikely(i) {
                 lmt_callback_error(L, top, i);
-            }
-            else {
+            } else {
                 *ignore = lua_toboolean(L, -1);
                 lmt_callback_wrapup(L, top);
             }
@@ -13789,7 +13792,7 @@ void lmt_buildpage_callback(
             lmt_push_node_to_callback(L, page_head == page_tail ? null : page_tail);
             lmt_push_node_to_callback(L, boundary);
             i = lmt_callback_call(L, 5, 1, top);
-            if (i) {
+            if lmt_unlikely(i) {
                 lmt_callback_error(L, top, i);
             } else {
                 tex_set_special_node_list(contribute_list_type, lmt_pop_node_from_callback(L, -1));
@@ -13825,7 +13828,7 @@ void lmt_append_line_callback(
                 lmt_push_node_to_callback(L, node_next(cur_list.head));
                 lmt_push_node_to_callback(L, cur_list.tail);
                 i = lmt_callback_call(L, 2, 1, top);
-                if (i) {
+                if lmt_unlikely(i) {
                     lmt_callback_error(L, top, i);
                 } else {
                     halfword n = lmt_pop_node_from_callback(L, -1);
@@ -13857,7 +13860,7 @@ void lmt_append_adjust_callback(
                 lmt_push_append_adjust_context(L, context);
                 lua_push_halfword(L, index);
                 i = lmt_callback_call(L, 4, 1, top);
-                if (i) {
+                if lmt_unlikely(i) {
                     lmt_callback_error(L, top, i);
                 } else {
                     halfword n = lmt_pop_node_from_callback(L, -1);
@@ -13887,7 +13890,7 @@ void lmt_append_migrate_callback(
                 lmt_push_node_to_callback(L, cur_list.tail);
                 lmt_push_append_migrate_context(L, context);
                 i = lmt_callback_call(L, 3, 1, top);
-                if (i) {
+                if lmt_unlikely(i) {
                     lmt_callback_error(L, top, i);
                 } else {
                     halfword n = lmt_pop_node_from_callback(L, -1);
@@ -13937,7 +13940,7 @@ void lmt_around_linebreak_callback(
                     lmt_push_node_to_callback(L, start);
                     lmt_push_group_code(L, extrainfo);
                     i = lmt_callback_call(L, 2, 1, top);
-                    if (i) {
+                    if lmt_unlikely(i) {
                         lmt_callback_error(L, top, i);
                     } else {
                         /*tex append to old head */
@@ -13980,7 +13983,7 @@ int lmt_linebreak_callback(
                     lmt_push_node_to_callback(L, start);
                     lua_pushboolean(L, isbroken);
                     i = lmt_callback_call(L, 2, 1, top);
-                    if (i) {
+                    if lmt_unlikely(i) {
                         lmt_callback_error(L, top, i);
                     } else {
                         halfword result = lmt_pop_node_from_callback(L, -1);
@@ -14019,7 +14022,7 @@ void lmt_alignment_callback(
                 lmt_push_node_to_callback(L, attrlist);
                 lmt_push_node_to_callback(L, preamble);
                 i = lmt_callback_call(L, 5, 0, top);
-                if (i) {
+                if lmt_unlikely(i) {
                     lmt_callback_error(L, top, i);
                 } else {
                     lmt_callback_wrapup(L, top);
@@ -14071,7 +14074,7 @@ void lmt_local_box_callback(
                 lua_pushinteger(L, parfillrightskip);
                 lua_pushinteger(L, overshoot);
                 i = lmt_callback_call(L, 15, 0, top);
-                if (i) {
+                if lmt_unlikely(i) {
                     lmt_callback_error(L, top, i);
                 } else {
                     /* todo: check if these boxes are still okay (defined) */
@@ -14108,7 +14111,7 @@ int lmt_append_to_vlist_callback(
                 lua_push_key_by_index(location);
                 lua_pushinteger(L, (int) prevdepth);
                 i = lmt_callback_call(L, 3, 3, top);
-                if (i) {
+                if lmt_unlikely(i) {
                     lmt_callback_error(L, top, i);
                 } else {
                     *result = lmt_pop_node_from_callback(L, -3);
@@ -14160,7 +14163,7 @@ halfword lmt_hpack_callback(
                 }
                 lmt_push_node_to_callback(L, attr);
                 i = lmt_callback_call(L, 6, 1, top);
-                if (i) {
+                if lmt_unlikely(i) {
                     lmt_callback_error(L, top, i);
                 } else {
                     head = lmt_pop_node_from_callback(L, -1);
@@ -14187,7 +14190,7 @@ extern halfword lmt_packed_vbox_callback(
                 lmt_push_node_to_callback(L, box);
                 lmt_push_group_code(L, extrainfo);
                 i = lmt_callback_call(L, 2, 1, top);
-                if (i) {
+                if lmt_unlikely(i) {
                     lmt_callback_error(L, top, i);
                 } else {
                     box = lmt_pop_node_from_callback(L, -1);
@@ -14228,7 +14231,7 @@ halfword lmt_vpack_callback(
                 }
                 lmt_push_node_to_callback(L, attr);
                 i = lmt_callback_call(L, 7, 1, top);
-                if (i) {
+                if lmt_unlikely(i) {
                     lmt_callback_error(L, top, i);
                 } else {
                     head = lmt_pop_node_from_callback(L, -1);
@@ -14290,7 +14293,7 @@ int lmt_par_pass_callback(
                 lua_push_integer(L, demerits);
                 lua_push_integer(L, classes);
                 i = lmt_callback_call(L, 10, 2, top);
-                if (i) {
+                if lmt_unlikely(i) {
                     lmt_callback_error(L, top, i);
                 } else {
                     switch (lua_type(L, -2)) {
@@ -14382,7 +14385,7 @@ halfword lmt_uleader_callback(
                 lmt_push_node_to_callback(L, box);
                 lua_pushinteger(L, location); /* maybe also string */
                 i = lmt_callback_call(L, 5, 1, top);
-                if (i) {
+                if lmt_unlikely(i) {
                     lmt_callback_error(L, top, i);
                 } else {
                     head = lmt_pop_node_from_callback(L, -1);
@@ -14417,7 +14420,7 @@ halfword lmt_uinsert_callback(
                 lua_pushinteger(L, height);
                 lua_pushinteger(L, amount);
                 i = lmt_callback_call(L, 6, 1, top);
-                if (i) {
+                if lmt_unlikely(i) {
                     lmt_callback_error(L, top, i);
                 } else {
                     halfword result = lmt_pop_node_from_callback(L, -1); 
@@ -14446,7 +14449,7 @@ void lmt_insert_par_callback(
             lmt_push_node_to_callback(L, node);
             lmt_push_par_mode(L, mode);
             i = lmt_callback_call(L, 2, 0, top);
-            if (i) {
+            if lmt_unlikely(i) {
                 lmt_callback_error(L, top, i);
             } else {
                 lmt_callback_wrapup(L, top);
@@ -14471,7 +14474,7 @@ scaled lmt_italic_correction_callback(
             lua_pushinteger(L, kern);
             lua_pushinteger(L, subtype);
             i = lmt_callback_call(L, 3, 1, top);
-            if (i) {
+            if lmt_unlikely(i) {
                 lmt_callback_error(L, top, i);
             } else {
                 kern = lmt_tohalfword(L, -1);

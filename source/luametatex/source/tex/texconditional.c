@@ -154,7 +154,7 @@ static int tex_aux_pass_text_x(int tracing_ifs, int tracing_commands)
                         }
                         tex_get_next_non_spacer();
                         if (lmt_condition_state.if_limit == if_code) {
-                            if (cur_cmd == if_test_cmd && cur_chr >= first_real_if_test_code) {
+                            if lmt_likely(cur_cmd == if_test_cmd && cur_chr >= first_real_if_test_code) {
                                 /* okay */
                             } else {
                                 tex_handle_error(
@@ -1261,6 +1261,7 @@ void tex_conditional_if(halfword code, int unless)
                             goto EMPTY_CHECK_AGAIN;
                         } else {
                             result = 0;
+                            break;
                         }
                     case specification_cmd:
                         result = (cur_chr && eq_value(cur_chr)) ? 0 : 1;
@@ -1410,7 +1411,7 @@ void tex_conditional_if(halfword code, int unless)
             {
                 halfword n1 = tex_scan_integer(0, NULL, NULL);
                 halfword n2 = tex_scan_integer(0, NULL, NULL);
-                result = n1 & n2 ? 1 : 0;
+                result = (n1 & n2) ? 1 : 0;
                 goto RESULT;
             }
         default:
@@ -1457,7 +1458,7 @@ void tex_conditional_if(halfword code, int unless)
        It is too messy to support |\unless| for case variants although for |\ifparameter| we do 
        support it (there are only a few outcomes there).
     */
-    if (unless) {
+    if lmt_unlikely(unless) {
         /*tex This could be a helper as we do this a few more times. */
         halfword online = tracing_online_par;
         tracing_online_par = 1;
@@ -1577,7 +1578,7 @@ void tex_conditional_fi_or_else(void)
     if (cur_chr == or_else_code || cur_chr == or_unless_code) {
         tex_get_next_non_spacer();
     } else if (cur_chr > lmt_condition_state.if_limit) {
-        if (lmt_condition_state.if_limit == if_code) {
+        if lmt_likely(lmt_condition_state.if_limit == if_code) {
             /*tex The condition is not yet evaluated. */
             tex_insert_relax_and_cur_cs();
         } else {
@@ -1611,7 +1612,7 @@ void tex_conditional_fi_or_else(void)
 void tex_conditional_unless(void)
 {
     tex_get_token();
-    if (cur_cmd == if_test_cmd) {
+    if lmt_likely(cur_cmd == if_test_cmd) {
         if (tracing_commands_par > 1) {
             tex_show_cmd_chr(cur_cmd, cur_chr);
         }

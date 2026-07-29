@@ -52,7 +52,7 @@ typedef struct hash_state_info {
     memoryword   *eqtb;       /*tex The equivalents table. */
     memory_data   eqtb_data;
     int           no_new_cs;  /*tex Are new identifiers legal? */
-    int           padding;
+    int           misses;
     unsigned char destructors[number_tex_commands]; 
 } hash_state_info ;
 
@@ -73,8 +73,8 @@ extern hash_state_info lmt_hash_state;
 # define cs_text(a) lmt_hash_state.hash[(a)].half1 /*tex string number for control sequence name */
 
 # define undefined_primitive    0
-# define primitives_size     2100 /*tex maximum number of primitives (quite a bit more than needed) */
-# define primitives_prime    1777 /*tex about 85 percent of |primitive_size| */
+# define primitives_size     2048 /*tex maximum number of primitives (quite a bit more than needed) */
+# define primitives_prime    1741 /*tex about 85 percent of |primitive_size| */
 
 typedef enum primitive_permissions {
     primitive_permitted = 0x00,

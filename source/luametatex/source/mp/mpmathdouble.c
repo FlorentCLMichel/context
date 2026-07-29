@@ -59,7 +59,7 @@
 Apart from it looking weird in results a |-0.0| can also give wrong results, for instance in a 
 |tan2|, see there for a comment. This is why we now do some checking on zero which in some cases
 also might be a bit more efficient as it avoids a multiplication or division, so likely we break 
-even. 
+even. We can use |signbit| but equally well just set or add zero.
 
 */
 
@@ -214,11 +214,8 @@ static void mp_double_set_from_of_the_way(MP mp, mp_number *A, mp_number *t, mp_
 
 static void mp_double_negate(mp_number *A)
 {
-    if (A->data.dval == -0.0) { /* already checked */
-        A->data.dval = 0.0;
-    } else if (A->data.dval != 0.0) {
-        A->data.dval = -A->data.dval;
-    }
+    /* the addition gets rid of the sign bit when we have zero */
+    A->data.dval = -A->data.dval + 0.0;
 }
 
 static void mp_double_add(mp_number *A, mp_number *B)
@@ -277,10 +274,8 @@ static void mp_double_clone(mp_number *A, mp_number *B)
 
 static void mp_double_negated_clone(mp_number *A, mp_number *B)
 {
-    A->data.dval = -B->data.dval;
-    if (A->data.dval == -0.0) {
-        A->data.dval = 0.0;
-    }
+    /* the addition gets rid of the sign bit when we have zero */
+    A->data.dval = -B->data.dval + 0.0;
 }
 
 static void mp_double_abs_clone(mp_number *A, mp_number *B)
@@ -793,14 +788,6 @@ static void mp_double_m_exp(MP mp, mp_number *ret, mp_number *x_orig)
 
 static void mp_double_n_arg(MP mp, mp_number *ret, mp_number *x_orig, mp_number *y_orig)
 {
-    /*        
-        if (x_orig->data.dval == -0.0) {
-            x_orig->data.dval = 0.0;
-        }
-        if (y_orig->data.dval == -0.0) {
-            y_orig->data.dval = 0.0;
-        }
-    */
     if (x_orig->data.dval == 0.0 && y_orig->data.dval == 0.0) {
         if (internal_value(mp_default_zero_angle_internal).data.dval < 0) {
             mp_error(
@@ -816,10 +803,10 @@ static void mp_double_n_arg(MP mp, mp_number *ret, mp_number *x_orig, mp_number 
     } else {
         ret->type = mp_angle_type;
         ret->data.dval = atan2(y_orig->data.dval, x_orig->data.dval) * (180.0 / PI) * angle_multiplier;
-        if (ret->data.dval == -0.0) {
+        /* we need to get rid of the sign bit */
+        if (ret->data.dval == 0.0) {
             ret->data.dval = 0.0;
         }
-// printf("D x=%f y=%f atan=%f\n",y_orig->data.dval,x_orig->data.dval,ret->data.dval);
     }
 }
 
