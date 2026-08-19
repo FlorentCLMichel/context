@@ -86,10 +86,50 @@ local ulong  = 4
 local helpers       = readers.helpers
 local gotodatatable = helpers.gotodatatable
 
+local function getdelta(delta,index)
+    local points = delta.points
+    if points then
+        for i=1,#points do
+            local point = points[i]
+            if point == index then
+                local xvalues = delta.xvalues
+                local yvalues = delta.yvalues
+                return xvalues and xvalues[i] or 0, yvalues and yvalues[i] or 0
+            elseif point > index then
+                break
+            end
+        end
+    else
+        local xvalues = delta.xvalues
+        local yvalues = delta.yvalues
+        return xvalues and xvalues[index] or 0, yvalues and yvalues[index] or 0
+    end
+    return 0, 0
+end
+
+local function applywidth(glyph,deltas,nofpoints)
+    local dw = 0
+    local dl = 0
+    local h  = nofpoints + 2 -- weird, the example font seems to have left first
+    local l  = nofpoints + 1
+    ----- v  = nofpoints + 3
+    ----- t  = nofpoints + 4
+    for i=1,#deltas do
+        local delta  = deltas[i]
+        local factor = delta.factor
+        local x = getdelta(delta,h)
+        if x then
+            dw = dw + factor * x
+        end
+        local x = getdelta(delta,l)
+        if x then
+            dl = dl + factor * x
+        end
+    end
+    glyph.width = (glyph.width or 0) + dw - dl
+end
+
 local function mergecomposites(glyphs,shapes)
-
-    -- todo : deltas
-
     local function merge(index,shape,components)
         local contours    = { }
         local points      = { }
@@ -97,11 +137,6 @@ local function mergecomposites(glyphs,shapes)
         local nofpoints   = 0
         local offset      = 0
         local deltas      = shape.deltas
-
-        -- deltas = false
-
-        local xcrap = 0
-        local ycrap = 0
 
         for i=1,#components do
             local component   = components[i]
@@ -132,39 +167,28 @@ local function mergecomposites(glyphs,shapes)
                 ----------------------------------------------------
 
                 if deltas then
-                -- if component.usexyarg then -- needs testing
                     for d=1,#deltas do
                         local delta  = deltas[d]
                         local factor = delta.factor
                         if factor then
-                            local xvalues = delta.xvalues
-                            local yvalues = delta.yvalues
-                            local dpoints = delta.points
-                            local x -- = nil
-                            local y -- = nil
-                --             if dpoints then
-                --                 local d = dpoints[i] -- i == component
-                --                 if d then
-                --                     if xvalues then x = xvalues[i] end
-                --                     if yvalues then y = yvalues[i] end
-                --                 end
-                --             else
-                                if xvalues then x = xvalues[i] end
-                                if yvalues then y = yvalues[i] end
-                --             end
+                            local x, y = getdelta(delta,i)
                             if x then xshift = xshift + x * factor end
                             if y then yshift = yshift + y * factor end
                         end
                     end
+                end
 
-                    if i == 1 then
-                        xcrap  = xshift
-                        xshift = 0
-                     -- yshift = 0
-                    else
-                        xshift = xshift - xcrap
+                if not component.usexyarg then
+                    local base      = points[component.base+1]
+                    local reference = subpoints[component.reference+1]
+                    if base and reference then
+                        local x = reference[1]
+                        local y = reference[2]
+                        xoffset = base[1] - xscale * x - xrotate * y
+                        yoffset = base[2] - yscale * y - yrotate * x
                     end
                 end
+
                 xoffset = xoffset + xshift
                 yoffset = yoffset + yshift
 
@@ -213,6 +237,9 @@ local function mergecomposites(glyphs,shapes)
             else
                 report("missing contours composite %s, component %s of %s, glyph %s",index,i,#components,subindex)
             end
+        end
+        if deltas and shape.dowidth then
+            applywidth(glyphs[index],deltas,#components)
         end
         shape.points     = points -- todo : phantom points
         shape.contours   = contours
@@ -269,8 +296,6 @@ local function applyaxis(glyph,shape,deltas,dowidth)
     local points = shape.points
     if points then
         local nofpoints = #points
-        local dw = 0
-        local dl = 0
         for i=1,#deltas do
             local deltaset = deltas[i]
             local xvalues  = deltaset.xvalues
@@ -280,8 +305,8 @@ local function applyaxis(glyph,shape,deltas,dowidth)
                 local factor  = deltaset.factor
                 if dpoints then
                     local cnt = #dpoints
-                    if dowidth then
-                        cnt = cnt - 4
+                    while cnt > 0 and dpoints[cnt] > nofpoints do
+                        cnt = cnt - 1
                     end
                     if cnt > 0 then
                         -- Not the most efficient solution but we seldom do this. We
@@ -449,8 +474,6 @@ local function applyaxis(glyph,shape,deltas,dowidth)
                                 pi[2] = pi[2] + factor * fy
                             end
                         end
-                    else
-                        report("bad deltapoint data, maybe a missing hvar table")
                     end
                 else
                     for i=1,nofpoints do
@@ -469,20 +492,6 @@ local function applyaxis(glyph,shape,deltas,dowidth)
                         end
                     end
                 end
-                if dowidth then
-                    local h = nofpoints + 2 -- weird, the example font seems to have left first
-                    local l = nofpoints + 1
-                    ----- v = nofpoints + 3
-                    ----- t = nofpoints + 4
-                    local x = xvalues[h]
-                    if x then
-                        dw = dw + factor * x
-                    end
-                    local x = xvalues[l]
-                    if x then
-                        dl = dl + factor * x
-                    end
-                end
             end
         end
      -- for i=1,nofpoints do
@@ -491,9 +500,7 @@ local function applyaxis(glyph,shape,deltas,dowidth)
      --     p[2] = round(p[2])
      -- end
         if dowidth then
-            local width = glyph.width or 0
-         -- local lsb   = glyph.lsb or 0
-            glyph.width = width + dw - dl
+            applywidth(glyph,deltas,nofpoints)
         end
     else
         report("no points for glyph %a",glyph.name)
@@ -1000,7 +1007,7 @@ local function repackpoints(glyphs,shapes)
                 else
                     padding = "\0\0\0"
                 end
-                padding = stream .. padding
+                stream = stream .. padding
             end
             glyph.stream = stream
         end
@@ -1020,15 +1027,27 @@ local flags = { }
 -- local flag_overlap_simple <const> = 0x40
 -- local flag_reserved       <const> = 0x80
 
-local function readglyph(f,nofcontours) -- read deltas here, saves space
+local function readglyph(f,nofcontours,glyphend) -- read deltas here, saves space
     local points          = { }
  -- local instructions    = { }
     local contours        = { } -- readintegertable(f,nofcontours,short)
+    local previous        = 0
+    if getposition(f) + 2*nofcontours + 2 > glyphend then
+        return
+    end
     for i=1,nofcontours do
-        contours[i] = readshort(f) + 1
+        local endpoint = readushort(f) + 1
+        if endpoint < previous then
+            return
+        end
+        contours[i] = endpoint
+        previous = endpoint
     end
     local nofpoints       = contours[nofcontours]
     local nofinstructions = readushort(f)
+    if getposition(f) + nofinstructions > glyphend then
+        return
+    end
     skipbytes(f,nofinstructions)
     -- Because flags can repeat we don't know the amount ... in fact this is not
     -- that efficient (small files but more mem). Why bother.
@@ -1042,10 +1061,19 @@ local function readglyph(f,nofcontours) -- read deltas here, saves space
     --
     local i = 1
     while i <= nofpoints do
+        if getposition(f) >= glyphend then
+            return
+        end
         local flag = readbyte(f)
         flags[i] = flag
         if (flag & 0x08) ~= 0 then -- flag_repeat
+            if getposition(f) >= glyphend then
+                return
+            end
             local n = readbyte(f)
+            if i + n > nofpoints then
+                return
+            end
             if n == 1 then
                 i = i + 1
                 flags[i] = flag
@@ -1067,6 +1095,7 @@ local function readglyph(f,nofcontours) -- read deltas here, saves space
     for i=1,nofpoints do
         local flag = flags[i]
         if (flag & 0x02) ~= 0 then     -- flag_x_short
+            if getposition(f) >= glyphend then return end
             if (flag & 0x10) ~= 0 then -- flag_x_short_geq
                 x = x + readbyte(f)
             else
@@ -1075,6 +1104,7 @@ local function readglyph(f,nofcontours) -- read deltas here, saves space
         elseif (flag & 0x10) ~= 0 then -- flag_x_short_geq
             -- copy
         else
+            if getposition(f) + 2 > glyphend then return end
             x = x + readshort(f)
         end
         points[i] = { x, 0, (flag & 0x01) ~= 0 } -- flag_on_curve
@@ -1083,6 +1113,7 @@ local function readglyph(f,nofcontours) -- read deltas here, saves space
     for i=1,nofpoints do
         local flag = flags[i]
         if (flag & 0x04) ~= 0 then     -- flag_y_short
+            if getposition(f) >= glyphend then return end
             if (flag & 0x20) ~= 0 then -- flag_y_short_geq
                 y = y + readbyte(f)
             else
@@ -1091,6 +1122,7 @@ local function readglyph(f,nofcontours) -- read deltas here, saves space
         elseif (flag & 0x20) ~= 0 then -- flag_y_short_geq
          -- copy
         else
+            if getposition(f) + 2 > glyphend then return end
             y = y + readshort(f)
         end
         points[i][2] = y
@@ -1104,11 +1136,14 @@ local function readglyph(f,nofcontours) -- read deltas here, saves space
     }
 end
 
-local function readcomposite(f)
+local function readcomposite(f,glyphend)
     local components    = { }
     local nofcomponents = 0
     local instructions  = false
     while true do
+        if getposition(f) + 4 > glyphend then
+            return
+        end
         local flags      = readushort(f)
         local index      = readushort(f)
         ----- f_words    = (flags & 0x0001) ~= 0
@@ -1132,6 +1167,14 @@ local function readcomposite(f)
         local yoffset    = 0
         local base       = false
         local reference  = false
+        local arguments  = (flags & 0x0001) ~= 0 and 4 or 2
+        local transform  = (flags & 0x0008) ~= 0 and 2
+                        or (flags & 0x0040) ~= 0 and 4
+                        or (flags & 0x0080) ~= 0 and 8
+                        or 0
+        if getposition(f) + arguments + transform > glyphend then
+            return
+        end
         if f_xyarg then
             if (flags & 0x0001) ~= 0 then -- f_words
                 xoffset = readshort(f)
@@ -1142,11 +1185,11 @@ local function readcomposite(f)
             end
         else
             if (flags & 0x0001) ~= 0 then -- f_words
-                base      = readshort(f)
-                reference = readshort(f)
+                base      = readushort(f)
+                reference = readushort(f)
             else
-                base      = readchar(f) -- signed byte, stupid name
-                reference = readchar(f) -- signed byte, stupid name
+                base      = readbyte(f)
+                reference = readbyte(f)
             end
         end
         if (flags & 0x0008) ~= 0 then -- f_scale
@@ -1210,27 +1253,37 @@ function readers.loca(f,fontdata,specification)
         local datatable = fontdata.tables.loca
         if datatable then
             -- locations are relative to the glypdata table (glyf)
-            local offset    = fontdata.tables.glyf.offset
-            local format    = fontdata.fontheader.indextolocformat
-            local profile   = fontdata.maximumprofile
-            local nofglyphs = profile and profile.nofglyphs
-            local locations = { }
+            local glyftable  = fontdata.tables.glyf
+            local offset     = glyftable.offset
+            local glyflength = glyftable.length
+            local format     = fontdata.fontheader.indextolocformat
+            local profile    = fontdata.maximumprofile
+            local nofglyphs  = profile and profile.nofglyphs
+            local locations  = { }
+            local read       = format == 0 and readushort or format == 1 and readulong
+            local size       = format == 0 and 2 or format == 1 and 4
+            if not read or nofglyphs and datatable.length < (nofglyphs+1)*size then
+                report("invalid loca table")
+                fontdata.badfont = true
+                return
+            end
             setposition(f,datatable.offset)
-            if format == 1 then
-                if not nofglyphs then
-                    nofglyphs = (datatable.length // 4) - 1
+            if not nofglyphs then
+                nofglyphs = (datatable.length // size) - 1
+            end
+            local previous = 0
+            for i=0,nofglyphs do
+                local location = read(f)
+                if format == 0 then
+                    location = 2 * location
                 end
-                for i=0,nofglyphs do
-                    locations[i] = offset + readulong(f)
+                if location < previous or location > glyflength then
+                    report("invalid loca entry %i",i)
+                    fontdata.badfont = true
+                    return
                 end
-                fontdata.nofglyphs = nofglyphs
-            else
-                if not nofglyphs then
-                    nofglyphs = (datatable.length // 2) - 1
-                end
-                for i=0,nofglyphs do
-                    locations[i] = offset + readushort(f) * 2
-                end
+                locations[i] = offset + location
+                previous = location
             end
             fontdata.nofglyphs = nofglyphs
             fontdata.locations = locations
@@ -1245,20 +1298,21 @@ function readers.glyf(f,fontdata,specification) -- part goes to cff module
         if locations then
             local glyphs     = fontdata.glyphs
             local nofglyphs  = fontdata.nofglyphs
-            local filesize   = fontdata.filesize
+            local tableend   = tableoffset + fontdata.tables.glyf.length
             local nothing    = { 0, 0, 0, 0 }
             local shapes     = { }
             local loadshapes = specification.shapes or specification.instance or specification.streams
             for index=0,nofglyphs-1 do
                 local location = locations[index]
                 local length   = locations[index+1] - location
-                if location >= filesize then
+                if length < 0 or location < tableoffset or location + length > tableend or length > 0 and length < 10 then
                     report("discarding %s glyphs due to glyph location bug",nofglyphs-index+1)
                     fontdata.nofglyphs = index - 1
                     fontdata.badfont   = true
                     break
                 elseif length > 0 then
                     setposition(f,location)
+                    local glyphend = location + length
                     local nofcontours = readshort(f)
                     glyphs[index].boundingbox = {
                         readshort(f), -- xmin
@@ -1271,9 +1325,14 @@ function readers.glyf(f,fontdata,specification) -- part goes to cff module
                     elseif nofcontours == 0 then
                         shapes[index] = readnothing(f)
                     elseif nofcontours > 0 then
-                        shapes[index] = readglyph(f,nofcontours)
+                        shapes[index] = readglyph(f,nofcontours,glyphend)
                     else
-                        shapes[index] = readcomposite(f,nofcontours)
+                        shapes[index] = readcomposite(f,glyphend)
+                    end
+                    if loadshapes and not shapes[index] then
+                        report("discarding glyph %i due to invalid glyph data",index)
+                        shapes[index]    = readnothing(f)
+                        fontdata.badfont = true
                     end
                 else
                     if loadshapes then
@@ -1294,7 +1353,6 @@ function readers.glyf(f,fontdata,specification) -- part goes to cff module
                         contours2outlines_shaped(glyphs,shapes,specification.shapes)
                     end
                 elseif specification.shapes then
--- table.save("crap.lua", shapes)
                     if specification.streams then
                         repackpoints(glyphs,shapes)
                     else
@@ -1306,7 +1364,6 @@ function readers.glyf(f,fontdata,specification) -- part goes to cff module
             end
         end
     end
---     flags = { } -- to be checked
 end
 
 -- gvar is a bit crazy format and one can really wonder if the bit-jugling obscurity
@@ -1344,7 +1401,7 @@ local function readpoints(f)
             local control   = readbyte(f)
             local runreader = (control & 0x80) ~= 0 and readushort or readbyte
             local runlength = (control & 0x7F)
-            for i=1,runlength+1 do
+            for i=1,min(runlength+1,count-p) do
                 n = n + runreader(f)
                 p = p + 1
                 points[p] = n
@@ -1361,7 +1418,7 @@ local function readdeltas(f,nofpoints)
         local control = readbyte(f)
         if control then
             local allzero   = (control & 0x80) ~= 0
-            local runlength = (control & 0x3F) + 1
+            local runlength = min((control & 0x3F) + 1,nofpoints)
             if allzero then
                 for i=1,runlength do
                     p = p + 1
@@ -1400,6 +1457,7 @@ function readers.gvar(f,fontdata,specification,glyphdata,shapedata)
     end
     local tableoffset = gotodatatable(f,fontdata,"gvar",specification.variable or specification.shapes)
     if tableoffset then
+        local tableend    = tableoffset + fontdata.tables.gvar.length
         local version     = readulong(f) -- 1.0
         local nofaxis     = readushort(f)
         local noftuples   = readushort(f)
@@ -1411,6 +1469,19 @@ function readers.gvar(f,fontdata,specification,glyphdata,shapedata)
         local tuples      = { }
         local glyphdata   = fontdata.glyphs
         local dowidth     = not fontdata.variabledata.hvarwidths
+        if tupleoffset < tableoffset or tupleoffset + 2*nofaxis*noftuples > tableend
+            or dataoffset < tableoffset or dataoffset > tableend
+        then
+            report("invalid gvar table offsets")
+            fontdata.badfont = true
+            return
+        end
+        local offsetsize = (flags & 0x0001) ~= 0 and 4 or 2
+        if nofglyphs > fontdata.nofglyphs or getposition(f) + (nofglyphs+1)*offsetsize > tableend then
+            report("invalid gvar glyph count")
+            fontdata.badfont = true
+            return
+        end
         -- there is one more offset (so that one can calculate the size i suppose)
         -- so we could test for overflows but we simply assume sane font files
         if (flags & 0x0001) ~= 0  then
@@ -1421,6 +1492,21 @@ function readers.gvar(f,fontdata,specification,glyphdata,shapedata)
             for i=1,nofglyphs+1 do
                 data[i] = dataoffset + 2*readushort(f)
             end
+        end
+        local previous = data[1]
+        if previous < dataoffset or previous > tableend then
+            report("invalid gvar glyph offset %i",0)
+            fontdata.badfont = true
+            return
+        end
+        for i=2,#data do
+            local current = data[i]
+            if current < previous or current > tableend then
+                report("invalid gvar glyph offset %i",i-1)
+                fontdata.badfont = true
+                return
+            end
+            previous = current
         end
         --
         if noftuples > 0 then
@@ -1440,6 +1526,11 @@ function readers.gvar(f,fontdata,specification,glyphdata,shapedata)
                     report("no deltas for glyph %a",name)
                 end
             else
+                if nextoffset - startoffset < 4 then
+                    report("invalid gvar glyph data %i",i-1)
+                    fontdata.badfont = true
+                    return
+                end
                 local shape = shapedata[i-1] -- todo 0
                 if not shape then
                     if name then
@@ -1448,19 +1539,30 @@ function readers.gvar(f,fontdata,specification,glyphdata,shapedata)
                 else
                  -- lastoffset = startoffset
                     setposition(f,startoffset)
-                    local flags     = readushort(f)
-                    local count     = (flags & 0x0FFF)
-                    local offset    = startoffset + readushort(f) -- to serialized
-                    local deltas    = { }
-                    local allpoints = (shape.nofpoints or 0) -- + 1
-                    local shared    = false
-                    local nofshared = 0
+                    local flags      = readushort(f)
+                    local count      = (flags & 0x0FFF)
+                    local offset     = startoffset + readushort(f) -- to serialized
+                    local deltas     = { }
+                    local components = shape.components
+                    local allpoints  = components and #components or (shape.nofpoints or 0)
+                    local shared     = false
+                    local nofshared  = 0
+                    if offset < getposition(f) or offset > nextoffset then
+                        report("invalid gvar data offset %i",i-1)
+                        fontdata.badfont = true
+                        return
+                    end
                     if (flags & 0x8000) ~= 0  then -- has shared points
                         -- go to the packed stream (get them once)
                         local current = getposition(f)
                         setposition(f,offset)
                         shared, nofshared = readpoints(f)
                         offset = getposition(f)
+                        if offset > nextoffset then
+                            report("invalid gvar shared points %i",i-1)
+                            fontdata.badfont = true
+                            return
+                        end
                         setposition(f,current)
                         -- and back to the table
                     end
@@ -1493,21 +1595,32 @@ function readers.gvar(f,fontdata,specification,glyphdata,shapedata)
                             stop    = readtuplerecord(f,nofaxis)
                          -- advance = advance + 4*nofaxis
                         end
+                        if getposition(f) > offset then
+                            report("invalid gvar tuple header %i",i-1)
+                            fontdata.badfont = true
+                            return
+                        end
                         -- get the deltas
                         if size > 0 then
                             local current = getposition(f)
                             -- goto the packed stream
-                            setposition(f,offset)
-                            if private then
-                                points, nofpoints = readpoints(f)
-                            end -- else
-                            if nofpoints == 0 then
-                                nofpoints = allpoints + 4
-                            end
-                            if nofpoints > 0 then
-                                -- a nice test is to do only one
-                                xvalues = readdeltas(f,nofpoints)
-                                yvalues = readdeltas(f,nofpoints)
+                            if offset + size <= nextoffset then
+                                setposition(f,offset)
+                                if private then
+                                    points, nofpoints = readpoints(f)
+                                end -- else
+                                if nofpoints == 0 then
+                                    nofpoints = allpoints + 4
+                                end
+                                if nofpoints > 0 then
+                                    -- a nice test is to do only one
+                                    xvalues = readdeltas(f,nofpoints)
+                                    yvalues = readdeltas(f,nofpoints)
+                                end
+                            else
+                                report("invalid gvar tuple data %i",i-1)
+                                fontdata.badfont = true
+                                return
                             end
                             -- resync offset
                             offset = offset + size
@@ -1528,9 +1641,13 @@ function readers.gvar(f,fontdata,specification,glyphdata,shapedata)
 --                             local stop  = stop  and stop [i] or (peak > 0 and peak or 1) -- or 1 ?
                             -- do we really need these tests ... can't we assume sane values
                             if start > peak or peak > stop then
-                                -- * 1
+                                -- * 0
+                                s = 0
+                                break
                             elseif start < 0 and stop > 0 and peak ~= 0 then
-                                -- * 1
+                                -- * 0
+                                s = 0
+                                break
                             elseif peak == 0 then
                                 -- * 1
                             elseif f < start or f > stop then
@@ -1563,7 +1680,8 @@ function readers.gvar(f,fontdata,specification,glyphdata,shapedata)
                     else
                         -- todo: args_are_xy_values mess .. i have to be really bored
                         -- and motivated to deal with it
-                        shape.deltas = deltas
+                        shape.deltas  = deltas
+                        shape.dowidth = dowidth
                     end
                 end
             end

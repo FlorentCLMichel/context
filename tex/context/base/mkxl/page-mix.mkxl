@@ -1113,7 +1113,10 @@
 %D We need to hook some handlers into the output routine and we define
 %D a dedicated one:
 
-\let\page_mix_command_flush_all_floats\page_one_command_flush_all_floats
+% \let\page_mix_command_flush_all_floats\page_one_command_flush_all_floats
+
+\protected\def\page_mix_command_flush_all_floats
+  {\page_one_command_flush_all_floats}
 
 \defineoutputroutine
   [\s!mixedcolumn]

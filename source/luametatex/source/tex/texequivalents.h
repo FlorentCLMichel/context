@@ -953,12 +953,13 @@ typedef enum unit_codes {
 # define eqtb_out_of_range(n)   ((n >= undefined_control_sequence) && ((n <= eqtb_size) || n > lmt_hash_state.hash_data.top))
 # define eqtb_invalid_cs(n)     ((n == 0) || (n > lmt_hash_state.hash_data.top) || ((n > frozen_control_sequence) && (n <= eqtb_size)))
 
-# define character_in_range(i)  (i >= 0 && i <= max_character_code)
-# define catcode_in_range(i)    (i >= 0 && i <= max_category_code)
-# define family_in_range(i)     (i >= 0 && i <= max_math_family_index)
-# define class_in_range(i)      (i >= 0 && i <= max_math_class_code)
-# define half_in_range(i)       (i >= 0 && i <= max_half_value)
-# define box_index_in_range(i)  (i >= 0 && i <= max_box_index)
+# define character_in_range(i)      (i >= 0 && i <= max_character_code)
+# define math_character_in_range(i) (i >= 0 && i <= max_math_character_code)
+# define catcode_in_range(i)        (i >= 0 && i <= max_category_code)
+# define family_in_range(i)         (i >= 0 && i <= max_math_family_index)
+# define class_in_range(i)          (i >= 0 && i <= max_math_class_code)
+# define half_in_range(i)           (i >= 0 && i <= max_half_value)
+# define box_index_in_range(i)      (i >= 0 && i <= max_box_index)
 
 /* These also have funny offsets: */
 
@@ -1019,6 +1020,13 @@ extern void tex_undump_equivalents_mem  (dumpstream f);
     (lmt_hash_state.eqtb[(A)].half0 == lmt_hash_state.eqtb[(B)].half0) \
  && (lmt_hash_state.eqtb[(A)].half1 == lmt_hash_state.eqtb[(B)].half1) \
 )
+
+// static inline int equal_eqtb_entries(int a, int b)
+// {
+//     return
+//         (lmt_hash_state.eqtb[a].half0 == lmt_hash_state.eqtb[b].half0)
+//      && (lmt_hash_state.eqtb[a].half1 == lmt_hash_state.eqtb[b].half1);
+// }
 
 /* or:
 # define equal_eqtb_entries(A,B) ( \
@@ -1175,8 +1183,6 @@ typedef enum save_record_types {
 # define skip_parameter    glue_parameter
 # define muskip_parameter  muglue_parameter
 
-# define unit_parameter_hash(l,r)   (26 * (l - 'a') + (r - 'a'))
-
 typedef enum unit_classes {
     unset_unit_class      = 0,
     tex_unit_class        = 1,
@@ -1185,26 +1191,42 @@ typedef enum unit_classes {
     user_unit_class       = 4,
 } unit_classes;
 
-static inline int unit_parameter_index(int l, int r) {
+// # define unit_parameter_hash(l,r)   (26 * (l - 'a') + (r - 'a'))
+//
+// static inline int unit_parameter_index(int l, int r) {
+//     if (l >= 'a' && l <= 'z' && r >= 'a' && r <= 'z') {
+//         /* okay */
+//     } else {
+//         if (l >= 'A' && l <= 'Z') {
+//             l |= 0x60;
+//         } else if (l >= 'a' && l <= 'z') {
+//             /* okay */
+//         } else {
+//             return -1;
+//         }
+//         if (r >= 'A' && r <= 'Z') {
+//             r |= 0x60;
+//         } else if (r >= 'a' && r <= 'z') {
+//             /* okay */
+//         } else {
+//             return -1;
+//         }
+//     }
+//     return unit_parameter_hash(l,r);
+// }
+
+# define unit_parameter_hash(l, r)  (26 * ((l) - 'a') + ((r) - 'a'))
+
+static inline int unit_parameter_index(int l, int r)
+{
+    // Convert uppercase to lowercase via ASCII bit-flip (+32)
+    if (l >= 'A' && l <= 'Z') { l |= 0x20; }
+    if (r >= 'A' && r <= 'Z') { r |= 0x20; }
+    // Validate both are lowercase ASCII letters
     if (l >= 'a' && l <= 'z' && r >= 'a' && r <= 'z') {
-        /* okay */
-    } else {
-        if (l >= 'A' && l <= 'Z') { 
-            l |= 0x60;
-        } else if (l >= 'a' && l <= 'z') {
-            /* okay */
-        } else { 
-            return -1;
-        }
-        if (r >= 'A' && r <= 'Z') {
-            r |= 0x60;
-        } else if (r >= 'a' && r <= 'z') {
-            /* okay */
-        } else { 
-            return -1;
-        }
+        return unit_parameter_hash(l, r);
     }
-    return unit_parameter_hash(l,r);
+    return -1;
 }
 
 /*tex These come from |\ALEPH| aka |\OMEGA|: */

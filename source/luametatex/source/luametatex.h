@@ -122,7 +122,7 @@
 # define luametatex_release          8
 # define luametatex_version_string   "2.11.09"
 # define luametatex_version_number   211.9
-# define luametatex_development_id   20260727
+# define luametatex_development_id   20260819
 # define luametatex_name_camelcase   "LuaMetaTeX"
 # define luametatex_name_lowercase   "luametatex"
 # define luametatex_copyright_holder "Taco Hoekwater, Hans Hagen, Wolfgang Schuster & Mikael Sundqvist"
@@ -186,6 +186,7 @@ extern version_state_info lmt_version_state;
 # include <signal.h>
 # include <sys/stat.h>
 # include <stdbool.h>
+# include <limits.h>
 
 # ifdef _WIN32
     # include <windows.h>
@@ -290,6 +291,8 @@ extern version_state_info lmt_version_state;
     variables left.
 
 */
+
+# define delayed_glue_supported 0
 
 # include "utilities/auxarithmetic.h"
 # include "utilities/auxmemory.h"

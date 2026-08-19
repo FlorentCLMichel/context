@@ -8,8 +8,6 @@
 %
 % **
 
-% iteratorindex deltaiteratorindex
-
 % path expression -> path
 
 % undraw unfill etc can go
@@ -44,13 +42,6 @@ configurable commands are in the \type{lmt_} namespace.
 
 \start \switchtobodyfont[8pt] % small]
 
-% setproperty
-% everyjob
-% maketext
-% quote
-% bytema see end
-% void
-
 \StartSyntax
 \S {atom}
     \M \S {variable} \S {argument}
@@ -61,6 +52,7 @@ configurable commands are in the \type{lmt_} namespace.
     \O \S {nullary op}
     \O \L {btex} \S {typesetting command} \L {etex}
     \O \S {pseudo function}
+    \O \L {void} \S {suffix}
 \StopSyntax
 
 \StartSyntax
@@ -111,9 +103,11 @@ configurable commands are in the \type{lmt_} namespace.
     \O \S {path subexpression} \S {path join} \S {cycle specifier}
 \StopSyntax
 
+% Single-quoted strings require singlequotemode.
 \StartSyntax
 \S {string expression}
-    \M \( \L {"} \L {,} \L {'} \) \S {string} \( \L {"} \L {,} \L {'} \)
+    \M \L {"} \S {string} \L {"}
+    \O \L {'} \S {string} \L {'}
 \StopSyntax
 
 \StartSyntax
@@ -277,6 +271,7 @@ configurable commands are in the \type{lmt_} namespace.
     \O \FL {whatever}
     \O \L  {readstring}
     \O \L  {mpversion}
+    \O \L  {iteratorindex}
 \StopSyntax
 
 % \O \FL {round}    % todo
@@ -299,7 +294,7 @@ configurable commands are in the \type{lmt_} namespace.
     \O \FL {bbox} \O \FL {bbwidth} \O \FL {bbheight}
     \O \FL {bot} \O \FL {lft} \O \FL {rt} \O \FL {top} \O \FL {center}
     \O \FL {colordecimals} \O \L {decimal} \O \FL {ddecimal} \O \FL {dddecimal} \O \FL {ddddecimal} \O \FL {condition}
-    \O \FL {tostring} \O \FL {topair} \O \FL {quote} \O \FL {quotation}
+    \O \FL {tostring} \O \FL {topair} \O \FL {quotation}
     \O \FL {boundingbox} \O \FL {outerboundingbox} \O \FL {innerboundingbox} \O \FL {bbox}
     \O \FL {colorpart} \O {fontpart} \O \L {pathpart} \O \L {penpart} \O \FL {textpart} \O \L {dashpart}
     \O \L  {redpart} \O \L {greenpart} \O \L {bluepart} \O \L {greypart} \O \FL {graypart}
@@ -325,7 +320,13 @@ configurable commands are in the \type{lmt_} namespace.
     \O \FL {unitvector}
     \O \L  {turningnumber}
     \O \FL {circularpath} \O \FL {squarepath} \O \FL {linearpath}
-    \O \L  {deltapoint} \O \FL {deltapostscontrol} \O \L {deltaprecontrol} \O \L {deltadirection} \O \L {deltaunitdirection} \O \FL {deltapointarclength}
+    \O \L  {deltapoint}
+    \O \L  {deltaprecontrol}
+    \O \L  {deltapostcontrol}
+    \O \L  {deltadirection}
+    \O \L  {deltaunitdirection}
+    \O \L  {deltaarclength}
+    \O \L  {deltaiteratorindex}
     \O \L  {centerof} \O \L {centerofmass} \O \L {singularity} \O \FL {counterclockwise}
     \O \L  {knownnormalize} \O \L {knownnorm}
     \O \FL {xnormalized} \O \FL {ynormalized} \O \FL {xynormalized}
@@ -360,7 +361,7 @@ configurable commands are in the \type{lmt_} namespace.
 \S {secondary binop}
     \M \L  {+} \O \L {-} \O \L {++} \O \L {+-+} \O \L {or}
     \O \FL {intersectionpoint} \O \L {intersectiontimes} \O \L {intersectiontimeslist}
-    \O \L  {knowncrossprod} \O \L {knowndiv} \O \L {knowndotprod} \O \FL {knowndotmod}
+    \O \L  {knowncrossprod} \O \L {knowndiv} \O \L {knowndotprod} \O \L {knownmod}
 \StopSyntax
 
 \StartSyntax
@@ -381,7 +382,7 @@ configurable commands are in the \type{lmt_} namespace.
     \O \L {direction} \O \L {directiontime} \O \FL {directionpoint}
     \O \L {penoffset} \O \L {point} \O \L {segment}
     \O \L {postcontrol} \O \L {precontrol} \O \L {subpath} \O \L {subarclength} \O \L {substring}
-    \O \L {boundingpath} \O \FL {enveloppe}
+    \O \L {boundingpath} \O \FL {envelope}
     \O \L {bytefound} \O \L {bytemapbounds} \O \L {bytepath} \O \L {bytevalue}
 \StopSyntax
 
@@ -529,9 +530,9 @@ configurable commands are in the \type{lmt_} namespace.
     \O \FL {textextoffset}
     \O \FL {maxdimensions}
     \O \L  {pruneoptions}
+    \O \L  {singlequotemode}
     \O \L  {restoreclipcolor}
-    \O \FL {textscriptmode}
-    \O \FL {textscriptmode}
+    \O \L  {texscriptmode}
     \O \L  {stacking}
     \O \FL {infinity}
     \O \FL {charscale}
@@ -696,6 +697,7 @@ configurable commands are in the \type{lmt_} namespace.
 \StartSyntax
 \S {program}
     \M \S {statement list} \L {end}
+    \O \S {statement list} \L {dump}
 \StopSyntax
 
 \StartSyntax
@@ -786,6 +788,14 @@ configurable commands are in the \type{lmt_} namespace.
     \O \L {vardef}     \S {generic variable} \S {delimited part} \S {undelimited part}
     \O \L {vardef}     \S {generic variable} \L {@#} \S {delimited part} \S {undelimited part}
     \O \S {binary def} \S {parameter} \S {symbolic token} \S {parameter}
+\StopSyntax
+
+\StartSyntax
+\S {macro special}
+    \M \L {quote}
+    \O \L {#@}
+    \O \L {@}
+    \O \L {@#}
 \StopSyntax
 
 \StartSyntax
@@ -888,6 +898,7 @@ configurable commands are in the \type{lmt_} namespace.
     \O \L  {maxknotpool} \L {:=} \S {numeric expression}
     \O \L  {save}        \S {symbolic token list}
     \O \L  {delimiters}  \S {character} \S {character}
+    \O \L  {everyjob}    \S {symbolic token}
     \O \L  {setbounds}   \S {picture variable} \L {to} \S {path expression}
     \O \L  {setgroup}    \S {picture variable} \L {to} \S {path expression}
     \O \L  {shipout}     \S {picture expression}
@@ -912,6 +923,9 @@ configurable commands are in the \type{lmt_} namespace.
     \O \L  {restoreclipcolor}
     \O \FL {savepen}
     \O \L  {runscript} \( \S {string expression} \L {,} \S {numeric primary} \)
+    \O \L  {maketext} \S {string expression}
+    \O \L  {setproperty} \S {numeric expression} \L {:} \S {symbolic token list}
+    \O \S  {bytemap operations}
     \O \FL {relax}
     \O \FL {pushcurrentpicture}
     \O \FL {popcurrentpicture}
@@ -1167,20 +1181,42 @@ configurable commands are in the \type{lmt_} namespace.
     \O \S {suffix list} \L {,} \S {suffix}
 \StopSyntax
 
-% anchor this somewhere
-
 \StartSyntax
 \S {bytemap operations}
-    \M \L {clipbytemap} (todo)
-    \O \L {copybytemap} (todo)
-    \O \L {newbytemap} (todo)
-    \O \L {reducebytemap} (todo)
-    \O \L {resetbytemap} (todo)
-    \O \L {resetbytemaps} (todo)
-    \O \L {setbyte} (todo)
-    \O \L {setbytemap} (todo)
-    \O \L {setbytemapoffset} (todo)
-    \O \L {setbytemapoptions} (todo)
+    \M \L {newbytemap} \S {numeric expression} \L {of} \S {bytemap dimensions}
+    \O \L {copybytemap} \S {numeric expression} \L {to} \S {numeric expression}
+    \O \L {clipbytemap} \S {numeric expression} \L {to} \S {numeric expression}
+    \O \L {reducebytemap} \S {numeric expression}
+    \O \L {reducebytemap} \S {numeric expression} \L {to} \S {numeric expression}
+    \O \L {resetbytemap} \S {numeric expression}
+    \O \L {resetbytemaps}
+    \O \L {setbyte} \( \S {numeric expression} \L {,} \S {numeric expression} \) \L {of} \S {numeric expression} \L {to} \S {bytemap value}
+    \O \L {setbyte} \( \S {numeric expression} \L {,} \S {numeric expression} \L {,} \S {numeric expression} \) \L {of} \S {numeric expression} \L {to} \S {numeric expression}
+    \O \L {setbyte} \( \S {numeric expression} \L {,} \S {numeric expression} \L {,} \S {numeric expression} \L {,} \S {numeric expression} \) \L {of} \S {numeric expression} \L {to} \S {bytemap range value}
+    \O \L {setbytemap} \S {numeric expression} \L {to} \S {bytemap value}
+    \O \L {setbytemapoffset} \( \S {numeric expression} \L {,} \S {numeric expression} \) \L {of} \S {numeric expression}
+    \O \L {setbytemapoptions} \S {numeric expression}
+    \O \L {setbytemapoptions} \S {numeric expression} \L {to} \S {numeric expression}
+\StopSyntax
+
+\StartSyntax
+\S {bytemap dimensions}
+    \M \S {numeric expression}
+    \O \S {pair expression}
+    \O \S {color expression}
+\StopSyntax
+
+\StartSyntax
+\S {bytemap value}
+    \M \S {numeric expression}
+    \O \S {color expression}
+\StopSyntax
+
+\StartSyntax
+\S {bytemap range value}
+    \M \S {numeric expression}
+    \O \S {pair expression}
+    \O \S {color expression}
 \StopSyntax
 
 \page
@@ -1523,4 +1559,3 @@ configurable commands are in the \type{lmt_} namespace.
 ./mp-base.mpxl    859: vardef penpos@#(expr b,d) =
 ./mp-base.mpxl    865: def penstroke text t =
 ./mp-base.mpxl    988: vardef penlabels@#(text t) =
-

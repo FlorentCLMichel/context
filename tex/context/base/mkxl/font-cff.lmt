@@ -145,6 +145,29 @@ local defaultstrings = { [0] = -- taken from ff
     "Black", "Bold", "Book", "Light", "Medium", "Regular", "Roman", "Semibold",
 }
 
+local expertcharset = { [0] =
+      0,   1, 229, 230, 231, 232, 233, 234, 235, 236, 237, 238,  13,  14,  15,  99,
+    239, 240, 241, 242, 243, 244, 245, 246, 247, 248,  27,  28, 249, 250, 251, 252,
+    253, 254, 255, 256, 257, 258, 259, 260, 261, 262, 263, 264, 265, 266, 109, 110,
+    267, 268, 269, 270, 271, 272, 273, 274, 275, 276, 277, 278, 279, 280, 281, 282,
+    283, 284, 285, 286, 287, 288, 289, 290, 291, 292, 293, 294, 295, 296, 297, 298,
+    299, 300, 301, 302, 303, 304, 305, 306, 307, 308, 309, 310, 311, 312, 313, 314,
+    315, 316, 317, 318, 158, 155, 163, 319, 320, 321, 322, 323, 324, 325, 326, 150,
+    164, 169, 327, 328, 329, 330, 331, 332, 333, 334, 335, 336, 337, 338, 339, 340,
+    341, 342, 343, 344, 345, 346, 347, 348, 349, 350, 351, 352, 353, 354, 355, 356,
+    357, 358, 359, 360, 361, 362, 363, 364, 365, 366, 367, 368, 369, 370, 371, 372,
+    373, 374, 375, 376, 377, 378,
+}
+
+local expertsubsetcharset = { [0] =
+      0,   1, 231, 232, 235, 236, 237, 238,  13,  14,  15,  99, 239, 240, 241, 242,
+    243, 244, 245, 246, 247, 248,  27,  28, 249, 250, 251, 253, 254, 255, 256, 257,
+    258, 259, 260, 261, 262, 263, 264, 265, 266, 109, 110, 267, 268, 269, 270, 272,
+    300, 301, 302, 305, 314, 315, 158, 155, 163, 320, 321, 322, 323, 324, 325, 326,
+    150, 164, 169, 327, 328, 329, 330, 331, 332, 333, 334, 335, 336, 337, 338, 339,
+    340, 341, 342, 343, 344, 345, 346,
+}
+
 local standardnames = { [0] = -- needed for seac
     false, false, false, false, false, false, false, false, false, false, false,
     false, false, false, false, false, false, false, false, false, false, false,
@@ -183,6 +206,12 @@ local cffreaders = {
     readuint,
     readulong,
 }
+
+local tableend = false -- extra check and possible recovery, not always used
+
+local function validrange(header,offset,size)
+    return offset >= header.offset and size >= 0 and (not tableend or offset + size <= tableend)
+end
 
 directives.register("fonts.streamreader",function()
     cffreaders = {
@@ -228,21 +257,41 @@ local function readlengths(f,longcount)
     local read  = cffreaders[osize]
     if not read then
         report("bad offset size: %i",osize)
+        if tableend then
+            setposition(f,tableend)
+        end
+        return { }
+    elseif tableend and getposition(f) + (count+1)*osize > tableend then
+        report("bad index count: %i",count)
+        setposition(f,tableend)
         return { }
     end
     local lengths  = { }
     local previous = read(f)
+    local okay     = previous == 1
     for i=1,count do
         local offset = read(f)
         local length = offset - previous
         if length < 0 then
             report("bad offset: %i",length)
             length = 0
+            okay   = false
         end
         lengths[i] = length
         previous = offset
     end
-    return lengths
+    if tableend and getposition(f) + previous - 1 > tableend then
+        report("bad index data size: %i",previous-1)
+        okay = false
+    end
+    if okay then
+        return lengths
+    else
+        report("bad first index offset")
+        local position = getposition(f) + max(previous-1,0)
+        setposition(f,tableend and min(position,tableend) or position)
+        return { }
+    end
 end
 
 -- There can be subfonts so names is an array. However, in our case it's always
@@ -300,10 +349,11 @@ do
     -- We use a closure so that we don't need to pass too much around. For cff2 we can
     -- at some point use a simple version as there is less.
 
-    local stack   = { }
-    local top     = 0
-    local result  = { }
-    local strings = { }
+    local stack         = { }
+    local top           = 0
+    local result        = { }
+    local strings       = { }
+    local variationdata = false
 
     local p_dictionary  do
 
@@ -395,10 +445,50 @@ do
                 result.nominalwidthx = stack[top]
                 top = 0 -- new, forgotten ?
             end
-       -- + P("\22") / function() -- reserved
-       --   end
-       -- + P("\23") / function() -- reserved
-       --   end
+          + P("\22") / function() -- new in cff2 private dictionaries
+                result.vsindex = stack[top]
+                top = 0
+            end
+          + P("\23") / function() -- new in cff2 private dictionaries
+                local n = stack[top]
+                top = top - 1
+                if type(n) ~= "number" or n < 0 then
+                    top = 0
+                elseif variationdata then
+                    local deltas = variationdata.deltas
+                    local delta  = deltas and deltas[(result.vsindex or 0)+1]
+                    local scales = delta and delta.scales
+                    if not scales and delta then
+                        local factors = variationdata.factors
+                        if factors then
+                            scales = readers.helpers.getscales(delta.regions,factors)
+                        else
+                         -- lua.newindex(delta.regions, 0)
+                            scales = { }
+                            for i=1,#delta.regions do
+                                scales[i] = 0
+                            end
+                        end
+                    end
+                    local nofregions = scales and #scales or 0
+                    if top < n * (nofregions + 1) then
+                        top = 0
+                    else
+                        top = top - nofregions * n
+                        local d = top
+                        local k = top - n
+                        for i=1,n do
+                            k = k + 1
+                            local v = stack[k]
+                            for r=1,nofregions do
+                                v = v + stack[d+r] * scales[r]
+                            end
+                            stack[k] = v
+                            d = d + nofregions
+                        end
+                    end
+                end
+            end
           + P("\24") / function() -- new in cff2
                 result.vstore = stack[top]
                 top = 0
@@ -527,7 +617,7 @@ do
 
         -- Some lpeg fun ... a first variant split the byte and made a new string but
         -- the second variant is much faster. Not that it matters much as we don't see
-        -- such numbers often.
+        -- such numbers often. Maybe a c version some day but do we gain?
 
         local remap_1 = {
             ["\x00"] = "00",  ["\x01"] = "01",  ["\x02"] = "02",  ["\x03"] = "03",  ["\x04"] = "04",  ["\x05"] = "05",  ["\x06"] = "06",  ["\x07"] = "07",  ["\x08"] = "08",  ["\x09"] = "09",  ["\x0A"] = "0.",  ["\x0B"] = "0E",  ["\x0C"] = "0E-",  ["\x0D"] = "0",  ["\x0E"] = "0-",  ["\x0F"] = "0",
@@ -670,8 +760,9 @@ do
     end
 
     parseprivates = function(data,dictionaries)
-        stack   = { }
-        strings = data.strings
+        stack         = { }
+        strings       = data.strings
+        variationdata = data.deltas and data or false
         for i=1,#dictionaries do
             local private = dictionaries[i].private
             if private and private.data then
@@ -692,9 +783,10 @@ do
                 private.data = result
             end
         end
-        result = { }
-        top    = 0
-        stack  = { }
+        result        = { }
+        top           = 0
+        stack         = { }
+        variationdata = false
     end
 
     -- All bezier curves have 6 points with successive pairs relative to
@@ -1884,9 +1976,13 @@ do
                         local peak  = r.peak
                         local stop  = r.stop
                         if start > peak or peak > stop then
-                            -- * 1
+                            -- * 0
+                            s = 0
+                            break
                         elseif start < 0 and stop > 0 and peak ~= 0 then
-                            -- * 1
+                            -- * 0
+                            s = 0
+                            break
                         elseif peak == 0 then
                             -- * 1
                         elseif f < start or f > stop then
@@ -2328,7 +2424,7 @@ do
                         if n1 >= 0x8000 then
                             n1 = n1 - 0x10000
                         end
-                        stack[top] = n1 + n2/0xFFFF
+                        stack[top] = n1 + n2/0x10000
                         i = i + 5
                     end
                 elseif t == op_integer then
@@ -2816,6 +2912,12 @@ do
         return privatedata.nominalwidthx or 0, privatedata.defaultwidthx or 0
     end
 
+    local function getdictionaryvsindex(dictionary)
+        local private = dictionary.private
+        local data    = private and private.data
+        return dictionary.vsindex or type(data) == "table" and data.vsindex or 0
+    end
+
     parsecharstrings = function(fontdata,data,glphs,doshapes,tversion,streams,nobias,istypeone)
 
         local dictionary  = data.dictionaries[1]
@@ -2828,7 +2930,7 @@ do
         globals   = data.routines or { }
         locals    = dictionary.subroutines or { }
         charset   = dictionary.charset
-        vsindex   = dictionary.vsindex or 0
+        vsindex   = getdictionaryvsindex(dictionary)
 
         local glyphs = glphs or { }
 
@@ -2892,7 +2994,7 @@ do
         locals    = dictionary.subroutines or { }
         typeone   = false -- actually unknown but we can use the version cff0
         charset   = false
-        vsindex   = dictionary.vsindex or 0
+        vsindex   = getdictionaryvsindex(dictionary)
 
         local glyphs = glphs or { }
 
@@ -2935,25 +3037,50 @@ do
         local strings       = data.strings
         local nofglyphs     = data.nofglyphs
         local charsetoffset = dictionary.charset
-        if charsetoffset and charsetoffset ~= 0 then
-            setposition(f,header.offset+charsetoffset)
+        if charsetoffset and charsetoffset <= 2 then
+            local charset = { }
+            local sids = charsetoffset == 1 and expertcharset or charsetoffset == 2 and expertsubsetcharset
+            for i=0,nofglyphs-1 do
+                local sid = sids and sids[i] or i
+                charset[i] = sid and strings[sid] or nil
+            end
+            dictionary.charset = charset
+        elseif charsetoffset then
+            local offset = header.offset + charsetoffset
+            if not validrange(header,offset,1) then
+                report("cff parser: invalid charset offset")
+                dictionary.charset = nil
+                return
+            end
+            setposition(f,offset)
             local format       = readbyte(f)
             local charset      = { [0] = ".notdef" }
             dictionary.charset = charset
             if format == 0 then
-                for i=1,nofglyphs do
+                if tableend and getposition(f) + 2*(nofglyphs-1) > tableend then
+                    report("cff parser: invalid charset data")
+                    dictionary.charset = nil
+                    return
+                end
+                for i=1,nofglyphs-1 do
                     charset[i] = strings[readushort(f)]
                 end
             elseif format == 1 or format == 2 then
                 local readcount = format == 1 and readbyte or readushort
+                local countsize = format == 1 and 1 or 2
                 local i = 1
-                while i <= nofglyphs do
+                while i < nofglyphs do
+                    if tableend and getposition(f) + 2 + countsize > tableend then
+                        report("cff parser: invalid charset range")
+                        dictionary.charset = nil
+                        return
+                    end
                     local sid = readushort(f)
                     local n   = readcount(f)
                     for s=sid,sid+n do
                         charset[i] = strings[s]
                         i = i + 1
-                        if i > nofglyphs then
+                        if i >= nofglyphs then
                             break
                         end
                     end
@@ -2972,8 +3099,14 @@ do
         local dictionaries = data.dictionaries
         local private      = dictionaries[1].private
         if private then
-            setposition(f,header.offset+private.offset)
-            private.data = readstring(f,private.size)
+            local offset = header.offset + private.offset
+            if validrange(header,offset,private.size) then
+                setposition(f,offset)
+                private.data = readstring(f,private.size)
+            else
+                report("cff parser: invalid private dictionary")
+                private.data = ""
+            end
         end
     end
 
@@ -2983,12 +3116,18 @@ do
         if private then
             local subroutineoffset = private.data.subroutines
             if subroutineoffset ~= 0 then
-                setposition(f,header.offset+private.offset+subroutineoffset)
-                local subroutines = readlengths(f,version == "cff2")
-                for i=1,#subroutines do
-                    subroutines[i] = readbytetable(f,subroutines[i])
+                local offset = header.offset + private.offset + subroutineoffset
+                if validrange(header,offset,version == "cff2" and 4 or 2) then
+                    setposition(f,offset)
+                    local subroutines = readlengths(f,version == "cff2")
+                    for i=1,#subroutines do
+                        subroutines[i] = readbytetable(f,subroutines[i])
+                    end
+                    dictionary.subroutines = subroutines
+                else
+                    report("cff parser: invalid local subroutine offset")
+                    dictionary.subroutines = { }
                 end
-                dictionary.subroutines = subroutines
                 private.data.subroutines = nil
             else
                 dictionary.subroutines = { }
@@ -3010,15 +3149,22 @@ do
         if type(offset) ~= "number" then
             -- weird
         elseif stringtype == 2 then
-            setposition(f,header.offset+offset)
-            -- could be a metatable .. delayed loading
-            local charstrings = readlengths(f,version=="cff2")
-            local nofglyphs   = #charstrings
-            for i=1,nofglyphs do
-                charstrings[i] = readstring(f,charstrings[i])
+            offset = header.offset + offset
+            if validrange(header,offset,version == "cff2" and 4 or 2) then
+                setposition(f,offset)
+                -- could be a metatable .. delayed loading
+                local charstrings = readlengths(f,version=="cff2")
+                local nofglyphs   = #charstrings
+                for i=1,nofglyphs do
+                    charstrings[i] = readstring(f,charstrings[i])
+                end
+                data.nofglyphs          = nofglyphs
+                dictionary.charstrings = charstrings
+            else
+                report("cff parser: invalid charstring offset")
+                data.nofglyphs          = 0
+                dictionary.charstrings = { }
             end
-            data.nofglyphs         = nofglyphs
-            dictionary.charstrings = charstrings
         else
             report("unsupported charstr type %i",stringtype)
             data.nofglyphs         = 0
@@ -3035,8 +3181,14 @@ do
             local dictionary = dictionaries[i]
             local private    = dictionary.private
             if private then
-                setposition(f,header.offset+private.offset)
-                private.data = readstring(f,private.size)
+                local offset = header.offset + private.offset
+                if validrange(header,offset,private.size) then
+                    setposition(f,offset)
+                    private.data = readstring(f,private.size)
+                else
+                    report("cff parser: invalid cid private dictionary")
+                    private.data = ""
+                end
             end
         end
         parseprivates(data,dictionaries)
@@ -3059,7 +3211,12 @@ do
         if cid then
             local fdarray = cid.fdarray
             if fdarray then
-                setposition(f,data.header.offset + fdarray)
+                local offset = data.header.offset + fdarray
+                if not validrange(data.header,offset,version == "cff2" and 4 or 2) then
+                    report("invalid cid array offset")
+                    return
+                end
+                setposition(f,offset)
                 local dictionaries    = readlengths(f,version=="cff2")
                 local nofdictionaries = #dictionaries
                 if nofdictionaries > 0 then
@@ -3097,34 +3254,66 @@ do
         local fdindex      = { }
         local nofglyphs    = data.nofglyphs
         local maxindex     = -1
-        setposition(f,header.offset+cidselect)
+        local selectoffset = header.offset + cidselect
+        if not validrange(header,selectoffset,1) then
+            report("invalid fd index offset")
+            return
+        end
+        setposition(f,selectoffset)
         local format       = readbyte(f)
-        if format == 1 then
-            for i=0,nofglyphs do -- notdef included (needs checking)
+        if format == 0 then
+            if tableend and getposition(f) + nofglyphs > tableend then
+                report("invalid fd index data")
+                return
+            end
+            for i=0,nofglyphs-1 do
                 local index = readbyte(f)
                 fdindex[i] = index
                 if index > maxindex then
                     maxindex = index
                 end
             end
-        elseif format == 3 then
-            local nofranges = readushort(f)
-            local first     = readushort(f)
-            local index     = readbyte(f)
-            while true do
-                local last = readushort(f)
-                if index > maxindex then
-                    maxindex = index
+        elseif format == 3 or (format == 4 and version == "cff2") then
+            local readcount   = format == 3 and readushort or readulong
+            local readindex   = format == 3 and readbyte   or readushort
+            local countsize   = format == 3 and 2 or 4
+            local indexsize   = format == 3 and 1 or 2
+            if tableend and getposition(f) + countsize > tableend then
+                report("invalid fd index ranges")
+                return
+            end
+            local nofranges   = readcount(f)
+            local firstglyphs = { }
+            local indices     = { }
+            if tableend and getposition(f) + nofranges*(countsize+indexsize) + countsize > tableend then
+                report("invalid fd index ranges")
+                return
+            end
+            for i=1,nofranges do
+                firstglyphs[i] = readcount(f)
+                indices[i]     = readindex(f)
+            end
+            firstglyphs[nofranges+1] = readcount(f)
+            local okay = firstglyphs[1] == 0 and firstglyphs[nofranges+1] == nofglyphs
+            if okay then
+                for i=1,nofranges do
+                    local first = firstglyphs[i]
+                    local last  = firstglyphs[i+1] - 1
+                    local index = indices[i]
+                    if first > last then
+                        okay = false
+                        break
+                    elseif index > maxindex then
+                        maxindex = index
+                    end
+                    for i=first,last do
+                        fdindex[i] = index
+                    end
                 end
-                for i=first,last do
-                    fdindex[i] = index
-                end
-                if last >= nofglyphs then
-                    break
-                else
-                    first = last + 1
-                    index = readbyte(f)
-                end
+            end
+            if not okay then
+                report("bad fd index range")
+                maxindex = -1
             end
         else
             report("unsupported fd index format %i",format)
@@ -3133,7 +3322,12 @@ do
         if maxindex >= 0 then
             local cidarray = cid.fdarray
             if cidarray then
-                setposition(f,header.offset+cidarray)
+                local offset = header.offset + cidarray
+                if not validrange(header,offset,version == "cff2" and 4 or 2) then
+                    report("invalid cid array offset")
+                    return
+                end
+                setposition(f,offset)
                 local dictionaries = readlengths(f,version == "cff2")
                 if #dictionaries > 0 then
                     for i=1,#dictionaries do
@@ -3147,11 +3341,11 @@ do
                     end
                     startparsing(fontdata,data,streams)
                     for i=1,#charstrings do
-                        local dictionary = dictionaries[fdindex[i]+1]
+                        local dictionary = dictionaries[fdindex[i-1]+1]
                         if dictionary then
                             parsecharstring(fontdata,data,dictionary,charstrings[i],glyphs,i,doshapes,version,streams)
                         else
-                         -- report("no dictionary for %a : %a => %a",version,i,fdindex[i]+1)
+                         -- report("no dictionary for %a : %a => %a",version,i,fdindex[i-1]+1)
                         end
                      -- charstrings[i] = false
                     end
@@ -3182,14 +3376,25 @@ do
     function readers.cff(f,fontdata,specification)
         local tableoffset = gotodatatable(f,fontdata,"cff",specification.details or specification.glyphs)
         if tableoffset then
+            tableend = tableoffset + fontdata.tables.cff.length
             local header = readheader(f)
             if header.major ~= 1 then
                 report("only version %s is supported for table %a",1,"cff")
+                tableend = false
+                return
+            elseif header.size < 4 or not validrange(header,header.offset,header.size) then
+                report("invalid cff header")
+                tableend = false
                 return
             end
             local glyphs       = fontdata.glyphs
             local names        = readfontnames(f)
             local dictionaries = readtopdictionaries(f)
+            if not dictionaries[1] then
+                report("no cff top dictionary")
+                tableend = false
+                return
+            end
             local strings      = readstrings(f)
             local data = {
                 header       = header,
@@ -3251,15 +3456,22 @@ do
                 end
             end
             cleanup(data,dictionaries)
+            tableend = false
         end
     end
 
     function readers.cff2(f,fontdata,specification)
         local tableoffset = gotodatatable(f,fontdata,"cff2",specification.glyphs)
         if tableoffset then
+            tableend = tableoffset + fontdata.tables.cff2.length
             local header = readheader(f)
             if header.major ~= 2 then
                 report("only version %s is supported for table %a",2,"cff2")
+                tableend = false
+                return
+            elseif header.size < 5 or not validrange(header,header.offset,header.size+header.dsize) then
+                report("invalid cff2 header")
+                tableend = false
                 return
             end
             local glyphs       = fontdata.glyphs
@@ -3275,10 +3487,16 @@ do
             local offset = dictionaries[1].vstore
             if offset > 0 then
                 local storeoffset = dictionaries[1].vstore + data.header.offset + 2 -- cff has a preceding size field
-                local regions, deltas = readers.helpers.readvariationdata(f,storeoffset,factors)
-                --
-                data.regions  = regions
-                data.deltas   = deltas
+                if validrange(data.header,storeoffset,8) then
+                    local regions, deltas = readers.helpers.readvariationdata(f,storeoffset,specification.factors)
+                    --
+                    data.regions = regions
+                    data.deltas  = deltas
+                else
+                    report("invalid cff2 variation store offset")
+                    data.regions = { }
+                    data.deltas  = { }
+                end
             else
                 data.regions  = { }
                 data.deltas   = { }
@@ -3293,6 +3511,7 @@ do
                 readnoselect(f,fontdata,data,glyphs,all,"cff2",specification.streams)
             end
             cleanup(data,dictionaries)
+            tableend = false
         end
     end
 

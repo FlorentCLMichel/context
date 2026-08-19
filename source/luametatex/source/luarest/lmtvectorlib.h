@@ -17,6 +17,10 @@
 # define max_vector_columns  24000000 /* normally there are only a few columns involved so ... */
 # define max_vector         240000000 /* so we stay way below |max_vector_rows * max_vector_columns| */
 
+# define max_point_rows    1000000000
+# define max_point_columns 1000000000 /* normally 1 */
+# define max_point         1000000000
+
 typedef enum vector_classification {
     generic_type,
     zero_type,

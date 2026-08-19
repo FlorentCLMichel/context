@@ -82,21 +82,27 @@ do
     local runcodes   = { }
 
     local function registerscript(name,mode,f)
-        nofscripts = nofscripts + 1
+        local index = runnames[name]
+        if index then
+            -- we registered earlier
+        else
+            nofscripts = nofscripts + 1
+            index = nofscripts
+        end
         if not f then
             f = mode
             mode = "buffered"
         end
         if f then
-            runscripts[nofscripts] = f
-            runnames[name] = nofscripts
+            runscripts[index] = f
+            runnames[name] = index
         else
-            runscripts[nofscripts] = name
+            runscripts[index] = name
         end
-        runcodes[nofscripts] = name
-        runmodes[nofscripts] = mode
+        runcodes[index] = name
+        runmodes[index] = mode
         if trace_script then
-            report_script("registering %s script %a as %i",mode,name,nofscripts)
+            report_script("registering %s script %a as %i",mode,name,index)
         end
         return nofscripts
     end
@@ -112,9 +118,18 @@ do
     end
 
     function metapost.scriptindex(name)
-        local index = runnames[name] or 0
-        if trace_script then
-            report_script("fetching scriptindex %i of %a",index,name)
+        local index = runnames[name]
+        if index then
+            if trace_script then
+                report_script("fetching scriptindex %i of %a",index,name)
+            end
+        else
+            if trace_script then
+                report_script("reserving scriptindex %i for %a",index,name)
+            end
+            nofscripts = nofscripts + 1
+            index = nofscripts
+            runnames[name] = index
         end
         return index
     end

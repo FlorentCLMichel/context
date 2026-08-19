@@ -1,7 +1,5 @@
 % language=us runpath=texruns:manuals/luametafun
 
-\usemodule[3d]
-
 \environment luametafun-style
 
 \startcomponent luametafun-threed
@@ -521,7 +519,7 @@ A third variant operates on the rows and columns of the \quote {final} image. \i
 \typebuffer[demo-3][option=TEX]
 
 \startplacefigure
-    [reference=fig:threed:process:2,
+    [reference=fig:threed:process:3,
      title={The result of \type{demo} process 3: manipulating colors using the final pixel positions.}]
     \getbuffer[demo-3,demo]
 \stopplacefigure
@@ -773,3 +771,13 @@ imported files.
 \stopchapter
 
 \stopcomponent
+
+% For Keith's animations:
+%
+% scenery = [
+%     filename    = "noisy-k3.png",
+%     nofframes   = \Frames,
+%     loop        = 0, % 1
+%     numerator   = 15,
+%     demominator = 100,
+% ]

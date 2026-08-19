@@ -13,7 +13,8 @@
 
 \writestatus{loading}{ConTeXt Math Macros / Initializations}
 
-% Needs checking:
+% Needs checking, we use them but maybe shouldn't and use parameters to nodes
+% instead (see math-frc.mkxl).
 %
 % \Umathruleheight
 % \Umathruledepth

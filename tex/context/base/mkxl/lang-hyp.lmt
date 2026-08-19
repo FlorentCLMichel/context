@@ -1644,11 +1644,11 @@ featureset.hyphenonly   = hyphenonly == v_yes
             return head -- a nut
         end
 
- -- local has_language = language.has_language
+ -- local haslanguage = language.haslanguage
  --
  -- local function original(head) -- kernel.hyphenation(head)
  --     local h = tonode(head)
- --     if has_language(h) then
+ --     if haslanguage(h) then
  --         hyphenate(h)
  --     end
  --     return head

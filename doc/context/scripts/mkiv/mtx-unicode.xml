@@ -8,7 +8,8 @@
  <flags>
   <category name="basic">
    <subcategory>
-    <flag name="whatever"><short>do whatever</short></flag>
+    <flag name="whatever"><short>do whatever needed (default)</short></flag>
+    <flag name="convert"><short>generate more efficient char-def.lmt file</short></flag>
    </subcategory>
   </category>
  </flags>

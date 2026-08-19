@@ -22,7 +22,7 @@ set(tex_sources
     source/lua/lmtcallbacklib.c
     source/lua/lmtlanguagelib.c
     source/lua/lmtlualib.c
-    source/lua/lmtluaclib.c
+  # source/lua/lmtluaclib.c
     source/lua/lmttexiolib.c
     source/lua/lmttexlib.c
     source/lua/lmttokenlib.c
@@ -62,6 +62,7 @@ set(tex_sources
     source/luarest/lmteffectslib.c
     source/luarest/lmtzbufferlib.c
     source/luarest/lmtkdtreelib.c
+  # source/luarest/lmtspecificlib.c
 
     source/tex/texalign.c
     source/tex/texarithmetic.c
@@ -129,5 +130,5 @@ target_include_directories(tex PRIVATE
     source/libraries/nanojpeg
     source/libraries/triangles
 
-#   source/libraries/qhull/src/libqhull_r
+  # source/libraries/qhull/src/libqhull_r
 )

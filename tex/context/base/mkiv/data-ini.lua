@@ -12,7 +12,7 @@ local filedirname, filebasename, filejoin, replacesuffix = file.dirname, file.ba
 local ostype, osname, osuname, ossetenv, osgetenv = os.type, os.name, os.uname, os.setenv, os.getenv
 local sortedpairs = table.sortedpairs
 local isfile, currentdir = lfs.isfile, lfs.currentdir
-local expandlink = dir.expandlink
+local expandlink, expandname = dir.expandlink, dir.expandname
 
 local P, S, R, C, Cs, Cc, lpegmatch = lpeg.P, lpeg.S, lpeg.R, lpeg.C, lpeg.Cs, lpeg.Cc, lpeg.match
 
@@ -119,6 +119,8 @@ do
 
     ownpath = expandlink(ownpath,trace_locating and report_initialization)
 
+    ownpath = expandname(ownpath) -- because expandlink on windows can have \\
+
     if not ownpath or ownpath == "" or ownpath == "unset" then
         ownpath = args[-1] or arg[-1]
         ownpath = ownpath and filedirname(gsub(ownpath,"\\","/"))
@@ -140,6 +142,7 @@ do
                     local b = filejoin(p,binary)
                     if isfile(b) then
                         ownpath = expandlink(p,trace_locating and report_initialization)
+                        ownpath = expandname(ownpath)
                         break
                     end
                 end

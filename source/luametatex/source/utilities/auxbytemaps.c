@@ -6,11 +6,14 @@
 # include "auxmemory.h"
 # include <math.h>
 # include <stdio.h>
+# include <stdint.h>
 
 /* 
     todo: set nz to zero when no data so we have a test less 
     todo: round keep in integer domain (see end of decodelib)
 */
+
+const double INV_255 = 1.0 / 255.0;
 
 static inline unsigned char max_of_three(unsigned char a, unsigned char b, unsigned char c)
 {
@@ -62,6 +65,7 @@ int bytemap_reset(bytemap_data *bytemap, size_t *count)
             .ox      = 0,
             .oy      = 0,
             .options = 0,
+            .model   = bytemap_gray,
         };
     }
     return done; 
@@ -75,8 +79,11 @@ void bytemap_reduce(bytemap_data *bytemap, int method, size_t *count)
                 break;
             case 3:
                 {
-                    int nx = bytemap->nx;
-                    int ny = bytemap->ny;
+                    int nx      = bytemap->nx;
+                    int ny      = bytemap->ny;
+                    int ox      = bytemap->ox;
+                    int oy      = bytemap->oy;
+                    int options = bytemap->options;
                     unsigned char *color = bytemap->data;
                     unsigned char *gray = lmt_memory_malloc(nx*ny);
                     unsigned c = 0;
@@ -126,9 +133,10 @@ void bytemap_reduce(bytemap_data *bytemap, int method, size_t *count)
                         .nx      = nx,
                         .ny      = ny,
                         .nz      = 1,
-                        .ox      = 0,
-                        .oy      = 0,
-                        .options = 0,
+                        .ox      = ox,
+                        .oy      = oy,
+                        .options = options,
+                        .model   = bytemap_gray,
                     };
                 }
                 break;
@@ -136,21 +144,40 @@ void bytemap_reduce(bytemap_data *bytemap, int method, size_t *count)
     }
 }
 
+/* Clip a half-open rectangle to the allocated bytemap. */
+
+static int bytemap_aux_clip_rectangle(const bytemap_data *bytemap, int *x, int *y, int *dx, int *dy)
+{
+    if (!bytemap || !bytemap->data || !x || !y || !dx || !dy || *dx <= 0 || *dy <= 0) {
+        return 0;
+    }
+    int64_t x0 = *x;
+    int64_t y0 = *y;
+    int64_t x1 = x0 + (int64_t) *dx;
+    int64_t y1 = y0 + (int64_t) *dy;
+    if (x0 < 0) { x0 = 0; }
+    if (y0 < 0) { y0 = 0; }
+    if (x1 > bytemap->nx) { x1 = bytemap->nx; }
+    if (y1 > bytemap->ny) { y1 = bytemap->ny; }
+    if (x0 < x1 && y0 < y1) {
+        *x  = (int) x0;
+        *y  = (int) y0;
+        *dx = (int) (x1 - x0);
+        *dy = (int) (y1 - y0);
+        return 1;
+    }
+    return 0;
+}
+
 void bytemap_slice_gray(bytemap_data *bytemap, int x, int y, int dx, int dy, int s)
 {
-    if (bytemap  && bytemap->data && dx > 0 && dy > 0) {
+    if (bytemap_aux_clip_rectangle(bytemap, &x, &y, &dx, &dy)) {
         switch (bytemap->nz) {
             case 1:
                 {
                     unsigned char *p = bytemap->data;
                     int w = bytemap->nx;
                     int o = x;
-                    if (x + dx > bytemap->nx) {
-                        dx = bytemap->nx - x;
-                    }
-                    if (y + dy > bytemap->ny) {
-                        dy = bytemap->ny - y;
-                    }
                     o += bm_current_y(bytemap->ny,y) * w;
                     memset(p + o, valid_byte(s), dx);
                     for (int i = bm_first_y(bytemap->ny,y,dy); i <= bm_last_y(bytemap->ny,y,dy); i++) {
@@ -168,7 +195,7 @@ void bytemap_slice_gray(bytemap_data *bytemap, int x, int y, int dx, int dy, int
 
 void bytemap_slice_rgb(bytemap_data *bytemap, int x, int y, int dx, int dy, int r, int g, int b)
 {
-    if (bytemap && bytemap->data && dx > 0 && dy > 0) {
+    if (bytemap_aux_clip_rectangle(bytemap, &x, &y, &dx, &dy)) {
         switch (bytemap->nz) {
             case 1:
                 bytemap_slice_gray(bytemap, x, y, dx, dy, rgb_to_gray(r,g,b));
@@ -178,12 +205,6 @@ void bytemap_slice_rgb(bytemap_data *bytemap, int x, int y, int dx, int dy, int 
                     unsigned char *p = bytemap->data;
                     int w = 3 * bytemap->nx;
                     int o = 3 * x;
-                    if (x + dx > bytemap->nx) {
-                        dx = bytemap->nx - x;
-                    }
-                    if (y + dy > bytemap->ny) {
-                        dy = bytemap->ny - y;
-                    }
                     o += bm_current_y(bytemap->ny,y) * w;
                     bytemap->data[o+0] = valid_byte(r);
                     bytemap->data[o+1] = valid_byte(g);
@@ -202,20 +223,16 @@ void bytemap_slice_rgb(bytemap_data *bytemap, int x, int y, int dx, int dy, int 
 
 void bytemap_slice_range(bytemap_data *bytemap, int x, int y, int dx, int dy, int min, int max)
 {
-    if (bytemap && bytemap->data && dx > 0 && dy > 0) {
+    if (bytemap_aux_clip_rectangle(bytemap, &x, &y, &dx, &dy)) {
         switch (bytemap->nz) {
             case 1:
             case 3:
                 {
                     int w = bytemap->nx * bytemap->nz;
                     double p = min; 
-                    double m = (max - min) / 255.0; 
+                    double m = ((double) max - (double) min) * INV_255;
                     int xend = x + dx;
                     int yend = y + dy;
-                    if (x < 0) { x = 0; }
-                    if (y < 0) { y = 0; }
-                    if (xend > bytemap->nx) { xend = bytemap->nx; }
-                    if (yend > bytemap->ny) { yend = bytemap->ny; }
                     for (int j = y; j < yend; j++) {
                         int o = bm_current_y(bytemap->ny,j) * w + x * bytemap->nz;
                         for (int i = x; i < xend; i++) {
@@ -365,6 +382,7 @@ void bytemap_wipe(bytemap_data *bytemap)
             .ox      = 0,
             .oy      = 0,
             .options = 0,
+            .model   = bytemap_gray,
         };
     }
 }
@@ -381,6 +399,7 @@ void bytemap_allocate(bytemap_data *bytemap, int nx, int ny, int nz, size_t *cou
             .ox      = 0,
             .oy      = 0,
             .options = 0,
+            .model   = nz == 3 ? bytemap_rgb : bytemap_gray,
         };
         if (count) { 
             *count += size;
@@ -390,23 +409,27 @@ void bytemap_allocate(bytemap_data *bytemap, int nx, int ny, int nz, size_t *cou
 
 void bytemap_copy(bytemap_data *source, bytemap_data *target, size_t *count)
 {
-    if (source && target) {
-        int size = source->nx * source->ny * source->nz;
-        if (target->data) {
-            lmt_memory_free(target->data);
-        }
-        *target = (bytemap_data) {
-            .data    = lmt_memory_malloc(size),
-            .nx      = source->nx,
-            .ny      = source->ny,
-            .nz      = source->nz,
-            .ox      = source->ox,
-            .oy      = source->oy,
-            .options = 0,
-        };
-        if (source->data && target->data) {
-            memcpy(target->data, source->data, size);
-            if (count) { 
+    if (source && target && source != target && source->data && source->data != target->data) {
+        size_t size = (size_t) source->nx * source->ny * source->nz;
+        unsigned char *data = lmt_memory_malloc(size);
+        if (data) {
+            size_t oldsize = target->data ? (size_t) target->nx * target->ny * target->nz : 0;
+            memcpy(data, source->data, size);
+            if (target->data) {
+                lmt_memory_free(target->data);
+            }
+            *target = (bytemap_data) {
+                .data    = data,
+                .nx      = source->nx,
+                .ny      = source->ny,
+                .nz      = source->nz,
+                .ox      = source->ox,
+                .oy      = source->oy,
+                .options = source->options,
+                .model   = source->model,
+            };
+            if (count) {
+                *count -= oldsize;
                 *count += size;
             }
         }
@@ -623,8 +646,8 @@ int bytemap_get_byte(bytemap_data *bytemap, int x, int y, int z)
                 case 3:
                     {
                         int p = bm_current_y(ny,y) * nx * 3 + x * 3;
-                        if (z >= 1 && z <= 3) { 
-                            return bytemap->data[p+z-1];
+                        if (z >= 0 && z < 3) {
+                            return bytemap->data[p+z];
                         } else {
                             return rgb_to_gray(
                                 bytemap->data[p],
@@ -681,7 +704,7 @@ double bytemap_get_luminance(bytemap_data *bytemap, int x, int y)
                 case 1:
                     {
                         unsigned char s = bytemap->data[bm_current_y(ny,y) * nx + x];
-                        return (double) s / 255;
+                        return (double) s * INV_255;
                     }
                 case 3:
                     {
@@ -689,7 +712,7 @@ double bytemap_get_luminance(bytemap_data *bytemap, int x, int y)
                         unsigned char r = bytemap->data[p++];
                         unsigned char g = bytemap->data[p++];
                         unsigned char b = bytemap->data[p];
-                        return (0.2126 * r + 0.7152 * g + 0.0722 * b) / 255;
+                        return (0.2126 * r + 0.7152 * g + 0.0722 * b) * INV_255;
                     }
             }
         }
@@ -723,9 +746,13 @@ void bytemap_downsample(bytemap_data *source, bytemap_data *target, int r)
         Todo: when source and target are the same, we have to use a temporary bytemap. 
     */
     if (source && target && source != target && source->data != target->data && source->data) {
-        int nx = source->nx;
-        int ny = source->ny; 
-        int nz = source->nz;
+        int nx      = source->nx;
+        int ny      = source->ny; 
+        int nz      = source->nz;
+        int ox      = source->ox;
+        int oy      = source->oy;
+        int options = source->options;
+        int model   = source->model;
         if (r < 2) {
             r = 2;
         }
@@ -746,9 +773,10 @@ void bytemap_downsample(bytemap_data *source, bytemap_data *target, int r)
                     .nx      = mx,
                     .ny      = my,
                     .nz      = nz,
-                    .ox      = 0,
-                    .oy      = 0,
-                    .options = 0,
+                    .ox      = ox,
+                    .oy      = oy,
+                    .options = options,
+                    .model   = model,
                 };
                 switch (nz) {
                     case 1:
@@ -798,9 +826,13 @@ void bytemap_downgrade(bytemap_data *source, bytemap_data *target, int r)
         Todo: when source and target are the same, we have to use a temporary bytemap. 
     */
     if (source && target && source != target && source->data != target->data && source->data) {
-        int nx = source->nx;
-        int ny = source->ny; 
-        int nz = source->nz;
+        int nx      = source->nx;
+        int ny      = source->ny; 
+        int nz      = source->nz;
+        int ox      = source->ox;
+        int oy      = source->oy;
+        int options = source->options;
+        int model   = source->model;
         int size = nx * ny * nz;
         unsigned char *q = lmt_memory_malloc(size);
         if (q) {
@@ -813,9 +845,10 @@ void bytemap_downgrade(bytemap_data *source, bytemap_data *target, int r)
                 .nx      = nx,
                 .ny      = ny,
                 .nz      = nz,
-                .ox      = 0,
-                .oy      = 0,
-                .options = 0,
+                .ox      = ox,
+                .oy      = oy,
+                .options = options,
+                .model   = model,
             };
             /* todo: fast path for 2 and 4 */
             if (r > 255) {

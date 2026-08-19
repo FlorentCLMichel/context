@@ -80,10 +80,10 @@
 */
 
 typedef int             strnumber;   /*  int32_t */
-typedef int             halfword;    /*  int32_t */
 typedef long long       fullword;    /*  int64_t */
-typedef unsigned short  quarterword; /* uint32_t */ /*tex It really is an unsigned one! But \MPLIB| had it signed. */
-typedef unsigned char   singleword;  /*  int16_t */
+typedef int             halfword;    /*  int32_t */
+typedef unsigned short  quarterword; /* uint16_t */ /*tex It really is an unsigned one! But \MPLIB| had it signed. */
+typedef unsigned char   singleword;  /*  uint8_t */
 typedef int             scaled;      /*  int32_t */
 typedef double          glueratio;                    /*tex This looks better in our (tex specific) syntax highlighting. */
 typedef int             pointer;     /*  int32_t */ /*tex Maybe I'll replace halfwords that act as pointer some day. */
@@ -153,8 +153,8 @@ extern halfword tex_badness(
 # define cs_offset_max                     0x001FFFFF
 # define cs_token_flag                     0x1FFFFFFF
 
-# define max_cardinal                      0xFFFFFFFF
-# define min_cardinal                               0
+# define max_cardinal                      0xFFFFFFFFU
+# define min_cardinal                      0x00000000U
 # define max_integer                       0x7FFFFFFF  /*tex aka |infinity| */
 # define min_integer                     (-0x7FFFFFFF) /*tex aka |min_infinity| */
 # define max_longinteger             0x7FFFFFFFFFFFFF 
@@ -170,6 +170,9 @@ extern halfword tex_badness(
 # define min_data_value                             0
 # define max_data_value                 cs_offset_max
 # define max_half_value                         32767  /*tex For instance sf codes.*/
+
+# define max_text_font_parameters                 512
+# define max_math_font_parameters                1024
 
 # define one_bp                                 65781
 
@@ -200,7 +203,7 @@ extern halfword tex_badness(
 # define min_halfword                    (-0x3FFFFFFF) /*tex The smallest allowable value in a |halfword|. */
 # define max_halfword                      0x3FFFFFFF  /*tex The largest allowable value in a |halfword|. */
 
-# define null_flag                       (-0x40000000)
+# define null_flag                       (-0x40000000) /*tex Also used for a runnign rule. */
 # define zero_glue                                  0
 # define unity                                0x10000  /*tex |0200000| or $2^{16}$, represents 1.00000 */
 # define two                                  0x20000  /*tex |0400000| or $2^{17}$, represents 2.00000 */
@@ -340,8 +343,7 @@ extern halfword tex_badness(
 # define max_n_list_stack_entries                15 
 
 # define max_character_code                0x10FFFF  /*tex 1114111, the largest allowed character number; must be |< max_halfword| */
-//define max_math_character_code           0x0FFFFF  /*tex 1048575, for now this is plenty, otherwise we need to store differently */
-# define max_math_character_code max_character_code  /*tex part gets clipped when we convert to a number */
+# define max_math_character_code           0x0FFFFF  /*tex the sparse math-code tables have 20 character bits */
 # define max_function_reference       cs_offset_max
 # define min_iterator_value               (-0xFFFFF) /* When we decide to generalize it might become 0xFFFF0 with */
 # define max_iterator_value                 0xFFFFF  /* 0x0000F being a classifier so that we save cmd's          */
@@ -415,20 +417,20 @@ extern halfword tex_badness(
 # define math_family_bits     6
 # define math_character_bits 20
 
-# define math_class_part(a)     ((a >> 26) & 0x3F)
-# define math_family_part(a)    ((a >> 20) & 0x3F)
-# define math_character_part(a)  (a        & 0xFFFFF)
+# define math_class_part(a)               (((uint32_t) (a) >> 26) & 0x3F)
+# define math_family_part(a)              (((uint32_t) (a) >> 20) & 0x3F)
+# define math_character_part(a)            ((uint32_t) (a)        & 0xFFFFF)
 
-# define math_old_class_part(a)     ((a >> 12) & 0x0F)
-# define math_old_family_part(a)    ((a >>  8) & 0x0F)
-# define math_old_character_part(a)  (a        & 0xFF)
+# define math_old_class_part(a)           (((uint32_t) (a) >> 12) & 0x0F)
+# define math_old_family_part(a)          (((uint32_t) (a) >>  8) & 0x0F)
+# define math_old_character_part(a)        ((uint32_t) (a)        & 0xFF)
 
-# define math_old_class_mask(a)     (a & 0x0F)
-# define math_old_family_mask(a)    (a & 0x0F)
-# define math_old_character_mask(a) (a & 0xFF)
+# define math_old_class_mask(a)           (a & 0x0F)
+# define math_old_family_mask(a)          (a & 0x0F)
+# define math_old_character_mask(a)       (a & 0xFF)
 
-# define math_packed_character(c,f,v)     (((c & 0x3F) << 26) + ((f & 0x3F) << 20) + (v & 0xFFFFF))
-# define math_old_packed_character(c,f,v) (((c & 0x0F) << 12) + ((f & 0x0F) <<  8) + (v & 0x000FF))
+# define math_packed_character(c,f,v)     ((uint32_t) ((((uint32_t) (c) & 0x3F) << 26) | (((uint32_t) (f) & 0x3F) << 20) | ((uint32_t) (v) & 0xFFFFF)))
+# define math_old_packed_character(c,f,v) ((uint32_t) ((((uint32_t) (c) & 0x0F) << 12) | (((uint32_t) (f) & 0x0F) <<  8) | ((uint32_t) (v) & 0x000FF)))
 
 # define rule_font_fam_offset 0xFFFFFF
 
@@ -1160,5 +1162,35 @@ typedef enum eq_equal_states {
     eq_state_same_value   = 2,
 } eq_equal_states;
 
-# endif
+/*tex 
 
+    This is also a sort of documentation. Active characters are stored in the hash using a prefix 
+    which assumes that users don't use that one. So far we've seen no clashes which is due to the 
+    fact that the namespace prefix U+FFFF is an invalid \UNICODE\ character and it's kind of hard 
+    to get that one into the input anyway. 
+
+    The replacement character U+FFFD is a kind of fallback when we run into some troubles or when 
+    a control sequence is expected (and undefined is unacceptable). 
+
+    U+FFFD  REPLACEMENT CHARACTER 
+    U+FFFE  NOT A CHARACTER
+    U+FFFF  NOT A CHARACTER 
+
+    I experimented with a namespace character (catcodetable id) as fourth character but there are
+    some unwanted side effects, for instance in testing an active character as separator (in 
+    arguments) so that code was eventually removed. I might come back to this one day (active
+    characters in the catcode regime namespace).
+
+*/
+
+# define utf_fffd_string            "\xEF\xBF\xBD" /* U+FFFD : 65533 */
+# define active_character_namespace "\xEF\xBF\xBF" /* U+FFFF : 65535 */
+# define active_character_unknown   "\xEF\xBF\xBD" /* utf_fffd_string */
+
+# define active_character_namespace_len 3 /* excludes the trailing \0 */
+
+# define active_character_first  0xEFU
+# define active_character_second 0xBFU
+# define active_character_third  0xBFU
+
+# endif

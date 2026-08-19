@@ -41,6 +41,9 @@ set(lua_sources
     source/luacore/luapeg/lpcset.c
     source/luacore/luapeg/lpcode.c
 
+    # here so that we don't get these alignment warnings
+
+    source/lua/lmtluaclib.c
 )
 
 add_library(lua STATIC ${lua_sources})

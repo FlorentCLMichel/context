@@ -203,20 +203,9 @@ static unsigned int hnj_string_hash(const unsigned char *s)
 
 // So overall pretty unreliable because who says it won't come with the original bad one.
 
-// But anyway, we can also do this:
+*/ /*tex
 
-*/
-
-/*
-
-static unsigned int string_hash(const unsigned char *s) // djb2a
-{
-    unsigned int h = 5381;
-    for (; *s != '\0'; s++) {
-        h = ((h << 5) + h) + *s; // h * 33 + *s
-    }
-    return h;
-}
+    In the end I settled on this and Codex agreed on it.
 
 */
 
@@ -235,9 +224,11 @@ static void state_insert(hjn_hashtable *hashtab, unsigned char *key, int state)
 {
     int i = (int) (string_hash(key) % HNJ_HASH_SIZE);
     hjn_hashentry* e = hnj_malloc(sizeof(hjn_hashentry));
-    e->next = hashtab->entries[i];
-    e->key = key;
-    e->u.state = state;
+    *e = (hjn_hashentry) {
+        .next    = hashtab->entries[i],
+        .key     = key,
+        .u.state = state,
+    };
     hashtab->entries[i] = e;
 }
 
@@ -250,7 +241,7 @@ static void insert_pattern(hjn_hashtable *hashtab, unsigned char *key, char *hyp
     for (e = hashtab->entries[i]; e; e = e->next) {
         if (strcmp((char *) e->key, (char *) key) == 0) {
             if (e->u.hyppat) {
-                if (trace && hyppat && strcmp((char *) e->u.hyppat, (char *) hyppat) != 0) {
+                if lmt_unlikely(trace && hyppat && strcmp((char *) e->u.hyppat, (char *) hyppat) != 0) {
                     tex_formatted_warning("hyphenation", "a conflicting pattern '%s' has been ignored", hyppat);
                 }
                 hnj_free(e->u.hyppat);
@@ -261,9 +252,11 @@ static void insert_pattern(hjn_hashtable *hashtab, unsigned char *key, char *hyp
         }
     }
     e = hnj_malloc(sizeof(hjn_hashentry));
-    e->next = hashtab->entries[i];
-    e->key = key;
-    e->u.hyppat = hyppat;
+    *e = (hjn_hashentry) {
+        .next     = hashtab->entries[i],
+        .key      = key,
+        .u.hyppat = hyppat,
+    };
     hashtab->entries[i] = e;
 }
 
@@ -487,31 +480,35 @@ void hnj_dictionary_free(hjn_dictionary *dict)
 
 unsigned char *hnj_dictionary_tostring(hjn_dictionary *dict)
 {
-    unsigned char *word;
-    char *pattern;
-    unsigned char *buf = hnj_malloc(dict->pat_length);
-    unsigned char *cur = buf;
-    hjn_hashiterator *v = new_hashiterator(dict->patterns);
-    while (eachhash(v, &word, &pattern)) {
-        int i = 0;
-        int e = 0;
-        while (word[e + i]) {
+    if (dict && dict->pat_length > 0) {
+        unsigned char *word;
+        char *pattern;
+        unsigned char *buf = hnj_malloc(dict->pat_length);
+        unsigned char *cur = buf;
+        hjn_hashiterator *v = new_hashiterator(dict->patterns);
+        while (eachhash(v, &word, &pattern)) {
+            int i = 0;
+            int e = 0;
+            while (word[e + i]) {
+                if (pattern[i] != '0') {
+                    *cur++ = (unsigned char) pattern[i];
+                }
+                *cur++ = word[e + i++];
+                while (is_utf8_follow(word[e + i])) {
+                    *cur++ = word[i + e++];
+                }
+            }
             if (pattern[i] != '0') {
                 *cur++ = (unsigned char) pattern[i];
             }
-            *cur++ = word[e + i++];
-            while (is_utf8_follow(word[e + i])) {
-                *cur++ = word[i + e++];
-            }
+            *cur++ = ' ';
         }
-        if (pattern[i] != '0') {
-            *cur++ = (unsigned char) pattern[i];
-        }
-        *cur++ = ' ';
+        delete_hashiterator(v);
+        *cur = 0;
+        return buf;
+    } else {
+        return NULL;
     }
-    delete_hashiterator(v);
-    *cur = 0;
-    return buf;
 }
 
 /*tex

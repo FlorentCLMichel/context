@@ -924,42 +924,16 @@ local function unifyglyphs(fontdata,usenames)
         end
     end
     --
-    if LUATEXENGINE == "luametatex" then
-        for index=1,nofglyphs do
-            local math = glyphs[index].math
-            if math then
-                local list = math.parts
-                if list then
-                    for i=1,#list do local l = list[i] l.glyph = indices[l.glyph] end
-                end
-                local list = math.variants
-                if list then
-                    for i=1,#list do list[i] = indices[list[i]] end
-                end
+    for index=1,nofglyphs do
+        local math = glyphs[index].math
+        if math then
+            local list = math.parts
+            if list then
+                for i=1,#list do local l = list[i] l.glyph = indices[l.glyph] end
             end
-        end
-    else
-        for index=1,nofglyphs do
-            local math = glyphs[index].math
-            if math then
-                local list = math.vparts
-                if list then
-                    for i=1,#list do local l = list[i] l.glyph = indices[l.glyph] end
-                end
-                local list = math.hparts
-                if list then
-                    for i=1,#list do local l = list[i] l.glyph = indices[l.glyph] end
-                end
-                local list = math.vvariants
-                if list then
-                 -- for i=1,#list do local l = list[i] l.glyph = indices[l.glyph] end
-                    for i=1,#list do list[i] = indices[list[i]] end
-                end
-                local list = math.hvariants
-                if list then
-                 -- for i=1,#list do local l = list[i] l.glyph = indices[l.glyph] end
-                    for i=1,#list do list[i] = indices[list[i]] end
-                end
+            local list = math.variants
+            if list then
+                for i=1,#list do list[i] = indices[list[i]] end
             end
         end
     end
@@ -977,6 +951,73 @@ local function unifyglyphs(fontdata,usenames)
                 end
             end
         end
+    end
+    -- COLRv1 paint graphs are read in glyph-ID space. Once glyphs are
+    -- unified, all glyph references exposed to the runtime must use the same
+    -- Unicode/private index space as descriptions and legacy COLRv0 layers.
+    local colorpaintdata = resources.colorpaintdata
+    if colorpaintdata then
+        for i=1,#colorpaintdata do
+            local paint = colorpaintdata[i]
+            if paint then
+                local glyph = paint.glyph
+                if glyph then
+                    paint.glyph = indices[glyph] or glyph
+                end
+            end
+        end
+    end
+    local colorpaintlist = resources.colorpaintlist
+    if colorpaintlist then
+        local remapped = { }
+        for glyph, paint in next, colorpaintlist do
+            local unicode = indices[glyph]
+            if unicode then
+                remapped[unicode] = paint
+            end
+        end
+        resources.colorpaintlist = remapped
+    end
+    local bitmapshapes = resources.bitmapshapes
+    if bitmapshapes then
+        local remapped = { }
+        for glyph, shape in next, bitmapshapes do
+            local unicode = indices[glyph]
+            if unicode then
+                remapped[unicode] = shape
+                local components = shape.components
+                if components then
+                    for i=1,#components do
+                        local component = components[i]
+                        local glyph     = component.glyph
+                        component.glyph = indices[glyph] or glyph
+                    end
+                end
+            end
+        end
+        resources.bitmapshapes = remapped
+    end
+    local attachments = resources.attachments
+    if attachments then
+        local remapped = { }
+        for glyph, points in next, attachments do
+            local unicode = indices[glyph]
+            if unicode then
+                remapped[unicode] = points
+            end
+        end
+        resources.attachments = remapped
+    end
+    local ligaturecarets = resources.ligaturecarets
+    if ligaturecarets then
+        local remapped = { }
+        for glyph, carets in next, ligaturecarets do
+            local unicode = indices[glyph]
+            if unicode then
+                remapped[unicode] = carets
+            end
+        end
+        resources.ligaturecarets = remapped
     end
     --
     fontdata.private      = private

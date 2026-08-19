@@ -101,17 +101,36 @@ static inline double dotproduct(double ax, double ay, double az, double bx, doub
     return ax * bx + ay * by + az * bz;
 }
 
+// static inline void normalize(double *x, double *y, double *z)
+// {
+//     double length = sqrt(*x * *x + *y * *y + *z * *z);
+//     if (length == 0.0) {
+//         *x = 0.0;
+//         *y = 0.0;
+//         *z = 1.0;
+//     } else {
+//         double inv_length = 1.0 / length;
+//         *x *= inv_length;
+//         *y *= inv_length;
+//         *z *= inv_length;
+//     }
+// }
+
 static inline void normalize(double *x, double *y, double *z)
 {
-    double length = sqrt(*x * *x + *y * *y + *z * *z);
-    if (length == 0.0) {
-        *x = 0;
-        *y = 0;
-        *z = 1;
+    double vx = *x;
+    double vy = *y;
+    double vz = *z;
+    double len_sq = vx * vx + vy * vy + vz * vz;
+    if (len_sq == 0.0) {
+        *x = 0.0;
+        *y = 0.0;
+        *z = 1.0;
     } else {
-        *x = *x / length;
-        *y = *y / length;
-        *z = *z / length;
+        double inv_length = 1.0 / sqrt(len_sq);
+        *x = vx * inv_length;
+        *y = vy * inv_length;
+        *z = vz * inv_length;
     }
 }
 
@@ -657,8 +676,8 @@ static int zbufferlib_crop(lua_State *L)
                     }
                     new->setup.viewport.xmin = 0;
                     new->setup.viewport.ymin = 0;
-                    new->setup.viewport.xmax = nofrows - 1;
-                    new->setup.viewport.ymax = nofcolumns - 1;
+                    new->setup.viewport.xmax = nofcolumns - 1;
+                    new->setup.viewport.ymax = nofrows - 1;
                 }
                 return 1;
             }
@@ -761,7 +780,7 @@ static int zbufferlib_resolve(lua_State *L)
             int height  = old->rows / factor;
             zbuffer new = zbufferlib_aux_push(L, height, width);
             if (new) {
-                int samples = factor * factor;
+                double inv_samples = 1.0 / (factor * factor);
                 for (int y = 0; y < height; y++) {
                     for (int x = 0; x < width; x++) {
                         zcolor red     = 0;
@@ -794,14 +813,14 @@ static int zbufferlib_resolve(lua_State *L)
                         }
                         {
                             zentry n = &(new->data[y * new->columns + x]);
-                            n->red     = red   / samples;
-                            n->green   = green / samples;
-                            n->blue    = blue  / samples;
+                            n->red     = red   * inv_samples;
+                            n->green   = green * inv_samples;
+                            n->blue    = blue  * inv_samples;
                             n->depth   = depth;
                             n->opacity = opacity;
-                            n->nx      = nx / samples;
-                            n->ny      = ny / samples;
-                            n->nz      = nz / samples;
+                            n->nx      = nx * inv_samples;
+                            n->ny      = ny * inv_samples;
+                            n->nz      = nz * inv_samples;
                         }
                     }
                 };
@@ -855,7 +874,7 @@ static int zbufferlib_tobytes(lua_State *L)
     return 0;
 }
 
-static zentry  zbufferlib_valid_index(lua_State *L)
+static zentry zbufferlib_valid_index(lua_State *L)
 {
     zbuffer zb = zbufferlib_aux_get(L, 1);
     if (zb && zb->data) {
@@ -1065,6 +1084,46 @@ static inline double edge(double ax, double ay, double bx, double by, double px,
     return (px - ax) * (by - ay) - (py - ay) * (bx - ax);
 }
 
+// static inline int interpolationweights(
+//     int    perspective,
+//     double l1,
+//     double l2,
+//     double l3,
+//     double d1,
+//     double d2,
+//     double d3,
+//     double *depth,
+//     double *w1,
+//     double *w2,
+//     double *w3
+// )
+// {
+//     if (perspective) {
+//         double inv1 = 1.0 / d1;
+//         double inv2 = 1.0 / d2;
+//         double inv3 = 1.0 / d3;
+//         double denominator = l1 * inv1 + l2 * inv2 + l3 * inv3;
+//         if (fabs(denominator) <= raster_epsilon) {
+//             *depth = 0;
+//             *w1    = 0;
+//             *w2    = 0;
+//             *w3    = 0;
+//             return 0;
+//         } else {
+//             *depth = 1.0 / denominator;
+//             *w1    = l1 * inv1 / denominator;
+//             *w2    = l2 * inv2 / denominator;
+//             *w3    = l3 * inv3 / denominator;
+//         }
+//     } else {
+//         *depth = l1 * d1 + l2 * d2 + l3 * d3;
+//         *w1    = l1;
+//         *w2    = l2;
+//         *w3    = l3;
+//     }
+//     return 1;
+// }
+
 static inline int interpolationweights(
     int    perspective,
     double l1,
@@ -1083,19 +1142,24 @@ static inline int interpolationweights(
         double inv1 = 1.0 / d1;
         double inv2 = 1.0 / d2;
         double inv3 = 1.0 / d3;
-        double denominator = l1 * inv1 + l2 * inv2 + l3 * inv3;
+        /* Term products used for denominator and weights */
+        double term1 = l1 * inv1;
+        double term2 = l2 * inv2;
+        double term3 = l3 * inv3;
+        double denominator = term1 + term2 + term3;
         if (fabs(denominator) <= raster_epsilon) {
-            *depth = 0;
-            *w1    = 0;
-            *w2    = 0;
-            *w3    = 0;
+            *depth = 0.0;
+            *w1    = 0.0;
+            *w2    = 0.0;
+            *w3    = 0.0;
             return 0;
-        } else {
-            *depth = 1.0 / denominator;
-            *w1    = l1 * inv1 / denominator;
-            *w2    = l2 * inv2 / denominator;
-            *w3    = l3 * inv3 / denominator;
         }
+        /* 1 division instead of 4 separate divisions by denominator */
+        double inv_denom = 1.0 / denominator;
+        *depth = inv_denom;
+        *w1    = term1 * inv_denom;
+        *w2    = term2 * inv_denom;
+        *w3    = term3 * inv_denom;
     } else {
         *depth = l1 * d1 + l2 * d2 + l3 * d3;
         *w1    = l1;
@@ -1335,13 +1399,14 @@ static void zbuffertriangle(zbuffer zb, const zbuffervectorn *p1, const zbufferv
      // int maxx = limited(ceil (fffmax(p1->sx, p2->sx, p3->sx)),     1, zb->columns);
      // int miny = limited(floor(fffmin(p1->sy, p2->sy, p3->sy)) + 1, 1, zb->rows);
      // int maxy = limited(ceil (fffmax(p1->sy, p2->sy, p3->sy)),     1, zb->rows);
+        double inv_area = 1.0 / area;
         for (int py = miny; py <= maxy; py++) {
             double sy = py - 0.5;
             for (int px = minx; px <= maxx; px++) {
                 double sx = px - 0.5;
-                double l1 = edge(p2->sx, p2->sy, p3->sx, p3->sy, sx, sy) / area;
-                double l2 = edge(p3->sx, p3->sy, p1->sx, p1->sy, sx, sy) / area;
-                double l3 = edge(p1->sx, p1->sy, p2->sx, p2->sy, sx, sy) / area;
+                double l1 = edge(p2->sx, p2->sy, p3->sx, p3->sy, sx, sy) * inv_area;
+                double l2 = edge(p3->sx, p3->sy, p1->sx, p1->sy, sx, sy) * inv_area;
+                double l3 = edge(p1->sx, p1->sy, p2->sx, p2->sy, sx, sy) * inv_area;
                 if (l1 >= raster_nepsilon && l2 >= raster_nepsilon && l3 >= raster_nepsilon) {
                     /* we are inside the triangle */
                     double depth, w1, w2, w3;
@@ -1581,15 +1646,17 @@ static int zbufferlib_points(lua_State *L)
                             double tx = nxt.sx - cur.sx;
                             double ty = nxt.sy - cur.sy;
                             double tnorm = sqrt(tx*tx + ty*ty);
-                            tx = dy * tx/tnorm;
-                            ty = dx * ty/tnorm;
-                            {
-                                zbuffervectorn A = cur; A.sx -= ty; A.sy += tx;
-                                zbuffervectorn B = cur; B.sx += ty; B.sy -= tx;
-                                zbuffervectorn C = nxt; C.sx -= ty; C.sy += tx;
-                                zbuffervectorn D = nxt; D.sx += ty; D.sy -= tx;
-                                zbuffertriangle(zb, &A, &B, &C, transparent, dp);
-                                zbuffertriangle(zb, &B, &D, &C, transparent, dp);
+                            if (tnorm > raster_epsilon) {
+                                tx = dy * tx/tnorm;
+                                ty = dx * ty/tnorm;
+                                {
+                                    zbuffervectorn A = cur; A.sx -= ty; A.sy += tx;
+                                    zbuffervectorn B = cur; B.sx += ty; B.sy -= tx;
+                                    zbuffervectorn C = nxt; C.sx -= ty; C.sy += tx;
+                                    zbuffervectorn D = nxt; D.sx += ty; D.sy -= tx;
+                                    zbuffertriangle(zb, &A, &B, &C, transparent, dp);
+                                    zbuffertriangle(zb, &B, &D, &C, transparent, dp);
+                                }
                             }
                             initial = 1;
                         }
@@ -1622,19 +1689,21 @@ static int zbufferlib_points(lua_State *L)
                              double tx = nxt.sx - cur.sx;
                              double ty = nxt.sy - cur.sy;
                              double tnorm = sqrt(tx*tx + ty*ty);
-                             tx = dy * tx/tnorm;
-                             ty = dx * ty/tnorm;
-                             if (! done) {
-                                 A = cur; A.sx -= ty; A.sy += tx;
-                                 B = cur; B.sx += ty; B.sy -= tx;
-                                 done = 1;
+                             if (tnorm > raster_epsilon) {
+                                 tx = dy * tx/tnorm;
+                                 ty = dx * ty/tnorm;
+                                 if (! done) {
+                                     A = cur; A.sx -= ty; A.sy += tx;
+                                     B = cur; B.sx += ty; B.sy -= tx;
+                                     done = 1;
+                                 }
+                                 zbuffervectorn C = nxt; C.sx -= ty; C.sy += tx;
+                                 zbuffervectorn D = nxt; D.sx += ty; D.sy -= tx;
+                                 zbuffertriangle(zb, &A, &B, &C, transparent, dp);
+                                 zbuffertriangle(zb, &B, &D, &C, transparent, dp);
+                                 A = C;
+                                 B = D;
                              }
-                             zbuffervectorn C = nxt; C.sx -= ty; C.sy += tx;
-                             zbuffervectorn D = nxt; D.sx += ty; D.sy -= tx;
-                             zbuffertriangle(zb, &A, &B, &C, transparent, dp);
-                             zbuffertriangle(zb, &B, &D, &C, transparent, dp);
-                             A = C;
-                             B = D;
                         }
                         cur = nxt;
                      // if (method == axis_points_method && (i % 2) == 1) {
@@ -1876,7 +1945,7 @@ static int zbufferlib_triangled(lua_State *L)
                                                 double y3 = first[i+1].sy;
                                                 double area = edge(x1, y1, x2, y2, x3, y3);
                                                 if (fabs(area) > raster_epsilon) {
-                                                    if ((result->index + 3 > result->size) && ! vectorlib_points_aux_grow(L, result, 1000)) {
+                                                    if ((result->index + 3 > result->size) && ! vectorlib_points_aux_grow(L, result, 1024)) {
                                                         return 0;
                                                     } else {
                                                         result->data[result->index++] = (pointdata) {
@@ -1991,8 +2060,8 @@ static int zbufferlib_smoothen(lua_State *L)
                         int c     = jnu  +  i - 1;
                         int uprev = jnu  + im - 1;
                         int unext = jnu  + ip - 1;
-                        int vnext = jmnu + ip - 1;
-                        int vprev = jpnu + ip - 1;
+                        int vnext = jmnu +  i - 1;
+                        int vprev = jpnu +  i - 1;
                         double ux = v->data[unext].x - v->data[uprev].x;
                         double uy = v->data[unext].y - v->data[uprev].y;
                         double uz = v->data[unext].z - v->data[uprev].z;
@@ -2197,7 +2266,7 @@ typedef enum normalmodes {
     normal_smooth = 0x0,
     normal_flat   = 0x1,
     normal_up     = 0x2,
-    normal_given  = 0x3,
+    normal_auto   = 0x3,
 } normalmodes;
 
 typedef struct tetra {
@@ -2205,7 +2274,272 @@ typedef struct tetra {
     double y;
     double z;
     double v;
-} tetra ;
+} tetra;
+
+/*tex
+
+    Once we had the code in sort-of-good-shape we decidd to see if we could speed it up. When
+    shown the implcit code and asking if an imperative approach would bring fain, Gemini
+    (flash) though that it indeed could (it recognized the algorithm) although it noted that
+    the \LUA\ overhead is the bottleneck (which it is). It also suggested caching with example
+    code. When we consulted Chat 5.6 on this it claimed that we rarely recurse and that a cache
+    would help more. So, this is what it came up with when asked, feeding it the existing code.
+    Not much cleanup was needed bcause Chat uses the helpers we provide and sticks to how we
+    design the code. We assume this kind of (tree based) cache is common in this usage pattern.
+
+    So is this indeed faster? Yes it is, and likely that is to a large extent due to the fact
+    that we have less calls to \LUA\ for points and normals.
+
+*/
+
+# define implicit_sample_unknown 0x0
+# define implicit_sample_invalid 0x1
+# define implicit_sample_valid   0x2
+
+typedef struct implicitcache {
+    int            nx;
+    int            ny;
+    int            lower_k;
+    int            upper_k;
+    int            lower_slot;
+    int            upper_slot;
+    size_t         planesize;
+    size_t         valuebytes;
+    size_t         statebytes;
+    double        *values[2];
+    unsigned char *states[2];
+} implicitcache;
+
+static void implicitcache_release(implicitcache *cache)
+{
+    if (cache->values[0]) {
+        vectorlib_memory_free(cache->values[0], cache->valuebytes);
+    }
+    if (cache->values[1]) {
+        vectorlib_memory_free(cache->values[1], cache->valuebytes);
+    }
+    if (cache->states[0]) {
+        vectorlib_memory_free(cache->states[0], cache->statebytes);
+    }
+    if (cache->states[1]) {
+        vectorlib_memory_free(cache->states[1], cache->statebytes);
+    }
+    memset(cache, 0, sizeof(implicitcache));
+}
+
+static int implicitcache_initialize(implicitcache *cache, int nx, int ny)
+{
+    memset(cache, 0, sizeof(implicitcache));
+    cache->nx         = nx;
+    cache->ny         = ny;
+    cache->lower_k    = -1;
+    cache->upper_k    = -1;
+    cache->lower_slot = 0;
+    cache->upper_slot = 1;
+    cache->planesize  = (size_t) nx * (size_t) ny;
+    if (cache->planesize > (size_t) -1 / sizeof(double)) {
+        return 0;
+    }
+    cache->valuebytes = cache->planesize * sizeof(double);
+    cache->statebytes = cache->planesize * sizeof(unsigned char);
+    for (int slot = 0; slot < 2; slot++) {
+        cache->values[slot] = vectorlib_memory_malloc(cache->valuebytes);
+        if (! cache->values[slot]) {
+            implicitcache_release(cache);
+            return 0;
+        }
+        cache->states[slot] = vectorlib_memory_calloc(cache->planesize, sizeof(unsigned char));
+        if (! cache->states[slot]) {
+            implicitcache_release(cache);
+            return 0;
+        }
+    }
+    return 1;
+}
+
+static void implicitcache_begin(implicitcache *cache, int k)
+{
+    if (cache->lower_k < 0) {
+        cache->lower_k = k;
+        cache->upper_k = k + 1;
+        memset(cache->states[cache->lower_slot], 0, cache->statebytes);
+        memset(cache->states[cache->upper_slot], 0, cache->statebytes);
+    } else if (k == cache->lower_k + 1) {
+        int slot = cache->lower_slot;
+        cache->lower_slot = cache->upper_slot;
+        cache->upper_slot = slot;
+        cache->lower_k = k;
+        cache->upper_k = k + 1;
+        memset(cache->states[cache->upper_slot], 0, cache->statebytes);
+    } else if (k != cache->lower_k) {
+        cache->lower_k = k;
+        cache->upper_k = k + 1;
+        cache->lower_slot = 0;
+        cache->upper_slot = 1;
+        memset(cache->states[0], 0, cache->statebytes);
+        memset(cache->states[1], 0, cache->statebytes);
+    }
+}
+
+static inline int implicitcache_slot(const implicitcache *cache, int k)
+{
+    if (k == cache->lower_k) {
+        return cache->lower_slot;
+    } else if (k == cache->upper_k) {
+        return cache->upper_slot;
+    } else {
+        return -1;
+    }
+}
+
+static inline int implicitcache_index(const implicitcache *cache, int i, int j, int k, int *slot, size_t *index)
+{
+    int s = implicitcache_slot(cache, k);
+    if (s < 0 || i < 0 || i >= cache->nx || j < 0 || j >= cache->ny) {
+        return 0;
+    }
+    *slot  = s;
+    *index = (size_t) j * (size_t) cache->nx + (size_t) i;
+    return 1;
+}
+
+static inline int implicitcache_lookup(const implicitcache *cache, tetra *t, int i, int j, int k)
+{
+    int slot;
+    size_t index;
+    if (! implicitcache_index(cache, i, j, k, &slot, &index)) {
+        return -1;
+    }
+    unsigned char state = cache->states[slot][index];
+    if (state == implicit_sample_unknown) {
+        return -1;
+    }
+    t->v = cache->values[slot][index];
+    return state == implicit_sample_valid;
+}
+
+static inline void implicitcache_store(implicitcache *cache, int i, int j, int k, double value, int okay)
+{
+    int slot;
+    size_t index;
+    if (implicitcache_index(cache, i, j, k, &slot, &index)) {
+        cache->values[slot][index] = value;
+        cache->states[slot][index] = okay ? implicit_sample_valid : implicit_sample_invalid;
+    }
+}
+
+/*
+    It is a bit ugly but because some points get copied we can save on calculating the point
+    normals when we make two tringles from four points.
+*/
+
+/*tex These two are the bottlenecks! */
+
+static inline double call_fp(lua_State *L, int slot, tetra *t)
+{
+    int top = lua_gettop(L);
+    lua_pushvalue(L, slot);
+    lua_pushnumber(L, t->x);
+    lua_pushnumber(L, t->y);
+    lua_pushnumber(L, t->z);
+    lua_call(L, 3, 1);
+    int okay = lua_type(L, -1) == LUA_TNUMBER;
+    if (okay) {
+        t->v = lua_tonumber(L, -1);
+    } else {
+        t->v = 0;
+    }
+    lua_settop(L, top);
+    return okay;
+}
+
+static inline void call_fn(lua_State *L, int slot, point p, double step)
+{
+    int top = lua_gettop(L);
+    lua_pushvalue(L, slot);
+    lua_pushnumber(L, p->x);
+    lua_pushnumber(L, p->y);
+    lua_pushnumber(L, p->z);
+    lua_pushnumber(L, step);
+    lua_call(L, 4, 3);
+    p->nx = lua_tonumber(L, -3);
+    p->ny = lua_tonumber(L, -2);
+    p->nz = lua_tonumber(L, -1);
+ /* we inline : normalize(&(p->nx), &(p->ny), &(p->nz)); */
+    double sq = p->nx * p->nx + p->ny * p->ny + p->nz * p->nz;
+    if (sq == 0.0) {
+        p->nx = 0.0;
+        p->ny = 0.0;
+        p->nz = 1.0;
+    } else {
+        double inv_length = 1.0 / sqrt(sq);
+        p->nx *= inv_length;
+        p->ny *= inv_length;
+        p->nz *= inv_length;
+    }
+    lua_settop(L, top);
+}
+
+static inline int call_fa_value(lua_State *L, int slot, double x, double y, double z, double *value)
+{
+    lua_pushvalue(L, slot);
+    lua_pushnumber(L, x);
+    lua_pushnumber(L, y);
+    lua_pushnumber(L, z);
+    lua_call(L, 3, 1);
+    int okay = lua_type(L, -1) == LUA_TNUMBER;
+    if (okay) {
+        *value = lua_tonumber(L, -1);
+    }
+    lua_pop(L, 1);
+    return okay;
+}
+
+static inline double finite_difference(int plusokay, int minusokay, double plus, double minus, double center, double step)
+{
+    if (plusokay && minusokay) {
+        return (plus-minus) / (2*step);
+    } else if (plusokay) {
+        return (plus-center) / step;
+    } else if (minusokay) {
+        return (center-minus) / step;
+    } else {
+        return 0;
+    }
+}
+
+static inline void call_fa(lua_State *L, int slot, point p, double step)
+{
+    double f0;
+    int    okay_f0  = call_fa_value(L, slot, p->x,      p->y,      p->z,      &f0);
+
+    if (! okay_f0) {
+        p->nx = 0;
+        p->ny = 0;
+        p->nz = 1;
+    } else {
+        double xp, xm, yp, ym, zp, zm;
+
+        int okay_xp = call_fa_value(L, slot, p->x+step, p->y,      p->z,      &xp);
+        int okay_xm = call_fa_value(L, slot, p->x-step, p->y,      p->z,      &xm);
+        int okay_yp = call_fa_value(L, slot, p->x,      p->y+step, p->z,      &yp);
+        int okay_ym = call_fa_value(L, slot, p->x,      p->y-step, p->z,      &ym);
+        int okay_zp = call_fa_value(L, slot, p->x,      p->y,      p->z+step, &zp);
+        int okay_zm = call_fa_value(L, slot, p->x,      p->y,      p->z-step, &zm);
+
+        p->nx = finite_difference(okay_xp, okay_xm, xp, xm, f0, step);
+        p->ny = finite_difference(okay_yp, okay_ym, yp, ym, f0, step);
+        p->nz = finite_difference(okay_zp, okay_zm, zp, zm, f0, step);
+        normalize(&p->nx, &p->ny, &p->nz);
+    }
+}
+
+/*tex
+    We can either calculate normals when we make triangles or we can do this when a point is created. I tested both
+    variants and even had a choice but now just stick to calculating it on the points. It's more efficient because
+    sometimes we share points in which case in triangles we would calculate twice. We could consider a more efficient
+    approach when we have four points turnign two triangles.
+*/
 
 static void addtriangle(lua_State *L, const points vertices, int mode, pointdata a, pointdata b, pointdata c)
 {
@@ -2222,30 +2556,31 @@ static void addtriangle(lua_State *L, const points vertices, int mode, pointdata
     if (area > epsilon2) {
         switch (mode) {
             case normal_smooth:
+                /* already done */
                 break;
             case normal_flat:
-                {
-                    nx = a.nx + b.nx + c.nx;
-                    ny = a.ny + b.ny + c.ny;
-                    nz = a.nz + b.nz + c.nz;
-                    normalize(&nx, &ny, &nz);
-                    a.nx = nx ; a.ny = ny ; a.nz = nz;
-                    b.nx = nx ; b.ny = ny ; b.nz = nz;
-                    c.nx = nx ; c.ny = ny ; c.nz = nz;
-                }
+                normalize(&nx, &ny, &nz);
+                a.nx = nx ; a.ny = ny ; a.nz = nz;
+                b.nx = nx ; b.ny = ny ; b.nz = nz;
+                c.nx = nx ; c.ny = ny ; c.nz = nz;
                 break;
             case normal_up:
-                a.nx = 0 ; a.ny = 0 ; a.nz = 1;
-                b.nx = 0 ; b.ny = 0 ; b.nz = 1;
-                c.nx = 0 ; c.ny = 0 ; c.nz = 1;
+                /* this can go because we already have set these */
+             // a.nx = 0 ; a.ny = 0 ; a.nz = 1;
+             // b.nx = 0 ; b.ny = 0 ; b.nz = 1;
+             // c.nx = 0 ; c.ny = 0 ; c.nz = 1;
+                break;
+            case normal_auto:
+                /* already done */
                 break;
         }
-       RETRY:
+      RETRY:
         if (vertices->index + 2 < vertices->size) {
             vertices->data[vertices->index++] = a;
             vertices->data[vertices->index++] = b;
             vertices->data[vertices->index++] = c;
         } else if (vectorlib_points_aux_grow(L, vertices, 1024)) {
+            /* maybe a larger step, we need to trace this */
             goto RETRY;
         } else {
             /* we should just exit */
@@ -2254,41 +2589,7 @@ static void addtriangle(lua_State *L, const points vertices, int mode, pointdata
     }
 }
 
-//static inline double call_fp(lua_State *L, int slot, double x, double y, double z)
-static inline double call_fp(lua_State *L, int slot, tetra *t)
-{
-    double d;
-    int top = lua_gettop(L);
-    lua_pushvalue(L, slot);
-    lua_pushnumber(L, t->x);
-    lua_pushnumber(L, t->y);
-    lua_pushnumber(L, t->z);
-    lua_call(L, 3, 1);
-    d = lua_tonumber(L, -1);
-    lua_settop(L, top);
-    return d;
-}
-
-static inline void call_fn(lua_State *L, int slot, double x, double y, double z, double step, double *nx, double *ny, double *nz)
-{
-    int top = lua_gettop(L);
-    lua_pushvalue(L, slot);
-    lua_pushnumber(L, x);
-    lua_pushnumber(L, y);
-    lua_pushnumber(L, z);
-    lua_pushnumber(L, step);
-    lua_call(L, 4, 3);
- // if (lua_pcall(L, 4, 3, 0) != 0) {
- //     tex_formatted_warning("zbuffer", "run: %s", lua_tostring(L, -1));
- // } else {
-    *nx = lua_tonumber(L, -3);
-    *ny = lua_tonumber(L, -2);
-    *nz = lua_tonumber(L, -1);
- // }
-    lua_settop(L, top);
-}
-
-static pointdata pointat(lua_State *L, const tetra *a, const tetra *b, double iso, int fn, double step) {
+static pointdata pointat(lua_State *L, const tetra *a, const tetra *b, double iso, int mode, int fn, double step) {
     pointdata p;
     double denominator = b->v - a->v;
     double t;
@@ -2306,9 +2607,10 @@ static pointdata pointat(lua_State *L, const tetra *a, const tetra *b, double is
     p.y = a->y + t * (b->y - a->y);
     p.z = a->z + t * (b->z - a->z);
     // gradient
-    if (fn) {
-        call_fn(L, fn, p.x, p.y, p.z, step, &p.nx, &p.ny, &p.nz);
-        normalize(&p.nx, &p.ny, &p.nz);
+    if (mode == normal_smooth) {
+        call_fn(L, fn, &p, step);
+    } else if (mode == normal_auto) {
+        call_fa(L, fn, &p, step);
     } else {
         p.nx = 0;
         p.ny = 0;
@@ -2319,7 +2621,7 @@ static pointdata pointat(lua_State *L, const tetra *a, const tetra *b, double is
     return p;
 }
 
-static void polygonizetetra(lua_State *L, points vertices, int mode, const tetra *c1, const tetra *c2, const tetra *c3, const tetra *c4, double iso, int fn, double step)
+inline static void polygonizetetra(lua_State *L, points vertices, int mode, const tetra *c1, const tetra *c2, const tetra *c3, const tetra *c4, double iso, int fn, double step)
 {
     int ins = 0;
     int out = 0;
@@ -2329,30 +2631,35 @@ static void polygonizetetra(lua_State *L, points vertices, int mode, const tetra
     if (c2->v <= iso) { inside[ins++] = c2; } else { outside[out++] = c2; }
     if (c3->v <= iso) { inside[ins++] = c3; } else { outside[out++] = c3; }
     if (c4->v <= iso) { inside[ins++] = c4; } else { outside[out++] = c4; }
+    /*
+        Every triangle gets its own points because the have normals. We could decide to use a
+        normals vector instead, that is: bind normals to the triangles. In that case the new
+        points vector can be smaller.
+    */
     switch (ins) {
         case 1:
             {
-                pointdata p1 = pointat(L, inside[0], outside[0], iso, fn, step);
-                pointdata p2 = pointat(L, inside[0], outside[1], iso, fn, step);
-                pointdata p3 = pointat(L, inside[0], outside[2], iso, fn, step);
+                pointdata p1 = pointat(L, inside[0], outside[0], iso, mode, fn, step);
+                pointdata p2 = pointat(L, inside[0], outside[1], iso, mode, fn, step);
+                pointdata p3 = pointat(L, inside[0], outside[2], iso, mode, fn, step);
                 addtriangle(L, vertices, mode, p1, p2, p3);
                 break;
             }
         case 2:
             {
-                pointdata p1 = pointat(L, inside[0], outside[0], iso, fn, step);
-                pointdata p2 = pointat(L, inside[0], outside[1], iso, fn, step);
-                pointdata p3 = pointat(L, inside[1], outside[1], iso, fn, step);
-                pointdata p4 = pointat(L, inside[1], outside[0], iso, fn, step);
+                pointdata p1 = pointat(L, inside[0], outside[0], iso, mode, fn, step);
+                pointdata p2 = pointat(L, inside[0], outside[1], iso, mode, fn, step);
+                pointdata p3 = pointat(L, inside[1], outside[1], iso, mode, fn, step);
+                pointdata p4 = pointat(L, inside[1], outside[0], iso, mode, fn, step);
                 addtriangle(L, vertices, mode, p1, p2, p3);
                 addtriangle(L, vertices, mode, p1, p3, p4);
                 break;
             }
         case 3:
             {
-                pointdata p1 = pointat(L, outside[0], inside[0], iso, fn, step);
-                pointdata p2 = pointat(L, outside[0], inside[2], iso, fn, step);
-                pointdata p3 = pointat(L, outside[0], inside[1], iso, fn, step);
+                pointdata p1 = pointat(L, outside[0], inside[0], iso, mode, fn, step);
+                pointdata p2 = pointat(L, outside[0], inside[2], iso, mode, fn, step);
+                pointdata p3 = pointat(L, outside[0], inside[1], iso, mode, fn, step);
                 addtriangle(L, vertices, mode, p1, p2, p3);
                 break;
             }
@@ -2382,19 +2689,86 @@ const unsigned tetras[6][2] = {
 static void polygonizecube(lua_State *L, points vertices, int mode, const tetra *c, double iso, int fn, double step)
 {
     for (unsigned i = 0; i < 6; i++) {
-        /* we could move the code here but the copiler will do that anyway */
+        /* we could move the code here but the compiler will do that anyway */
         polygonizetetra(L, vertices, mode, &c[0], &c[tetras[i][0]], &c[tetras[i][1]], &c[6], iso, fn, step);
     }
 }
 
-static inline void sample(lua_State *L, tetra *t, double xmin, double ymin, double zmin, double dx, double dy, double dz, int fp, int i, int j, int k)
+static inline int sample(lua_State *L, tetra *t,
+    double xmin, double ymin, double zmin, double dx, double dy, double dz,
+    int fp, int i, int j, int k, implicitcache *cache,
+    int base_i, int base_j, int base_k, int depth)
 {
     t->x = xmin + i * dx;
     t->y = ymin + j * dy;
     t->z = zmin + k * dz;
- // t->v = call_fp(L, fp, t->x, t->y, t->z);
-    t->v = call_fp(L, fp, t);
+    if (cache && depth == 0) {
+        int okay = implicitcache_lookup(cache, t, base_i + i, base_j + j, base_k + k);
+        if (okay >= 0) {
+            return okay;
+        }
+        okay = call_fp(L, fp, t);
+        implicitcache_store(cache, base_i + i, base_j + j, base_k + k, t->v, okay);
+        return okay;
+    } else {
+        return call_fp(L, fp, t);
+    }
 }
+
+/*
+    A nonnumeric result from the point function marks a point as outside the
+    requested domain. A cube with a mixed set of valid and invalid corners is
+    refined locally so that a domain boundary is not represented only by the
+    original grid resolution. Mixed cubes that remain mixed after (the default
+    of) two levels are conservatively discarded. We can set the levels from 1
+    upto 4. On an example in the manual where we cut based on some specific x
+    and y values a depth of 3 gives good results.
+*/
+
+static void implicitcube(lua_State *L, points vertices, int mode,
+    double xmin, double ymin, double zmin, double dx, double dy, double dz,
+    double iso, int fp, int fn, double step, int depth, int maxdepth,
+    implicitcache *cache, int base_i, int base_j, int base_k)
+{
+    tetra c[8];
+    int valid = 0;
+
+    valid += sample(L, &c[0], xmin, ymin, zmin, dx, dy, dz, fp, 0, 0, 0, cache, base_i, base_j, base_k, depth);
+    valid += sample(L, &c[1], xmin, ymin, zmin, dx, dy, dz, fp, 1, 0, 0, cache, base_i, base_j, base_k, depth);
+    valid += sample(L, &c[2], xmin, ymin, zmin, dx, dy, dz, fp, 1, 1, 0, cache, base_i, base_j, base_k, depth);
+    valid += sample(L, &c[3], xmin, ymin, zmin, dx, dy, dz, fp, 0, 1, 0, cache, base_i, base_j, base_k, depth);
+    valid += sample(L, &c[4], xmin, ymin, zmin, dx, dy, dz, fp, 0, 0, 1, cache, base_i, base_j, base_k, depth);
+    valid += sample(L, &c[5], xmin, ymin, zmin, dx, dy, dz, fp, 1, 0, 1, cache, base_i, base_j, base_k, depth);
+    valid += sample(L, &c[6], xmin, ymin, zmin, dx, dy, dz, fp, 1, 1, 1, cache, base_i, base_j, base_k, depth);
+    valid += sample(L, &c[7], xmin, ymin, zmin, dx, dy, dz, fp, 0, 1, 1, cache, base_i, base_j, base_k, depth);
+
+    if (valid == 0) {
+        return;
+    } else if (valid == 8) {
+        polygonizecube(L, vertices, mode, c, iso, fn, step);
+    } else if (depth < maxdepth) {
+        double halfdx = dx * 0.5;
+        double halfdy = dy * 0.5;
+        double halfdz = dz * 0.5;
+        for (int k = 0; k < 2; k++) {
+            for (int j = 0; j < 2; j++) {
+                for (int i = 0; i < 2; i++) {
+                    implicitcube(
+                        L, vertices, mode,
+                        xmin + i * halfdx,
+                        ymin + j * halfdy,
+                        zmin + k * halfdz,
+                        halfdx, halfdy, halfdz,
+                        iso, fp, fn, step, depth + 1, maxdepth,
+                        cache, base_i, base_j, base_k
+                    );
+                }
+            }
+        }
+    }
+}
+
+static const int max_implicit = max_point / 4;
 
 static int zbufferlib_implicit(lua_State *L)
 {
@@ -2403,11 +2777,12 @@ static int zbufferlib_implicit(lua_State *L)
         lua_getfield(L, 1, "nx"); nx = lmt_tointeger(L, -1); lua_pop(L, 1);
         lua_getfield(L, 1, "ny"); ny = lmt_tointeger(L, -1); lua_pop(L, 1);
         lua_getfield(L, 1, "nz"); nz = lmt_tointeger(L, -1); lua_pop(L, 1);
-        if (nx > 1 && ny > 1 && nz > 1) {
+        if (nx > 1 && ny > 1 && nz > 1 && nx <= max_implicit / ny && nx * ny <= max_implicit / nz) {
             points vertices = vectorlib_points_aux_push(L, nx * ny * nz * 3, 1, point_type_default, 1, 0);
             if (vertices) {
-                double xmin, xmax, ymin, ymax, zmin, zmax, iso, step, dx, dy, dz;
+                double xmin, xmax, ymin, ymax, zmin, zmax, iso, step, dx, dy, dz, sd;
                 int mode, fp, fn;
+                implicitcache cache;
                 lua_getfield(L, 1, "xmin");        xmin = lua_tonumber (L, -1); lua_pop(L, 1);
                 lua_getfield(L, 1, "xmax");        xmax = lua_tonumber (L, -1); lua_pop(L, 1);
                 lua_getfield(L, 1, "ymin");        ymin = lua_tonumber (L, -1); lua_pop(L, 1);
@@ -2415,6 +2790,7 @@ static int zbufferlib_implicit(lua_State *L)
                 lua_getfield(L, 1, "zmin");        zmin = lua_tonumber (L, -1); lua_pop(L, 1);
                 lua_getfield(L, 1, "zmax");        zmax = lua_tonumber (L, -1); lua_pop(L, 1);
                 lua_getfield(L, 1, "iso");         iso  = lua_tonumber (L, -1); lua_pop(L, 1);
+                lua_getfield(L, 1, "splitdepth");  sd   = lua_tointeger(L, -1); lua_pop(L, 1);
                 lua_getfield(L, 1, "normalstep");  step = lua_tonumber (L, -1); lua_pop(L, 1);
                 lua_getfield(L, 1, "normalmode");  mode = lmt_tointeger(L, -1); lua_pop(L, 1);
                 lua_getfield(L, 1, "fp");          fp   = lua_type(L, -1) == LUA_TFUNCTION ? lua_absindex(L, -1) : 0;
@@ -2428,32 +2804,41 @@ static int zbufferlib_implicit(lua_State *L)
                  // lua_pop(L, 2);
                     return 0;
                 }
-                if (fn == 0) {
+                if (mode == normal_auto) {
+                    fn = fp;
+                } else if (mode != normal_smooth) {
+                    fn = 0; /* we handle flat and up ourselves */
+                } else if (fn == 0) {
                     /* maybe issue a warning */
+                }
+                if (sd <= 0 || sd > 5) {
+                    sd = 2;
                 }
                 if (step == 0) {
                     step = fmin(dx, fmin(dy, dz)) * 0.5;
                 }
+                if (!implicitcache_initialize(&cache, nx, ny)) {
+                    lua_pop(L, 2); /* the functions */
+                    return 0;
+                }
                 for (int k = 0; k < nz - 1; k++) {
-                    int k1 = k + 1;
+                    implicitcache_begin(&cache, k);
                     for (int j = 0; j < ny - 1; j++) {
-                        int j1 = j + 1;
                         for (int i = 0; i < nx - 1; i++) {
-                            int i1 = i + 1;
-                            tetra c[8];
-                            sample(L, &c[0], xmin, ymin, zmin, dx, dy, dz, fp, i , j , k );
-                            sample(L, &c[1], xmin, ymin, zmin, dx, dy, dz, fp, i1, j , k );
-                            sample(L, &c[2], xmin, ymin, zmin, dx, dy, dz, fp, i1, j1, k );
-                            sample(L, &c[3], xmin, ymin, zmin, dx, dy, dz, fp, i , j1, k );
-                            sample(L, &c[4], xmin, ymin, zmin, dx, dy, dz, fp, i , j , k1);
-                            sample(L, &c[5], xmin, ymin, zmin, dx, dy, dz, fp, i1, j , k1);
-                            sample(L, &c[6], xmin, ymin, zmin, dx, dy, dz, fp, i1, j1, k1);
-                            sample(L, &c[7], xmin, ymin, zmin, dx, dy, dz, fp, i , j1, k1);
-                            polygonizecube(L, vertices, mode, c, iso, fn, step);
+                            implicitcube(
+                                L, vertices, mode,
+                                xmin + i * dx,
+                                ymin + j * dy,
+                                zmin + k * dz,
+                                dx, dy, dz,
+                                iso, fp, fn, step, 0,
+                                sd, &cache, i, j, k
+                            );
                         }
                     }
                 }
-                vertices->size = vertices->index;
+                implicitcache_release(&cache);
+                vectorlib_points_aux_prune(L, vertices, vertices->size - vertices->index);
                 lua_pop(L, 2); /* the functions */
                 return 1;
             }
@@ -2476,7 +2861,7 @@ static int zbufferlib_implicit(lua_State *L)
 
 const int partialmap[3][2] = { { 0, 1 }, { 1, 2 }, { 2, 0 } };
 
-static void mesh_addoverlappingpoint(const points vertices, int first[3], int m, const points pvertices, int second[3], points result, double tolerance)
+static void mesh_addoverlappingpoint(lua_State *L, const points vertices, int first[3], int m, const points pvertices, int second[3], points result, double tolerance)
 {
     point pa  = &(vertices ->data[first[partialmap[m][0]]]);
     point pb  = &(vertices ->data[first[partialmap[m][1]]]);
@@ -2531,12 +2916,17 @@ static void mesh_addoverlappingpoint(const points vertices, int first[3], int m,
                         return;
                     }
                 }
+              RETRY:
                 if (result->index < result->size) {
                     result->data[result->index].x = x;
                     result->data[result->index].y = y;
                     result->data[result->index].z = z;
                     result->index++;
+                } else if (vectorlib_points_aux_grow(L, result, 1024)) {
+                    /* maybe a larger step, we need to trace this */
+                    goto RETRY;
                 } else {
+                    /* we should just exit */
                     printf(">>> mesh mesh result overflow %i\n",result->index); /* todo: grow */
                 }
             }
@@ -2640,9 +3030,12 @@ static mm_records mesh_mesh_triangles(const points vertices, const mesh triangle
                 records[index] = (mm_record) { xmin, xmax, ymin, ymax, zmin, zmax };
                 if (bounds) {
                     if (*done) {
-                        if (xmin < bounds->xmin ) { bounds->xmin = xmin; } else if (xmax > bounds->xmax ) { bounds->xmax = xmax; }
-                        if (ymin < bounds->ymin ) { bounds->ymin = ymin; } else if (ymax > bounds->ymax ) { bounds->ymax = ymax; }
-                        if (zmin < bounds->zmin ) { bounds->zmin = zmin; } else if (zmax > bounds->zmax ) { bounds->zmax = zmax; }
+                        if (xmin < bounds->xmin ) { bounds->xmin = xmin; }
+                        if (xmax > bounds->xmax ) { bounds->xmax = xmax; }
+                        if (ymin < bounds->ymin ) { bounds->ymin = ymin; }
+                        if (ymax > bounds->ymax ) { bounds->ymax = ymax; }
+                        if (zmin < bounds->zmin ) { bounds->zmin = zmin; }
+                        if (zmax > bounds->zmax ) { bounds->zmax = zmax; }
                     } else {
                         *done = 1;
                         *bounds = (mm_record) { xmin, xmax, ymin, ymax, zmin, zmax };
@@ -2684,6 +3077,9 @@ static int mesh_mesh_overlay(lua_State *L, const points index_vertices, const me
         int cells;
         bitset seen;
         query_records = mesh_mesh_triangles(query_vertices, query_triangles, NULL, NULL);
+        if (! query_records) {
+            goto DONE;
+        }
         double nx, ny, nz, xsize, ysize, zsize;
         double xextent         = bounds.xmax - bounds.xmin;
         double yextent         = bounds.ymax - bounds.ymin;
@@ -2805,18 +3201,18 @@ static int mesh_mesh_overlay(lua_State *L, const points index_vertices, const me
                                                 int f[3], s[3];
                                                 vectorlib_mesh_aux_get_points(index_triangles, index, f);
                                                 vectorlib_mesh_aux_get_points(query_triangles, i,     s);
-                                             // mesh_addoverlappingpoint(index_vertices, f, 0, query_vertices, s, result, tolerance);
-                                             // mesh_addoverlappingpoint(index_vertices, f, 1, query_vertices, s, result, tolerance);
-                                             // mesh_addoverlappingpoint(index_vertices, f, 2, query_vertices, s, result, tolerance);
-                                             // mesh_addoverlappingpoint(query_vertices, s, 0, index_vertices, f, result, tolerance);
-                                             // mesh_addoverlappingpoint(query_vertices, s, 1, index_vertices, f, result, tolerance);
-                                             // mesh_addoverlappingpoint(query_vertices, s, 2, index_vertices, f, result, tolerance);
+                                             // mesh_addoverlappingpoint(L, index_vertices, f, 0, query_vertices, s, result, tolerance);
+                                             // mesh_addoverlappingpoint(L, index_vertices, f, 1, query_vertices, s, result, tolerance);
+                                             // mesh_addoverlappingpoint(L, index_vertices, f, 2, query_vertices, s, result, tolerance);
+                                             // mesh_addoverlappingpoint(L, query_vertices, s, 0, index_vertices, f, result, tolerance);
+                                             // mesh_addoverlappingpoint(L, query_vertices, s, 1, index_vertices, f, result, tolerance);
+                                             // mesh_addoverlappingpoint(L, query_vertices, s, 2, index_vertices, f, result, tolerance);
                                                 /* 5 k smaller binary */
                                                 for (int m = 0; m < 3; m++) {
-                                                    mesh_addoverlappingpoint(index_vertices, f, m, query_vertices, s, result, tolerance);
+                                                    mesh_addoverlappingpoint(L, index_vertices, f, m, query_vertices, s, result, tolerance);
                                                 }
                                                 for (int m = 0; m < 3; m++) {
-                                                    mesh_addoverlappingpoint(query_vertices, s, m, index_vertices, f, result, tolerance);
+                                                    mesh_addoverlappingpoint(L, query_vertices, s, m, index_vertices, f, result, tolerance);
                                                 }
                                             }
                                             found = 1;
@@ -2837,6 +3233,7 @@ static int mesh_mesh_overlay(lua_State *L, const points index_vertices, const me
                 }
             }
         }
+        vectorlib_points_aux_prune(L, result, result->size - result->index);
         disposebitset(&seen);
         result->rows = result->index;
         result->size = result->index;
@@ -2858,8 +3255,9 @@ static int zbufferlib_meshmesh(lua_State *L)
     points  vertices_two  = vectorlib_points_aux_get(L, 3);
     mesh    triangles_two = vectorlib_mesh_aux_get(L, 4);
     double  tolerance     = lua_tonumber(L, 5);
-    if (triangles_one && triangles_two && valid_vertices(vertices_one) && valid_vertices(vertices_two)) {
-        if (vertices_one->data && triangles_one->points && vertices_two->data && triangles_two->points) {
+    if (tolerance >= 0 && tolerance != INFINITY && tolerance == tolerance
+        && triangles_one && triangles_two && valid_vertices(vertices_one) && valid_vertices(vertices_two)) {
+        if (vertices_one->data && vertices_two->data) {
             if (triangles_one->size < triangles_two->size) {
                 return mesh_mesh_overlay(L, vertices_one, triangles_one, vertices_two, triangles_two, tolerance);
             } else {
@@ -2948,7 +3346,7 @@ static inline double checkedgenop(
     double  edge
 )
 {
-    if (nc >= 0 && nc < zb->columns && nr >= 0 && nr < zb->rows) {
+    if (nc < 0 || nc >= zb->columns || nr < 0 || nr >= zb->rows) {
         return edge;
     } else {
         double zdepth = zb->data[nr * zb->columns + nc].depth;
@@ -2995,7 +3393,7 @@ static inline double checkedgeyes(
     double  edge
 )
 {
-    if (nc >= 0 && nc < zb->columns && nr >= 0 && nr < zb->rows) {
+    if (nc < 0 || nc >= zb->columns || nr < 0 || nr >= zb->rows) {
         return edge;
     } else {
         double zdepth = zb->data[nr * zb->columns + nc].depth;
@@ -3340,7 +3738,6 @@ static int samesurface(
 )
 {
     double z1 = zb->data[y * zb->columns + x].depth;
-    (void) coscrease; /* to be checked */
     if (z1 == INFINITY) {
         return 0;
     } else {
@@ -3358,7 +3755,7 @@ static int samesurface(
             if (n == 0) {
                 return 1;
             } else {
-                return n >= cossame;
+                return n >= cossame && n >= coscrease;
             }
         }
     }
@@ -3484,6 +3881,28 @@ static int zbufferlib_stipple_4(lua_State *L)
     return 0;
 }
 
+static int zbufferlib_getconstants(lua_State *L)
+{
+    lua_createtable(L, 0, 6);
+    lua_set_integer_by_key(L, "maximplicits",     max_implicit);
+    lua_set_number_by_key (L, "epsilon",          epsilon);
+    lua_set_number_by_key (L, "projectepsilon",   project_epsilon);
+    lua_set_number_by_key (L, "rasterepsilon",    raster_epsilon);
+    lua_set_integer_by_key(L, "maxzbufferdepth",  zbuffer_maxnoffragments);
+    lua_set_integer_by_key(L, "maxstipplelevels", zstipple_maxnoflevels);
+    return 1;
+}
+
+static int zbufferlib_getnormalmodes(lua_State *L)
+{
+    lua_createtable(L, 3, 1);
+    lua_set_string_by_index(L, normal_smooth, "smooth");
+    lua_set_string_by_index(L, normal_flat,   "flat");
+    lua_set_string_by_index(L, normal_up,     "up");
+    lua_set_string_by_index(L, normal_auto,   "auto");
+    return 1;
+}
+
 static const luaL_Reg zbufferlib_function_list[] =
 {
     { "new",            zbufferlib_new            },
@@ -3528,6 +3947,9 @@ static const luaL_Reg zbufferlib_function_list[] =
     { "stipple_2",      zbufferlib_stipple_2      },
     { "stipple_3",      zbufferlib_stipple_3      },
     { "stipple_4",      zbufferlib_stipple_4      },
+    /* */
+    { "getconstants",   zbufferlib_getconstants   },
+    { "getnormalmodes", zbufferlib_getnormalmodes },
     /* nothing more */
     { NULL,             NULL                      },
 };

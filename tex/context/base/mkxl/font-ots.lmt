@@ -203,8 +203,6 @@ local getwidth           = nuts.getwidth
 local getoptions         = nuts.getoptions
 local setoptions         = nuts.setoptions
 
-local getglyphdata       = nuts.getglyphdata
------ getscales          = nuts.getscales
 ---------------------------------------------------------------------------------------
 
 -- Beware: In ConTeXt components no longer are real components. We only keep track of
@@ -220,10 +218,8 @@ local flushcomponents    = components.flush
 
 ---------------------------------------------------------------------------------------
 
-local ischar             = nuts.ischar
 local isnextchar         = nuts.isnextchar -- only makes sense when we know we need next
 local isprevchar         = nuts.isprevchar -- only makes sense when we know we need prev
-local usesfont           = nuts.usesfont
 
 local insertnodeafter    = nuts.insertafter
 local copynode           = nuts.copy
@@ -932,7 +928,7 @@ function handlers.gsub_ligature(head,start,dataset,sequence,ligature,rlmode,skip
                 end
             end
             -- is this test ok:
-            if not match and not pre or not replace then
+            if not match and (not pre or not replace) then
                 local ndf = getnext(discfound)
                 local nxt, char = isnextchck(ndf,currentcheck)
                 if char and ligature[char] and not hasglyphoption(ndf,no_left_ligature_code) then
@@ -1474,8 +1470,8 @@ function chainprocs.gsub_alternate(head,start,stop,dataset,sequence,currentlooku
                         if trace_alternatives then
                             logprocess("%s: replacing %s by alternative %a to %s, %s",cref(dataset,sequence),gref(currentchar),choice,gref(choice),comment)
                         end
-                        resetinjection(start)
-                        setchar(start,choice)
+                        resetinjection(current)
+                        setchar(current,choice)
                     else
                         if trace_alternatives then
                             logwarning("%s: no variant %a for %s, %s",cref(dataset,sequence),value,gref(currentchar),comment)
@@ -1635,7 +1631,7 @@ function chainprocs.gpos_single(head,start,stop,dataset,sequence,currentlookup,r
                         logprocess("%s: shifting single %s by %s (%p,%p) and correction (%p,%p)",cref(dataset,sequence),gref(startchar),format,dx,dy,w,h)
                     end
                 else -- needs checking .. maybe no kerns format for single
-                    local k = (format == "move" and setmove or setkern)(start,factor,rlmode,kerns,injection)
+                    local k = (format == "move" and setmove or setkern)(start,factor,rlmode,kerns,"injections")
                     if trace_kerns then
                         logprocess("%s: shifting single %s by %s %p",cref(dataset,sequence),gref(startchar),format,k)
                     end
@@ -1737,7 +1733,7 @@ function chainprocs.gpos_mark2base(head,start,stop,dataset,sequence,currentlooku
                             while base do
                                 base = getprev(base)
                                 if base then
-                                    local prv, basechar = isprevchck(base,currentcheck)
+                                    prv, basechar = isprevchck(base,currentcheck)
                                     if basechar then
                                         if not marks[basechar] then
                                             break
@@ -1803,7 +1799,7 @@ function chainprocs.gpos_mark2ligature(head,start,stop,dataset,sequence,currentl
                             while base do
                                 base = getprev(base)
                                 if base then
-                                    local prv, basechar = isprevchck(base,currentcheck)
+                                    prv, basechar = isprevchck(base,currentcheck)
                                     if basechar then
                                         if not marks[basechar] then
                                             break
@@ -1832,7 +1828,7 @@ function chainprocs.gpos_mark2ligature(head,start,stop,dataset,sequence,currentl
                                     local dx, dy, bound = setmark(start,base,factor,rlmode,ba,ma,characters[basechar],false,checkmarks)
                                     if trace_marks then
                                         logprocess("%s, bound %s, anchoring mark %s to baselig %s at index %s => (%p,%p)",
-                                            cref(dataset,sequence),a or bound,gref(markchar),gref(basechar),index,dx,dy)
+                                            cref(dataset,sequence),bound,gref(markchar),gref(basechar),index,dx,dy)
                                     end
                                     return head, start, true
                                 end
@@ -1953,7 +1949,7 @@ function chainprocs.gpos_cursive(head,start,stop,dataset,sequence,currentlookup,
                 end
             end
         elseif trace_cursive and trace_details then
-            logprocess("%s, cursive %s is already done",pref(dataset,sequence),gref(getchar(start)),alreadydone)
+            logprocess("%s, cursive %s is already done",pref(dataset,sequence),gref(getchar(start)))
         end
     end
     return head, start, false
@@ -2215,6 +2211,7 @@ local function chaindisk(head,start,dataset,sequence,rlmode,skiphash,ck)
                     sweepnode     = current
                     current       = getnext(current)
                 else
+                    local discnext = getnext(current)
                     -- we can use an iterator
                     while replace and i <= l do
                         if getid(replace) == glyph_code then
@@ -2222,7 +2219,7 @@ local function chaindisk(head,start,dataset,sequence,rlmode,skiphash,ck)
                         end
                         replace = getnext(replace)
                     end
-                    current = getnext(replace)
+                    current = replace or discnext
                 end
                 last = current
             else
@@ -3588,6 +3585,7 @@ local function t_run_single(start,stop,lookupcache)
                 end
                 local l = nil
                 local d = 0
+-- maybe use the traverser
                 while s do
                     local nxt, char = isnextchck(s,currentcheck)
                     if char then
@@ -3646,6 +3644,7 @@ end
 
 local function k_run_single(sub,injection,last,lookupcache,step,dataset,sequence,rlmode,skiphash,handler)
     local done  = false
+-- maybe use the traverser
     for n in nextnode, sub do -- only gpos
         if n == last then
             break
@@ -3792,6 +3791,7 @@ local function t_run_multiple(start,stop,steps,nofsteps)
 end
 
 local function k_run_multiple(sub,injection,last,steps,nofsteps,dataset,sequence,rlmode,skiphash,handler)
+-- maybe use the traverser
     for n in nextnode, sub do -- only gpos
         if n == last then
             break

@@ -799,6 +799,7 @@ return {
   "retokenized",
   "rightmarginkern",
   "righttwindemerits",
+  "romannumerical",
   "rpcode",
   "savecatcodetable",
   "scaledemwidth",

@@ -1,5 +1,29 @@
 % language=us runpath=texruns:manuals/luametatex
 
+% tex.getspcode
+% tex.setspcode
+
+% tex.less
+% tex.lessequal
+
+% tex.mprint
+
+% tex.runstring
+
+% tex.setrunstate
+
+% tex.tracingonlygetqetb
+
+% tex.trackedattribute.
+
+% tex.getfontdimension
+
+% tex.setinsertmaxplaced
+% tex.getinsertmaxplaced
+
+% tex.setoverloadstate
+% tex.getoverloadstate
+
 \environment luametatex-style
 
 \startdocument[title=\TEX,xtitle=\TEX]
@@ -114,12 +138,13 @@ an eye on these mappings!
 The individual states can be fetched with the following helpers:
 
 \starttyping[option=LUA]
+function status.getbalancestate       ( ) return <t:table> end
 function status.getbufferstate        ( ) return <t:table> end
 function status.getcallbackstate      ( ) return <t:table> end
+function status.getdumpstate          ( ) return <t:table> end
 function status.geterrorlinestate     ( ) return <t:table> end
 function status.geterrorstate         ( ) return <t:table> end
 function status.getexpandstate        ( ) return <t:table> end
-function status.getextrastate         ( ) return <t:table> end
 function status.getfilestate          ( ) return <t:table> end
 function status.getfontstate          ( ) return <t:table> end
 function status.gethalferrorlinestate ( ) return <t:table> end
@@ -132,6 +157,7 @@ function status.getlinebreakstate     ( ) return <t:table> end
 function status.getlookupstate        ( ) return <t:table> end
 function status.getluastate           ( ) return <t:table> end
 function status.getmarkstate          ( ) return <t:table> end
+function status.getmvlstate           ( ) return <t:table> end
 function status.getneststate          ( ) return <t:table> end
 function status.getnodestate          ( ) return <t:table> end
 function status.getparameterstate     ( ) return <t:table> end
@@ -709,6 +735,14 @@ The largest used mark class is returned by:
 \starttyping[option=LUA]
 function tex.getlargestusedmark ( )
     return <t:integer> -- max mark class
+end
+\stoptyping
+
+The currently used marks can be queried with:
+
+\starttyping[option=LUA]
+function tex.getusedmarks ( )
+    return <t:table>
 end
 \stoptyping
 
@@ -1337,15 +1371,10 @@ end
 \stoptyping
 
 Only valid primitive names are processed. Because it is no fun to enter the
-names, there is this one. It has two variants, where the boolean variant returns
-a table with all primitives.
+names, there is this one.
 
 \starttyping[option=LUA]
 function tex.extraprimitives ( <t:string> subset, ... )
-    return <t:table> -- names
-end
-
-function tex.extraprimitives ( <t:true> )
     return <t:table> -- names
 end
 \stoptyping
@@ -1392,86 +1421,113 @@ be status values (where are we currently), options (in nodes), control parameter
 strings. Here is the complete list. We show the results in various places in the
 documentation. The advantage is that the engine is partly self documenting.
 
-\starttyping[option=LUA]
-function tex.getadjustoptionvalues        ( ) return <t:table> end
-function tex.getalignmentcontextvalues    ( ) return <t:table> end
-function tex.getappendlinecontextvalues   ( ) return <t:table> end
-function tex.getautomigrationvalues       ( ) return <t:table> end
-function tex.getautoparagraphvalues       ( ) return <t:table> end
-function tex.getbalancestepoptionvalues   ( ) return <t:table> end
-function tex.getbalancecallbackvalues     ( ) return <t:table> end
-function tex.getboxoptionvalues           ( ) return <t:table> end
-function tex.getbreakcontextvalues        ( ) return <t:table> end
-function tex.getbuildcontextvalues        ( ) return <t:table> end
-function tex.getcharactercontrolvalues    ( ) return <t:table> end
-function tex.getcharactertagvalues        ( ) return <t:table> end
-function tex.getdirectionvalues           ( ) return <t:table> end
-function tex.getdiscoptionvalues          ( ) return <t:table> end
-function tex.getdiscpartvalues            ( ) return <t:table> end
-function tex.getdoublescriptoptionvalues  ( ) return <t:table> end
-function tex.geterrorvalues               ( ) return <t:table> end
-function tex.getfillvalues                ( ) return <t:table> end
-function tex.getflagvalues                ( ) return <t:table> end
-function tex.getfrozenparvalues           ( ) return <t:table> end
-function tex.getglueoptionvalues          ( ) return <t:table> end
-function tex.getglyphdiscvalues           ( ) return <t:table> end
-function tex.getglyphoptionvalues         ( ) return <t:table> end
-function tex.getglyphprotectionvalues     ( ) return <t:table> end
-function tex.getgroupvalues               ( ) return <t:table> end
-function tex.gethyphenationvalues         ( ) return <t:table> end
-function tex.getiftypes                   ( ) return <t:table> end
-function tex.getinteractionmodes          ( ) return <t:table> end
-function tex.getiovalues                  ( ) return <t:table> end
-function tex.getkernoptionvalues          ( ) return <t:table> end
-function tex.getkerneloptionvalues        ( ) return <t:table> end
-function tex.getlinebreakparameterfields  ( ) return <t:table> end
-function tex.getlinebreakresultfields     ( ) return <t:table> end
-function tex.getlinebreakstatevalues      ( ) return <t:table> end
-function tex.getlistanchorvalues          ( ) return <t:table> end
-function tex.getlistfields                ( ) return <t:table> end
-function tex.getlistgeometryvalues        ( ) return <t:table> end
-function tex.getlistsignvalues            ( ) return <t:table> end
-function tex.getlocalboxlocations         ( ) return <t:table> end
-function tex.getmathclassoptionvalues     ( ) return <t:table> end
-function tex.getmathcontrolvalues         ( ) return <t:table> end
-function tex.getmathgluevalues            ( ) return <t:table> end
-function tex.getmathoptionvalues          ( ) return <t:table> end
-function tex.getmathparametervalues       ( ) return <t:table> end
-function tex.getmathscriptordervalues     ( ) return <t:table> end
-function tex.getmathscriptsmodevalues     ( ) return <t:table> end
-function tex.getmathstylenamevalues       ( ) return <t:table> end
-function tex.getmathstylevalues           ( ) return <t:table> end
-function tex.getmathsurroundvalues        ( ) return <t:table> end
-function tex.getmathvariantpresets        ( ) return <t:table> end
-function tex.getmathvariantvalues         ( ) return <t:table> end
-function tex.getmarknames                 ( ) return <t:table> end
-function tex.getmvloptionvalues           ( ) return <t:table> end
-function tex.getmodevalues                ( ) return <t:table> end
-function tex.getnestfields                ( ) return <t:table> end
-function tex.getnoadoptionvalues          ( ) return <t:table> end
-function tex.getnormalizelinevalues       ( ) return <t:table> end
-function tex.getnormalizeparvalues        ( ) return <t:table> end
-function tex.getpacktypevalues            ( ) return <t:table> end
-function tex.getpagecontextvalues         ( ) return <t:table> end
-function tex.getpagestatevalues           ( ) return <t:table> end
-function tex.getparametermodevalues       ( ) return <t:table> end
-function tex.getparcontextvalues          ( ) return <t:table> end
-function tex.getparmodevalues             ( ) return <t:table> end
-function tex.getpartriggervalues          ( ) return <t:table> end
-function tex.getpenaltyoptionvalues       ( ) return <t:table> end
-function tex.getprepoststatevalues        ( ) return <t:table> end
-function tex.getprimitiveorigins          ( ) return <t:table> end
-function tex.getprotrusionboundaryvalues  ( ) return <t:table> end
-function tex.getruleoptionvalues          ( ) return <t:table> end
-function tex.getrunstatevalues            ( ) return <t:table> end
-function tex.getshapingpenaltiesvalues    ( ) return <t:table> end
-function tex.getspecialmathclassvalues    ( ) return <t:table> end
-function tex.getspecificationoptionvalues ( ) return <t:table> end
-function tex.gettextcontrolvalues         ( ) return <t:table> end
-function tex.getuleaderlocationvalues     ( ) return <t:table> end
-function tex.getunitclassvalues           ( ) return <t:table> end
-\stoptyping
+%        tex.getappendlinecontextvalues    ( ) return <t:table> end
+%        tex.getdelayedgluelocationvalues  ( ) return <t:table> end
+%        tex.getdelayedgluetargetvalues    ( ) return <t:table> end
 
+\starttyping[option=LUA]
+function tex.getadjustoptionvalues         ( ) return <t:table> end
+function tex.getalignmentcontextvalues     ( ) return <t:table> end
+function tex.getappendadjustcontextvalues  ( ) return <t:table> end
+function tex.getappendmigratecontextvalues ( ) return <t:table> end
+function tex.getautomigrationvalues        ( ) return <t:table> end
+function tex.getautoparagraphvalues        ( ) return <t:table> end
+function tex.getbadnessmodevalues          ( ) return <t:table> end
+function tex.getbalancecallbackvalues      ( ) return <t:table> end
+function tex.getbalancestepoptionvalues    ( ) return <t:table> end
+function tex.getboxcontinuationvalues      ( ) return <t:table> end
+function tex.getboxoptionvalues            ( ) return <t:table> end
+function tex.getbreakcontextvalues         ( ) return <t:table> end
+function tex.getbuildcontextvalues         ( ) return <t:table> end
+function tex.getcharactercontrolvalues     ( ) return <t:table> end
+function tex.getcharactertagvalues         ( ) return <t:table> end
+function tex.getdirectionvalues            ( ) return <t:table> end
+function tex.getdiscoptionvalues           ( ) return <t:table> end
+function tex.getdiscpartvalues             ( ) return <t:table> end
+function tex.getdoublescriptoptionvalues   ( ) return <t:table> end
+function tex.getemptyparagraphmodevalues   ( ) return <t:table> end
+function tex.geterrorrecoverymodevalues    ( ) return <t:table> end
+function tex.geterrorvalues                ( ) return <t:table> end
+function tex.getfillvalues                 ( ) return <t:table> end
+function tex.getflagvalues                 ( ) return <t:table> end
+function tex.getfrozenparvalues            ( ) return <t:table> end
+function tex.getglueoptionvalues           ( ) return <t:table> end
+function tex.getglyphdiscvalues            ( ) return <t:table> end
+function tex.getglyphoptionvalues          ( ) return <t:table> end
+function tex.getglyphprotectionvalues      ( ) return <t:table> end
+function tex.getgroupvalues                ( ) return <t:table> end
+function tex.gethyphenationvalues          ( ) return <t:table> end
+function tex.getiftypes                    ( ) return <t:table> end
+function tex.getinsertcategoryvalues       ( ) return <t:table> end
+function tex.getinsertoptionvalues         ( ) return <t:table> end
+function tex.getinsertsplitvalues          ( ) return <t:table> end
+function tex.getinteractionmodes           ( ) return <t:table> end
+function tex.getiovalues                   ( ) return <t:table> end
+function tex.getkerneloptionvalues         ( ) return <t:table> end
+function tex.getkernoptionvalues           ( ) return <t:table> end
+function tex.getlinebreakstatevalues       ( ) return <t:table> end
+function tex.getlistanchorvalues           ( ) return <t:table> end
+function tex.getlistfields                 ( ) return <t:table> end
+function tex.getlistgeometryvalues         ( ) return <t:table> end
+function tex.getlistsignvalues             ( ) return <t:table> end
+function tex.getlocalboxlocations          ( ) return <t:table> end
+function tex.getmarknames                  ( ) return <t:table> end
+function tex.getmathclassoptionvalues      ( ) return <t:table> end
+function tex.getmathcontrolvalues          ( ) return <t:table> end
+function tex.getmathgluevalues             ( ) return <t:table> end
+function tex.getmathoptionvalues           ( ) return <t:table> end
+function tex.getmathparametervalues        ( ) return <t:table> end
+function tex.getmathscriptordervalues      ( ) return <t:table> end
+function tex.getmathscriptsmodevalues      ( ) return <t:table> end
+function tex.getmathstylenamevalues        ( ) return <t:table> end
+function tex.getmathstylevalues            ( ) return <t:table> end
+function tex.getmathsurroundvalues         ( ) return <t:table> end
+function tex.getmathvariantpresets         ( ) return <t:table> end
+function tex.getmathvariantvalues          ( ) return <t:table> end
+function tex.getmissingcharactervalues     ( ) return <t:table> end
+function tex.getmodevalues                 ( ) return <t:table> end
+function tex.getmvloptionvalues            ( ) return <t:table> end
+function tex.getnestfields                 ( ) return <t:table> end
+function tex.getnoadoptionvalues           ( ) return <t:table> end
+function tex.getnormalizelinevalues        ( ) return <t:table> end
+function tex.getnormalizeparvalues         ( ) return <t:table> end
+function tex.getnospacesmodevalues         ( ) return <t:table> end
+function tex.getpacktypevalues             ( ) return <t:table> end
+function tex.getpagecontextvalues          ( ) return <t:table> end
+function tex.getpagestatevalues            ( ) return <t:table> end
+function tex.getparagraphfillmodevalues    ( ) return <t:table> end
+function tex.getparagraphoptionvalues      ( ) return <t:table> end
+function tex.getparametermodevalues        ( ) return <t:table> end
+function tex.getparcontextvalues           ( ) return <t:table> end
+function tex.getparmodevalues              ( ) return <t:table> end
+function tex.getpartriggervalues           ( ) return <t:table> end
+function tex.getpenaltyoptionvalues        ( ) return <t:table> end
+function tex.getprepoststatevalues         ( ) return <t:table> end
+function tex.getprimitiveorigins           ( ) return <t:table> end
+function tex.getprotrusionboundaryvalues   ( ) return <t:table> end
+function tex.getruleoptionvalues           ( ) return <t:table> end
+function tex.getrunstatevalues             ( ) return <t:table> end
+function tex.getshapingpenaltiesvalues     ( ) return <t:table> end
+function tex.getsnappingvalues             ( ) return <t:table> end
+function tex.getspacefactorvalues          ( ) return <t:table> end
+function tex.getspaceskipvalues            ( ) return <t:table> end
+function tex.getspecialmathclassvalues     ( ) return <t:table> end
+function tex.getspecificationoptionvalues  ( ) return <t:table> end
+function tex.gettextcontrolvalues          ( ) return <t:table> end
+function tex.getuleaderlocationvalues      ( ) return <t:table> end
+function tex.getunitclassvalues            ( ) return <t:table> end
+function tex.getvsplitcontextvalues        ( ) return <t:table> end
+
+function tex.getpardataspecifications      ( ) return <t:table> end
+
+function tex.getprimitivelegacies          ( ) return <t:table> end
+
+function tex.getbalanceparameterfields     ( ) return <t:table> end
+function tex.getbalanceresultfields        ( ) return <t:table> end
+
+function tex.getlinebreakparameterfields   ( ) return <t:table> end
+function tex.getlinebreakresultfields      ( ) return <t:table> end
+\stoptyping
 \stopsubsection
 
 \startsubsection [title={Glyphs}]

@@ -105,7 +105,7 @@ local runner = sandbox.registerrunner {
     name     = "to file curl resolver",
     method   = "execute",
     program  = "curl", -- redirects: -L or --follow (new)
-    template = '--L --silent --insecure --create-dirs --output "%cachename%" "%original%"',
+    template = '-L --silent --insecure --create-dirs --output "%cachename%" "%original%"',
     internal = function(specification)
         local fetch = fetcher(specification.reporter)
         return fetch and function(name,program,template,checkers,defaults,variables,reporter,finalized)
@@ -123,7 +123,7 @@ local memrunner = sandbox.registerrunner {
     name     = "in memory curl resolver",
     method   = "resultof",
     program  = "curl", -- redirects: -L or --follow (new)
-    template = '--L --silent --insecure "%original%"',
+    template = '-L --silent --insecure "%original%"',
     internal = function(specification)
         local fetch = fetcher(specification.reporter)
         return fetch and function(name,program,template,checkers,defaults,variables,reporter,finalized)

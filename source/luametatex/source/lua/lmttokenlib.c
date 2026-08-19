@@ -119,7 +119,7 @@ void lmt_tokenlib_initialize(void)
     lmt_interface.command_names[mkern_cmd]                            = (command_item) { .id = mkern_cmd,                          .lua = lua_key_index(mkern),                        .name = lua_key(mkern),                        .kind = regular_command_item,   .min = 0,                         .max = 0,                            .base = 0,                       .fixedvalue = 0            };
     lmt_interface.command_names[leader_cmd]                           = (command_item) { .id = leader_cmd,                         .lua = lua_key_index(leader),                       .name = lua_key(leader),                       .kind = regular_command_item,   .min = first_leader_code,         .max = last_leader_code,             .base = 0,                       .fixedvalue = 0            };
     lmt_interface.command_names[legacy_cmd]                           = (command_item) { .id = legacy_cmd,                         .lua = lua_key_index(legacy),                       .name = lua_key(legacy),                       .kind = regular_command_item,   .min = first_legacy_code,         .max = last_legacy_code ,            .base = 0,                       .fixedvalue = 0            };
-    lmt_interface.command_names[local_box_cmd]                        = (command_item) { .id = local_box_cmd,                      .lua = lua_key_index(local_box),                    .name = lua_key(local_box),                    .kind = regular_command_item,   .min = first_local_box_code,      .max = last_local_box_code,          .base = 0,                       .fixedvalue = 0            };
+    lmt_interface.command_names[local_box_cmd]                        = (command_item) { .id = local_box_cmd,                      .lua = lua_key_index(local_box),                    .name = lua_key(local_box),                    .kind = regular_command_item,   .min = first_local_box_code,      .max = last_local_box_token_code, .base = 0,                       .fixedvalue = 0            };
     lmt_interface.command_names[halign_cmd]                           = (command_item) { .id = halign_cmd,                         .lua = lua_key_index(halign),                       .name = lua_key(halign),                       .kind = regular_command_item,   .min = 0,                         .max = 0,                            .base = 0,                       .fixedvalue = 0            };
     lmt_interface.command_names[valign_cmd]                           = (command_item) { .id = valign_cmd,                         .lua = lua_key_index(valign),                       .name = lua_key(valign),                       .kind = regular_command_item,   .min = 0,                         .max = 0,                            .base = 0,                       .fixedvalue = 0            };
     lmt_interface.command_names[vrule_cmd]                            = (command_item) { .id = vrule_cmd,                          .lua = lua_key_index(vrule),                        .name = lua_key(vrule),                        .kind = regular_command_item,   .min = first_rule_code,           .max = last_rule_code,               .base = 0,                       .fixedvalue = 0            };
@@ -341,25 +341,30 @@ static inline int tokenlib_aux_valid_cs(int cs)
 
 static void tokenlib_aux_warn_inhibited(int cmd, int chr, int permissions, int quit)
 {
+     strnumber name = tex_primitive_name(cmd, chr);
+     const char *text = name >= cs_offset_value ? str_getconstr(name) : "";
      if (permissions & primitive_warned) { 
          return; 
      } else if (quit) { 
         tex_handle_error(
             normal_error_type,
             permissions & primitive_permanent 
-          ? "token (%i,%i) (%T) is permanently inhibited" 
-          : "token (%i,%i) (%T) is inhibited by \\overloadmode", 
-            cmd, chr, tex_primitive_name(cmd, chr),
+          ? "token (%i,%i) (%s) is permanently inhibited%h"
+          : "token (%i,%i) (%s) is inhibited by \\overloadmode%h",
+            cmd, chr, text,
             "This primitive is inhibited so we play safe and quit."
         );
      } else { 
         tex_formatted_warning(
             "tokens", 
             "token (%i,%i) (%s) is inhibited",
-            cmd, chr, str_string(tex_primitive_name(cmd, chr))
+            cmd, chr, text
         );
     }
-    lmt_primitive_state.prim_data[cmd].permissions[chr] |= primitive_warned; 
+    int index = tex_primitive_index(cmd, chr);
+    if (index >= 0 && lmt_primitive_state.prim_data[cmd].permissions) {
+        lmt_primitive_state.prim_data[cmd].permissions[index] |= primitive_warned;
+    }
 }
 
 /* todo: strick checking ! */
@@ -374,9 +379,10 @@ static inline int tokenlib_aux_valid_token(int cmd, int chr, int cs)
     } if (cmd >= first_cmd && cmd <= last_cmd) {
         chr = tokenlib_aux_valid_chr(cmd, chr);
         if (chr >= 0) {
+            int index = tex_primitive_index(cmd, chr);
             int permissions = 
-                lmt_primitive_state.prim_data[cmd].names && chr <= lmt_primitive_state.prim_data[cmd].subids 
-              ? lmt_primitive_state.prim_data[cmd].permissions[chr] 
+                index >= 0 && lmt_primitive_state.prim_data[cmd].permissions
+              ? lmt_primitive_state.prim_data[cmd].permissions[index]
               : primitive_permitted;
             if (permissions & primitive_permanent) { 
                 /*tex We can't use a permanently inhibited primitive. */
@@ -569,19 +575,17 @@ halfword lmt_token_code_from_lua(lua_State *L, int slot)
 
 /*tex two core helpers .. todo: combine active*/
 
-static unsigned char *tokenlib_aux_get_cs_text(int cs, int *allocated)
+static lstring_string tokenlib_aux_get_cs_text(int cs, int *allocated)
 {
     if (cs == null_cs) {
-        return (unsigned char *) "\\csname\\endcsname";
+        return (lstring_string) "\\csname\\endcsname";
     } else if ((cs_text(cs) < 0) || (cs_text(cs) >= lmt_string_pool_state.string_pool_data.ptr)) {
-        return (unsigned char *) "";
- // } else {
- //     return (unsigned char *) tex_makecstring(cs_text(cs));
+        return (lstring_string) "";
     } else if (cs_text(cs) < cs_offset_value) {
         *allocated = 1;
-        return (unsigned char *) aux_uni2str((unsigned) cs_text(cs));
+        return (lstring_string) aux_uni2str((unsigned) cs_text(cs));
     } else {
-        return (unsigned char *) (str_length(cs_text(cs)) > 0 ?  (unsigned char *) str_string(cs_text(cs)) :  (unsigned char *) "");
+        return str_getlen(cs_text(cs)) > 0 ? str_getstr(cs_text(cs)) : (lstring_string) "";
     }
 }
 
@@ -1739,7 +1743,7 @@ static void show_right_brace_error(void)
 {
     tex_handle_error(
         normal_error_type,
-        "Unbalanced value parsing (in Lua call)",
+        "Unbalanced value parsing (in Lua call)%h",
         "A { has to be matched by a }."
     );
 }
@@ -2128,10 +2132,10 @@ static int tokenlib_grab_string_until(lua_State *L)
                             }
                         }
                         if (tex_is_active_cs(str)) {
-                            luaL_addlstring(&b, ((char *) str_string(str)) + 3, str_length(str) - 3);
+                            luaL_addlstring(&b, (str_getchrstr(str)) + 3, str_getlen(str) - 3);
                         } else { 
                             luaL_addchar(&b, '\\');
-                            luaL_addlstring(&b, (char *) str_string(str), str_length(str));
+                            luaL_addlstring(&b, str_getchrstr(str), str_getlen(str));
                         }
                     } else { 
                         /* */
@@ -2384,7 +2388,7 @@ static int tokenlib_scanvalue(lua_State *L)
                 if (t >= cs_token_flag) {
                     unsigned char *s = get_cs_text(t - cs_token_flag);
                    if (s) {
-                     // if (is_active_cs(cs_text(t - cs_token_flag))) {
+                     // if (tex_is_active_cs(cs_text(t - cs_token_flag))) {
                         luaL_Buffer b;
                         luaL_buffinit(L, &b);
                         cs_name_to_buffer(s);
@@ -2786,7 +2790,7 @@ static int tokenlib_getprimitives(lua_State *L)
     while (cs < primitives_size) {
         strnumber s = get_prim_text(cs);
         if (s > 0 && (get_prim_origin(cs) != no_command)) {
-            const char *ss = tex_to_cstring(s);
+            const char *ss = str_getconstr(s);
             int cmd = prim_eq_type(cs);
             int chr = prim_equiv(cs);
             if (! raw) {
@@ -3543,7 +3547,7 @@ static halfword tokenlib_aux_expand_macros_in_tokenlist(halfword p)
         /*tex Recover from an unbalanced write command */
         tex_handle_error(
             normal_error_type,
-            "Unbalanced token list expansion",
+            "Unbalanced token list expansion%h",
             "On this page there's a token list expansion with fewer real {'s than }'s. I can't\n"
             "handle that very well; good luck."
         );
@@ -3835,23 +3839,25 @@ static int tokenlib_setmacrofrommark(lua_State *L)
         const char *name = lua_tolstring(L, slot++, &lname);
         if (name) {
             halfword mark = lmt_tohalfword(L, slot++);
-            halfword what = lmt_get_mark_class(L, slot++);
-            int flags = 0;
-            halfword cs = tex_string_locate(name, lname, 1);
-            if (slot <= stacktop) {
-                lmt_check_for_flags(L, slot, &flags, 1, 1);
-            }
-            if (tex_define_permitted(cs, flags)) {
-                halfword head = null;
-                if (mark >= lmt_mark_state.min_used && mark <= lmt_mark_state.max_used) { 
-                    head = tex_get_mark(mark, what);
-                    if (head && token_link(head)) { 
-                        add_token_reference(head);
-                    } else { 
-                        head = lmt_token_state.empty;
-                    }
+            if (tex_valid_mark(mark)) {
+                halfword what = lmt_get_mark_class(L, slot++);
+                int flags = 0;
+                halfword cs = tex_string_locate(name, lname, 1);
+                if (slot <= stacktop) {
+                    lmt_check_for_flags(L, slot, &flags, 1, 1);
                 }
-                tex_define(flags, cs, tex_flags_to_cmd(flags), head);
+                if (tex_define_permitted(cs, flags)) {
+                    halfword head = null;
+                    if (mark >= lmt_mark_state.min_used && mark <= lmt_mark_state.max_used) {
+                        head = tex_get_mark(mark, what);
+                        if (head && token_link(head)) {
+                            add_token_reference(head);
+                        } else {
+                            head = lmt_token_state.empty;
+                        }
+                    }
+                    tex_define(flags, cs, tex_flags_to_cmd(flags), head);
+                }
             }
         }
     }
@@ -4127,7 +4133,7 @@ static int tokenlib_getcommandvalues(lua_State *L)
                 if (lmt_primitive_state.prim_data[cmd].names[idx]) {
                     strnumber s = lmt_primitive_state.prim_data[cmd].names[idx];
                     if (s) {
-                        lua_pushlstring(L, (const char *) str_string(s), (size_t) str_length(s));
+                        lua_pushlstring(L, str_getconstr(s), (size_t) str_getsizlen(s));
                         lua_rawseti(L, -2, idx);
                     }
                 } else { 

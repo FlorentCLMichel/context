@@ -269,7 +269,7 @@ end
                     })
                 end
                 if right and not p_right then
-                    p_right = addprivate(main,p_right,{
+                    p_right = addprivate(main,f_right,{
                         height   = height,
                         width    = .95*rwidth,
                         commands = {
@@ -773,11 +773,11 @@ local function copy_glyph(main,target,original,unicode,slot)
                     italic       = oldnextdata.italic,
                     topanchor    = oldnextdata.topanchor,
                     bottomanchor = oldnextdata.bottomanchor,
-                    kerns        = olddata.kerns,
-                    mathkerns    = olddata.mathkerns,
-                    tounicode    = olddata.tounicode,
-                    unicode      = olddata.unicode,
-                    smaller      = olddata.smaller,
+                    kerns        = oldnextdata.kerns,
+                    mathkerns    = oldnextdata.mathkerns,
+                    tounicode    = oldnextdata.tounicode,
+                    unicode      = oldnextdata.unicode,
+                    smaller      = oldnextdata.smaller,
                     commands     = { slotcommand[slot][nextglyph] },
                 }
                 local newnextglyph = addprivate(main,formatters["M-N-%H"](nextglyph),newnextdata)

@@ -93,6 +93,20 @@ local mprgbcolor = attributes.colors.mprgbcolor
 
 local report = logs.reporter("metapost 3D")
 
+local constants = zbuffer.getconstants()
+
+local maxsamplingcount <const> = 1024 * 1024
+local maxmeshpoints    <const> = constants.maximplicits  -- 4 * 1024 * 1024
+
+local function validcount(value,minimum,comment)
+    value = tonumber(value)
+    if not value or value ~= value or value == infinity or value < minimum or value > maxsamplingcount then
+        report("invalid %s sampling count %a",comment,value)
+        return false
+    end
+    return max(minimum,floor(value))
+end
+
 -- This is a bit creepy but we want to save memory so ... however, intermediate
 -- cleanup of temporary variables we leave to the collectors (for now). Calling the
 -- garbage collector explicitly can crash the engine when some mesh is needed later
@@ -120,14 +134,25 @@ local compilecode  do
 
     local math = xmath
 
-    local limited = { math = xmath, print = print }
+    local limited = {
+        math         = xmath,
+        print        = print,
+        MP           = MP,
+        globaldata   = globaldata,
+        moduledata   = moduledata,
+        documentdata = documentdata,
+        userdata     = userdata,
+    }
     for k, v in next, xmath do
         limited[k] = v
     end
 
     compilecode = function(code,arguments,mandate,comment)
         local tcode = type(code)
-        if tcode == "function" then
+        if tcode == "number" then
+            local value = code
+            return function() return value end
+        elseif tcode == "function" then
             return code -- just in case we end up here again
         elseif tcode == "string" and code ~= "" then
             if arguments then
@@ -219,12 +244,15 @@ local normalize    = xmath.normalize
 local normal_smooth <const> = 0
 local normal_flat   <const> = 1
 local normal_up     <const> = 2
+local normal_auto   <const> = 3
 
 local function validnormal(mode)
     if mode == "flat" then
         return normal_flat
     elseif mode == "up" then
         return normal_up
+    elseif mode == "auto" then
+        return normal_auto
     else
         return normal_smooth
     end
@@ -357,6 +385,8 @@ do
             viewport  = setmetatableindex(specification.viewport,defaults.viewport),
             camera    = setmetatableindex(specification.camera,  defaults.camera),
             light     = setmetatableindex(specification.light,   defaults.light),
+            process   = specification.process,
+            stipple   = specification.stipple,
             materials = { },
             objects   = { },
             overlays  = { },
@@ -651,22 +681,23 @@ do
             -- started with a less integrated zbuffer object we might eventually decide to do this
             -- when we create it. But for now ...
             --
-if camera.eye == "auto" then
-    local bounds = scene.bounds
-    camera.eye = bounds and {
-        1.3 * (bounds.xmax - bounds.xmin),
-      - 2.4 * (bounds.ymax - bounds.ymin),
-        2.0 * (bounds.zmax - bounds.zmin),
-    } or nil
-end
-if camera.target == "auto" then
-    local bounds = scene.bounds
-    camera.target = bounds and {
-        0.5 * (bounds.xmax + bounds.xmin),
-        0.5 * (bounds.ymax + bounds.ymin),
-        0.5 * (bounds.zmax + bounds.zmin),
-    } or nil
-end
+            if camera.eye == "auto" then
+                local bounds = scene.bounds
+                camera.eye = bounds and {
+                    1.3 * (bounds.xmax - bounds.xmin),
+                  - 2.4 * (bounds.ymax - bounds.ymin),
+                    2.0 * (bounds.zmax - bounds.zmin),
+                } or nil
+            end
+            if camera.target == "auto" then
+                local bounds = scene.bounds
+                camera.target = bounds and {
+                    0.5 * (bounds.xmax + bounds.xmin),
+                    0.5 * (bounds.ymax + bounds.ymin),
+                    0.5 * (bounds.zmax + bounds.zmin),
+                } or nil
+            end
+            --
             zbuffersetup(zbuffer, {
                 target = camera.target,
                 up     = camera.up,
@@ -704,8 +735,13 @@ end
             -- resolution in both dimentions.
             --
             if width then
-                bytewidth  = resolution * width  / 72
-                byteheight = bytewidth  * usedheight / usedwidth
+                if height then
+                    bytewidth  = resolution * width  / 72
+                    byteheight = resolution * height / 72
+                else
+                    bytewidth  = resolution * width  / 72
+                    byteheight = bytewidth  * usedheight / usedwidth
+                end
             elseif height then
                 byteheight = resolution * height / 72
                 bytewidth  = byteheight * usedwidth / usedheight
@@ -830,7 +866,19 @@ end
             -- For clearity we have inlined the helper so that we see what gets done in
             -- relation to the already calculated properties. Kind of messy.
             --
-            local transform do
+            local transform
+
+            if crop == false then
+
+                transform = {
+                    scale = 1,
+                    x     = 0,
+                    y     = 0,
+                    crop  = false,
+                }
+
+            else
+
                 local xmin, xmax, ymin, ymax
                 local tanhalf = crop ~= true and 1 or tanhalf
                 for i=1,count do
@@ -893,6 +941,7 @@ end
                         ymax = ymax,
                     },
                 }
+
             end
             --
             -- We can now allocate the zbuffer matrix. We actually went through various intermediate
@@ -984,16 +1033,19 @@ end
          -- local yscale       = resolved.height / buffer.height
             local ratio        = resolved.width  / buffer.width
             local tolerance    = depthtolerance
-            local surfacedepth = zbuffergetdepth(zbuffer,x,y)
-            if not surfacedepth then
+
+            local column       = min(buffer.width, max(1,floor(x)+1))
+            local row          = min(buffer.height,max(1,floor(y)+1))
+            local surfacedepth = zbuffergetdepth(zbuffer,row,column)
+            if not surfacedepth or surfacedepth == infinity then
                 visible = false
             elseif depth > surfacedepth + tolerance then
                 visible = false
             end
-            -- still not ok
             x = x * ratio
             y = y * ratio
             if resolved.bounds then
+                x = x - resolved.bounds[1]
                 y = resolved.bounds[4] - y
             else
                 y = resolved.height - y
@@ -1052,11 +1104,37 @@ do
         local zv = compilecode(specification.zv,"u,v",false,"parametric zv") -- dfdy
         --
         local f        = false
+        local normalf  = false
         local analytic = xu and yu and zu and xv and yv and zv
-        if analytic then
+        if normalmode == normal_up then
+            f = compilecode(combinedf(specification),false,true,"parametric fp")
+            normalf = function()
+                return 0, 0, 1
+            end
+        elseif analytic then
             f = compilecode(combinedn(specification),false,true,"parametric fn")
+            normalf = function(u,v)
+                local _, _, _, nx, ny, nz = f(u,v)
+                return nx, ny, nz
+            end
         else
             f = compilecode(combinedf(specification),false,true,"parametric fp")
+            local urange = abs((specification.umax or 1) - (specification.umin or 0))
+            local vrange = abs((specification.vmax or 1) - (specification.vmin or 0))
+            local step   = tonumber(specification.normalstep)
+            if not step or step ~= step or step <= 0 or step == infinity then
+                step = max(1e-9,min(urange > 0 and urange or 1,vrange > 0 and vrange or 1) * 1e-5)
+            end
+            normalf = function(u,v)
+                local x,  y,  z  = f(u,v)
+                local x1, y1, z1 = f(u + step,v)
+                local x2, y2, z2 = f(u - step,v)
+                local x3, y3, z3 = f(u,v + step)
+                local x4, y4, z4 = f(u,v - step)
+                local ux, uy, uz = normalize(x1 - x2,y1 - y2,z1 - z2)
+                local vx, vy, vz = normalize(x3 - x4,y3 - y4,z3 - z4)
+                return normalize(crossproduct(ux,uy,uz,vx,vy,vz))
+            end
         end
         --
         specification.f        = f
@@ -1064,14 +1142,12 @@ do
         specification.normal   = normalmode
         --
         specification.scenedata.functions[specification.id] = {
+            kind   = "parametric",
             point  = function(u,v)
                 local x, y, z = f(u,v)
                 return x, y, z
             end,
-            normal = function(u,v)
-                local _, _, _, nx, ny, nz = f(u,v)
-                return nx, ny, nz
-            end
+            normal = normalf
         }
     end
 
@@ -1082,8 +1158,13 @@ do
         local umax = specification.umax
         local vmin = specification.vmin
         local vmax = specification.vmax
-        local nu   = specification.nu
-        local nv   = specification.nv
+        local nu   = validcount(specification.nu,1,"parametric nu")
+        local nv   = validcount(specification.nv,1,"parametric nv")
+        if not nu or not nv then
+            return
+        end
+        specification.nu = nu
+        specification.nv = nv
         local du   = (umax - umin) / nu
         local dv   = (vmax - vmin) / nv
         --
@@ -1091,8 +1172,16 @@ do
         local normalmode = specification.normal -- already checked
         local f          = specification.f
         --
+        if nu > maxmeshpoints / nv then
+            report("parametric mesh with %i by %i cells is too large",nu,nv)
+            return
+        end
         local vertices  = newpoints(nu+1,nv+1)
         local triangles = vectormakemesh(nu,nv,6)
+        if not vertices or not triangles then
+            report("unable to allocate parametric mesh with %i by %i cells",nu,nv)
+            return
+        end
         --
         if normalmode == normal_smooth and analytic then
             local v = vmin
@@ -1121,8 +1210,6 @@ do
             end
         end
         local bounds       = getpointbounds(vertices,true)
--- print("PARAMETRIC")
--- inspect(bounds)
         local nofvertices  = #vertices
         local noftriangles = #triangles
         stoptiming("thr")
@@ -1146,7 +1233,7 @@ end
 
 do
 
-    -- We decided to just map graphs onto parametrics.
+-- We decided to just map graphs onto parametrics.
 
 --     local combinedf = replacer [[
 --         return function(x,y)
@@ -1274,7 +1361,7 @@ do
 
     local function remap(s) return lpeg.match(p,s) or s end
 
-    generators["graph"] = function(specification)
+    local function compilegraph(specification)
         --
         local code = remap(specification.code or "")
         local dfdx = remap(specification.dfdx or "")
@@ -1299,6 +1386,16 @@ do
         specification.nu   = specification.nx
         specification.nv   = specification.ny
         --
+        return code, dfdx, dfdy
+    end
+
+    compilers["graph"] = function(specification)
+        compilegraph(specification)
+        compilers["parametric"](specification)
+    end
+
+    generators["graph"] = function(specification)
+        local code, dfdx, dfdy = compilegraph(specification)
         report("mapping graph onto parametric: xu=1 | yu=0 | zu=%s | xv=0 | yv=1 | zv=%s | x=u | y=v | z=%s",dfdx,dfdy,code)
         --
         return generators["parametric"](specification)
@@ -1320,6 +1417,7 @@ do
         local f = compilecode(combinedf(specification),false,true,"curve fp")
         specification.f = f
         specification.scenedata.functions[specification.id] = {
+            kind  = "curve",
             point = f,
         }
     end
@@ -1329,13 +1427,24 @@ do
         compilers["curve"](specification)
         local tmin  = specification.tmin
         local tmax  = specification.tmax
-        local nt    = specification.nt or 2
-        local tstep = specification.tstep
+        local nt    = validcount(specification.nt or 2,2,"curve nt")
+        local tstep = tonumber(specification.tstep)
+        if not nt then
+            return
+        end
+        if tstep and (tstep ~= tstep or tstep == infinity or tstep < 0) then
+            report("invalid curve tstep %a",tstep)
+            return
+        end
         if tmin >= tmax then
             return
         end
         if tstep and tstep > 0 then
             nt = ceil((tmax - tmin) / tstep) + 1
+            nt = validcount(nt,2,"curve tstep")
+            if not nt then
+                return
+            end
         end
         if nt < 2 then
             nt = 2
@@ -1344,6 +1453,10 @@ do
         local pstep    = (tmax - tmin) / (nt - 1)
         local t        = tmin
         local vertices = newpoints(nt)
+        if not vertices then
+            report("unable to allocate curve with %i points",nt)
+            return
+        end
         for i=1,nt do
             vertices(f(t))
             t = t + pstep
@@ -1362,7 +1475,20 @@ end
 
 do
 
+    -- Calculating implicit surfacces are kind of slow so we delegate this to a C
+    -- helper after prototyping. There are various scenarios to deal with:
+    --
+    --     - string based calculations (code, dfdx, dfdy and dfdz)
+    --     - functions (that permit output based on specific x, y and/or z)
+    --     - a combination of this
+    --     - smooth, flat and up normals
+    --
+    -- This means that we need to check a lot below. We also need to construct the
+    -- right functions for the C end.
+
     local combinedn = replacer [[
+        local sin = sin
+        local cos = cos
         return function(xx,yy,zz,step)
             local x, y, z, x1, x2, y1, y2, z1, z2
             y = yy z = zz
@@ -1381,6 +1507,8 @@ do
     ]]
 
     local combinedd = utilities.templates.replacer [[
+        local sin = sin
+        local cos = cos
         return function(x,y,z)
             return %dfdx%, %dfdy%, %dfdz%
         end
@@ -1389,28 +1517,158 @@ do
     compilers["implicit"] = function(specification)
         local normalmode = validnormal(specification.normal)
         specification.normalmode = normalmode
+        local querystep = tonumber(specification.normalstep)
+        if not querystep or querystep ~= querystep or querystep <= 0 or querystep == infinity then
+            local xrange = abs((specification.xmax or 1) - (specification.xmin or 0))
+            local yrange = abs((specification.ymax or 1) - (specification.ymin or 0))
+            local zrange = abs((specification.zmax or 1) - (specification.zmin or 0))
+            querystep = max(
+                1e-9,
+                min(
+                    xrange > 0 and xrange or 1,
+                    yrange > 0 and yrange or 1,
+                    zrange > 0 and zrange or 1
+                ) * 1e-5
+            )
+        end
+        specification.normalstep = tonumber(specification.normalstep)
+        if not specification.normalstep
+            or specification.normalstep ~= specification.normalstep
+            or specification.normalstep <= 0
+            or specification.normalstep == infinity then
+            specification.normalstep = 0
+        end
         specification.normalstep = specification.normalstep or 0     -- never set
-        specification.fp         = compilecode(specification.code,"x,y,z",true, "implicit fp")
+        local pfunction    = specification.pfunction
+        local nfunction    = specification.nfunction
+        local haspfunction = false
         --
-        local dfdx = compilecode(specification.dfdx,"x,y,z",false,"implicit dfdx")
-        local dfdy = compilecode(specification.dfdy,"x,y,z",false,"implicit dfdy")
-        local dfdz = compilecode(specification.dfdz,"x,y,z",false,"implicit dfdz")
-        if dfdx and dfdy and dfdz then
-            specification.fn = compilecode(combinedd(specification),false,true,"implicit fn")
+        if pfunction then
+            specification.fp = compilecode(
+                "return " .. pfunction,
+                false,
+                true,
+                "implicit fp"
+            )
+            haspfunction = specification.fp and true or false
+        elseif specification.fp then
+            haspfunction = true
+        end
+        if not specification.fp then
+            specification.fp = compilecode(
+                specification.code,
+                "x,y,z",
+                true,
+                "implicit fp"
+            )
+        end
+        --
+        if nfunction then
+            nfunction = "return " .. nfunction
+            specification.fn = compilecode(nfunction,false,true,"implicit fn")
+        end
+        if specification.fn then
+            --
         else
-            specification.fn = compilecode(combinedn(specification),false,true,"implicit fn")
+            local dfdx = compilecode(specification.dfdx,"x,y,z",false,"implicit dfdx")
+            local dfdy = compilecode(specification.dfdy,"x,y,z",false,"implicit dfdy")
+            local dfdz = compilecode(specification.dfdz,"x,y,z",false,"implicit dfdz")
+
+            local hasderivatives = dfdx and dfdy and dfdz
+
+            if haspfunction and not hasderivatives and normalmode == normal_smooth then
+                normalmode               = normal_auto
+                specification.normal     = "auto"
+                specification.normalmode = normal_auto
+            end
+            if haspfunction and not hasderivatives then
+
+                -- A pfunction without derivatives needs numerical normals. In that case
+                -- the renderer's default smooth mode must use the same calculation.
+
+                local function difference(plus,minus,f0,step)
+                    local p = tonumber(plus)
+                    local m = tonumber(minus)
+                    if     p and m then return (plus-minus) / (2*step)
+                    elseif p       then return (plus-f0   ) /    step
+                    elseif       m then return (f0  -minus) /    step
+                    else                return 0
+                    end
+                end
+
+                specification.fn = function(x,y,z,step)
+                    local f0 = specification.fp(x,y,z)
+                    if tonumber(f0) then -- faster than type check
+                        local xp = specification.fp(x+step,y,z)
+                        local xm = specification.fp(x-step,y,z)
+                        local yp = specification.fp(x,y+step,z)
+                        local ym = specification.fp(x,y-step,z)
+                        local zp = specification.fp(x,y,z+step)
+                        local zm = specification.fp(x,y,z-step)
+                        return
+                            difference(xp,xm,f0,step),
+                            difference(yp,ym,f0,step),
+                            difference(zp,zm,f0,step)
+                    else
+                        return 0, 0, 1
+                    end
+                end
+            elseif hasderivatives then
+                specification.fn = compilecode(
+                    combinedd(specification),
+                    false,
+                    true,
+                    "implicit fn"
+                )
+            else
+                specification.fn = compilecode(
+                    combinedn(specification),
+                    false,
+                    true,
+                    "implicit fn"
+                )
+            end
         end
         --
         specification.scenedata.functions[specification.id] = {
+            kind   = "implicit",
+            step   = querystep,
             point  = specification.fp,
             normal = specification.fn,
         }
     end
 
+local kept = { }
+
     generators["implicit"] = function(specification)
         starttiming("thr",true) ioflush()
+local keep = specification.keep and specification.id
+local result = keep and kept[keep]
+if result then
+    stoptiming("thr")
+    report("implicit mesh %a is reused",keep)
+    return result
+end
+        local nx = validcount(specification.nx,2,"implicit nx")
+        local ny = validcount(specification.ny,2,"implicit ny")
+        local nz = validcount(specification.nz,2,"implicit nz")
+        if not nx or not ny or not nz then
+            return
+        end
+        specification.nx = nx
+        specification.ny = ny
+        specification.nz = nz
         compilers["implicit"](specification)
-        local vertices    = zbufferimplicit(specification)
+        if nx > maxmeshpoints / ny or nx * ny > maxmeshpoints / nz then
+            report("implicit mesh with %i by %i by %i samples is too large",nx,ny,nz)
+            return
+        end
+        -- specification.splitdepth defaults to 2 (max 3)
+        local vertices = zbufferimplicit(specification)
+        if not vertices then
+            report("unable to generate implicit mesh with %i by %i by %i samples",nx,ny,nz)
+            return
+        end
         local triangles   = vectormakemesh(#vertices/3,1,5)
         local nofvertices = #vertices
         local bounds      = getpointbounds(vertices,true)
@@ -1421,7 +1679,7 @@ do
         local noftriangles = #triangles
         stoptiming("thr")
         report("implicit mesh: %i vertices, %i triangles, runtime %s",nofvertices,noftriangles,elapsedtime("thr"))
-        return {
+        local result = {
             creator      = "implicit",
             vertices     = vertices,
             triangles    = triangles,
@@ -1435,7 +1693,12 @@ do
                 ny = specification.ny,
                 nz = specification.nz,
             },
+kept = keep,
         }
+if keep then
+    kept[keep] = result
+end
+        return result
     end
 
 end
@@ -2142,9 +2405,9 @@ do
         --
         local segments = { }
         local bounds   = { }
-        for j=0,ny do
+        for j=0,ny - 1 do
             local dx = j * (nx + 1)
-            for i=0,nx do
+            for i=0,nx - 1 do
                 local a = dx + i + 1
                 local b = a + 1        -- right
                 local d = a + (nx + 1) -- below
@@ -2409,6 +2672,9 @@ do
                 local zbuffer = scene.buffer.zbuffer
                 local method  = 0
                 starttiming("thr",true) ioflush()
+                if process.initialize then
+                   process.initialize(process)
+                end
                 if process.direct or process.method == "direct" then
                     meshup(zbuffer,process)
                 else
@@ -2423,8 +2689,11 @@ do
                     local okay = zbufferprocess(zbuffer,meshup,method,process)
                  -- print(meshup,method,okay)
                 end
-                report("meshupper %a applied, method 0x%02X, runtime %s",name or "unset",method,elapsedtime("thr"))
+                if process.finalize then
+                   process.finalize(process)
+                end
                 stoptiming("thr")
+                report("meshupper %a applied, method 0x%02X, runtime %s",name or "unset",method,elapsedtime("thr"))
                 return
             end
         elseif name then
@@ -2434,7 +2703,7 @@ do
 
     function rasterizers.tobytemap(buffer,index)
         local data, height, width, components = zbuffertobytes(buffer.zbuffer)
-        newbytemap(index, width, height, components, data)
+        newbytemap(index,width,height,components,data)
         local storedwidth, storedheight, storedcomponents = getbytemapdata(index)
         if storedwidth == width and storedheight == height and storedcomponents == components then
             return {
@@ -2448,6 +2717,9 @@ do
     end
 
     function rasterizers.recreate(bytemap,index)
+        if not bytemap or not bytemap.data then
+            return false
+        end
         local data = gzip.decompress(bytemap.data)
         if data then
             newbytemap(
@@ -2621,13 +2893,12 @@ do
                             report("%i %i : %-9s : %s, opacity %0.3f, id %a, method %i, runtime %s",1,i,"points",object.kind,opacity,object.id,mesh.method,elapsedtime("thr"))
                         else
                             starttiming("thr",true) ioflush()
-if bitmap then
-                            zbuffertriangles(zbuffer,mesh.vertices,mesh.triangles,false,mesh.normals)
-end
-if vector then
-                            registervector(zbuffer,mesh,object)
-end
-
+                            if bitmap then
+                                zbuffertriangles(zbuffer,mesh.vertices,mesh.triangles,false,mesh.normals)
+                            end
+                            if vector then
+                                registervector(zbuffer,mesh,object)
+                            end
                             stoptiming("thr")
                             report("%i %i : %-9s : %s, opacity %0.3f, id %a, runtime %s",1,i,"triangles",object.kind,opacity,object.id,elapsedtime("thr"))
                         end
@@ -2792,7 +3063,7 @@ do
         }
     end
 
-    local version <const> = 1.006
+    local version <const> = 1.008
 
     local cachenames = { }
 
@@ -2813,7 +3084,7 @@ do
 
     function scenes.store(scene,bytemap)
         local name = cachename(scene)
-        if name then
+        if name and bytemap and bytemap.data then
             bytemap.data   = gzip.compress(bytemap.data)
             local buffer   = scene.result.buffer
             local resolved = scene.result.resolved
@@ -2826,6 +3097,7 @@ do
                 bytemap   = bytemap,
                 layout    = scene.layout,
                 process   = scene.process,
+                stipple   = scene.stipple and true or false,
                 buffer    = {
                     height      = buffer.height,
                     width       = buffer.width,
@@ -2838,6 +3110,8 @@ do
                     bounds    = resolved.bounds,
                 },
                 setup     = {
+                    width       = buffer.width  + (buffer.supersample or 1),
+                    height      = buffer.height + (buffer.supersample or 1),
                     --
                     eye         = camera.eye,
                     target      = camera.target,
@@ -2860,22 +3134,32 @@ do
             local cache = table.load(name)
             if cache and cache.kind == "scenebytemap"
                      and cache.version == version
+                     and cache.bytemap
+                     and not scene.process
+                     and not scene.stipple
+                     and not cache.process
+                     and not cache.stipple
                      and samespecification(scene,cache) then
                 if rasterizers.recreate(cache.bytemap,index) then
                     scenes.prepare(scene)
                     --
                     local zbuffer = scene.buffer.zbuffer
+                    local setup   = cache.setup
                     --
-                    zbuffersetup(zbuffer,cache.setup)
-                    cache.buffer  .zbuffer = zbuffer
                     cache.resolved.zbuffer = zbuffer
                     --
+                    zbuffersetup(zbuffer,setup)
+                    --
+                    cache.buffer  .zbuffer = zbuffer
+                    cache.resolved.zbuffer = zbuffer
+
                     scene.layout      = cache.layout
-                    scene.perspective = cache.perspective
-                    scene.light       = cache.light
-                    scene.viewport    = cache.viewport
-                    scene.transform   = cache.transform
-                    scene.camera      = cache.camera
+                    scene.perspective = setup.perspective
+                    scene.light       = setup.light
+                    scene.viewport    = setup.viewport
+                    scene.transform   = setup.transform
+                    scene.camera      = setup.camera
+                    --
                     scene.rendered    = true
                     scene.result      = {
                         scene    = scene,
@@ -2889,10 +3173,55 @@ do
         return false
     end
 
+    local sceneries = { }
+
+    function sceneries.flush(specification,bmp)
+        local name = specification.filename
+        if name then
+            if not bytemap.png then
+                dofile(resolvers.findfile("grph-png.lmt"))
+            end
+            local scenery = sceneries[name]
+            if scenery == nil then
+                specification.width     = bmp.width
+                specification.height    = bmp.height
+                specification.bitdepth  = 8
+                specification.bpp       = bmp.components or 3
+                specification.colortype = specification.bpp == 3 and 2 or 0
+                local add, close = bytemap.png.open(specification)
+                if add and close then
+                    report()
+                    report("populating file %a as we go",name)
+                    report()
+                 -- scenery = {
+                 --     name  = scenery,
+                 --     add   = add,
+                 --     close = function()
+                 --         close()
+                 --         sceneries[scenery] = false
+                 --     end
+                 -- }
+                    scenery = add
+                else
+                    scenery = false
+                end
+                sceneries[name] = scenery
+            end
+            if scenery then
+                local n = scenery(bmp.data)
+                if n then
+                    report("frame %i flushed to %a",n,name)
+                end
+            end
+        end
+    end
+
     function scenes.render(scene,specification)
         if scene.rendered then
             return scene.result
         end
+        scene.process = specification.process
+        scene.stipple = specification.stipple
         if scenes.recreate(scene,specification.bytemap) then
             scenes.compile(scene)
         else
@@ -2936,6 +3265,10 @@ do
                 resolved = displaybuffer,
             }
             --
+            if scene.scenery and bytemap then
+                sceneries.flush(scene.scenery,bytemap)
+            end
+            --
             scenes.store(scene,bytemap)
         end
     end
@@ -2954,12 +3287,14 @@ do
                     for i=1,#objects do
                         local object = objects[i]
                         local mesh   = object.mesh
+if not mesh.kept then
                         if mesh then
                             resetwhatever(mesh.vertices)
                             resetwhatever(mesh.triangles)
                             resetwhatever(mesh.meshpoints)
                             resetwhatever(mesh.triangles)
                         end
+end
                     end
                 end
                 if result and result.resolved then
@@ -3021,16 +3356,42 @@ if mp and metapost then
     local function getsteps(first,last,step)
         local values    = { }
         local nofvalues = 0
-        local tolerance = abs(step) * steptolerance
+        first = tonumber(first)
+        last  = tonumber(last)
+        step  = tonumber(step)
+        if not first or not last or not step
+            or first ~= first or last ~= last or step ~= step
+            or first == infinity or first == -infinity
+            or last == infinity or last == -infinity
+            or step == infinity or step == -infinity
+            or step == 0 then
+            report("invalid overlay step range: first=%a, last=%a, step=%a",first,last,step)
+            return values
+        elseif step > 0 and first > last then
+            report("positive overlay step cannot reach a lower endpoint")
+            return values
+        elseif step < 0 and first < last then
+            report("negative overlay step cannot reach a higher endpoint")
+            return values
+        end
+        local tolerance = max(steptolerance,abs(step) * steptolerance)
         local value     = first
         if step > 0 then
-            while value <= last + steptolerance do
+            while value <= last + tolerance do
+                if nofvalues >= maxsamplingcount then
+                    report("overlay step range exceeds %i values",maxsamplingcount)
+                    break
+                end
                 nofvalues = nofvalues + 1
                 values[nofvalues] = value
                 value = value + step
             end
         else
-            while value >= last - steptolerance do
+            while value >= last - tolerance do
+                if nofvalues >= maxsamplingcount then
+                    report("overlay step range exceeds %i values",maxsamplingcount)
+                    break
+                end
                 nofvalues = nofvalues + 1
                 values[nofvalues] = value
                 value = value + step
@@ -3064,12 +3425,14 @@ if mp and metapost then
                 direction = specification.light, -- name ?
                 intensity = specification.intensity or 1,
             },
+            process  = specification.process,
             stipple = specification.stipple,
         }
-        scenedata.name   = specification.name
-        scenedata.result = false
-        scenedata.cache  = specification.cache
-        scenedata.layout = {
+        scenedata.name    = specification.name
+        scenedata.result  = false
+        scenedata.scenery = specification.scenery
+        scenedata.cache   = specification.cache
+        scenedata.layout  = {
             bytewidth  = 0, -- bytewidth,
             byteheight = 0, -- byteheight,
             width      = 0, -- displaywidth,
@@ -3214,32 +3577,44 @@ if mp and metapost then
                 local namespace = scenedata.functions[name]
                 local getpoint  = namespace and namespace.point
                 if getpoint then
-                    at = specification.point
-                    if not at then
-                        local x = specification.x
-                        local y = specification.y
-                        local z = specification.z or 0
-                        if x and y then
-                            at = { x, y, z }
+                    if namespace.kind == "implicit" then
+                        at = specification.point
+                        if not at then
+                            local x = specification.x
+                            local y = specification.y
+                            local z = specification.z or 0
+                            if x and y then
+                                at = { x, y, z }
+                            end
                         end
-                    end
-                    if not at then
-                        local u = specification.u
-                        local v = specification.v
-                        if u and v then
-                            at = { u, v, 0 }
+                    else
+                        at = specification.point
+                        if not at then
+                            local x = specification.x
+                            local y = specification.y
+                            local z = specification.z or 0
+                            if x and y then
+                                at = { x, y, z }
+                            end
                         end
-                    end
-                    if not at then
-                        local t = specification.t
-                        if t then
-                            at = { t }
+                        if not at then
+                            local u = specification.u
+                            local v = specification.v
+                            if u and v then
+                                at = { u, v, 0 }
+                            end
                         end
-                    end
-                    if at then
-                        local x, y, z = getpoint(unpack(at))
-                        if x then
-                            at = { x, y, z }
+                        if not at then
+                            local t = specification.t
+                            if t then
+                                at = { t }
+                            end
+                        end
+                        if at then
+                            local x, y, z = getpoint(unpack(at))
+                            if x then
+                                at = { x, y, z }
+                            end
                         end
                     end
                 end
@@ -3254,9 +3629,21 @@ if mp and metapost then
             local namespace = scenedata.functions[name]
             local getnormal = namespace and namespace.normal
             if getnormal then
-                local at = getpoint(specification)
+                local at
+                if namespace.kind == "parametric" and specification.u and specification.v then
+                    at = { specification.u, specification.v }
+                elseif namespace.kind == "curve" and specification.t then
+                    at = { specification.t }
+                else
+                    at = getpoint(specification)
+                end
                 if at then
-                    local nx, ny, nz = getnormal(unpack(at))
+                    local input = { unpack(at) }
+                    local step = namespace.step
+                    if step and step > 0 then
+                        input[#input+1] = step
+                    end
+                    local nx, ny, nz = getnormal(unpack(input))
                     if nx then
                         return { nx, ny, nz }
                     end
@@ -3329,8 +3716,6 @@ if mp and metapost then
         local special  = specials[kind]
         local segments = special and special(specification)
         if segments then
--- print("SEGMENTS")
--- inspect(segments)
             specification.segments = segments
             registersegments(scenedata,specification)
         else
@@ -3385,6 +3770,10 @@ if mp and metapost then
         local namespace = scenedata.functions[name]
         local getnormal = namespace and namespace.normal
         if getnormal then
+            local step = namespace.step
+            if step and step > 0 then
+                input[#input+1] = step
+            end
             local x, y, z = normalize(getnormal(unpack(input)))
             injecttriplet(x,y,z)
         else

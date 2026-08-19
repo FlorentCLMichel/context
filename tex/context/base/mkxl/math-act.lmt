@@ -131,8 +131,8 @@ function mathematics.initializeparameters(target,original,nodimensions)
         if not mathparameters.NoLimitSubFactor                  then mathparameters.NoLimitSubFactor                  = 0 end
         if not mathparameters.AccentTopShiftUp                  then mathparameters.AccentTopShiftUp                  = 0 end
         if not mathparameters.AccentBottomShiftDown             then mathparameters.AccentBottomShiftDown             = 0 end
-        if not mathparameters.FlattenedAccentTopShiftUp         then mathparameters.AccentTopShiftUp                  = 0 end
-        if not mathparameters.FlattenedAccentBottomShiftDown    then mathparameters.AccentBottomShiftDown             = 0 end
+        if not mathparameters.FlattenedAccentTopShiftUp         then mathparameters.FlattenedAccentTopShiftUp         = 0 end
+        if not mathparameters.FlattenedAccentBottomShiftDown    then mathparameters.FlattenedAccentBottomShiftDown    = 0 end
         if not mathparameters.AccentBaseDepth                   then mathparameters.AccentBaseDepth                   = 0 end
         if not mathparameters.AccentFlattenedBaseDepth          then mathparameters.AccentFlattenedBaseDepth          = 0 end
         if not mathparameters.AccentTopOvershoot                then mathparameters.AccentTopOvershoot                = 0 end

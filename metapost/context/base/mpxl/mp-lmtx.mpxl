@@ -3080,20 +3080,25 @@ enddef ;
 
 %D For Keith McKay:
 
-newscriptindex mfid_perlinnoise   ; mfid_perlinnoise   := scriptindex "perlinnoise" ;
-newscriptindex mfid_simplexnoise  ; mfid_simplexnoise  := scriptindex "simplexnoise" ;
-newscriptindex mfid_perlinoctave  ; mfid_perlinoctave  := scriptindex "perlinoctave" ;
-newscriptindex mfid_simplexoctave ; mfid_simplexoctave := scriptindex "simplexoctave" ;
+newscriptindex mfid_perlinnoise   ; mfid_perlinnoise   := scriptindex "perlinnoise"   ;
+newscriptindex mfid_simplexnoise  ; mfid_simplexnoise  := scriptindex "simplexnoise"  ;
+newscriptindex mfid_worleynoise   ; mfid_worleynoise   := scriptindex "worleynoise"   ;
+newscriptindex mfid_browniannoise ; mfid_browniannoise := scriptindex "browniannoise" ;
 
-vardef perlinnoise (expr p, q, r) = runscript mfid_perlinnoise  p q r enddef ;
-vardef simplexnoise(expr p, q, r) = runscript mfid_simplexnoise p q r enddef ;
+% newscriptindex mfid_perlinoctave  ; mfid_perlinoctave  := scriptindex "perlinoctave" ;
+% newscriptindex mfid_simplexoctave ; mfid_simplexoctave := scriptindex "simplexoctave" ;
 
-vardef perlinoctave (expr        iterations, amplitude, frequency, persistence, lacunarity, ang, minimum, maximum, x, y) =
-    runscript mfid_perlinoctave  iterations  amplitude  frequency  persistence  lacunarity  ang  minimum  maximum  x  y
-enddef ;
-vardef simplexoctave(expr        iterations, amplitude, frequency, persistence, lacunarity, ang, minimum, maximum, x, y) =
-    runscript mfid_simplexoctave iterations  amplitude  frequency  persistence  lacunarity  ang  minimum  maximum  x  y
-enddef ;
+vardef perlinnoise  (expr p, q, r) = runscript mfid_perlinnoise   p q r enddef ;
+vardef simplexnoise (expr p, q, r) = runscript mfid_simplexnoise  p q r enddef ;
+vardef worleynoise  (expr p, q, r) = runscript mfid_worleynoise   p q r enddef ;
+vardef browniannoise(expr p, q, r) = runscript mfid_browniannoise p q r enddef ;
+
+% vardef perlinoctave (expr        iterations, amplitude, frequency, persistence, lacunarity, ang, minimum, maximum, x, y) =
+%     runscript mfid_perlinoctave  iterations  amplitude  frequency  persistence  lacunarity  ang  minimum  maximum  x  y
+% enddef ;
+% vardef simplexoctave(expr        iterations, amplitude, frequency, persistence, lacunarity, ang, minimum, maximum, x, y) =
+%     runscript mfid_simplexoctave iterations  amplitude  frequency  persistence  lacunarity  ang  minimum  maximum  x  y
+% enddef ;
 
 presetparameters "noise" [
     bytemap     = 1,
@@ -3107,7 +3112,7 @@ presetparameters "noise" [
     high        = 255,
     colorcode   = "",
     angle       = 0,
-    method      = "perlin", % simplex angle detail
+    method      = "perlin", % simplex angle detail worley brownian
 ] ;
 
 def lmt_noise = applyparameters "noise" "lmt_do_noise" enddef ;

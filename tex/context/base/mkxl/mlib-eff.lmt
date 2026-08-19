@@ -27,21 +27,24 @@ local loadbytemapfile  = mp.loadbytemapfile
 local setbytemapoctave = mp.setbytemapoctave
 
 local perlinnoise     = effects.perlinnoise
-local perlinoctave    = effects.perlinoctave
 local simplexnoise    = effects.simplexnoise
-local simplexoctave   = effects.simplexoctave
-local angleoctave     = effects.angleoctave
-local detailoctave    = effects.detailoctave
+local worleynoise     = effects.worleynoise
+local browniannoise   = effects.browniannoise
+
+-- local perlinoctave    = effects.perlinoctave
+-- local simplexoctave   = effects.simplexoctave
+-- local angleoctave     = effects.angleoctave
+-- local detailoctave    = effects.detailoctave
 
 local directoctave    = effects.octave
 local octavebytemap   = effects.octavebytemap
 
-local newoctave  = effects.newoctave
-local stepoctave = effects.stepoctave
+local newoctave       = effects.newoctave
+local stepoctave      = effects.stepoctave
 
-local octavemethods  = effects.getoctavemethods()
-local octaveloops    = effects.getoctaveloops()
-local octavevariants = effects.getoctavevariants()
+local octavemethods   = effects.getoctavemethods()
+local octaveloops     = effects.getoctaveloops()
+local octavevariants  = effects.getoctavevariants()
 
 local function noise(method)
     injectnumber(method(
@@ -68,9 +71,11 @@ end
 
 registerdirect("perlinnoise",   function() noise(perlinnoise)   end)
 registerdirect("simplexnoise",  function() noise(simplexnoise)  end)
+registerdirect("worleynoise",   function() noise(worleynoise)   end)
+registerdirect("browniannoise", function() noise(browniannoise) end)
 
-registerdirect("perlinoctave",  function() noise(perlinoctave)  end)
-registerdirect("simplexoctave", function() noise(simplexoctave) end)
+-- registerdirect("perlinoctave",  function() noise(perlinoctave)  end)
+-- registerdirect("simplexoctave", function() noise(simplexoctave) end)
 
 local getparameterset = metapost.getparameterset
 
@@ -83,6 +88,13 @@ local f_function = [[
       return %s
     end
 ]]
+
+local octave_perlin   <const> = 1
+local octave_simplex  <const> = 2
+local octave_angle    <const> = 3
+local octave_detail   <const> = 4
+local octave_worley   <const> = 5
+local octave_brownian <const> = 6
 
 function mp.lmt_noise_do()
     local p = getparameterset()
@@ -175,25 +187,31 @@ function mp.lmt_noise_do()
         elseif z then
             for x=0,nx-1 do
                 for y=0,ny-1 do
-                    local v = directoctave(2,iterations,amplitude,frequency,persistence,lacunarity,angle,minimum,maximum,x,y,z)
+                    local v = directoctave(octave_simplex,iterations,amplitude,frequency,persistence,lacunarity,angle,minimum,maximum,x,y,z)
                     setbytemap(bytemap,x,y,action(v,x,y)) -- r, g, b
                 end
             end
         else
             for x=0,nx-1 do
                 for y=0,ny-1 do
-                    local v = directoctave(2,iterations,amplitude,frequency,persistence,lacunarity,angle,minimum,maximum,x,y)
+                    local v = directoctave(octave_simplex,iterations,amplitude,frequency,persistence,lacunarity,angle,minimum,maximum,x,y)
                     setbytemap(bytemap,x,y,action(v,x,y)) -- r, g, b
                 end
             end
         end
     elseif method == "test2" then
-        octave = newoctave(2,iterations,amplitude,frequency,persistence,lacunarity,angle,minimum,maximum,z or false)
+        octave = newoctave(octave_simplex,iterations,amplitude,frequency,persistence,lacunarity,angle,minimum,maximum,z or false)
         local result, size = octavebytemap(octave,nx,ny,nz,action,data)
         newbytemap(bytemap,nx,ny,nz,result)
-    elseif method == "simplex" then
+    elseif method == "simplex" or method == "worley" or method == "brownian" then
+        local noise = octave_simplex
+        if method == "worley" then
+            noise = octave_worley
+        elseif method == "brownian" then
+            noise = octave_brownian
+        end
         if slowloop and action then
-            octave = newoctave(2,iterations,amplitude,frequency,persistence,lacunarity,angle,minimum,maximum)
+            octave = newoctave(noise,iterations,amplitude,frequency,persistence,lacunarity,angle,minimum,maximum)
             if z then
                 for x=0,nx-1 do
                     for y=0,ny-1 do
@@ -210,16 +228,16 @@ function mp.lmt_noise_do()
                 end
             end
         else
-            octave = newoctave(2,iterations,amplitude,frequency,persistence,lacunarity,angle,minimum,maximum,z or false)
+            octave = newoctave(noise,iterations,amplitude,frequency,persistence,lacunarity,angle,minimum,maximum,z or false)
             newbytemap(bytemap,nx,ny,nz)
             setbytemapoctave(bytemap,octave,action)
         end
     elseif method == "detail" then
         if slowloop and action then
-            octave = newoctave(4,iterations,amplitude,frequency,persistence,lacunarity,angle,minimum,maximum)
+            octave = newoctave(octave_detail,iterations,amplitude,frequency,persistence,lacunarity,angle,minimum,maximum)
             if z then
                 if keep then
-                    for x=0,nx-1 do
+                     for x=0,nx-1 do
                         for y=0,ny-1 do
                             local v, dx, dy = stepoctave(octave,x,y,z)
                             setbytemap(bytemap,x,y,action(v,x,y,dx,dy,getbytemap(bytemap,x,y))) -- r, g, b
@@ -251,13 +269,13 @@ function mp.lmt_noise_do()
                 end
             end
         else
-            octave = newoctave(4,iterations,amplitude,frequency,persistence,lacunarity,angle,minimum,maximum,z or false)
+            octave = newoctave(octave_detail,iterations,amplitude,frequency,persistence,lacunarity,angle,minimum,maximum,z or false)
             newbytemap(bytemap,nx,ny,nz)
             setbytemapoctave(bytemap,octave,action)
         end
     elseif method == "angle" then
         if slowloop and action then
-            octave = newoctave(3,iterations,amplitude,frequency,persistence,lacunarity,angle,minimum,maximum)
+            octave = newoctave(octave_angle,iterations,amplitude,frequency,persistence,lacunarity,angle,minimum,maximum)
             if z then
                 for x=0,nx-1 do
                     for y=0,ny-1 do
@@ -274,13 +292,13 @@ function mp.lmt_noise_do()
                 end
             end
         else
-            octave = newoctave(3,iterations,amplitude,frequency,persistence,lacunarity,angle,minimum,maximum,z or false)
+            octave = newoctave(octave_angle,iterations,amplitude,frequency,persistence,lacunarity,angle,minimum,maximum,z or false)
             newbytemap(bytemap,nx,ny,nz)
             setbytemapoctave(bytemap,octave,action)
         end
-    else
+    else -- perlin similar to simplex
         if slowloop and action then
-            octave = newoctave(1,iterations,amplitude,frequency,persistence,lacunarity,angle,minimum,maximum)
+            octave = newoctave(octave_perlin,iterations,amplitude,frequency,persistence,lacunarity,angle,minimum,maximum)
             if z then
                 for x=0,nx-1 do
                     for y=0,ny-1 do
@@ -297,23 +315,23 @@ function mp.lmt_noise_do()
                 end
             end
         else
-            octave = newoctave(1,iterations,amplitude,frequency,persistence,lacunarity,angle,minimum,maximum,z or false)
+            octave = newoctave(octave_perlin,iterations,amplitude,frequency,persistence,lacunarity,angle,minimum,maximum,z or false)
             newbytemap(bytemap,nx,ny,nz)
             setbytemapoctave(bytemap,octave,action)
         end
     end
     if trace then
-      if octave then
-        local s = effects.getoctavestatus(octave)
-        report("used method  : %s", octavemethods[s.method])
-        report("used variant : %s", octavevariants[s.variant])
-      if s.zset then
-        report("used z value : %N", s.z)
-      end
-      if s.wset then
-        report("used w value : %N", s.w)
-      end
-      end
+        if octave then
+            local s = effects.getoctavestatus(octave)
+            report("used method  : %s", octavemethods[s.method])
+            report("used variant : %s", octavevariants[s.variant])
+            if s.zset then
+                report("used z value : %N", s.z)
+            end
+            if s.wset then
+                report("used w value : %N", s.w)
+            end
+        end
         statistics.stoptiming(t)
         report("seconds used : %s",statistics.elapsedseconds(t))
     end

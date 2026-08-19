@@ -82,16 +82,20 @@ local binary_class      = classes.binary
 local relation_class    = classes.relation
 local open_class        = classes.open
 local close_class       = classes.close
-local variable_class    = classes.variable
 local punctuation_class = classes.punctuation
-local middle_class      = classes.middle
-local accent_class      = classes.accent
-local radical_class     = classes.radical
-local fraction_class    = classes.fraction
+local variable_class    = classes.variable
+----- active
+----- inner
 local under_class       = classes.under
 local over_class        = classes.over
+local fraction_class    = classes.fraction
+local radical_class     = classes.radical
+local middle_class      = classes.middle
+local prime_class       = classes.prime
+local accent_class      = classes.accent
 local fenced_class      = classes.fenced
 local ghost_class       = classes.ghost
+----- vcenter
 
 -- these will go
 
@@ -161,6 +165,8 @@ registerengineclass("under",       "und")
 registerengineclass("over",        "ove")
 registerengineclass("fenced",      "fen")
 registerengineclass("ghost",       "gho")
+registerengineclass("prime",       "prm")
+
 registerengineclass("vcenter",     "vce") -- not used
 
 -- additional classes
@@ -172,7 +178,7 @@ registerengineclass("exponential",     "exp")
 registerengineclass("integral",        "int")
 registerengineclass("ellipsis",        "ell")
 registerengineclass("function",        "fnc")
-registerengineclass("digit",           "dig")  local division_class =
+registerengineclass("digit",           "dig")
 registerengineclass("division",        "div")
 registerengineclass("factorial",       "fac")
 registerengineclass("wrapped",         "wra")
@@ -181,7 +187,7 @@ registerengineclass("dimension",       "dim")
 registerengineclass("unary",           "una")
 registerengineclass("textpunctuation", "tpu")
 registerengineclass("unspaced",        "uns")
-registerengineclass("experimental",    "exp")
+registerengineclass("experimental",    "tst") -- otherwise clash with exp
 registerengineclass("fake",            "fak")
 registerengineclass("numbergroup",     "ngr")
 
@@ -293,7 +299,7 @@ local extensibles = allocate {
     l = 1, left       = 1,
     r = 2, right      = 2,
     h = 3, horizontal = 3,-- lr or rl
-    u = 5, up         = 4,
+    u = 4, up         = 4,
     d = 5, down       = 5,
     v = 6, vertical   = 6,-- ud or du
     m = 7, mixed      = 7,

@@ -6,7 +6,8 @@ if not modules then modules = { } end modules ['math-ext'] = {
     license   = "see context related readme files"
 }
 
--- This is a completely different file from the lua one but the name fits.
+-- This is a completely different file from the lua one but the name fits. It
+-- will be replaces by usign the callback key to noads.
 
 -- We actually have a mechanism for this but it has never been used so let's go
 -- simple till we have that active again. This kind of trickery only works in
@@ -15,6 +16,10 @@ if not modules then modules = { } end modules ['math-ext'] = {
 ----- texnest     = tex.nest
 ----- setproperty = nodes.nuts.setprop
 local getproperty = nodes.nuts.getprop
+
+local trace  = false ; trackers.register("math.mp.extensibles", function(v) trace = v end)
+
+local report = logs.reporter("mpextensible")
 
 local extensibles = { }
 
@@ -32,8 +37,13 @@ end
 --     end
 -- end
 
+-- todo
+
 function mathematics.setextensibledata(data)
-    context(nodes.upcomingproperties { extensible = data })
+    if trace then
+        report("registering: %s",table.sequenced(data)) -- todo : more
+    end
+    context(nodes.tonode(nodes.upcomingproperties { extensible = data }))
 end
 
 function mathematics.getextensibledata(target)

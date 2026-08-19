@@ -20,7 +20,6 @@
 % test $|x|$ test \par
 % test $||x||$ test (okay) \par
 % test $a\left|\frac{1}{b}\right|c$ test \par
-% test $a\left||\frac{1}{b}\right||c$ test (not okay) \par
 %
 % \setupmathfences [color=red]
 %

@@ -72,7 +72,8 @@ static environment_state_info lmt_environment_state = {
 
 static void enginelib_splitnames(void)
 {
-    char *p = lmt_memory_strdup(lmt_environment_state.ownpath); /*tex We need to make copies! */
+    /* Preserve context/mtxrun aliases while normalizing the path. */
+    char *p = aux_utf8_expandpath(lmt_environment_state.ownpath); /*tex We need to make copies! */
     /*
         We loose some here but not enough to worry about. Maybe eventually we will use our own
         |basename| and |dirname| anyway. I need to check if all are set to something we can 
@@ -1125,6 +1126,7 @@ static const luaL_Reg lmt_libs_extra_function_list[] = {
     { "bytemap",   luaopen_bytemap   },
     { "kdtree",    luaopen_kdtree    },
     { "serial",    luaopen_serial    },
+ // { "specific",  luaopen_specific  },
     { NULL,        NULL              },
 };
 
@@ -1389,7 +1391,7 @@ void lmt_dump_engine_info(dumpstream f)
             return;
         }
     }
-    tex_normal_error("system","dumping engine info failed");
+    tex_normal_error("system", "dumping engine info failed");
 }
 
 void lmt_undump_engine_info(dumpstream f)

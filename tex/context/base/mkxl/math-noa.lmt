@@ -7,8 +7,6 @@ if not modules then modules = { } end modules ['math-noa'] = {
     license   = "see context related readme files"
 }
 
--- TODO: SET CLASSES !
-
 -- if specials and (specials[1] == "char" or specials[1] == "font") then -- can we avoid this
 -- ... better create a reverse mapping from the already present vectors
 
@@ -487,6 +485,8 @@ experiments.register("optimize.math.process",function()
         process       = helper.mathprocess or process
         processnested = helper.mathnested  or processnested
         processstep   = helper.mathstep    or processstep
+    else
+        -- the helper module has not been compiled in (work in progress)
     end
 end)
 
@@ -1070,7 +1070,7 @@ do
         local o_next = getnext(open)
         makelist(middle,open,f_o,o_next,last,nil)
         -- open is now a list
-        setlink(open,l_next)
+        setlink(open,l_next) -- o_next 
         return open
     end
 
@@ -1861,9 +1861,6 @@ end
 do
 
     local function enable()
-        if trace_italics then
-            report_italics("enabling math italics")
-        end
         -- we enable math (unless already enabled elsewhere)
         typesetters.italics.enablemath()
         enable = false

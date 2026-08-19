@@ -505,7 +505,7 @@ local function valid_one(s) for i=1,nofscripts do if s[scripts_one[i]] then retu
 local function valid_two(s) for i=1,nofscripts do if s[scripts_two[i]] then return true end end end
 
 local function initializedevanagi(tfmdata)
-    local script, language = otf.scriptandlanguage(tfmdata,attr) -- todo: take fast variant
+    local script, language = otf.scriptandlanguage(tfmdata) -- todo: take fast variant
     if scripts[script] then
         local resources  = tfmdata.resources
         local devanagari = resources.devanagari
@@ -551,15 +551,17 @@ local function initializedevanagi(tfmdata)
                                                     local chainlookups = ck[6]
                                                     if chainlookups then
                                                         local chainlookup = chainlookups[f]
-                                                        for j=1,#chainlookup do
-                                                            local chainstep = chainlookup[j]
-                                                            local steps    = chainstep.steps
-                                                            local nofsteps = chainstep.nofsteps
-                                                            for i=1,nofsteps do
-                                                                local step     = steps[i]
-                                                                local coverage = step.coverage
-                                                                if coverage then
-                                                                    locl = coverage[k]
+                                                        if chainlookup then
+                                                            for j=1,#chainlookup do
+                                                                local chainstep = chainlookup[j]
+                                                                local steps    = chainstep.steps
+                                                                local nofsteps = chainstep.nofsteps
+                                                                for i=1,nofsteps do
+                                                                    local step     = steps[i]
+                                                                    local coverage = step.coverage
+                                                                    if coverage then
+                                                                        locl = coverage[k]
+                                                                    end
                                                                 end
                                                             end
                                                         end
@@ -736,7 +738,6 @@ local function initializedevanagi(tfmdata)
                                             -- if #r > 0 then we have a list otherwise a hash; we actually should
                                             -- test properly for gsub_...
                                             base = k
-                                            local h = false
                                             if #r > 0 then
                                                 for j=1,#r do
                                                     local ck = r[j]
@@ -744,25 +745,27 @@ local function initializedevanagi(tfmdata)
                                                     local chainlookups = ck[6]
                                                     if chainlookups then
                                                         local chainlookup = chainlookups[f]
-                                                        for j=1,#chainlookup do
-                                                            local chainstep = chainlookup[j]
-                                                            local steps    = chainstep.steps
-                                                            local nofsteps = chainstep.nofsteps
-                                                            for i=1,nofsteps do
-                                                                local step     = steps[i]
-                                                                local coverage = step.coverage
-                                                                if coverage then
-                                                                    local r = coverage[k]
-                                                                    if r then
-                                                                        for k, v in next, halant do
-                                                                            local h = r[k]
-                                                                            if h then
-                                                                                reph = tonumber(h) or h.ligature or false
+                                                        if chainlookup then
+                                                            for j=1,#chainlookup do
+                                                                local chainstep = chainlookup[j]
+                                                                local steps     = chainstep.steps
+                                                                local nofsteps  = chainstep.nofsteps
+                                                                for i=1,nofsteps do
+                                                                    local step     = steps[i]
+                                                                    local coverage = step.coverage
+                                                                    if coverage then
+                                                                        local r = coverage[k]
+                                                                        if r then
+                                                                            for k, v in next, halant do
+                                                                                local h = r[k]
+                                                                                if h then
+                                                                                    reph = tonumber(h) or h.ligature or false
+                                                                                    break
+                                                                                end
+                                                                            end
+                                                                            if reph then
                                                                                 break
                                                                             end
-                                                                        end
-                                                                        if h then
-                                                                            break
                                                                         end
                                                                     end
                                                                 end
@@ -811,27 +814,29 @@ local function initializedevanagi(tfmdata)
                                                 local chainlookups = ck[6]
                                                 if chainlookups then
                                                     local chainlookup = chainlookups[f]
-                                                    for j=1,#chainlookup do
-                                                        local chainstep = chainlookup[j]
-                                                        local steps     = chainstep.steps
-                                                        local nofsteps  = chainstep.nofsteps
-                                                        for i=1,nofsteps do
-                                                            local step     = steps[i]
-                                                            local coverage = step.coverage
-                                                            if coverage then
-                                                                local h = coverage[k]
-                                                                if h then
-                                                                    for k, v in next, h do
-                                                                        if v then
-                                                                            found = tonumber(v) or v.ligature
-                                                                            if found then
-                                                                                pre_base_reordering_consonants[found] = true
-                                                                                break
+                                                    if chainlookup then
+                                                        for j=1,#chainlookup do
+                                                            local chainstep = chainlookup[j]
+                                                            local steps     = chainstep.steps
+                                                            local nofsteps  = chainstep.nofsteps
+                                                            for i=1,nofsteps do
+                                                                local step     = steps[i]
+                                                                local coverage = step.coverage
+                                                                if coverage then
+                                                                    local h = coverage[k]
+                                                                    if h then
+                                                                        for k, v in next, h do
+                                                                            if v then
+                                                                                found = tonumber(v) or v.ligature
+                                                                                if found then
+                                                                                    pre_base_reordering_consonants[found] = true
+                                                                                    break
+                                                                                end
                                                                             end
                                                                         end
-                                                                    end
-                                                                    if found then
-                                                                        break
+                                                                        if found then
+                                                                            break
+                                                                        end
                                                                     end
                                                                 end
                                                             end
@@ -886,6 +891,7 @@ registerotffeature {
 
 local function initializeconjuncts(tfmdata,value)
     if value then
+        local script     = otf.scriptandlanguage(tfmdata)
         local resources  = tfmdata.resources
         local devanagari = resources.devanagari
         if devanagari then
@@ -900,9 +906,7 @@ local function initializeconjuncts(tfmdata,value)
             if conjuncts == "auto" then
                 conjuncts = "mixed" -- for all scripts ?
             end
-            if movematra == "auto" and
-                  script == "mlym" or
-                  script == "taml" then
+            if movematra == "auto" and (script == "mlym" or script == "taml") then
                 movematra = "leftbeforebase"
             else
                 movematra = "default"
@@ -3055,12 +3059,15 @@ local function method_two(head,font,attr)
                     local p = getprev(current)
                     if not p then
                         -- begin of paragraph or box
-                    elseif ischar(p,font) then
-                        -- different font or language so quite certainly a different word
-                    elseif not separator[getchar(p)] then
-                        -- something that separates words
                     else
-                        standalone = false
+                        local prevchar = ischar(p,font)
+                        if not prevchar then
+                            -- different font or language so quite certainly a different word
+                        elseif not separator[prevchar] then
+                            -- something that separates words
+                        else
+                            standalone = false
+                        end
                     end
                 end
                 if standalone then

@@ -322,37 +322,39 @@ See \prm {Uover} for an introduction.
 
 \startnewprimitive[title={\prm {Udelcode}}]
 
-{\em todo} \writestatus{TODO}{\string\Udelcode}
+This is the \UNICODE\ variant of \prm {delcode}: it sets or returns the small and
+large delimiter codes associated with a character.
 
 \stopnewprimitive
 
 \startnewprimitive[title={\prm {Udelimited}}]
 
-{\em todo} \writestatus{TODO}{\string\Udelimited}
+See \prm {Uradical} for an introduction.
 
 \stopnewprimitive
 
 \startnewprimitive[title={\prm {Udelimiter}}]
 
-{\em todo} \writestatus{TODO}{\string\Udelimiter}
+This creates a delimiter from a \UNICODE\ math character specification. Unlike a
+fence made with \prm {Uleft}, it does not delimit a subformula.
 
 \stopnewprimitive
 
 \startnewprimitive[title={\prm {Udelimiterover}}]
 
-{\em todo} \writestatus{TODO}{\string\Udelimiterover}
+See \prm {Uradical} for an introduction.
 
 \stopnewprimitive
 
 \startnewprimitive[title={\prm {Udelimiterunder}}]
 
-{\em todo} \writestatus{TODO}{\string\Udelimiterunder}
+See \prm {Uradical} for an introduction.
 
 \stopnewprimitive
 
 \startnewprimitive[title={\prm {Uhextensible}}]
 
-{\em todo} \writestatus{TODO}{\string\Uhextensible}
+See \prm {Uradical} for an introduction.
 
 \stopnewprimitive
 
@@ -418,7 +420,8 @@ and get: \inlinebuffer .
 
 \startnewprimitive[title={\prm {Umathaccent}}]
 
-{\em todo} \writestatus{TODO}{\string\Umathaccent}
+This attaches one or more accent characters to a math nucleus. Options select
+top, bottom or overlay accents and control how they adapt to the nucleus.
 
 % \startbuffer
 % \im {\Umathaccent top "1 "0 `A {xxx}}
@@ -479,55 +482,57 @@ and get: \inlinebuffer .
 
 \startnewprimitive[title={\prm {Umathaccentbasedepth}}]
 
-{\em todo} \writestatus{TODO}{\string\Umathaccentbasedepth}
+This is the depth of the base used when placing an accent. It complements \prm
+{Umathaccentbaseheight}.
 
 \stopnewprimitive
 
 \startnewprimitive[title={\prm {Umathaccentbaseheight}}]
 
-{\em todo} \writestatus{TODO}{\string\Umathaccentbaseheight}
+This is the height of the base used when placing an accent.
 
 \stopnewprimitive
 
 \startnewprimitive[title={\prm {Umathaccentbottomovershoot}}]
 
-{\em todo} \writestatus{TODO}{\string\Umathaccentbottomovershoot}
+This is the amount by which a bottom accent can extend beyond the base.
 
 \stopnewprimitive
 
 \startnewprimitive[title={\prm {Umathaccentbottomshiftdown}}]
 
-{\em todo} \writestatus{TODO}{\string\Umathaccentbottomshiftdown}
+This is the amount by which a bottom accent is shifted down.
 
 \stopnewprimitive
 
 \startnewprimitive[title={\prm {Umathaccentextendmargin}}]
 
-{\em todo} \writestatus{TODO}{\string\Umathaccentextendmargin}
+This is the margin added when an accent is automatically extended.
 
 \stopnewprimitive
 
 \startnewprimitive[title={\prm {Umathaccentsuperscriptdrop}}]
 
-{\em todo} \writestatus{TODO}{\string\Umathaccentsuperscriptdrop}
+This controls the drop applied to a superscript attached to an accented nucleus.
 
 \stopnewprimitive
 
 \startnewprimitive[title={\prm {Umathaccentsuperscriptpercent}}]
 
-{\em todo} \writestatus{TODO}{\string\Umathaccentsuperscriptpercent}
+This is the percentage used when positioning a superscript on an accented
+nucleus.
 
 \stopnewprimitive
 
 \startnewprimitive[title={\prm {Umathaccenttopovershoot}}]
 
-{\em todo} \writestatus{TODO}{\string\Umathaccenttopovershoot}
+This is the amount by which a top accent can extend beyond the base.
 
 \stopnewprimitive
 
 \startnewprimitive[title={\prm {Umathaccenttopshiftup}}]
 
-{\em todo} \writestatus{TODO}{\string\Umathaccenttopshiftup}
+This is the amount by which a top accent is shifted up.
 
 \stopnewprimitive
 
@@ -539,19 +544,20 @@ The current value of this parameter is \CurrentMathVariant \Umathaccentvariant.
 
 \startnewprimitive[title={\prm {Umathadapttoleft}}]
 
-{\em todo} \writestatus{TODO}{\string\Umathadapttoleft}
+This modifier makes the current math atom adapt its size to the atom on its left.
 
 \stopnewprimitive
 
 \startnewprimitive[title={\prm {Umathadapttoright}}]
 
-{\em todo} \writestatus{TODO}{\string\Umathadapttoright}
+This modifier makes the current math atom adapt its size to the atom on its
+right.
 
 \stopnewprimitive
 
 \startnewprimitive[title={\prm {Umathaxis}}]
 
-{\em todo} \writestatus{TODO}{\string\Umathaxis}
+This is the height of the math axis above the baseline.
 
 \stopnewprimitive
 
@@ -563,187 +569,195 @@ The current value of this parameter is \CurrentMathVariant \Umathbottomaccentvar
 
 \startnewprimitive[title={\prm {Umathchar}}]
 
-{\em todo} \writestatus{TODO}{\string\Umathchar}
+This inserts a math character specified by a \UNICODE\ math code.
 
 \stopnewprimitive
 
 \startnewprimitive[title={\prm {Umathchardef}}]
 
-{\em todo} \writestatus{TODO}{\string\Umathchardef}
+This defines a control sequence as a math character specified by a \UNICODE\ math
+code.
 
 \stopnewprimitive
 
 \startnewprimitive[title={\prm {Umathcode}}]
 
-{\em todo} \writestatus{TODO}{\string\Umathcode}
+This sets or returns the \UNICODE\ math code of a character, including its class
+and family.
 
 \stopnewprimitive
 
 \startnewprimitive[title={\prm {Umathconnectoroverlapmin}}]
 
-{\em todo} \writestatus{TODO}{\string\Umathconnectoroverlapmin}
+This is the minimum overlap between parts of an extensible math construction.
 
 \stopnewprimitive
 
 \startnewprimitive[title={\prm {Umathdegreevariant}}]
 
 The current value of this parameter is \CurrentMathVariant \Umathdegreevariant.
+It is used for the degree in \prm {Uroot} and \prm {Urooted}.
 
 \stopnewprimitive
 
 \startnewprimitive[title={\prm {Umathdelimiterextendmargin}}]
 
-{\em todo} \writestatus{TODO}{\string\Umathdelimiterextendmargin}
+This is the margin added when a delimiter is automatically extended.
 
 \stopnewprimitive
 
 \startnewprimitive[title={\prm {Umathdelimiterovervariant}}]
 
-The current value of this parameter is \CurrentMathVariant \Umathdelimiterovervariant.
+The current value of this parameter is \CurrentMathVariant
+\Umathdelimiterovervariant. It is used by \prm {Udelimiterover}.
 
 \stopnewprimitive
 
 \startnewprimitive[title={\prm {Umathdelimiterpercent}}]
 
-{\em todo} \writestatus{TODO}{\string\Umathdelimiterpercent}
+This is the percentage used when sizing a delimiter for the current style.
 
 \stopnewprimitive
 
 \startnewprimitive[title={\prm {Umathdelimitershortfall}}]
 
-{\em todo} \writestatus{TODO}{\string\Umathdelimitershortfall}
+This is the amount by which a delimiter may fall short of the requested size.
 
 \stopnewprimitive
 
 \startnewprimitive[title={\prm {Umathdelimiterundervariant}}]
 
-The current value of this parameter is \CurrentMathVariant \Umathdelimiterundervariant.
+The current value of this parameter is \CurrentMathVariant
+\Umathdelimiterundervariant. It is used by \prm {Udelimiterunder}.
 
 \stopnewprimitive
 
 \startnewprimitive[title={\prm {Umathdenominatorvariant}}]
 
-The current value of this parameter is \CurrentMathVariant \Umathdenominatorvariant.
+The current value of this parameter is \CurrentMathVariant
+\Umathdenominatorvariant.
 
 \stopnewprimitive
 
 \startnewprimitive[title={\prm {Umathdictdef}}]
 
-{\em todo} \writestatus{TODO}{\string\Umathdictdef}
+Like \prm {Umathchardef}, this defines a math character and also associates a
+math dictionary with it.
 
 \stopnewprimitive
 
 \startnewprimitive[title={\prm {Umathexheight}}]
 
-{\em todo} \writestatus{TODO}{\string\Umathexheight}
+This is the ex-height used by the current math style.
 
 \stopnewprimitive
 
 \startnewprimitive[title={\prm {Umathextrasubpreshift}}]
 
-{\em todo} \writestatus{TODO}{\string\Umathextrasubpreshift}
+This adds a vertical shift to a sub-prescript.
 
 \stopnewprimitive
 
 \startnewprimitive[title={\prm {Umathextrasubprespace}}]
 
-{\em todo} \writestatus{TODO}{\string\Umathextrasubprespace}
+This adds horizontal space before a sub-prescript.
 
 \stopnewprimitive
 
 \startnewprimitive[title={\prm {Umathextrasubshift}}]
 
-{\em todo} \writestatus{TODO}{\string\Umathextrasubshift}
+This adds a vertical shift to a subscript.
 
 \stopnewprimitive
 
 \startnewprimitive[title={\prm {Umathextrasubspace}}]
 
-{\em todo} \writestatus{TODO}{\string\Umathextrasubspace}
+This adds horizontal space before a subscript.
 
 \stopnewprimitive
 
 \startnewprimitive[title={\prm {Umathextrasuppreshift}}]
 
-{\em todo} \writestatus{TODO}{\string\Umathextrasuppreshift}
+This adds a vertical shift to a super-prescript.
 
 \stopnewprimitive
 
 \startnewprimitive[title={\prm {Umathextrasupprespace}}]
 
-{\em todo} \writestatus{TODO}{\string\Umathextrasupprespace}
+This adds horizontal space before a super-prescript.
 
 \stopnewprimitive
 
 \startnewprimitive[title={\prm {Umathextrasupshift}}]
 
-{\em todo} \writestatus{TODO}{\string\Umathextrasupshift}
+This adds a vertical shift to a superscript.
 
 \stopnewprimitive
 
 \startnewprimitive[title={\prm {Umathextrasupspace}}]
 
-{\em todo} \writestatus{TODO}{\string\Umathextrasupspace}
+This adds horizontal space before a superscript.
 
 \stopnewprimitive
 
 \startnewprimitive[title={\prm {Umathflattenedaccentbasedepth}}]
 
-{\em todo} \writestatus{TODO}{\string\Umathflattenedaccentbasedepth}
+This is the depth of the flattened base used when placing a wide accent. It
+complements \prm {Umathflattenedaccentbaseheight}.
 
 \stopnewprimitive
 
 \startnewprimitive[title={\prm {Umathflattenedaccentbaseheight}}]
 
-{\em todo} \writestatus{TODO}{\string\Umathflattenedaccentbaseheight}
+This is the height of the flattened base used when placing a wide accent.
 
 \stopnewprimitive
 
 \startnewprimitive[title={\prm {Umathflattenedaccentbottomshiftdown}}]
 
-{\em todo} \writestatus{TODO}{\string\Umathflattenedaccentbottomshiftdown}
+This is the amount by which a wide bottom accent is shifted down.
 
 \stopnewprimitive
 
 \startnewprimitive[title={\prm {Umathflattenedaccenttopshiftup}}]
 
-{\em todo} \writestatus{TODO}{\string\Umathflattenedaccenttopshiftup}
+This is the amount by which a wide top accent is shifted up.
 
 \stopnewprimitive
 
 \startnewprimitive[title={\prm {Umathfractiondelsize}}]
 
-{\em todo} \writestatus{TODO}{\string\Umathfractiondelsize}
+This is the minimum delimiter size used by a fraction with delimiters.
 
 \stopnewprimitive
 
 \startnewprimitive[title={\prm {Umathfractiondenomdown}}]
 
-{\em todo} \writestatus{TODO}{\string\Umathfractiondenomdown}
+This is the downward shift of the denominator in a fraction.
 
 \stopnewprimitive
 
 \startnewprimitive[title={\prm {Umathfractiondenomvgap}}]
 
-{\em todo} \writestatus{TODO}{\string\Umathfractiondenomvgap}
+This is the vertical clearance between the denominator and the fraction rule.
 
 \stopnewprimitive
 
 \startnewprimitive[title={\prm {Umathfractionnumup}}]
 
-{\em todo} \writestatus{TODO}{\string\Umathfractionnumup}
+This is the upward shift of the numerator in a fraction.
 
 \stopnewprimitive
 
 \startnewprimitive[title={\prm {Umathfractionnumvgap}}]
 
-{\em todo} \writestatus{TODO}{\string\Umathfractionnumvgap}
+This is the vertical clearance between the numerator and the fraction rule.
 
 \stopnewprimitive
 
 \startnewprimitive[title={\prm {Umathfractionrule}}]
 
-{\em todo} \writestatus{TODO}{\string\Umathfractionrule}
+This is the thickness of the rule in a fraction.
 
 \stopnewprimitive
 
@@ -755,73 +769,76 @@ The current value of this parameter is \CurrentMathVariant \Umathfractionvariant
 
 \startnewprimitive[title={\prm {Umathhextensiblevariant}}]
 
-The current value of this parameter is \CurrentMathVariant \Umathhextensiblevariant.
+The current value of this parameter is \CurrentMathVariant
+\Umathhextensiblevariant. It is used by \prm {Uhextensible}.
 
 \stopnewprimitive
 
 \startnewprimitive[title={\prm {Umathlimitabovebgap}}]
 
-{\em todo} \writestatus{TODO}{\string\Umathlimitabovebgap}
+This is the baseline clearance for a limit placed above an operator.
 
 \stopnewprimitive
 
 \startnewprimitive[title={\prm {Umathlimitabovekern}}]
 
-{\em todo} \writestatus{TODO}{\string\Umathlimitabovekern}
+This is the space reserved at the top of a limit placed above an operator.
 
 \stopnewprimitive
 
 \startnewprimitive[title={\prm {Umathlimitabovevgap}}]
 
-{\em todo} \writestatus{TODO}{\string\Umathlimitabovevgap}
+This is the vertical clearance for a limit placed above an operator.
 
 \stopnewprimitive
 
 \startnewprimitive[title={\prm {Umathlimitbelowbgap}}]
 
-{\em todo} \writestatus{TODO}{\string\Umathlimitbelowbgap}
+This is the baseline clearance for a limit placed below an operator.
 
 \stopnewprimitive
 
 \startnewprimitive[title={\prm {Umathlimitbelowkern}}]
 
-{\em todo} \writestatus{TODO}{\string\Umathlimitbelowkern}
+This is the space reserved at the bottom of a limit placed below an operator.
 
 \stopnewprimitive
 
 \startnewprimitive[title={\prm {Umathlimitbelowvgap}}]
 
-{\em todo} \writestatus{TODO}{\string\Umathlimitbelowvgap}
+This is the vertical clearance for a limit placed below an operator.
 
 \stopnewprimitive
 
 \startnewprimitive[title={\prm {Umathlimits}}]
 
-{\em todo} \writestatus{TODO}{\string\Umathlimits}
+This modifier places scripts on top of and below the current operator.
 
 \stopnewprimitive
 
 \startnewprimitive[title={\prm {Umathnoaxis}}]
 
-{\em todo} \writestatus{TODO}{\string\Umathnoaxis}
+This modifier prevents the current math atom from being aligned on the math axis.
 
 \stopnewprimitive
 
 \startnewprimitive[title={\prm {Umathnolimits}}]
 
-{\em todo} \writestatus{TODO}{\string\Umathnolimits}
+This modifier forces scripts on the current operator to remain as postscripts.
 
 \stopnewprimitive
 
 \startnewprimitive[title={\prm {Umathnolimitsubfactor}}]
 
-{\em todo} \writestatus{TODO}{\string\Umathnolimitsubfactor}
+This is the multiplier used when shifting a subscript on an operator without
+limits.
 
 \stopnewprimitive
 
 \startnewprimitive[title={\prm {Umathnolimitsupfactor}}]
 
-{\em todo} \writestatus{TODO}{\string\Umathnolimitsupfactor}
+This is the multiplier used when shifting a superscript on an operator without
+limits.
 
 \stopnewprimitive
 
@@ -833,61 +850,65 @@ The current value of this parameter is \CurrentMathVariant \Umathnumeratorvarian
 
 \startnewprimitive[title={\prm {Umathopenupdepth}}]
 
-{\em todo} \writestatus{TODO}{\string\Umathopenupdepth}
+This modifier adds the given depth to the current math atom.
 
 \stopnewprimitive
 
 \startnewprimitive[title={\prm {Umathopenupheight}}]
 
-{\em todo} \writestatus{TODO}{\string\Umathopenupheight}
+This modifier adds the given height to the current math atom.
 
 \stopnewprimitive
 
 \startnewprimitive[title={\prm {Umathoperatorsize}}]
 
-{\em todo} \writestatus{TODO}{\string\Umathoperatorsize}
+This is the minimum size of a large operator in display style.
 
 \stopnewprimitive
 
 \startnewprimitive[title={\prm {Umathoverbarkern}}]
 
-{\em todo} \writestatus{TODO}{\string\Umathoverbarkern}
+This is the vertical clearance above the rule in an overbar.
 
 \stopnewprimitive
 
 \startnewprimitive[title={\prm {Umathoverbarrule}}]
 
-{\em todo} \writestatus{TODO}{\string\Umathoverbarrule}
+This is the thickness of the rule in an overbar.
 
 \stopnewprimitive
 
 \startnewprimitive[title={\prm {Umathoverbarvgap}}]
 
-{\em todo} \writestatus{TODO}{\string\Umathoverbarvgap}
+This is the vertical clearance below the rule in an overbar.
 
 \stopnewprimitive
 
 \startnewprimitive[title={\prm {Umathoverdelimiterbgap}}]
 
-{\em todo} \writestatus{TODO}{\string\Umathoverdelimiterbgap}
+This is the baseline clearance used by \prm {Uoverdelimiter} and \prm
+{Udelimiterover}.
 
 \stopnewprimitive
 
 \startnewprimitive[title={\prm {Umathoverdelimitervariant}}]
 
-The current value of this parameter is \CurrentMathVariant \Umathoverdelimitervariant.
+The current value of this parameter is \CurrentMathVariant
+\Umathoverdelimitervariant. It is used by \prm {Uoverdelimiter}.
 
 \stopnewprimitive
 
 \startnewprimitive[title={\prm {Umathoverdelimitervgap}}]
 
-{\em todo} \writestatus{TODO}{\string\Umathoverdelimitervgap}
+This is the vertical clearance used by \prm {Uoverdelimiter} and \prm
+{Udelimiterover}.
 
 \stopnewprimitive
 
 \startnewprimitive[title={\prm {Umathoverlayaccentvariant}}]
 
-The current value of this parameter is \CurrentMathVariant \Umathoverlayaccentvariant.
+The current value of this parameter is \CurrentMathVariant
+\Umathoverlayaccentvariant.
 
 \stopnewprimitive
 
@@ -899,37 +920,38 @@ The current value of this parameter is \CurrentMathVariant \Umathoverlinevariant
 
 \startnewprimitive[title={\prm {Umathphantom}}]
 
-{\em todo} \writestatus{TODO}{\string\Umathphantom}
+This modifier discards the content of the current atom but retains its
+dimensions.
 
 \stopnewprimitive
 
 \startnewprimitive[title={\prm {Umathprimeraise}}]
 
-{\em todo} \writestatus{TODO}{\string\Umathprimeraise}
+This is the percentage by which a prime is raised.
 
 \stopnewprimitive
 
 \startnewprimitive[title={\prm {Umathprimeraisecomposed}}]
 
-{\em todo} \writestatus{TODO}{\string\Umathprimeraisecomposed}
+This is the percentage by which a composed prime is raised.
 
 \stopnewprimitive
 
 \startnewprimitive[title={\prm {Umathprimeshiftdrop}}]
 
-{\em todo} \writestatus{TODO}{\string\Umathprimeshiftdrop}
+This is the maximum baseline drop applied to a prime.
 
 \stopnewprimitive
 
 \startnewprimitive[title={\prm {Umathprimeshiftup}}]
 
-{\em todo} \writestatus{TODO}{\string\Umathprimeshiftup}
+This is the upward shift applied to a prime.
 
 \stopnewprimitive
 
 \startnewprimitive[title={\prm {Umathprimespaceafter}}]
 
-{\em todo} \writestatus{TODO}{\string\Umathprimespaceafter}
+This is the additional space inserted after a prime.
 
 \stopnewprimitive
 
@@ -941,127 +963,135 @@ The current value of this parameter is \CurrentMathVariant \Umathprimevariant.
 
 \startnewprimitive[title={\prm {Umathquad}}]
 
-{\em todo} \writestatus{TODO}{\string\Umathquad}
+This is the width of eighteen math units in the current style.
 
 \stopnewprimitive
 
 \startnewprimitive[title={\prm {Umathradicaldegreeafter}}]
 
-{\em todo} \writestatus{TODO}{\string\Umathradicaldegreeafter}
+This is the horizontal kern after the degree in \prm {Uroot} and \prm {Urooted}.
 
 \stopnewprimitive
 
 \startnewprimitive[title={\prm {Umathradicaldegreebefore}}]
 
-{\em todo} \writestatus{TODO}{\string\Umathradicaldegreebefore}
+This is the horizontal kern before the degree in \prm {Uroot} and \prm {Urooted}.
 
 \stopnewprimitive
 
 \startnewprimitive[title={\prm {Umathradicaldegreeraise}}]
 
-{\em todo} \writestatus{TODO}{\string\Umathradicaldegreeraise}
+This is the percentage by which the degree is raised in \prm {Uroot} and \prm
+{Urooted}.
 
 \stopnewprimitive
 
 \startnewprimitive[title={\prm {Umathradicalextensibleafter}}]
 
-{\em todo} \writestatus{TODO}{\string\Umathradicalextensibleafter}
+This is the horizontal space after an extensible radical symbol in \prm
+{radical}, \prm {Uradical}, \prm {Uroot} and \prm {Urooted}.
 
 \stopnewprimitive
 
 \startnewprimitive[title={\prm {Umathradicalextensiblebefore}}]
 
-{\em todo} \writestatus{TODO}{\string\Umathradicalextensiblebefore}
+This is the horizontal space before an extensible radical symbol in \prm
+{radical}, \prm {Uradical}, \prm {Uroot} and \prm {Urooted}.
 
 \stopnewprimitive
 
 \startnewprimitive[title={\prm {Umathradicalkern}}]
 
-{\em todo} \writestatus{TODO}{\string\Umathradicalkern}
+This is the vertical clearance above the rule in \prm {radical}, \prm {Uradical},
+\prm {Uroot} and \prm {Urooted}.
 
 \stopnewprimitive
 
 \startnewprimitive[title={\prm {Umathradicalrule}}]
 
-{\em todo} \writestatus{TODO}{\string\Umathradicalrule}
+This is the thickness of the rule in the radical and related delimiter
+constructors.
 
 \stopnewprimitive
 
 \startnewprimitive[title={\prm {Umathradicalvariant}}]
 
 The current value of this parameter is \CurrentMathVariant \Umathradicalvariant.
+It selects the style used for the radicand in the radical constructors.
 
 \stopnewprimitive
 
 \startnewprimitive[title={\prm {Umathradicalvgap}}]
 
-{\em todo} \writestatus{TODO}{\string\Umathradicalvgap}
+This is the vertical clearance between the radicand and the rule in \prm
+{radical}, \prm {Uradical}, \prm {Uroot} and \prm {Urooted}.
 
 \stopnewprimitive
 
 \startnewprimitive[title={\prm {Umathruledepth}}]
 
-{\em todo} \writestatus{TODO}{\string\Umathruledepth}
+This is the default depth of a math strut rule when no depth is specified.
 
 \stopnewprimitive
 
 \startnewprimitive[title={\prm {Umathruleheight}}]
 
-{\em todo} \writestatus{TODO}{\string\Umathruleheight}
+This is the default height of a math strut rule when no height is specified.
 
 \stopnewprimitive
 
 \startnewprimitive[title={\prm {Umathskeweddelimitertolerance}}]
 
-{\em todo} \writestatus{TODO}{\string\Umathskeweddelimitertolerance}
+This is the tolerance used when sizing a delimiter in a skewed fraction.
 
 \stopnewprimitive
 
 \startnewprimitive[title={\prm {Umathskewedfractionhgap}}]
 
-{\em todo} \writestatus{TODO}{\string\Umathskewedfractionhgap}
+This is the horizontal gap used when positioning the parts of a skewed fraction.
 
 \stopnewprimitive
 
 \startnewprimitive[title={\prm {Umathskewedfractionvgap}}]
 
-{\em todo} \writestatus{TODO}{\string\Umathskewedfractionvgap}
+This is the vertical gap used when positioning the parts of a skewed fraction.
 
 \stopnewprimitive
 
 \startnewprimitive[title={\prm {Umathsource}}]
 
-{\em todo} \writestatus{TODO}{\string\Umathsource}
+This modifier assigns a source identifier to the current math atom or its
+nucleus.
 
 \stopnewprimitive
 
 \startnewprimitive[title={\prm {Umathspaceafterscript}}]
 
-{\em todo} \writestatus{TODO}{\string\Umathspaceafterscript}
+This is the additional horizontal space inserted after a super- or subscript.
 
 \stopnewprimitive
 
 \startnewprimitive[title={\prm {Umathspacebeforescript}}]
 
-{\em todo} \writestatus{TODO}{\string\Umathspacebeforescript}
+This is the additional horizontal space inserted before a prescript.
 
 \stopnewprimitive
 
 \startnewprimitive[title={\prm {Umathspacebetweenscript}}]
 
-{\em todo} \writestatus{TODO}{\string\Umathspacebetweenscript}
+This is the horizontal space inserted between a super- and subscript.
 
 \stopnewprimitive
 
 \startnewprimitive[title={\prm {Umathstackdenomdown}}]
 
-{\em todo} \writestatus{TODO}{\string\Umathstackdenomdown}
+This is the downward shift of the denominator in an \prm {atop} stack.
 
 \stopnewprimitive
 
 \startnewprimitive[title={\prm {Umathstacknumup}}]
 
-{\em todo} \writestatus{TODO}{\string\Umathstacknumup}
+This is the upward shift of the numerator in an \prm {atop} stack.
 
 \stopnewprimitive
 
@@ -1073,151 +1103,162 @@ The current value of this parameter is \CurrentMathVariant \Umathstackvariant.
 
 \startnewprimitive[title={\prm {Umathstackvgap}}]
 
-{\em todo} \writestatus{TODO}{\string\Umathstackvgap}
+This is the vertical clearance between the elements of an \prm {atop} stack.
 
 \stopnewprimitive
 
 \startnewprimitive[title={\prm {Umathsubscriptsnap}}]
 
-{\em todo} \writestatus{TODO}{\string\Umathsubscriptsnap}
+This controls snapping of small standalone subscript boxes to the normal script
+position.
 
 \stopnewprimitive
 
 \startnewprimitive[title={\prm {Umathsubscriptvariant}}]
 
-The current value of this parameter is \CurrentMathVariant \Umathsubscriptvariant.
+The current value of this parameter is \CurrentMathVariant
+\Umathsubscriptvariant.
 
 \stopnewprimitive
 
 \startnewprimitive[title={\prm {Umathsubshiftdown}}]
 
-{\em todo} \writestatus{TODO}{\string\Umathsubshiftdown}
+This is the downward shift of a subscript attached to a character.
 
 \stopnewprimitive
 
 \startnewprimitive[title={\prm {Umathsubshiftdrop}}]
 
-{\em todo} \writestatus{TODO}{\string\Umathsubshiftdrop}
+This is the subscript drop used for boxes and subformulas.
 
 \stopnewprimitive
 
 \startnewprimitive[title={\prm {Umathsubsupshiftdown}}]
 
-{\em todo} \writestatus{TODO}{\string\Umathsubsupshiftdown}
+This is the subscript shift used when a superscript is present as well.
 
 \stopnewprimitive
 
 \startnewprimitive[title={\prm {Umathsubsupvgap}}]
 
-{\em todo} \writestatus{TODO}{\string\Umathsubsupvgap}
+This is the vertical clearance between a superscript and a subscript.
 
 \stopnewprimitive
 
 \startnewprimitive[title={\prm {Umathsubtopmax}}]
 
-{\em todo} \writestatus{TODO}{\string\Umathsubtopmax}
+This limits how high a standalone subscript may reach above the baseline.
 
 \stopnewprimitive
 
 \startnewprimitive[title={\prm {Umathsupbottommin}}]
 
-{\em todo} \writestatus{TODO}{\string\Umathsupbottommin}
+This sets the minimum height of the bottom of a standalone superscript above the
+baseline.
 
 \stopnewprimitive
 
 \startnewprimitive[title={\prm {Umathsuperscriptsnap}}]
 
-{\em todo} \writestatus{TODO}{\string\Umathsuperscriptsnap}
+This controls snapping of small standalone superscript boxes to the normal script
+position.
 
 \stopnewprimitive
 
 \startnewprimitive[title={\prm {Umathsuperscriptvariant}}]
 
-The current value of this parameter is \CurrentMathVariant \Umathsuperscriptvariant.
+The current value of this parameter is \CurrentMathVariant
+\Umathsuperscriptvariant.
 
 \stopnewprimitive
 
 \startnewprimitive[title={\prm {Umathsupshiftdrop}}]
 
-{\em todo} \writestatus{TODO}{\string\Umathsupshiftdrop}
+This is the superscript drop used for boxes and subformulas.
 
 \stopnewprimitive
 
 \startnewprimitive[title={\prm {Umathsupshiftup}}]
 
-{\em todo} \writestatus{TODO}{\string\Umathsupshiftup}
+This is the upward shift of a superscript attached to a character.
 
 \stopnewprimitive
 
 \startnewprimitive[title={\prm {Umathsupsubbottommax}}]
 
-{\em todo} \writestatus{TODO}{\string\Umathsupsubbottommax}
+This limits how low the superscript of a combined super- and subscript may reach.
 
 \stopnewprimitive
 
 \startnewprimitive[title={\prm {Umathtopaccentvariant}}]
 
-The current value of this parameter is \CurrentMathVariant \Umathtopaccentvariant.
+The current value of this parameter is \CurrentMathVariant
+\Umathtopaccentvariant.
 
 \stopnewprimitive
 
 \startnewprimitive[title={\prm {Umathunderbarkern}}]
 
-{\em todo} \writestatus{TODO}{\string\Umathunderbarkern}
+This is the vertical clearance below the rule in an underbar.
 
 \stopnewprimitive
 
 \startnewprimitive[title={\prm {Umathunderbarrule}}]
 
-{\em todo} \writestatus{TODO}{\string\Umathunderbarrule}
+This is the thickness of the rule in an underbar.
 
 \stopnewprimitive
 
 \startnewprimitive[title={\prm {Umathunderbarvgap}}]
 
-{\em todo} \writestatus{TODO}{\string\Umathunderbarvgap}
+This is the vertical clearance above the rule in an underbar.
 
 \stopnewprimitive
 
 \startnewprimitive[title={\prm {Umathunderdelimiterbgap}}]
 
-{\em todo} \writestatus{TODO}{\string\Umathunderdelimiterbgap}
+This is the baseline clearance used by \prm {Uunderdelimiter} and \prm
+{Udelimiterunder}.
 
 \stopnewprimitive
 
 \startnewprimitive[title={\prm {Umathunderdelimitervariant}}]
 
-The current value of this parameter is \CurrentMathVariant \Umathunderdelimitervariant.
+The current value of this parameter is \CurrentMathVariant
+\Umathunderdelimitervariant. It is used by \prm {Uunderdelimiter}.
 
 \stopnewprimitive
 
 \startnewprimitive[title={\prm {Umathunderdelimitervgap}}]
 
-{\em todo} \writestatus{TODO}{\string\Umathunderdelimitervgap}
+This is the vertical clearance used by \prm {Uunderdelimiter} and \prm
+{Udelimiterunder}.
 
 \stopnewprimitive
 
 \startnewprimitive[title={\prm {Umathunderlinevariant}}]
 
-The current value of this parameter is \CurrentMathVariant \Umathunderlinevariant.
+The current value of this parameter is \CurrentMathVariant
+\Umathunderlinevariant.
 
 \stopnewprimitive
 
 \startnewprimitive[title={\prm {Umathuseaxis}}]
 
-{\em todo} \writestatus{TODO}{\string\Umathuseaxis}
+This modifier aligns the current math atom on the math axis.
 
 \stopnewprimitive
 
 \startnewprimitive[title={\prm {Umathvextensiblevariant}}]
 
-The current value of this parameter is \CurrentMathVariant \Umathvextensiblevariant.
+The current value of this parameter is \CurrentMathVariant
+\Umathvextensiblevariant.
 
 \stopnewprimitive
 
 \startnewprimitive[title={\prm {Umathvoid}}]
 
-{\em todo} \writestatus{TODO}{\string\Umathvoid}
+This modifier discards the content and dimensions of the current math atom.
 
 \stopnewprimitive
 
@@ -1260,7 +1301,8 @@ See \prm {Uleft} for an explanation.
 
 \startnewprimitive[title={\prm {Uoperator}}]
 
-{\em todo} \writestatus{TODO}{\string\Uoperator}
+This constructs a large operator from a \UNICODE\ math character. It uses the
+same options and sizing mechanism as the extended fences.
 
 \stopnewprimitive
 
@@ -1328,7 +1370,7 @@ time these options will be discussed in mode detail.
 
 \startnewprimitive[title={\prm {Uoverdelimiter}}]
 
-{\em todo} \writestatus{TODO}{\string\Uoverdelimiter}
+See \prm {Uradical} for an introduction.
 
 \stopnewprimitive
 
@@ -1340,7 +1382,83 @@ See \prm {Uover} for an introduction.
 
 \startnewprimitive[title={\prm {Uradical}}]
 
-{\em todo} \writestatus{TODO}{\string\Uradical}
+This command is one of the radical constructors. A radical has a delimiter on
+the left and a radicand. A degree and a right delimiter are available in the
+related constructors. The delimiter can be a variant glyph or an extensible
+made from several glyphs.
+
+The basic forms are:
+
+\starttabulate[|l|l|]
+    \NC \type {\Uradical} \NC <left delimiter> {<radicand>} \NC \NR
+    \NC \type {\Uroot}    \NC <left delimiter> {<degree>} {<radicand>} \NC \NR
+    \NC \type {\Urooted}  \NC <left delimiter> <right delimiter> {<degree>} {<radicand>} \NC \NR
+\stoptabulate
+
+The \prm {Udelimited} variant takes two delimiters but no degree. The
+\prm {Uoverdelimiter} and \prm {Uunderdelimiter} variants put an extensible
+delimiter above or below a formula, while \prm {Udelimiterover} and \prm
+{Udelimiterunder} put the formula above or below an extensible delimiter. The
+\prm {Uhextensible} variant constructs only the horizontal extensible.
+
+These commands accept options for dimensions, style, delimiter alignment,
+overflow and rule handling. The options are \type {attr}, \type {bottom},
+\type {callback}, \type {depth}, \type {exact}, \type {height}, \type {left},
+\type {middle}, \type {norule}, \type {nooverflow}, \type {right}, \type
+{reflected}, \type {shrink}, \type {size}, \type {stretch}, \type {style},
+\type {source}, \type {symbolattr}, \type {top}, \type {usecallback} and
+\type {width}. Not all options apply to every constructor. The parameters that
+control these constructions are summarized in the appendix.
+
+The radical primitives share a construction path, but not every parameter is
+read by every variant. The following table gives the main relationships. The
+parameters ending in \type {variant}, and the \type {extensible...} parameters,
+are \LUAMETATEX\ additions; the other radical and delimiter parameters are
+based on the \OPENTYPE\ math parameters.
+
+\starttabulate[|l|p|p|]
+    \FL
+    \BC parameter \BC use \BC constructors \NC \NR
+    \TL
+    \NC \type {Umathradicalvgap}
+        \NC clearance between the radicand and the radical rule
+        \NC \type {\radical}, \type {\Uradical}, \type {\Uroot}, \type {\Urooted} \NC \NR
+    \NC \type {Umathradicalkern}
+        \NC clearance above the radical rule
+        \NC \type {\radical}, \type {\Uradical}, \type {\Uroot}, \type {\Urooted} \NC \NR
+    \NC \type {Umathradicalrule}
+        \NC radical rule thickness, also used as callback line width
+        \NC radical and delimiter forms, except \type {\Uhextensible} \NC \NR
+    \NC \type {Umathradicaldegreebefore}, \type {Umathradicaldegreeafter}
+        \NC horizontal kerns before and after the degree
+        \NC \type {\Uroot}, \type {\Urooted} \NC \NR
+    \NC \type {Umathradicaldegreeraise}
+        \NC percentage used for the vertical position of the degree
+        \NC \type {\Uroot}, \type {\Urooted} \NC \NR
+    \NC \type {Umathradicalextensiblebefore}, \type {Umathradicalextensibleafter}
+        \NC horizontal space around an extensible radical symbol
+        \NC \type {\radical}, \type {\Uradical}, \type {\Uroot}, \type {\Urooted} \NC \NR
+    \NC \type {Umathradicalvariant}
+        \NC style used for the radicand
+        \NC radical forms and \type {\Udelimited} \NC \NR
+    \NC \type {Umathoverdelimiterbgap}, \type {Umathoverdelimitervgap}
+        \NC baseline and vertical clearance for an upper delimiter
+        \NC \type {\Uoverdelimiter}, \type {\Udelimiterover} \NC \NR
+    \NC \type {Umathunderdelimiterbgap}, \type {Umathunderdelimitervgap}
+        \NC baseline and vertical clearance for a lower delimiter
+        \NC \type {\Uunderdelimiter}, \type {\Udelimiterunder} \NC \NR
+    \NC \type {Umathdegreevariant}
+        \NC style used for the degree
+        \NC \type {\Uroot}, \type {\Urooted} \NC \NR
+    \NC \type {Umathhextensiblevariant}
+        \NC style used for the horizontal extensible
+        \NC \type {\Uhextensible} \NC \NR
+\stoptabulate
+
+The radical rule is made directly for the usual radical forms. In the related
+delimiter forms it is also passed to an extensible callback as the requested line
+width. The horizontal-extensible form instead uses \prm {Umathfractionrule} for
+that callback.
 
 \stopnewprimitive
 
@@ -1352,13 +1470,13 @@ See \prm {Uleft} for an explanation.
 
 \startnewprimitive[title={\prm {Uroot}}]
 
-{\em todo} \writestatus{TODO}{\string\Uroot}
+See \prm {Uradical} for an introduction.
 
 \stopnewprimitive
 
 \startnewprimitive[title={\prm {Urooted}}]
 
-{\em todo} \writestatus{TODO}{\string\Urooted}
+See \prm {Uradical} for an introduction.
 
 \stopnewprimitive
 
@@ -1424,13 +1542,14 @@ See \prm {Uover} for an introduction.
 
 \startnewprimitive[title={\prm {Uunderdelimiter}}]
 
-{\em todo} \writestatus{TODO}{\string\Uunderdelimiter}
+See \prm {Uradical} for an introduction.
 
 \stopnewprimitive
 
 \startnewprimitive[title={\prm {Uvextensible}}]
 
-{\em todo} \writestatus{TODO}{\string\Uvextensible}
+This constructs a vertically extensible math symbol around the following
+material. It accepts the same sizing options as the other extended fences.
 
 \stopnewprimitive
 
@@ -3467,7 +3586,10 @@ Here we use the two numeric state primitives \prm {currentloopiterator} and \prm
 \stopnewprimitive
 
 \startnewprimitive[title={\prm {currentlysetmathstyle}}]
-    TODO
+
+This expands to the math style currently in effect, including its cramped state.
+Unlike an explicit style command, it does not add a style node to the math list.
+
 \stopnewprimitive
 
 \startnewprimitive[title={\prm {currentmarks}}]
@@ -6500,7 +6622,10 @@ length of a word that gets hyphenated.
 \stopnewprimitive
 
 \startnewprimitive[title={\prm {hyphenationmode}}]
-    TODO
+
+This bitset controls which kinds of hyphenation and discretionary injection are
+enabled. The individual bits are described in the language documentation.
+
 \stopnewprimitive
 
 \startoldprimitive[title={\prm {hyphenchar}}]
@@ -7675,7 +7800,9 @@ macro. The number of grabbed arguments can be tested as follows:
 
 {\getbuffer}
 
-{\em Todo: explain optional delimiters.}
+When optional arguments are represented by delimiters in the macro definition,
+this primitive stops scanning at the current point. Any remaining arguments are
+left empty and can be handled by the macro body.
 
 \stopnewprimitive
 
@@ -8930,7 +9057,10 @@ would have been the solution. This is an experimental primitive!
 \stopnewprimitive
 
 \startnewprimitive[title={\prm {localbrokenpenalty}}]
-    TODO
+
+This sets the penalty used for a break in the current paragraph when the local
+paragraph settings are active.
+
 \stopnewprimitive
 
 \startnewprimitive[title={\prm {localcontrol}}]
@@ -9078,7 +9208,10 @@ number creates a hole at the right. This is consistent with \prm {hangindent}.
 \stopnewprimitive
 
 \startnewprimitive[title={\prm {localinterlinepenalty}}]
-    TODO
+
+This sets the interline penalty for the current paragraph without changing the
+global \prm {interlinepenalty}.
+
 \stopnewprimitive
 
 \startnewprimitive[title={\prm {localleftbox}}]
@@ -9107,7 +9240,10 @@ This returns the box set with \prm {localmiddlebox}.
 \stopnewprimitive
 
 \startnewprimitive[title={\prm {localpretolerance}}]
-    TODO
+
+This sets the first-pass line-breaking tolerance for the current paragraph
+without changing the global \prm {pretolerance}.
+
 \stopnewprimitive
 
 \startnewprimitive[title={\prm {localrightbox}}]
@@ -9123,7 +9259,10 @@ This returns the box set with \prm {localrightbox}.
 \stopnewprimitive
 
 \startnewprimitive[title={\prm {localtolerance}}]
-    TODO
+
+This sets the line-breaking tolerance for the current paragraph without changing
+the global \prm {tolerance}.
+
 \stopnewprimitive
 
 \startoldprimitive[title={\prm {long}}][obsolete=yes]
@@ -10568,7 +10707,9 @@ yet but for instance in a \prm {halign} do something between the lines: some
 calculation or injecting inter-row material. In \LUAMETATEX\ this primitive can
 be used nested.
 
-{\em Todo: discuss keywords.}
+The alignment options can be changed for the following row with \prm
+{alignoption}. It accepts \type {firstskip}, \type {lastskip}, \type
+{nofirstskip}, \type {nolastskip} and \type {prune}.
 
 \stopoldprimitive
 
@@ -11032,8 +11173,11 @@ enables it as part of its recipe.
 
 \stopnewprimitive
 
-% \startnewprimitive[title={\prm {optionspar}}]
-% \stopnewprimitive
+\startnewprimitive[title={\prm {optionspar}}]
+
+You can set this register with options for the upcoming paragraph. Of course you
+have to make sure that it indeed concerns that paragraph and not one that gets
+rendered as side effect before that paragraph is typeset. \stopnewprimitive
 
 \startoldprimitive[title={\prm {or}}]
 
@@ -11895,8 +12039,12 @@ the inter atom spacing variables.
 
 \stopnewprimitive
 
-% \startnewprimitive[title={\prm {prerollmvl}}]
-% \stopnewprimitive
+\startnewprimitive[title={\prm {prerollmvl}}]
+
+This primitive does a preroll of a specific balancing stream. It returns a list
+with empty lines. Its argument in an index.
+
+\stopnewprimitive
 
 \startnewprimitive[title={\prm {preshortinlinepenalty}}]
 
@@ -12418,6 +12566,16 @@ large number will for sure result in a long string because after thousand we
 start duplicating.
 
 \stopoldprimitive
+
+\startnewprimitive[title={\prm {romannumerical}}]
+
+This is a variant of \prm {romanumeral} that doesn't suffer from the excessive
+generation of \type {m}'s when we cross the 4000 boundary, so \im {1234567} will
+give you {\tttf \romannumerical {1234567}} instead of \ctxlua { context
+(\letterhash "\normalromannumeral1234567" - # "dlxvii" ) } {\tttf m}'s in front
+of {\tttf dlxvii}.
+
+\stopnewprimitive
 
 \startnewprimitive[title={\prm {rpcode}}]
 
@@ -14404,8 +14562,12 @@ page builder.
 
 \stopnewprimitive
 
-% \startnewprimitive[title={\prm {tracingraggedness}}]
-% \stopnewprimitive
+\startnewprimitive[title={\prm {tracingraggedness}}]
+
+This tracker keep track of how ragged a paragraph is. It relates to \prm
+{justificationskip}.
+
+\stopnewprimitive
 
 \startoldprimitive[title={\prm {tracingrestores}}]
 

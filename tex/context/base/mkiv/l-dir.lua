@@ -569,9 +569,18 @@ do
 
     local chdir = sandbox and sandbox.original(chdir) or chdir
 
-    if onwindows then
+    dir.expandname = lfs.expandpath
+
+    if dir.expandname then
+
+        -- luametatex
+
+    elseif onwindows then
 
         local xcurrentdir = dir.current
+
+        -- assumes a path with / because network paths have \ and when we feed \ we
+        -- can get a weird duplicated own path
 
         function dir.expandname(str) -- will be merged with cleanpath and collapsepath\
             local first, nothing, last = match(str,"^(//)(//*)(.*)$")
@@ -619,8 +628,16 @@ do
 
     end
 
-    -- This go there anc check works okay in tricky situation as we encounter
+    -- This go there and check works okay in tricky situation as we encounter
     -- on osx, where tex installations use rather complex chains of links.
+
+ -- dir.expandlink = lfs.readlink
+ --
+ -- if not dir.expandlink then
+ --
+ --     -- needs testing
+ --
+ -- end
 
     function dir.expandlink(dir,report)
         local curdir = currentdir()

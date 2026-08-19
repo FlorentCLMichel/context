@@ -66,6 +66,9 @@ const unsigned char some_item_classification[] = {
     [input_line_no_code]                 = classification_no_arguments,
     [badness_code]                       = classification_no_arguments,
     [overshoot_code]                     = classification_no_arguments,
+    [luametatex_major_version_code]      = classification_no_arguments,
+    [luametatex_minor_version_code]      = classification_no_arguments,
+    [luametatex_release_code]            = classification_no_arguments,
     [luatex_version_code]                = classification_no_arguments,
     [luatex_revision_code]               = classification_no_arguments,
     [current_group_level_code]           = classification_no_arguments,
@@ -103,6 +106,8 @@ const unsigned char some_item_classification[] = {
     [font_spec_scale_code]               = classification_unknown,
     [font_spec_xscale_code]              = classification_unknown,
     [font_spec_yscale_code]              = classification_unknown,
+    [font_spec_slant_code]               = classification_unknown,
+    [font_spec_weight_code]              = classification_unknown,
     [font_size_code]                     = classification_unknown,
     [font_math_control_code]             = classification_unknown,
     [font_text_control_code]             = classification_unknown,
@@ -124,16 +129,26 @@ const unsigned char some_item_classification[] = {
     [scaled_ex_height_code]              = classification_no_arguments,
     [scaled_em_width_code]               = classification_no_arguments,
     [scaled_extra_space_code]            = classification_no_arguments,
+    [scaled_math_axis_code]              = classification_unknown,
+    [scaled_math_ex_height_code]         = classification_unknown,
+    [scaled_math_em_width_code]          = classification_unknown,
     [last_arguments_code]                = classification_no_arguments,
     [parameter_count_code]               = classification_no_arguments,
     [parameter_index_code]               = classification_no_arguments,
  /* [lua_value_function_code]            = classification_no_arguments, */
     [insert_progress_code]               = classification_unknown,
     [left_margin_kern_code]              = classification_unknown,
+    [specification_count_code]           = classification_unknown,
+    [specification_options_code]         = classification_unknown,
+    [specification_first_code]           = classification_unknown,
+    [specification_second_code]          = classification_unknown,
     [right_margin_kern_code]             = classification_unknown,
     [par_shape_length_code]              = classification_unknown,
     [par_shape_indent_code]              = classification_unknown,
     [par_shape_width_code]               = classification_unknown,
+    [balance_shape_vsize_code]           = classification_unknown,
+    [balance_shape_top_space_code]       = classification_unknown,
+    [balance_shape_bottom_space_code]    = classification_unknown,
     [glue_stretch_code]                  = classification_unknown,
     [glue_shrink_code]                   = classification_unknown,
     [mu_to_glue_code]                    = classification_unknown,
@@ -146,6 +161,8 @@ const unsigned char some_item_classification[] = {
     [muexpr_code]                        = classification_unknown,
     [numexpression_code]                 = classification_unknown,
     [dimexpression_code]                 = classification_unknown,
+    [numexperimental_code]               = classification_unknown,
+    [dimexperimental_code]               = classification_unknown,
     [last_chk_integer_code]              = classification_unknown,
     [last_chk_dimension_code]            = classification_unknown,
  // [dimen_to_scale_code]                = classification_no_arguments,
@@ -162,6 +179,7 @@ const unsigned char some_item_classification[] = {
     [current_loop_iterator_code]         = classification_no_arguments,
     [current_loop_nesting_code]          = classification_no_arguments,
     [last_loop_iterator_code]            = classification_no_arguments,
+    [last_par_trigger_code]              = classification_no_arguments,
     [last_par_context_code]              = classification_no_arguments,
     [last_page_extra_code]               = classification_no_arguments,
  // [last_line_width_code]               = classification_no_arguments,
@@ -182,6 +200,7 @@ const unsigned char some_convert_classification[] = {
     [to_dimension_code]        = classification_integer,
     [to_sparse_dimension_code] = classification_integer,
     [to_mathstyle_code]        = classification_unknown,
+    [to_limited_float_code]    = classification_integer,
     [lua_code]                 = classification_unknown,
     [lua_function_code]        = classification_unknown,
     [lua_bytecode_code]        = classification_unknown,
@@ -195,6 +214,7 @@ const unsigned char some_convert_classification[] = {
     [detokenized_code]         = classification_unknown,
     [detokened_code]           = classification_unknown,
     [roman_numeral_code]       = classification_integer,
+    [roman_numerical_code]     = classification_integer,
     [meaning_code]             = classification_unknown,
     [meaning_full_code]        = classification_unknown,
     [meaning_less_code]        = classification_unknown,
@@ -542,7 +562,7 @@ void tex_initialize_commands(void)
         tex_primitive(tex_command,        no_legacy,       "hsize",                          internal_dimension_cmd, hsize_code,                               internal_dimension_base);
         tex_primitive(luatex_command,     no_legacy,       "ignoredepthcriterion",           internal_dimension_cmd, ignore_depth_criterion_code,              internal_dimension_base); /* mostly for myself, tutorials etc */
         tex_primitive(tex_command,        no_legacy,       "lineskiplimit",                  internal_dimension_cmd, line_skip_limit_code,                     internal_dimension_base);
-        tex_primitive(luametatex_command, no_legacy,       "linesnappingtolerance",          internal_dimension_cmd, line_snapping_tolerance_code,             internal_integer_base);
+        tex_primitive(luametatex_command, no_legacy,       "linesnappingtolerance",          internal_dimension_cmd, line_snapping_tolerance_code,             internal_dimension_base);
         tex_primitive(luametatex_command, no_legacy,       "localhangindent",                internal_dimension_cmd, local_hang_indent_code,                   internal_dimension_base);
         tex_primitive(tex_command,        no_legacy,       "mathsurround",                   internal_dimension_cmd, math_surround_code,                       internal_dimension_base);
         tex_primitive(tex_command,        no_legacy,       "maxdepth",                       internal_dimension_cmd, max_depth_code,                           internal_dimension_base);
@@ -675,8 +695,8 @@ void tex_initialize_commands(void)
         tex_primitive(luatex_command,     no_legacy,       "ignorenestedupto",               ignore_something_cmd,   ignore_nested_upto_code,                  0);
         tex_primitive(luatex_command,     no_legacy,       "ignorepars",                     ignore_something_cmd,   ignore_par_code,                          0);
         tex_primitive(tex_command,        no_legacy,       "ignorespaces",                   ignore_something_cmd,   ignore_space_code,                        0);
-        tex_primitive(luatex_command,     no_legacy,       "ignoreupto",                     ignore_something_cmd,   ignore_upto_code,                         0);
-        tex_primitive(luatex_command,     no_legacy,       "ignorerest",                     ignore_something_cmd,   ignore_rest_code,                         0);
+        tex_primitive(luametatex_command, no_legacy,       "ignoreupto",                     ignore_something_cmd,   ignore_upto_code,                         0);
+        tex_primitive(luametatex_command, no_legacy,       "ignorerest",                     ignore_something_cmd,   ignore_rest_code,                         0);
 
         tex_primitive(tex_command,        no_legacy,       "endinput",                       input_cmd,              end_of_input_code,                        0);
         tex_primitive(tex_command,        no_legacy,       "input",                          input_cmd,              normal_input_code,                        0);
@@ -1069,6 +1089,7 @@ void tex_initialize_commands(void)
         tex_primitive(luametatex_command, no_legacy,       "meaningless",                    convert_cmd,            meaning_less_code,                        0); /* less as in fill */
         tex_primitive(tex_command,        no_legacy,       "number",                         convert_cmd,            number_code,                              0);
         tex_primitive(tex_command,        no_legacy,       "romannumeral",                   convert_cmd,            roman_numeral_code,                       0);
+        tex_primitive(luametatex_command, no_legacy,       "romannumerical",                 convert_cmd,            roman_numerical_code,                     0);
         tex_primitive(luametatex_command, no_legacy,       "semiexpanded",                   convert_cmd,            semi_expanded_code,                       0);
         tex_primitive(tex_command,        no_legacy,       "string",                         convert_cmd,            string_code,                              0);
         tex_primitive(luametatex_command, no_legacy,       "todimension",                    convert_cmd,            to_dimension_code,                        0);
@@ -1359,27 +1380,6 @@ void tex_initialize_commands(void)
             We had these for a while but they are now dropped because (1) we should not overload |\mathaccent|
             (at least not now) and we have many user classes in \CONTEXT\ anyway.
         */
-
-        /* begin of gone */ /*
-
-        tex_primitive(luatex_command,     no_legacy,       "mathaccent",                     math_component_cmd,     math_component_accent_code,               0);
-        tex_primitive(luatex_command,     no_legacy,       "mathbinary",                     math_component_cmd,     math_component_binary_code,               0);
-        tex_primitive(luatex_command,     no_legacy,       "mathclose",                      math_component_cmd,     math_component_close_code,                0);
-        tex_primitive(luatex_command,     no_legacy,       "mathfenced",                     math_component_cmd,     math_component_fenced_code,               0);
-        tex_primitive(luatex_command,     no_legacy,       "mathfraction",                   math_component_cmd,     math_component_fraction_code,             0);
-        tex_primitive(luatex_command,     no_legacy,       "mathghost",                      math_component_cmd,     math_component_ghost_code,                0);
-        tex_primitive(luatex_command,     no_legacy,       "mathinner",                      math_component_cmd,     math_component_inner_code,                0);
-        tex_primitive(luatex_command,     no_legacy,       "mathmiddle",                     math_component_cmd,     math_component_middle_code,               0);
-        tex_primitive(luatex_command,     no_legacy,       "mathopen",                       math_component_cmd,     math_component_open_code,                 0);
-        tex_primitive(luatex_command,     no_legacy,       "mathoperator",                   math_component_cmd,     math_component_operator_code,             0);
-        tex_primitive(luatex_command,     no_legacy,       "mathordinary",                   math_component_cmd,     math_component_ordinary_code,             0);
-        tex_primitive(luatex_command,     no_legacy,       "mathoverline",                   math_component_cmd,     math_component_over_code,                 0);
-        tex_primitive(luatex_command,     no_legacy,       "mathpunctuation",                math_component_cmd,     math_component_punctuation_code,          0);
-        tex_primitive(luatex_command,     no_legacy,       "mathradical",                    math_component_cmd,     math_component_radical_code,              0);
-        tex_primitive(luatex_command,     no_legacy,       "mathrelation",                   math_component_cmd,     math_component_relation_code,             0);
-        tex_primitive(luatex_command,     no_legacy,       "mathunderline",                  math_component_cmd,     math_component_under_code,                0);
-
-        */ /* end of gone */
 
         tex_primitive(luametatex_command, no_legacy,       "mathatom",                       math_component_cmd,     math_component_atom_code,                 0);
 

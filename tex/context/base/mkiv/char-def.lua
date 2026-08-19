@@ -24,6 +24,13 @@ Todo: get rid of specials = { "font", ... } in math ... we have already vectors.
 Todo: remove adobe names (move them to the glyph list, done)
 Todo: remove some never used context names (idem)
 
+When this file has been changed you have to run the following when you use mkxl:
+
+    mtxrun --script unicode --convert
+
+which will reduce the size of the format with over 500K. This could actually also
+work in mkiv but we don't do it there.
+
 ]]--
 
 characters = characters or { }

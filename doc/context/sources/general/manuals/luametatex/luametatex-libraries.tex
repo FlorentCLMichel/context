@@ -916,7 +916,7 @@ actually just support for \PNG\ compression, so there we need to do more
 work and filter the content:
 
 \starttyping[option=LUA]
-function decode.applyfilter (
+function pngdecode.applyfilter (
     <t:string>  data,
     <t:integer> nx,
     <t:integer> ny,
@@ -929,7 +929,7 @@ end
 We also need to split off the mask as ie becomes a separate object:
 
 \starttyping[option=LUA]
-function decode.splitmask (
+function pngdecode.splitmask (
     <t:string>  data,
     <t:integer> nx,
     <t:integer> ny,
@@ -945,7 +945,7 @@ end
 If present we have to deinterlace:
 
 \starttyping[option=LUA]
-function decode.interlace (
+function pngdecode.interlace (
     <t:string>  data,
     <t:integer> nx,
     <t:integer> ny,
@@ -959,7 +959,7 @@ end
 And maybe expand compressed:
 
 \starttyping[option=LUA]
-function decode.expand (
+function pngdecode.expand (
     <t:string>  data,
     <t:integer> nx,
     <t:integer> ny,
@@ -975,7 +975,7 @@ These are just helpers that permit integration in the \CONTEXT\ graphic
 ecosystem (including \METAPOST):
 
 \starttyping[option=LUA]
-function decode.tocmyk ( <t:string data )
+function pngdecode.tocmyk ( <t:string data )
     return <t:string>
 end
 \stoptyping
@@ -983,7 +983,7 @@ end
 For usage see the \CONTEXT\ sources.
 
 \starttyping[option=LUA]
-function decode.tomask (
+function pngdecode.tomask (
     <t:string>  content,
     <t:string>  mapping,
     <t:integer> xsize,
@@ -997,14 +997,14 @@ end
 There are to variants:
 
 \starttyping[option=LUA]
-function decode.makemask (
+function pngdecode.makemask (
     <t:string>  content,
     <t:integer> mapping
 )
     return <t:string>
 end
 
-function decode.makemask (
+function pngdecode.makemask (
     <t:string> content,
     <t:table>  mapping
 )
@@ -1447,11 +1447,11 @@ end
 There is a bunch of functions that take a complex number:
 
 \starttyping[option=LUA]
-function xcomplex.abs   ( <t:complex> z ) return <t:complex> end
-function xcomplex.arg   ( <t:complex> z ) return <t:complex> end
-function xcomplex.imag  ( <t:complex> z ) return <t:complex> end
-function xcomplex.real  ( <t:complex> z ) return <t:complex> end
-function xcomplex.onj   ( <t:complex> z ) return <t:complex> end
+function xcomplex.abs   ( <t:complex> z ) return <t:number>  end
+function xcomplex.arg   ( <t:complex> z ) return <t:number>  end
+function xcomplex.imag  ( <t:complex> z ) return <t:number>  end
+function xcomplex.real  ( <t:complex> z ) return <t:number>  end
+function xcomplex.conj  ( <t:complex> z ) return <t:complex> end
 function xcomplex.proj  ( <t:complex> z ) return <t:complex> end
 function xcomplex.exp   ( <t:complex> z ) return <t:complex> end
 function xcomplex.log   ( <t:complex> z ) return <t:complex> end
@@ -1472,7 +1472,7 @@ function xcomplex.atanh ( <t:complex> z ) return <t:complex> end
 function xcomplex.pow   ( <t:complex> z1, <t:complex> z2 ) return <t:complex> end
 \stoptyping
 
-We added the \type {cerf} functions but none can wonder if we should carry that
+We added the \type {cerf} functions but one can wonder if we should carry that
 burden around (instead of just assuming a library to be used).
 
 The complex error function \type {erf(z)}:
@@ -1650,9 +1650,6 @@ function xmath.j1         ( <t:number> a )               return <t:number> end
 function xmath.jn         ( <t:number> a, <t:number> b ) return <t:number> end
 function xmath.ldexp      ( <t:number> a, <t:number> b ) return <t:number> end
 function xmath.lgamma     ( <t:number> a )               return <t:number> end
-function xmath.l0         ( <t:number> a )               return <t:number> end
-function xmath.l1         ( <t:number> a )               return <t:number> end
-function xmath.ln         ( <t:number> a, <t:number> b ) return <t:number> end
 function xmath.log        ( <t:number> a [,b])           return <t:number> end
 function xmath.log10      ( <t:number> a )               return <t:number> end
 function xmath.log1p      ( <t:number> a )               return <t:number> end
@@ -1706,7 +1703,7 @@ A library can be loaded, and thereby registered in the \quote {optional}
 namespace, assuming that \type {--permitloadlib} is given with:
 
 \starttyping[option=LUA]
-function library.load (
+function optional.library.load (
     <t:string> filename,
     <t:string> openname,
 )
@@ -1860,7 +1857,7 @@ end
 The noise types can be fetched with:
 
 \starttyping[option=LUA]
-function optional.graphicsmagick.noisetypes ( )
+function optional.graphicsmagick.getnoisetypes ( )
     return <t:table>
 end
 \stoptyping

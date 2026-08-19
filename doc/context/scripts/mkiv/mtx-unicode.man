@@ -12,7 +12,10 @@
 .SH OPTIONS
 .TP
 .B --whatever
-do whatever
+do whatever needed (default)
+.TP
+.B --convert
+generate more efficient char-def.lmt file
 .SH AUTHOR
 More information about ConTeXt and the tools that come with it can be found at:
 

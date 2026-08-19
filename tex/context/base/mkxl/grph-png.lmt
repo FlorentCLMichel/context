@@ -1,0 +1,228 @@
+if not modules then modules = { } end modules ['grph-png'] = {
+    version   = 1.001,
+    comment   = "companion to grph-inc.mkiv",
+    author    = "Hans Hagen, PRAGMA-ADE, Hasselt NL",
+    copyright = "PRAGMA ADE / ConTeXt Development Team",
+    license   = "see context related readme files"
+}
+
+-- This is a rather specialized module and only used for the more artistic
+-- \LUAMETAFUN\ applicaztions.
+
+local tocardinal4 = sio.tocardinal4
+local tocardinal2 = sio.tocardinal2
+local tocardinal1 = string.char
+local substring   = string.sub
+local concat      = table.concat
+local rep         = string.rep
+
+local checksum    = xzip.crc32
+local compress    = xzip.compress
+
+-- the checksum is calculated over the chunk type (tag) and data but the
+-- length excludes the 4 character tag
+
+local function blob(data)
+    local pre  = tocardinal4(#data - 4)
+    local post = tocardinal4(checksum(data))
+    return pre .. data .. post
+end
+
+local function IHDR(width,height,bitdepth,colortype)
+    return blob("IHDR"
+      .. tocardinal4(width)
+      .. tocardinal4(height)
+      .. tocardinal1(bitdepth)  -- 8, 16, etc. (often just 8)
+      .. tocardinal1(colortype) -- 0 = gray, 2 = rgb, 6 = rgba (often 0 or 2)
+      .. tocardinal1(0)         -- compression
+      .. tocardinal1(0)         -- filter
+      .. tocardinal1(0)         -- interlace
+    )
+end
+
+local function IDAT(bytes)
+    return blob("IDAT" .. bytes)
+end
+
+local function acTL(frames, plays)
+    return blob("acTL"
+     .. tocardinal4(frames)
+     .. tocardinal4(plays)
+    )
+end
+
+local function fcTL(sequence,width,height,numerator,denominator,dispose,blend)
+    return blob("fcTL"
+     .. tocardinal4(sequence)
+     .. tocardinal4(width)
+     .. tocardinal4(height)
+     .. tocardinal4(0)           -- xoffset
+     .. tocardinal4(0)           -- yoffset
+     .. tocardinal2(numerator)   -- delay
+     .. tocardinal2(denominator) -- delay
+     .. tocardinal1(dispose)     -- dispose op (1 = clear background)
+     .. tocardinal1(blend)       -- blend op (0 = source)
+    )
+end
+
+local function fdAT(sequence, bytes)
+    return blob("fdAT"
+     .. tocardinal4(sequence)
+     .. bytes
+    )
+end
+
+local function SIGN()
+    return "\137\080\078\071\013\010\026\010"
+end
+
+local function IEND()
+    return blob("IEND")
+end
+
+local function filtered(bytes,width,height,bpp)
+    local rowsize = width * bpp
+    local result  = { }
+    local start   = 1
+    local r       = 0
+    for i=1,height do
+        r = r + 1 ; result[r] = tocardinal1(0) -- filter 0 : none
+        r = r + 1 ; result[r] = substring(bytes,start,start+rowsize-1)
+        start = start + rowsize
+    end
+    return concat(result)
+end
+
+local report = logs.reporter("export [a]png")
+
+local function openpng(specification)
+    --
+    local nofframes = specification.nofframes or 0
+    local width     = specification.width     or 0
+    local height    = specification.height    or 0
+    local bitdepth  = specification.bitdepth  or 8
+    local colortype = specification.colortype or 0 -- gray
+    local bpp       = specification.bpp       or 1
+    local loop      = specification.loop      or 0 -- infinity
+    local nofbytes  = width * height * bpp
+    local filename  = specification.filename
+    --
+    if nofframes == 0 then
+        report("no frames")
+        return
+    end
+    --
+    local f = filename and io.open(filename, "wb")
+    if not f then
+        report("unable to open %a",filename)
+        return
+    end
+    --
+    local sequence = 0
+    --
+    local numerator   = specification.numerator    or 4   -- delay
+    local denominator = specification.denominator  or 100 -- delay
+    local dispose     = specification.dispose      or 1
+    local blend       = specification.blend        or 0
+    --
+    statistics.starttiming(specification,true)
+    f:write(SIGN())
+    f:write(IHDR(width,height,bitdepth,colortype))
+    f:write(acTL(nofframes,loop))
+    statistics.stoptiming(specification) -- still zero
+    --
+    local done = 0
+    --
+    local function close()
+        if f then
+            f:write(IEND())
+            f:close()
+            report("png sequence of size %i saved in %a, %s seconds spent",nofframes,filename,statistics.elapsedtime(specification))
+            f = nil
+        end
+    end
+    --
+    local function add(frame)
+        if f then
+            statistics.starttiming(specification)
+            if #frame ~= nofbytes then
+                report("inconsistent frame %i, expected %i bytes instead of %i",done+1,nofbytes,#frame)
+                frame = rep("\0x7F",nofbytes)
+            end
+            local bytes  = filtered(frame,width,height,bpp)
+            local stream = compress(bytes)
+            f:write(fcTL(sequence,width,height,numerator,denominator,dispose,blend))
+            sequence = sequence + 1
+            if sequence == 1 then
+                -- the first frame uses standard IDAT and does not increment sequence
+                f:write(IDAT(stream))
+            else
+                -- following frames use fdAT and includes its own sequence number
+                f:write(fdAT(sequence, stream))
+                sequence = sequence + 1
+            end
+            done = done + 1
+            if done >= nofframes then
+                close()
+            end
+            statistics.stoptiming(specification)
+            return done
+        end
+    end
+    --
+    return add, close
+end
+
+local function savepng(specification)
+    local frames    = specification.frames
+    local nofframes = frames and #frames or 0
+    if nofframes == 0 then
+        report("no frames given")
+        return
+    end
+    specification.nofframes = nofframes
+    local add, close = openpng(specification)
+    if add and close then
+        for i=1,nofframes do
+            add(frames[i])
+        end
+        close()
+    end
+end
+
+bytemap.png = {
+    open = openpng,
+    save = savepng,
+}
+
+-- if not context then
+--
+--     local width           = 500
+--     local height          = 500
+--     local bitdepth        = 8
+--     local colortype       = 0
+--     local bpp             = 1 -- bytes per pixel
+--     local frames          = { }
+--
+--     for i=1,100 do
+--         frames[i] = string.rep(
+--             tocardinal1(i*2),
+--             width * height
+--         )
+--     end
+--
+--     savepng {
+--         filename    = "crap.png",
+--         width       = width,
+--         height      = height,
+--         bitdepth    = bitdepth,
+--         colortype   = colortype,
+--         bpp         = bpp,
+--         frames      = frames,
+--         loop        = 0, -- 1
+--         loop        = 1, -- 1
+--         numerator   = 8,
+--         demominator = 100,
+--     }
+--
+-- end

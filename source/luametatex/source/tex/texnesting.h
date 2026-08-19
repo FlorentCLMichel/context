@@ -73,7 +73,7 @@ extern void        tex_pop_nest              (void);
 extern void        tex_tail_prepend          (halfword p);
 extern void        tex_tail_append           (halfword p);
 extern void        tex_tail_append_list      (halfword p);
-extern void        tex_tail_append_callback  (halfword p);
+extern halfword    tex_tail_append_callback  (halfword p);
 extern halfword    tex_tail_fetch_callback   (void);
 extern halfword    tex_tail_apply_callback   (halfword p, halfword c);
 extern halfword    tex_pop_tail              (void);
@@ -123,6 +123,8 @@ extern halfword tex_preroll_mvl          (halfword n);
 extern int      tex_appended_mvl         (halfword context, halfword boundary);
 extern int      tex_current_mvl          (halfword *head, halfword *tail);
 
+# if (delayed_glue_supported == 1)
+
 typedef enum delayed_glue_targets {
     delayed_glue_target_unknown = 0x0,
     delayed_glue_target_current = 0x1,
@@ -137,7 +139,9 @@ typedef enum delayed_glue_locations {
     delayed_glue_location_lua       = 0x4,
 } delayed_glue_locations;
 
-// extern void tex_delayed_glue_check       (int target, int location);
-// extern int  tex_delayed_glue_par_skipped (void);
+extern void tex_delayed_glue_check       (int target, int location);
+extern int  tex_delayed_glue_par_skipped (void);
+
+# endif
 
 # endif

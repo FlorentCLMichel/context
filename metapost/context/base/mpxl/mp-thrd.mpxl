@@ -15,8 +15,6 @@ if known metafun_loaded_thrd : endinput ; fi ;
 
 newinternal boolean metafun_loaded_thrd ; metafun_loaded_thrd := true ; immutable metafun_loaded_thrd ;
 
-runscript("lua.registercode('mlib-thr.lmt')");
-
 presetparameters "lmtthreedscene" [
     bytemap     = 1,
   % crop        = true,
@@ -242,6 +240,10 @@ presetparameters "lmtthreedvisiblesegment" [
     width  = -1
 ] ;
 
+% We reserve the indixes byt assign the funtions later, when we actually use these macros
+% and of course we could have had lmt_scene_start do a delayed load of the module (just add
+% a stub in a main file) but this will also do.
+
 newscriptindex mfid_scene_width   ; mfid_scene_width   := scriptindex "lmt_scene_width" ;
 newscriptindex mfid_scene_height  ; mfid_scene_height  := scriptindex "lmt_scene_height" ;
 newscriptindex mfid_scene_bytemap ; mfid_scene_bytemap := scriptindex "lmt_scene_bytemap" ;
@@ -249,16 +251,6 @@ newscriptindex mfid_scene_bytemap ; mfid_scene_bytemap := scriptindex "lmt_scene
 def lmt_scene_width   = runscript mfid_scene_width   enddef ;
 def lmt_scene_height  = runscript mfid_scene_height  enddef ;
 def lmt_scene_bytemap = runscript mfid_scene_bytemap enddef ;
-
-% newscriptindex mfid_scene_overlay_path_count ; mfid_scene_overlay_path_count := scriptindex "lmt_scene_overlay_path_count" ;
-% newscriptindex mfid_scene_overlay_path_data  ; mfid_scene_overlay_path_data  := scriptindex "lmt_scene_overlay_path_data"  ;
-% newscriptindex mfid_scene_overlay_path_width ; mfid_scene_overlay_path_width := scriptindex "lmt_scene_overlay_path_width" ;
-% newscriptindex mfid_scene_overlay_path_color ; mfid_scene_overlay_path_color := scriptindex "lmt_scene_overlay_path_color" ;
-
-% def lmt_scene_overlay_path_count          = runscript mfid_scene_overlay_path_count   enddef ;
-% def lmt_scene_overlay_path_data  (expr j) = runscript mfid_scene_overlay_path_data  j enddef ;
-% def lmt_scene_overlay_path_width (expr j) = runscript mfid_scene_overlay_path_width j enddef ;
-% def lmt_scene_overlay_path_color (expr j) = runscript mfid_scene_overlay_path_color j enddef ;
 
 newscriptindex mfid_scene_project_point    ; mfid_scene_project_point    := scriptindex "lmt_scene_project_point" ;
 newscriptindex mfid_scene_calculate_normal ; mfid_scene_calculate_normal := scriptindex "lmt_scene_calculate_normal" ;
@@ -324,7 +316,7 @@ def lmt_load_mlib_thr =
 enddef ;
 
 def lmt_scene_start =
-    lmt_load_mlib_lsy ;
+    lmt_load_mlib_thr ;
     applyparameters "lmtthreedscene" "lmt_scene_do_start"
 enddef ;
 
@@ -363,7 +355,7 @@ def lmt_scene_flush_bytemap =
             xyscaled (lmt_scene_width,lmt_scene_height)
             if (hasparameter "lmtthreedscene" "width") :
                 if (hasparameter "lmtthreedscene" "height") :
-                    xsized (getparameter "lmtthreedscene" "width"),getparameter "lmtthreedscene" "height"))
+                    xysized (getparameter "lmtthreedscene" "width",getparameter "lmtthreedscene" "height")
                 else :
                     xsized (getparameter "lmtthreedscene" "width")
                 fi
@@ -431,3 +423,13 @@ vardef lmt_scene_mesh expr name =
     p := p xysized(lmt_final_width,lmt_final_height) ;
     p
 enddef;
+
+% newscriptindex mfid_scene_overlay_path_count ; mfid_scene_overlay_path_count := scriptindex "lmt_scene_overlay_path_count" ;
+% newscriptindex mfid_scene_overlay_path_data  ; mfid_scene_overlay_path_data  := scriptindex "lmt_scene_overlay_path_data"  ;
+% newscriptindex mfid_scene_overlay_path_width ; mfid_scene_overlay_path_width := scriptindex "lmt_scene_overlay_path_width" ;
+% newscriptindex mfid_scene_overlay_path_color ; mfid_scene_overlay_path_color := scriptindex "lmt_scene_overlay_path_color" ;
+
+% def lmt_scene_overlay_path_count          = runscript mfid_scene_overlay_path_count   enddef ;
+% def lmt_scene_overlay_path_data  (expr j) = runscript mfid_scene_overlay_path_data  j enddef ;
+% def lmt_scene_overlay_path_width (expr j) = runscript mfid_scene_overlay_path_width j enddef ;
+% def lmt_scene_overlay_path_color (expr j) = runscript mfid_scene_overlay_path_color j enddef ;

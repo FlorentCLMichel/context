@@ -52,6 +52,8 @@
   %\c!maxwidth=,
    \c!distance=\zeropoint,
    \c!margin=\zeropoint,
+   \c!leftmargin=\zeropoint,
+   \c!rightmargin=\zeropoint,
    \c!alternative=\c!b,
    \c!style=\v!normal,
   %\c!color=,
@@ -1250,7 +1252,9 @@
 
 \startsetups[\??listrenderings:d]
     \ifvmode
-        \advanceby\leftskip{\listparameter\c!margin}%
+        \advanceby\leftskip {\listparameter\c!margin}%
+        \advanceby\leftskip {\listparameter\c!leftmargin}%
+        \advanceby\rightskip{\listparameter\c!rightmargin}%
     \fi
     \begingroup
     \ifvmode

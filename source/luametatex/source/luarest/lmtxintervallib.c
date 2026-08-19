@@ -47,13 +47,65 @@ static const double epsilon = 0.000001;
 //     return (interval) { - i.SUP, - i.INF };
 // }
 
+// static inline interval interval_mod(interval a, interval b)
+// {
+//     double d;
+//     interval i = div_ii(a, b);
+//     i.INF = modf(i.INF, &d);
+//     i.SUP = modf(i.SUP, &d);
+//     return mul_ii(i, b);
+// }
+
+/*tex
+
+    When checking this module, espcially how do do a proper |mod|, this is what gemini came up with:
+
+    Key ImprovementsQuotient Analysis:
+
+        Calculates $k = \lfloor a/b \rfloor$. If $k_{\text{min}} = k_{\text{max}}$, the interval
+        fits within a single integer period, allowing exact subtraction $a - k \cdot b$.
+
+        Multi-period Wrapping: If $k_{\text{min}} \neq k_{\text{max}}$, the modulo operation
+        wraps past zero. The upper bound of the result is safely bounded by $[0, \max(b)]$ (for
+        $b > 0$).
+
+        Div-by-Zero Protection: Prevents undefined behavior if the divisor interval $b$
+        contains 0.
+
+    This is not something I can come up with so \unknown
+
+*/
+
 static inline interval interval_mod(interval a, interval b)
 {
-    double d;
-    interval i = div_ii(a, b);
-    i.INF = modf(i.INF, &d);
-    i.SUP = modf(i.SUP, &d);
-    return mul_ii(i, b);
+    // Check for division by zero or crossing zero in divisor
+    if (b.INF <= 0.0 && b.SUP >= 0.0) {
+        // Return an undefined/NaN interval or handle division by zero error
+        interval err = {NAN, NAN};
+        return err;
+    }
+    // Compute the interval of possible quotients k = floor(a / b)
+    interval q = div_ii(a, b);
+    double k_min = floor(q.INF);
+    double k_max = floor(q.SUP);
+    // If the quotient spans multiple integer values, the remainder spans
+    // from 0 up to the maximum possible remainder bound (or standard wrap).
+    if (k_min != k_max) {
+        interval result;
+        if (b.INF > 0.0) {
+            result.INF = 0.0;
+            result.SUP = b.SUP; // Upper bound capped by the maximum divisor value
+        } else {
+            result.INF = b.INF;
+            result.SUP = 0.0;
+        }
+        return result;
+    }
+    // If the quotient interval falls within a single integer span k:
+    // a mod b = a - k * b
+    interval k_interval = {k_min, k_min};
+    interval kb = mul_ii(k_interval, b);
+    return sub_ii(a, kb);
 }
 
 static inline int interval_equal(interval a, interval b, double eps)
@@ -81,14 +133,14 @@ static inline int interval_lessequal(interval a, interval b, double eps)
 {
     double ma = 0.5 * (a.INF + a.SUP);
     double mb = 0.5 * (b.INF + b.SUP);
-    return fabs(ma - mb) <= eps || (ma - eps) < (mb + eps);
+    return ma <= mb + 2.0 * eps;
 }
 
 static inline int interval_greaterequal(interval a, interval b, double eps)
 {
     double ma = 0.5 * (a.INF + a.SUP);
     double mb = 0.5 * (b.INF + b.SUP);
-    return fabs(ma - mb) <= eps || (ma + eps) > (mb - eps);
+    return ma >= mb - 2.0 * eps;
 }
 
 static inline int interval_eq(interval a, interval b)
@@ -167,9 +219,10 @@ static inline interval xintervallib_get(lua_State *L, int i)
                     u.INF = lua_tonumber(L, -1);
                     if (lua_rawgeti(L, i, 2) == LUA_TNUMBER) {
                         u.SUP = lua_tonumber(L, -1);
+                        lua_pop(L, 2);
                     } else {
-                        lua_pop(L, 1);
-                        u.SUP = 0;
+                        lua_pop(L, 2);
+                        u.SUP = u.INF;
                     }
                 } else {
                     lua_pop(L, 1);
@@ -532,10 +585,84 @@ static int xintervallib_mid(lua_State *L)
 
 /* x^a = exp(a*log(x)) */
 
+// static int xintervallib_pow(lua_State *L)
+// {
+//     interval i = xintervallib_get(L, 1);
+//     interval e = xintervallib_get(L, 2);
+//     return xintervallib_push(L, j_exp(mul_ii(e, j_log(i))));
+// }
+
+/*tex
+
+    I also checked this one:
+
+    What Changed?
+
+        Specialized Integer Exponentiation (interval_pow_int): Correctly computes even powers
+        where $0 \in [\text{INF}, \text{SUP}]$ by clamping the lower bound to $0.0$ (e.g.,
+        $[-3, 2]^2 = [0, 9]$ instead of failure or overly wide bounds).
+
+        Safely evaluates odd integer powers across negative domain spaces (e.g., $[-2, 1]^3 =
+        [-8, 1]$).Domain Guard for Real Exponents: Checks i.INF > 0.0 before attempting j_log(i),
+        returning [NaN, NaN] cleanly if the operation is mathematically invalid in real interval
+        arithmetic.
+
+    I assume there's literature to be foudn about this kind of things but I dont'have access
+    to academia resources.
+
+*/
+
+static inline interval interval_pow_int(interval base, int exp)
+{
+    if (exp == 0) {
+        interval res = {1.0, 1.0};
+        return res;
+    }
+    // Handle negative integer powers: x^(-n) = 1 / (x^n)
+    if (exp < 0) {
+        interval one = {1.0, 1.0};
+        return div_ii(one, interval_pow_int(base, -exp));
+    }
+    // Exact handling for even integer powers on signed intervals
+    // Example: [-2, 3]^2 = [0, 9]
+    if (exp % 2 == 0) {
+        double min_val, max_val;
+        double abs_inf = fabs(base.INF);
+        double abs_sup = fabs(base.SUP);
+
+        if (base.INF <= 0.0 && base.SUP >= 0.0) {
+            min_val = 0.0;
+        } else {
+            min_val = pow(fmin(abs_inf, abs_sup), exp);
+        }
+        max_val = pow(fmax(abs_inf, abs_sup), exp);
+
+        interval res = {min_val, max_val};
+        return res;
+    }
+
+    // Odd integer powers are monotonic across all reals
+    // Example: [-2, 3]^3 = [-8, 27]
+    interval res = {pow(base.INF, exp), pow(base.SUP, exp)};
+    return res;
+}
+
 static int xintervallib_pow(lua_State *L)
 {
     interval i = xintervallib_get(L, 1);
     interval e = xintervallib_get(L, 2);
+    // Optimization: If exponent is a point interval representing an integer
+    if (e.INF == e.SUP && floor(e.INF) == e.INF) {
+        int exp_int = (int)e.INF;
+        return xintervallib_push(L, interval_pow_int(i, exp_int));
+    }
+    // Real power i^e using exp(e * log(i)) requires base > 0
+    if (i.INF <= 0.0) {
+        // Base contains <= 0 with non-integer exponent -> Domain error
+        interval err = {NAN, NAN};
+        return xintervallib_push(L, err);
+    }
+    // Standard continuous power formula for strictly positive base
     return xintervallib_push(L, j_exp(mul_ii(e, j_log(i))));
 }
 

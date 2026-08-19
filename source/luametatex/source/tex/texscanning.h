@@ -81,7 +81,6 @@ extern void        tex_scan_optional_equals           (void);
 extern int         tex_scan_cardinal                  (int optional_equal, unsigned *value, int dontbark);
 extern halfword    tex_scan_integer                   (int optional_equal, int *radix, int *grouped);
 extern void        tex_scan_integer_validate          (void);
-extern halfword    tex_scan_positive_integer          (int optional_equal);
 extern halfword    tex_scan_scale                     (int optional_equal);
 extern halfword    tex_scan_scale_factor              (int optional_equal);
 extern halfword    tex_scan_clipped_scale_factor      (int optional_equal);

@@ -1,0 +1,326 @@
+if not modules then modules = { } end modules ['mlib-thr-imp-external'] = {
+    version   = 1.001,
+    optimize  = true,
+    comment   = "companion to mlib-ctx.mkiv",
+    author    = "Hans Hagen, Mikael Sundqvist",
+    copyright = "PRAGMA ADE / ConTeXt Development Team",
+    license   = "see context related readme files",
+}
+
+local type, tonumber = type, tonumber
+local replacesuffix = file.replacesuffix
+
+local starttiming    = statistics.starttiming
+local stoptiming     = statistics.stoptiming
+local elapsedtime    = statistics.elapsedtime
+local ioflush        = io.flush
+
+local newpoints      = vector.points.new
+local getpoint       = vector.points.get
+
+local newnormals     = vector.normals.new
+
+local vectornewmesh  = vector.mesh.new
+local vectorgetmesh  = vector.mesh.get
+local vectormakemesh = vector.contour.makemesh
+
+local report = logs.reporter("metapost 3D")
+
+local external = { }
+
+-- THIS IS A QUICK HACK ... TODO ...
+
+-- # (%d+) vertex positions
+-- # 0 UV coordinates
+-- # 0 vertex normals
+-- # Mesh '' with 2000 faces
+
+-- local match, gmatch = string.match, string.gmatch
+--
+-- loaders.obj = function(filename,scale)
+--     local data  = io.loaddata(filename) or ""
+--     local count = tonumber(match(data,"# (%d+) vertex positions"))
+--     if count then
+--         local vertices     = newindex(count)
+--         local triangles    = { }
+--         local nofvertices  = 0
+--         local noftriangles = 0
+--         local nofnormals   = 0
+--         for x, y, z in gmatch(data,"v%s+(%S+)%s+(%S+)%s+(%S+)") do
+--             nofvertices = nofvertices + 1
+--             local vx = tonumber(x)
+--             local vy = tonumber(y)
+--             local vz = tonumber(z)
+--             if scale ~= 1 then
+--                 vx = vx * scale
+--                 vy = vy * scale
+--                 vz = vz * scale
+--             end
+--             vertices[nofvertices] = { vx, vy, vz, 0, 0, 1 }
+--         end
+--         -- officially we should have a normals list and then the index after the // has to be
+--         -- used but we delay that
+--         for x, y, z in gmatch(data,"vn%s+(%S+)%s+(%S+)%s+(%S+)") do
+--             nofnormals = nofnormals + 1
+--             local v = vertices[nofnormals]
+--             v[4], v[5], v[6] = normalize(tonumber(x),tonumber(y),tonumber(z))
+--         end
+--         local normals = nofnormals > 0
+--         for a, b, c in gmatch(data,"f%s+([%d%+%-%.e]+)%S+%s+([%d%+%-%.e]+)%S+%s+([%d%+%-%.e]+)%S+") do
+--             noftriangles = noftriangles + 1
+--             triangles[noftriangles] = {
+--                 tonumber(a),
+--                 tonumber(b),
+--                 tonumber(c),
+--             }
+--         end
+--         -- convert to userdata
+--         local nofvertices  = #vertices
+--         local noftriangles = #triangles
+--         local mvertices    = newpoints(nofvertices,1)
+--         local mtriangles   = vectornewmesh(triangles,3)
+--         for i=1,nofvertices do
+--             mvertices(vertices[i])
+--         end
+--         vertices  = mvertices
+--         triangles = mtriangles
+--         return {
+--             filename  = filename,
+--             count     = count,
+--             vertices  = vertices,
+--             triangles = triangles,
+--             normals   = normals,
+--         }
+--     end
+-- end
+
+local openstream     = utilities.streams.open
+local readstring     = utilities.streams.readstring
+local readcardinal4  = utilities.streams.readcardinal4le
+local readcardinal2  = utilities.streams.readcardinal2le
+local readfloat      = utilities.streams.readfloatle
+local readfloat6     = utilities.streams.readfloatle6
+local readfloat12    = utilities.streams.readfloatle12
+local setposition    = utilities.streams.setposition
+local getposition    = utilities.streams.getposition
+
+local writecardinal4 = fio.writecardinal4le
+local writecardinal2 = fio.writecardinal2le
+local writefloat     = fio.writefloatle
+
+local meshbanner <const> = "context lmtx mesh : 1.00 : "
+
+local function meshspecification(specification,keys)
+    local t = { }
+    for i=1,#keys do
+        local k = keys[i]
+        t[k] = specification[k]
+    end
+    return t
+end
+
+local function meshstlhash(specification,keys)
+    return md5.HEX(table.sequenced(meshspecification(specification,keys)))
+end
+
+local checkers = { }
+local loaders  = { }
+local savers   = { }
+
+function checkers.stl(filename,checksum,suffix)
+    local n = replacesuffix(filename,suffix or "stl")
+    local f = openstream(n)
+    if f then
+        local s = readstring(f,80)
+        local c = string.match(s,"^" .. meshbanner .. "(%S*)")
+        return c == checksum
+    end
+end
+
+function checkers.lua(filename,checksum)
+    return lfs.isfile(replacesuffix(filename,"lmtmesh"))
+end
+
+function savers.stl(filename,vertices,triangles,checksum)
+    local count = #triangles
+    if count > 0 then
+        local n = replacesuffix(filename,"stl")
+        local f = io.open(n,"wb")
+        local c = checksum or ""
+        if f then
+            local banner = meshbanner .. c
+            f:write(banner .. string.rep(" ",80 - #banner))
+            writecardinal4(f,count)
+            for i=1,count do
+                local p1, p2, p3 = vectorgetmesh(triangles,i)
+                local v1x, v1y, v1z, n1x, n1y, n1z = getpoint(vertices,p1)
+                local v2x, v2y, v2z, n2x, n2y, n2z = getpoint(vertices,p2)
+                local v3x, v3y, v3z, n3x, n3y, n3z = getpoint(vertices,p3)
+                writefloat(f,(n1x + n2x + n3x)/3)
+                writefloat(f,(n1y + n2y + n3y)/3)
+                writefloat(f,(n1z + n2z + n3z)/3)
+                writefloat(f,v1x)
+                writefloat(f,v1y)
+                writefloat(f,v1z)
+                writefloat(f,v2x)
+                writefloat(f,v2y)
+                writefloat(f,v2z)
+                writefloat(f,v3x)
+                writefloat(f,v3y)
+                writefloat(f,v3z)
+                writecardinal2(f,0)
+            end
+            f:close()
+        end
+    end
+end
+
+-- todo: no need for triangles when identity
+
+function savers.lua(filename,vertices,triangles,checksum)
+    local n = replacesuffix(resolvers.findfile(filename),"lmtmesh")
+    local t = {
+        kind          = "lmtx mesh file",
+        checksum      = checksum,
+     -- specification = meshspecification(specification,keys),
+        vertices      = vector.points.totable(vertices),
+        triangles     = vector.mesh.totable(triangles),
+    }
+    table.save(n,t)
+end
+
+function loaders.stl(filename)
+    local n = replacesuffix(resolvers.findfile(filename),"stl")
+    local f = openstream(n)
+    if f then
+        local banner       = readstring(f,80)
+        print(banner)
+        local noftriangles = readcardinal4(f)
+        local nofvertices  = noftriangles * 3
+        local vertices     = newpoints(nofvertices,1)
+        local normals      = false
+        local position     = getposition(f)
+        for i=1,math.min(10,noftriangles) do
+            local nx, ny, nz = readfloat12(f)
+            if nx ~= 0 or ny ~= 0 or nz ~= 0 then
+                normals = true
+                break
+            end
+        end
+        if normals then
+            normals = newnormals(noftriangles)
+        end
+        setposition(f,position)
+        for i=1,noftriangles do
+            local nx,  ny,  nz,
+                  v1x, v1y, v1z,
+                  v2x, v2y, v2z,
+                  v3x, v3y, v3z = readfloat12(f)
+            readcardinal2(f) -- attributes
+            vertices(v1x,v1y,v1z)
+            vertices(v2x,v2y,v2z)
+            vertices(v3x,v3y,v3z)
+            if normals then
+                normals(nx,ny,nz)
+            end
+        end
+        if nofvertices == #vertices then
+            local triangles = vectormakemesh(noftriangles,1,5)
+            return {
+                filename   = filename,
+                count      = nofvertices, -- not needed
+                vertices   = vertices,
+                triangles  = triangles,
+                normals    = normals,
+                hasnormals = normals and true or false,
+            }
+        end
+    end
+end
+
+function loaders.lua(filename)
+    local name = replacesuffix(resolvers.findfile(filename),"lmtmesh")
+    local mesh = table.load(name)
+    if mesh then
+        return mesh
+    end
+end
+
+loaders.lmtmesh = loaders.lua
+
+checkers.default = checkers.stl
+loaders .default = loaders .stl
+savers  .default = savers  .stl
+
+function external.load(filename)
+    local loader = loaders[file.suffix(filename)] or loaders.default
+    starttiming("thr",true) ioflush()
+    local mesh = loader(filename)
+    stoptiming("thr")
+    report("loading %a, status %l, runtime %s",filename,mesh,elapsedtime("thr"))
+    return mesh
+end
+
+function external.save(filename,vertices,triangles,checksum)
+    local saver = savers[file.suffix(filename)] or savers.default
+    starttiming("thr",true) ioflush()
+    saver(filename,vertices,triangles,checksum)
+    stoptiming("thr")
+    report("saving %a, runtime %s",filename,elapsedtime("thr"))
+end
+
+function external.check(filename,checksum)
+    local checker = checkers[file.suffix(filename)] or checkers.default
+    return checker(filename,checksum)
+end
+
+local function prepared(specification,keys,cache)
+    local name = specification.id
+    if type(cache) ~= "string" or cache == "" then
+        cache = "stl"
+    end
+    if type(name) ~= "string" or name == "" then
+        name = "unknownmesh"
+    end
+    return file.replacesuffix(name,cache), meshstlhash(specification,keys)
+end
+
+-- function external.autoload(specification,keys,cache)
+--     if specification and keys then
+--         local filename, checksum = prepared(specification,keys,cache)
+--         if external.check(filename,checksum) then
+--             return external.load(filename,vertices,triangles,checksum)
+--         end
+--     end
+-- end
+
+-- function external.autosave(specification,keys,vertices,triangles,cache)
+--     if specification and keys and vertices and triangles then
+--         local filename, checksum = prepared(specification,keys,cache)
+--         if not external.check(filename,checksum) then
+--             return external.save(filename,vertices,triangles,checksum)
+--         end
+--     end
+-- end
+
+-- local memory = { }
+--
+-- function checkers.memory(name,checksum)
+--     local m = memory[name]
+--     return m and m.checksum == checksum
+-- end
+--
+-- function savers.memory(name,vertices,triangles,checksum)
+--     memory[name] = {
+--         cached    = true,
+--         checksum  = checksum,
+--         vertices  = vertices,
+--         triangles = triangles,
+--     }
+-- end
+--
+-- function loaders.memory(name)
+--     return memory[name]
+-- end
+
+return external

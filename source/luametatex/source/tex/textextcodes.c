@@ -71,6 +71,9 @@ static void tex_aux_initialize_catcodes(void)
 
 void tex_set_cat_code(int h, int n, halfword v, int gl)
 {
+    if (! tex_valid_catcode_table(h)) {
+        return;
+    }
     sa_tree tree = lmt_catcode_state.catcode_heads[h];
     if (! tree) {
         sa_tree_item item = { .uint_value = CATCODEDEFAULTS };
@@ -93,6 +96,9 @@ void tex_set_cat_code(int h, int n, halfword v, int gl)
 
 halfword tex_get_cat_code(int h, int n)
 {
+    if (! tex_valid_catcode_table(h)) {
+        return CATCODEDEFAULT;
+    }
     sa_tree tree = lmt_catcode_state.catcode_heads[h];
     if (! tree) {
         sa_tree_item item = { .uint_value = CATCODEDEFAULTS };
@@ -115,6 +121,9 @@ halfword tex_get_cat_code(int h, int n)
 
 void tex_unsave_cat_codes(int h, int gl)
 {
+    if (h < 0 || h >= max_n_of_catcode_tables) {
+        return;
+    }
     if (h > lmt_catcode_state.catcode_max) {
         lmt_catcode_state.catcode_max = h;
     }
@@ -127,6 +136,9 @@ void tex_unsave_cat_codes(int h, int gl)
 
 void tex_restore_cat_codes(int h, int level)
 {
+    if (h < 0 || h >= max_n_of_catcode_tables) {
+        return;
+    }
     if (h > lmt_catcode_state.catcode_max) {
         lmt_catcode_state.catcode_max = h;
     }
@@ -158,22 +170,37 @@ static void tex_aux_dump_catcodes(dumpstream f)
 
 static void tex_aux_undump_catcodes(dumpstream f)
 {
-    int total, nibbled;
-    sa_free_array(lmt_catcode_state.catcode_heads);
-    sa_free_array(lmt_catcode_state.catcode_valid);
-    tex_aux_allocate_catcodes();
-    undump_int(f, lmt_catcode_state.catcode_max);
+    int catcode_max, total, nibbled;
+    undump_int(f, catcode_max);
     undump_int(f, total);
     undump_int(f, nibbled);
-    if (nibbled == nibbled_catcodes) { 
-        for (int k = 0; k < total; k++) {
-            int x;
-            undump_int(f, x);
-            lmt_catcode_state.catcode_heads[x] = sa_undump_tree(f);
-            lmt_catcode_state.catcode_valid[x] = 1;
-        }
-    } else { 
+    if (catcode_max < 0 || catcode_max >= max_n_of_catcode_tables || total < 0 || total > catcode_max + 1) {
+        tex_fatal_undump_error("catcodes");
+        return;
+    } else if (nibbled != nibbled_catcodes) {
         tex_fatal_undump_error("nibbled catcodes mismatch");
+        return;
+    }
+    if (lmt_catcode_state.catcode_heads) {
+        for (int k = 0; k < max_n_of_catcode_tables; k++) {
+            if (lmt_catcode_state.catcode_heads[k]) {
+                sa_destroy_tree(lmt_catcode_state.catcode_heads[k]);
+            }
+        }
+    }
+    lmt_catcode_state.catcode_heads = sa_free_array(lmt_catcode_state.catcode_heads);
+    lmt_catcode_state.catcode_valid = sa_free_array(lmt_catcode_state.catcode_valid);
+    tex_aux_allocate_catcodes();
+    lmt_catcode_state.catcode_max = catcode_max;
+    for (int k = 0; k < total; k++) {
+        int x;
+        undump_int(f, x);
+        if (x < 0 || x > catcode_max || lmt_catcode_state.catcode_valid[x]) {
+            tex_fatal_undump_error("catcodes");
+            return;
+        }
+        lmt_catcode_state.catcode_heads[x] = sa_undump_tree(f);
+        lmt_catcode_state.catcode_valid[x] = 1;
     }
 }
 
@@ -184,7 +211,7 @@ int tex_valid_catcode_table(int h)
 
 void tex_copy_cat_codes(int from, int to)
 {
-    if (from < 0 || from >= max_n_of_catcode_tables || lmt_catcode_state.catcode_valid[from] == 0) {
+    if (from < 0 || from >= max_n_of_catcode_tables || to < 0 || to >= max_n_of_catcode_tables || lmt_catcode_state.catcode_valid[from] == 0) {
         exit(EXIT_FAILURE);
     } else {
         if (to > lmt_catcode_state.catcode_max) {
@@ -219,11 +246,15 @@ int get_cat_code_table_default(int h)
 
 void tex_initialize_cat_codes(int h)
 {
+    if (h < 0 || h >= max_n_of_catcode_tables) {
+        return;
+    }
     if (h > lmt_catcode_state.catcode_max) {
         lmt_catcode_state.catcode_max = h;
     }
     sa_destroy_tree(lmt_catcode_state.catcode_heads[h]);
     lmt_catcode_state.catcode_heads[h] = NULL;
+    lmt_catcode_state.catcode_valid[h] = 1;
     tex_set_cat_code(h, '\r', end_line_cmd, 1);
     tex_set_cat_code(h, ' ', spacer_cmd, 1);
     tex_set_cat_code(h, '\\', escape_cmd, 1);
@@ -240,8 +271,8 @@ void tex_initialize_cat_codes(int h)
 
 static void tex_aux_free_catcodes(void)
 {
-    for (int k = 0; k <= lmt_catcode_state.catcode_max; k++) {
-        if (lmt_catcode_state.catcode_valid[k]) {
+    for (int k = 0; k < max_n_of_catcode_tables; k++) {
+        if (lmt_catcode_state.catcode_heads[k]) {
             sa_destroy_tree(lmt_catcode_state.catcode_heads[k]);
         }
     }
@@ -352,6 +383,7 @@ static void tex_aux_dump_lccodes(dumpstream f)
 
 static void tex_aux_undump_lccodes(dumpstream f)
 {
+    sa_destroy_tree(lmt_luscode_state.lccode_head);
     lmt_luscode_state.lccode_head = sa_undump_tree(f);
 }
 
@@ -397,6 +429,7 @@ static void tex_aux_dump_uccodes(dumpstream f)
 
 static void tex_aux_undump_uccodes(dumpstream f)
 {
+    sa_destroy_tree(lmt_luscode_state.uccode_head);
     lmt_luscode_state.uccode_head = sa_undump_tree(f);
 }
 
@@ -420,8 +453,8 @@ void tex_set_sf_code(int n, halfword v, int gl)
 
 void tex_set_sp_code(int n, halfword v, int gl)
 {
-    int code = sa_return_item_4(lmt_luscode_state.sfcode_head, n);
-    sa_tree_item item = { .int_value = ((v << 16) & 0xFFFF0000) | (code & 0x0000FFFF) };
+    unsigned int code = (unsigned int) sa_return_item_4(lmt_luscode_state.sfcode_head, n);
+    sa_tree_item item = { .uint_value = (((unsigned int) v & 0xFFFFu) << 16) | (code & 0x0000FFFFu) };
     sa_set_item_4(lmt_luscode_state.sfcode_head, n, item, gl);
 }
 
@@ -433,7 +466,8 @@ halfword tex_get_sf_code(int n)
 
 halfword tex_get_sp_code(int n)
 {
-    return (sa_return_item_4(lmt_luscode_state.sfcode_head, n) >> 16) & 0xFFFF;
+    unsigned int value = ((unsigned int) sa_return_item_4(lmt_luscode_state.sfcode_head, n) >> 16) & 0xFFFFu;
+    return (value & 0x8000u) ? (halfword) (value - 0x10000u) : (halfword) value;
 }
 
 static void tex_aux_unsave_sfcodes(int gl)
@@ -454,6 +488,7 @@ static void tex_aux_dump_sfcodes(dumpstream f)
 
 static void tex_aux_undump_sfcodes(dumpstream f)
 {
+    sa_destroy_tree(lmt_luscode_state.sfcode_head);
     lmt_luscode_state.sfcode_head = sa_undump_tree(f);
 }
 
@@ -497,6 +532,7 @@ static void tex_aux_dump_hccodes(dumpstream f)
 
 static void tex_aux_undump_hccodes(dumpstream f)
 {
+    sa_destroy_tree(lmt_luscode_state.hccode_head);
     lmt_luscode_state.hccode_head = sa_undump_tree(f);
 }
 
@@ -537,6 +573,7 @@ static void tex_aux_dump_hmcodes(dumpstream f)
 
 static void tex_aux_undump_hmcodes(dumpstream f)
 {
+    sa_destroy_tree(lmt_luscode_state.hmcode_head);
     lmt_luscode_state.hmcode_head = sa_undump_tree(f);
 }
 
@@ -576,6 +613,7 @@ static void tex_aux_dump_amcodes(dumpstream f)
 
 static void tex_aux_undump_amcodes(dumpstream f)
 {
+    sa_destroy_tree(lmt_luscode_state.amcode_head);
     lmt_luscode_state.amcode_head = sa_undump_tree(f);
 }
 
@@ -618,6 +656,7 @@ static void tex_aux_dump_cccodes(dumpstream f)
 
 static void tex_aux_undump_cccodes(dumpstream f)
 {
+    sa_destroy_tree(lmt_luscode_state.cccode_head);
     lmt_luscode_state.cccode_head = sa_undump_tree(f);
 }
 
@@ -645,7 +684,7 @@ static void tex_aux_free_cccodes(void)
 
 void tex_set_hj_code(int h, int n, halfword v, int gl)
 {
-    if (h >= 0 && h <= lmt_language_state.language_data.top) {
+    if (h >= 0 && h <= lmt_language_state.language_data.top && lmt_language_state.languages[h] && character_in_range(n) && character_in_range(v)) {
         sa_tree tree = lmt_language_state.languages[h]->hjcode_head;
         if (! tree) {
             sa_tree_item item = { .int_value = HJCODEDEFAULT };
@@ -663,7 +702,7 @@ void tex_set_hj_code(int h, int n, halfword v, int gl)
 
 halfword tex_get_hj_code(int h, int n)
 {
-    if (h >= 0 && h <= lmt_language_state.language_data.top) {
+    if (h >= 0 && h <= lmt_language_state.language_data.top && lmt_language_state.languages[h] && character_in_range(n)) {
         sa_tree tree = lmt_language_state.languages[h]->hjcode_head;
         if (! tree) {
             tree = lmt_luscode_state.lccode_head;
@@ -676,7 +715,7 @@ halfword tex_get_hj_code(int h, int n)
 
 void tex_dump_language_hj_codes(dumpstream f, int h)
 {
-    if (h >= 0 && h <= lmt_language_state.language_data.top) {
+    if (h >= 0 && h <= lmt_language_state.language_data.top && lmt_language_state.languages[h]) {
         sa_tree tree = lmt_language_state.languages[h]->hjcode_head;
         if (tree) {
             dump_via_uchar(f, 1);
@@ -691,14 +730,13 @@ void tex_dump_language_hj_codes(dumpstream f, int h)
 
 void tex_undump_language_hj_codes(dumpstream f, int h)
 {
-    if (h >= 0 && h <= lmt_language_state.language_data.top) {
+    if (h >= 0 && h <= lmt_language_state.language_data.top && lmt_language_state.languages[h]) {
         unsigned char marker;
         undump_uchar(f, marker);
-        if (marker) {
-            sa_free_array(lmt_language_state.languages[h]->hjcode_head);
+        sa_destroy_tree(lmt_language_state.languages[h]->hjcode_head);
+        lmt_language_state.languages[h]->hjcode_head = NULL;
+        if (marker == 1) {
             lmt_language_state.languages[h]->hjcode_head = sa_undump_tree(f);
-        } else {
-            lmt_language_state.languages[h]->hjcode_head = NULL;
         }
     } else {
        /* error */
@@ -707,7 +745,7 @@ void tex_undump_language_hj_codes(dumpstream f, int h)
 
 void tex_hj_codes_from_lc_codes(int h)
 {
-    if (h >= 0 && h <= lmt_language_state.language_data.top) {
+    if (h >= 0 && h <= lmt_language_state.language_data.top && lmt_language_state.languages[h]) {
         sa_tree tree = lmt_language_state.languages[h]->hjcode_head;
         if (tree) {
             sa_destroy_tree(tree);
@@ -812,7 +850,7 @@ void tex_run_case_shift(halfword code)
                 set_token_info(p, t - c + i);
             }
         } else if (tex_is_active_cs(cs_text(t - cs_token_flag))) {
-            halfword c = active_cs_value(cs_text(t - cs_token_flag));
+            halfword c = tex_active_cs_value(cs_text(t - cs_token_flag));
             halfword i = upper ? tex_get_uc_code(c) : tex_get_lc_code(c);
             if (i) {
                 set_token_info(p, tex_active_to_cs(i, 1) + cs_token_flag);
@@ -886,7 +924,7 @@ void tex_show_code_stack()
         case hyphenation_cmd:
             switch (cur_chr) {
                 case hjcode_code: 
-                    if (language_par >= 0 && language_par <= lmt_language_state.language_data.top) {
+                    if (language_par >= 0 && language_par <= lmt_language_state.language_data.top && lmt_language_state.languages[language_par]) {
                         head = lmt_language_state.languages[language_par]->hjcode_head;
                     }
                     break;
@@ -942,4 +980,3 @@ void tex_get_sp_codes(halfword chr, halfword *sf, halfword *sp)
         *sp = 0;
     }
 }
-

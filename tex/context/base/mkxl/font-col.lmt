@@ -298,7 +298,7 @@ function collections.clonevector(name)
                     local unic = unicode + offset - start
                     if isprivate(unic) or isprivate(unicode) then
                         -- ignore
-                    elseif not newchars[target] then
+                    elseif not newchars[unic] then
                         -- not in font
                     elseif force or (not vector[unic] and not oldchars[unic]) then
                         vector[unic] = cloneid

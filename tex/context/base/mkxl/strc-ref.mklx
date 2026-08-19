@@ -1340,12 +1340,14 @@
    \strc_references_stop_goto}
 
 \permanent\protected\def\strc_references_in
-  {\strc_references_start_goto
+  {\dontleavehmode
+   \strc_references_start_goto
    \let\currentreferencecontent\currentreferencedefault
    \strc_references_pickup_goto}
 
 \permanent\protected\def\strc_references_at
-  {\strc_references_start_goto
+  {\dontleavehmode
+   \strc_references_start_goto
    \let\currentreferencecontent\currentreferencepage
    \strc_references_pickup_goto}
 

@@ -208,9 +208,25 @@ static int xmathlib_gamma(lua_State *L)
     return 1;
 }
 
+// static int xmathlib_hypot(lua_State *L)
+// {
+//     lua_pushnumber(L, hypot(luaL_checknumber(L, 1), luaL_checknumber(L, 2)));
+//     return 1;
+// }
+
 static int xmathlib_hypot(lua_State *L)
 {
-    lua_pushnumber(L, hypot(luaL_checknumber(L, 1), luaL_checknumber(L, 2)));
+    lua_Number h = 0;
+    int top = lua_gettop(L);
+    if (top > 1) {
+        h = (lua_Number) hypot(luaL_checknumber(L, 1), luaL_checknumber(L, 2));
+        if (top > 2) {
+            h = (lua_Number) hypot(h, luaL_checknumber(L, 3));
+        }
+    } else {
+        h = luaL_checknumber(L, 1);
+    }
+    lua_pushnumber(L, h);
     return 1;
 }
 

@@ -1,6 +1,6 @@
 -- merged file : c:/data/develop/context/sources/luatex-fonts-merged.lua
 -- parent file : c:/data/develop/context/sources/luatex-fonts.lua
--- merge date  : 2026-07-29 11:43
+-- merge date  : 2026-08-20 00:02
 
 do -- begin closure to overcome local limits and interference
 
@@ -13005,6 +13005,7 @@ local function readdata(f,offset,specification)
  readtable("vmtx",f,fontdata,specification)
  readtable("vorg",f,fontdata,specification)
  readtable("post",f,fontdata,specification)
+ readtable("gasp",f,fontdata,specification)
  readtable("mvar",f,fontdata,specification)
  readtable("hvar",f,fontdata,specification)
  readtable("vvar",f,fontdata,specification)
@@ -13022,6 +13023,7 @@ local function readdata(f,offset,specification)
  readtable("cblc",f,fontdata,specification)
  readtable("ebdt",f,fontdata,specification)
  readtable("eblc",f,fontdata,specification)
+ readtable("ebsc",f,fontdata,specification)
  readtable("kern",f,fontdata,specification)
  readtable("gsub",f,fontdata,specification)
  readtable("gpos",f,fontdata,specification)
@@ -13233,13 +13235,22 @@ function readers.loadfont(filename,n,instance)
     version=getname(fontdata,"version"),
     cidinfo=fontdata.cidinfo,
     mathconstants=fontdata.mathconstants,
+    gasp=fontdata.gasp,
     colorpalettes=fontdata.colorpalettes,
     colorpaintdata=fontdata.colorpaintdata,
     colorpaintlist=fontdata.colorpaintlist,
     colorlinesdata=fontdata.colorlinesdata,
     coloraffinedata=fontdata.coloraffinedata,
+    colorclips=fontdata.colorclips,
+    colorpaletteinfo=fontdata.colorpaletteinfo,
     svgshapes=fontdata.svgshapes,
     pngshapes=fontdata.pngshapes,
+    bitmapshapes=fontdata.bitmapshapes,
+    bitmapstrikes=fontdata.bitmapstrikes,
+    bitmapformats=fontdata.bitmapformats,
+    bitmapscales=fontdata.bitmapscales,
+    attachments=fontdata.attachments,
+    ligaturecarets=fontdata.ligaturecarets,
     variabledata=fontdata.variabledata,
     foundtables=fontdata.foundtables,
    },
@@ -20396,9 +20407,10 @@ local scripts=allocate {
  ["bamu"]="bamum",
  ["bass"]="bassa vah",
  ["batk"]="batak",
- ["beng"]="bengali",
+ ["beng"]="bangla",
  ["bhks"]="bhaiksuki",
- ["bng2"]="bengali variant 2",
+ ["bng2"]="bangla v.2",
+ ["berf"]="beria erfe",
  ["bopo"]="bopomofo",
  ["brah"]="brahmi",
  ["brai"]="braille",
@@ -20415,18 +20427,19 @@ local scripts=allocate {
  ["cpmn"]="cypro-minoan",
  ["cprt"]="cypriot syllabary",
  ["cyrl"]="cyrillic",
- ["dev2"]="devanagari variant 2",
+ ["dev2"]="devanagari v.2",
  ["deva"]="devanagari",
  ["diak"]="dives akuru",
  ["dogr"]="dogra",
  ["dsrt"]="deseret",
  ["dupl"]="duployan",
- ["egyp"]="egyptian heiroglyphs",
+ ["egyp"]="egyptian hieroglyphs",
  ["elba"]="elbasan",
  ["elym"]="elymaic",
  ["ethi"]="ethiopic",
+ ["gara"]="garay",
  ["geor"]="georgian",
- ["gjr2"]="gujarati variant 2",
+ ["gjr2"]="gujarati v.2",
  ["glag"]="glagolitic",
  ["gong"]="gunjala gondi",
  ["gonm"]="masaram gondi",
@@ -20434,8 +20447,9 @@ local scripts=allocate {
  ["gran"]="grantha",
  ["grek"]="greek",
  ["gujr"]="gujarati",
- ["gur2"]="gurmukhi variant 2",
+ ["gur2"]="gurmukhi v.2",
  ["guru"]="gurmukhi",
+ ["gukh"]="gurung khema",
  ["hang"]="hangul",
  ["hani"]="cjk ideographic",
  ["hano"]="hanunoo",
@@ -20454,49 +20468,53 @@ local scripts=allocate {
  ["khmr"]="khmer",
  ["khoj"]="khojki",
  ["kits"]="khitan small script",
- ["knd2"]="kannada variant 2",
+ ["knd2"]="kannada v.2",
  ["knda"]="kannada",
  ["kthi"]="kaithi",
- ["lana"]="tai tham",
+ ["kawi"]="kawi",
+ ["krai"]="kirat rai",
+ ["lana"]="tai tham (lanna)",
  ["lao" ]="lao",
  ["latn"]="latin",
  ["lepc"]="lepcha",
  ["limb"]="limbu",
  ["lina"]="linear a",
  ["linb"]="linear b",
- ["lisu"]="lisu",
+ ["lisu"]="lisu (fraser)",
  ["lyci"]="lycian",
  ["lydi"]="lydian",
  ["mahj"]="mahajani",
  ["maka"]="makasar",
- ["mand"]="mandaic and mandaean",
+ ["mand"]="mandaic, mandean",
  ["mani"]="manichaean",
  ["marc"]="marchen",
- ["math"]="mathematical alphanumeric symbols",
+ ["math"]="mathematical text layout",
  ["medf"]="medefaidrin",
  ["mend"]="mende kikakui",
  ["merc"]="meroitic cursive",
  ["mero"]="meroitic hieroglyphs",
- ["mlm2"]="malayalam variant 2",
+ ["mlm2"]="malayalam v.2",
  ["mlym"]="malayalam",
  ["modi"]="modi",
  ["mong"]="mongolian",
  ["mroo"]="mro",
- ["mtei"]="meitei Mayek",
+ ["mtei"]="meitei mayek",
  ["mult"]="multani",
  ["musc"]="musical symbols",
- ["mym2"]="myanmar variant 2",
+ ["mym2"]="myanmar v.2",
  ["mymr"]="myanmar",
  ["nand"]="nandinagari",
  ["narb"]="old north arabian",
  ["nbat"]="nabataean",
+ ["nagm"]="nag mundari",
  ["newa"]="newa",
- ["nko" ]='n"ko',
+ ["nko" ]="n'ko",
  ["nshu"]="nüshu",
  ["ogam"]="ogham",
  ["olck"]="ol chiki",
- ["orkh"]="old turkic and orkhon runic",
- ["ory2"]="odia variant 2",
+ ["onao"]="ol onal",
+ ["orkh"]="old turkic, orkhon runic",
+ ["ory2"]="odia v.2",
  ["orya"]="odia",
  ["osge"]="osage",
  ["osma"]="osmanya",
@@ -20520,6 +20538,7 @@ local scripts=allocate {
  ["shaw"]="shavian",
  ["shrd"]="sharada",
  ["sidd"]="siddham",
+ ["sidt"]="sidetic",
  ["sind"]="khudawadi",
  ["sinh"]="sinhala",
  ["sogd"]="sogdian",
@@ -20527,6 +20546,7 @@ local scripts=allocate {
  ["sora"]="sora sompeng",
  ["soyo"]="soyombo",
  ["sund"]="sundanese",
+ ["sunu"]="sunuwar",
  ["sylo"]="syloti nagri",
  ["syrc"]="syriac",
  ["tagb"]="tagbanwa",
@@ -20536,7 +20556,8 @@ local scripts=allocate {
  ["taml"]="tamil",
  ["tang"]="tangut",
  ["tavt"]="tai viet",
- ["tel2"]="telugu variant 2",
+ ["tayo"]="tai yo",
+ ["tel2"]="telugu v.2",
  ["telu"]="telugu",
  ["tfng"]="tifinagh",
  ["tglg"]="tagalog",
@@ -20544,11 +20565,15 @@ local scripts=allocate {
  ["thai"]="thai",
  ["tibt"]="tibetan",
  ["tirh"]="tirhuta",
+ ["todr"]="todhri",
+ ["tols"]="tolong siki",
  ["tnsa"]="tangsa",
- ["tml2"]="tamil variant 2",
+ ["tml2"]="tamil v.2",
  ["toto"]="toto",
+ ["tutg"]="tulu-tigalari",
  ["ugar"]="ugaritic cuneiform",
  ["vai" ]="vai",
+ ["vith"]="vithkuqi",
  ["wara"]="warang citi",
  ["wcho"]="wancho",
  ["xpeo"]="old persian cuneiform",
@@ -20558,10 +20583,12 @@ local scripts=allocate {
  ["zanb"]="zanabazar square",
 }
 local languages=allocate {
+ ["aaq" ]="eastern abenaki",
  ["aba" ]="abaza",
  ["abk" ]="abkhazian",
  ["ach" ]="acholi",
  ["acr" ]="achi",
+ ["acy" ]="cypriot arabic",
  ["ady" ]="adyghe",
  ["afk" ]="afrikaans",
  ["afr" ]="afar",
@@ -20580,7 +20607,8 @@ local languages=allocate {
  ["ark" ]="rakhine",
  ["asm" ]="assamese",
  ["ast" ]="asturian",
- ["ath" ]="athapaskan",
+ ["ath" ]="athapaskan languages",
+ ["ats" ]="gros ventre (atsina)",
  ["avn" ]="avatime",
  ["avr" ]="avar",
  ["awa" ]="awadhi",
@@ -20599,9 +20627,10 @@ local languages=allocate {
  ["bch" ]="bench",
  ["bcr" ]="bible cree",
  ["bdy" ]="bandjalang",
- ["bel" ]="belarussian",
+ ["bdc" ]="emberá-baudó",
+ ["bel" ]="belarusian",
  ["bem" ]="bemba",
- ["ben" ]="bengali",
+ ["ben" ]="bangla",
  ["bgc" ]="haryanvi",
  ["bgq" ]="bagri",
  ["bgr" ]="bulgarian",
@@ -20627,16 +20656,19 @@ local languages=allocate {
  ["brx" ]="bodo",
  ["bsh" ]="bashkir",
  ["bsk" ]="burushaski",
- ["bta" ]="batak alas kluet",
+ ["btk" ]="batak languages",
  ["btd" ]="batak dairi (pakpak)",
  ["bti" ]="beti",
  ["btm" ]="batak mandailing",
  ["bts" ]="batak simalungun",
  ["btx" ]="batak karo",
+ ["btz" ]="batak alas-kluet",
  ["bug" ]="bugis",
  ["byv" ]="medumba",
  ["cak" ]="kaqchikel",
  ["cat" ]="catalan",
+ ["cay" ]="cayuga",
+ ["cbg" ]="chimila",
  ["cbk" ]="zamboanga chavacano",
  ["cchn"]="chinantec",
  ["ceb" ]="cebuano",
@@ -20655,7 +20687,9 @@ local languages=allocate {
  ["chy" ]="cheyenne",
  ["cja" ]="western cham",
  ["cjm" ]="eastern cham",
+ ["cmi" ]="emberá-chamí",
  ["cmr" ]="comorian",
+ ["coo" ]="comox",
  ["cop" ]="coptic",
  ["cor" ]="cornish",
  ["cos" ]="corsican",
@@ -20667,6 +20701,7 @@ local languages=allocate {
  ["csl" ]="church slavonic",
  ["csy" ]="czech",
  ["ctg" ]="chittagonian",
+ ["cto" ]="emberá-catío",
  ["ctt" ]="wayanad chetti",
  ["cuk" ]="san blas kuna",
  ["dag" ]="dagbani",
@@ -20676,7 +20711,7 @@ local languages=allocate {
  ["dcr" ]="woods cree",
  ["deu" ]="german",
  ["dgo" ]="dogri (individual language)",
- ["dgr" ]="dogri (macro language)",
+ ["dgr" ]="dogri (macrolanguage)",
  ["dhg" ]="dhangu",
  ["dhv" ]="divehi (dhivehi, maldivian)",
  ["diq" ]="dimli",
@@ -20696,6 +20731,7 @@ local languages=allocate {
  ["efi" ]="efik",
  ["ell" ]="greek",
  ["emk" ]="eastern maninkakan",
+ ["emp" ]="northern emberá",
  ["eng" ]="english",
  ["erz" ]="erzya",
  ["esp" ]="spanish",
@@ -20706,14 +20742,14 @@ local languages=allocate {
  ["evn" ]="even",
  ["ewe" ]="ewe",
  ["fan" ]="french antillean",
- ["fan0"]=" fang",
+ ["fan0"]="fang",
  ["far" ]="persian",
  ["fat" ]="fanti",
  ["fin" ]="finnish",
  ["fji" ]="fijian",
  ["fle" ]="dutch (flemish)",
  ["fmp" ]="fe’fe’",
- ["fne" ]="forest nenets",
+ ["fne" ]="forest enets",
  ["fon" ]="fon",
  ["fos" ]="faroese",
  ["fra" ]="french",
@@ -20725,7 +20761,7 @@ local languages=allocate {
  ["ful" ]="fulah",
  ["fuv" ]="nigerian fulfulde",
  ["gad" ]="ga",
- ["gae" ]="scottish gaelic (gaelic)",
+ ["gae" ]="scottish gaelic",
  ["gag" ]="gagauz",
  ["gal" ]="galician",
  ["gar" ]="garshuni",
@@ -20749,7 +20785,7 @@ local languages=allocate {
  ["guz" ]="gusii",
  ["hai" ]="haitian (haitian creole)",
  ["hai0"]="haida",
- ["hal" ]="halam",
+ ["hal" ]="halam (falam chin)",
  ["har" ]="harauti",
  ["hau" ]="hausa",
  ["haw" ]="hawaiian",
@@ -20762,6 +20798,7 @@ local languages=allocate {
  ["hil" ]="hiligaynon",
  ["hin" ]="hindi",
  ["hma" ]="high mari",
+ ["hmd" ]="a-hmao",
  ["hmn" ]="hmong",
  ["hmo" ]="hiri motu",
  ["hnd" ]="hindko",
@@ -20769,6 +20806,7 @@ local languages=allocate {
  ["hri" ]="harari",
  ["hrv" ]="croatian",
  ["hun" ]="hungarian",
+ ["hur" ]="halkomelem",
  ["hye" ]="armenian",
  ["hye0"]="armenian east",
  ["iba" ]="iban",
@@ -20787,7 +20825,7 @@ local languages=allocate {
  ["ipph"]="phonetic transcription—ipa conventions",
  ["iri" ]="irish",
  ["irt" ]="irish traditional",
- ["uri" ]="irula",
+ ["iru" ]="irula",
  ["isl" ]="icelandic",
  ["ism" ]="inari sami",
  ["ita" ]="italian",
@@ -20797,11 +20835,13 @@ local languages=allocate {
  ["jav" ]="javanese",
  ["jbo" ]="lojban",
  ["jct" ]="krymchak",
+ ["jdt" ]="judeo-tat",
  ["jii" ]="yiddish",
  ["jud" ]="ladino",
  ["jul" ]="jula",
  ["kab" ]="kabardian",
  ["kab0"]="kabyle",
+ ["kbc" ]="kadiwéu",
  ["kac" ]="kachchi",
  ["kal" ]="kalenjin",
  ["kan" ]="kannada",
@@ -20814,6 +20854,7 @@ local languages=allocate {
  ["keb" ]="kebena",
  ["kek" ]="kekchi",
  ["kge" ]="khutsuri georgian",
+ ["kgf" ]="kube",
  ["kha" ]="khakass",
  ["khk" ]="khanty-kazim",
  ["khm" ]="khmer",
@@ -20826,11 +20867,13 @@ local languages=allocate {
  ["kis" ]="kisii",
  ["kiu" ]="kirmanjki",
  ["kjd" ]="southern kiwai",
+ ["kjj" ]="khinalug",
  ["kjp" ]="eastern pwo karen",
  ["kjz" ]="bumthangkha",
  ["kkn" ]="kokni",
  ["klm" ]="kalmyk",
  ["kmb" ]="kamba",
+ ["kmg" ]="kâte",
  ["kmn" ]="kumaoni",
  ["kmo" ]="komo",
  ["kms" ]="komso",
@@ -20857,6 +20900,7 @@ local languages=allocate {
  ["ksh0"]="ripuarian",
  ["ksi" ]="khasi",
  ["ksm" ]="kildin sami",
+ ["ksu" ]="khamyang",
  ["ksw" ]="s’gaw karen",
  ["kua" ]="kuanyama",
  ["kui" ]="kui",
@@ -20865,6 +20909,7 @@ local languages=allocate {
  ["kur" ]="kurdish",
  ["kuu" ]="kurukh",
  ["kuy" ]="kuy",
+ ["kvq" ]="geba karen",
  ["kwk" ]="kwakʼwala",
  ["kyk" ]="koryak",
  ["kyu" ]="western kayah",
@@ -20883,6 +20928,7 @@ local languages=allocate {
  ["lim" ]="limburgish",
  ["lin" ]="lingala",
  ["lis" ]="lisu",
+ ["liv" ]="liv",
  ["ljp" ]="lampung",
  ["lki" ]="laki",
  ["lma" ]="low mari",
@@ -20901,6 +20947,7 @@ local languages=allocate {
  ["lug" ]="ganda",
  ["luh" ]="luyia",
  ["luo" ]="luo",
+ ["lut" ]="lushootseed",
  ["lvi" ]="latvian",
  ["mad" ]="madura",
  ["mag" ]="magahi",
@@ -20921,6 +20968,7 @@ local languages=allocate {
  ["mdr" ]="mandar",
  ["men" ]="me'en",
  ["mer" ]="meru",
+ ["mev" ]="mano",
  ["mfa" ]="pattani malay",
  ["mfe" ]="morisyen",
  ["min" ]="minangkabau",
@@ -20942,7 +20990,7 @@ local languages=allocate {
  ["mok" ]="moksha",
  ["mol" ]="moldavian",
  ["mon" ]="mon",
- ["mnw" ]="thailand mon",
+ ["mont"]="thailand mon",
  ["mor" ]="moroccan",
  ["mos" ]="mossi",
  ["mri" ]="maori",
@@ -20978,18 +21026,22 @@ local languages=allocate {
  ["nld" ]="dutch",
  ["noe" ]="nimadi",
  ["nog" ]="nogai",
+ ["nop" ]="numanggang",
  ["nor" ]="norwegian",
  ["nov" ]="novial",
  ["nsm" ]="northern sami",
  ["nso" ]="northern sotho",
  ["nta" ]="northern tai",
  ["nto" ]="esperanto",
+ ["nuk" ]="nuu-chah-nulth",
  ["nym" ]="nyamwezi",
- ["nyn" ]="norwegian nynorsk",
+ ["nyn" ]="norwegian nynorsk (nynorsk, norwegian)",
  ["nza" ]="mbembe tigon",
  ["oci" ]="occitan",
  ["ocr" ]="oji-cree",
  ["ojb" ]="ojibway",
+ ["one" ]="oneida",
+ ["ono" ]="onondaga",
  ["ori" ]="odia",
  ["oro" ]="oromo",
  ["oss" ]="ossetian",
@@ -21010,12 +21062,13 @@ local languages=allocate {
  ["pih" ]="norfolk",
  ["pil" ]="filipino",
  ["plg" ]="palaung",
+ ["plg0"]="pilagá",
  ["plk" ]="polish",
  ["pms" ]="piemontese",
  ["pnb" ]="western panjabi",
  ["poh" ]="pocomchi",
  ["pon" ]="pohnpeian",
- ["pro" ]="provencal",
+ ["pro" ]="provençal / old provençal",
  ["ptg" ]="portuguese",
  ["pwo" ]="western pwo karen",
  ["qin" ]="chin",
@@ -21052,6 +21105,7 @@ local languages=allocate {
  ["scn" ]="sicilian",
  ["sco" ]="scots",
  ["scs" ]="north slavey",
+ ["see" ]="seneca",
  ["sek" ]="sekota",
  ["sel" ]="selkup",
  ["sfm" ]="small flowery miao",
@@ -21063,6 +21117,9 @@ local languages=allocate {
  ["sib" ]="sibe",
  ["sid" ]="sidamo",
  ["sig" ]="silte gurage",
+ ["sja" ]="epena",
+ ["sje" ]="pite sami",
+ ["sju" ]="ume sami",
  ["sks" ]="skolt sami",
  ["sky" ]="slovak",
  ["sla" ]="slavey",
@@ -21084,6 +21141,7 @@ local languages=allocate {
  ["srr" ]="serer",
  ["ssl" ]="south slavey",
  ["ssm" ]="southern sami",
+ ["str" ]="straits salish",
  ["stq" ]="saterland frisian",
  ["suk" ]="sukuma",
  ["sun" ]="sundanese",
@@ -21104,8 +21162,11 @@ local languages=allocate {
  ["tab" ]="tabasaran",
  ["taj" ]="tajiki",
  ["tam" ]="tamil",
+ ["taq" ]="tamasheq",
  ["tat" ]="tatar",
+ ["tbv" ]="tobo",
  ["tcr" ]="th-cree",
+ ["tdc" ]="emberá-tadó",
  ["tdd" ]="dehong dai",
  ["tel" ]="telugu",
  ["tet" ]="tetum",
@@ -21115,15 +21176,19 @@ local languages=allocate {
  ["tgy" ]="tigrinya",
  ["tha" ]="thai",
  ["tht" ]="tahitian",
+ ["thp" ]="thompson",
+ ["thv" ]="tahaggart tamahaq",
+ ["thz" ]="tayart tamajeq",
  ["tib" ]="tibetan",
  ["tiv" ]="tiv",
- ["tj;" ]="tai laing",
+ ["tjl" ]="tai laing",
  ["tkm" ]="turkmen",
  ["tli" ]="tlingit",
+ ["tly" ]="talysh",
  ["tmh" ]="tamashek",
  ["tmn" ]="temne",
  ["tna" ]="tswana",
- ["tne" ]="tundra nenets",
+ ["tne" ]="tundra enets",
  ["tng" ]="tonga",
  ["tod" ]="todo",
  ["tod0"]="toma",
@@ -21131,18 +21196,22 @@ local languages=allocate {
  ["trk" ]="turkish",
  ["tsg" ]="tsonga",
  ["tsj" ]="tshangla",
+ ["ttq" ]="tawallammat tamajaq",
  ["tua" ]="turoyo aramaic",
  ["tul" ]="tulu",
  ["tum" ]="tumbuka",
+ ["tus" ]="tuscarora",
  ["tuv" ]="tuvin",
  ["tvl" ]="tuvalu",
  ["twi" ]="twi",
  ["tyz" ]="tày",
  ["tzm" ]="tamazight",
  ["tzo" ]="tzotzil",
+ ["udi" ]="udi",
  ["udm" ]="udmurt",
  ["ukr" ]="ukrainian",
  ["umb" ]="umbundu",
+ ["upph"]="uralic phonetic alphabet",
  ["urd" ]="urdu",
  ["usb" ]="upper sorbian",
  ["uyg" ]="uyghur",
@@ -21155,12 +21224,15 @@ local languages=allocate {
  ["wa"  ]="wa",
  ["wag" ]="wagdi",
  ["war" ]="waray-waray",
+ ["wbl" ]="wakhi",
  ["wci" ]="waci gbe",
  ["wcr" ]="west-cree",
+ ["wdt" ]="wendat",
  ["wel" ]="welsh",
  ["wlf" ]="wolof",
  ["wln" ]="walloon",
  ["wtm" ]="mewati",
+ ["wyn" ]="wyandot",
  ["xbd" ]="lü",
  ["xhs" ]="xhosa",
  ["xjb" ]="minjangbal",
@@ -21174,19 +21246,20 @@ local languages=allocate {
  ["yap" ]="yapese",
  ["yba" ]="yoruba",
  ["ycr" ]="y-cree",
+ ["yuf" ]="havasupai-walapai-yavapai",
  ["ygp" ]="gepo",
  ["yic" ]="yi classic",
  ["yim" ]="yi modern",
  ["yna" ]="aluo",
  ["ywq" ]="wuding-luquan",
  ["zea" ]="zealandic",
- ["zgh" ]="standard morrocan tamazigh",
+ ["zgh" ]="standard moroccan tamazight",
  ["zha" ]="zhuang",
- ["zhh" ]="chinese, hong kong sar",
- ["zho" ]="chinese traditional, macao",
- ["zhp" ]="chinese phonetic",
- ["zhs" ]="chinese simplified",
- ["zht" ]="chinese traditional",
+ ["zhh" ]="chinese, traditional, hong kong sar",
+ ["zhp" ]="chinese, phonetic",
+ ["zhs" ]="chinese, simplified",
+ ["zht" ]="chinese, traditional",
+ ["zhtm"]="chinese, traditional, macao sar",
  ["znd" ]="zande",
  ["zul" ]="zulu",
  ["zza" ]="zazaki",
@@ -21197,7 +21270,8 @@ local features=allocate {
  ["abvm"]="above-base mark positioning",
  ["abvs"]="above-base substitutions",
  ["afrc"]="alternative fractions",
- ["akhn"]="akhands",
+ ["akhn"]="akhand",
+ ["apkn"]="kerning for alternate proportional widths",
  ["blwf"]="below-base forms",
  ["blwm"]="below-base mark positioning",
  ["blws"]="below-base substitutions",
@@ -21220,11 +21294,11 @@ local features=allocate {
  ["dnom"]="denominators",
  ["dtls"]="dotless forms",
  ["expt"]="expert forms",
- ["falt"]="final glyph alternates",
+ ["falt"]="final glyph on line alternates",
  ["fin2"]="terminal forms #2",
  ["fin3"]="terminal forms #3",
  ["fina"]="terminal forms",
- ["flac"]="flattened accents over capitals",
+ ["flac"]="flattened accent forms",
  ["frac"]="fractions",
  ["fwid"]="full width",
  ["half"]="half forms",
@@ -21291,7 +21365,7 @@ local features=allocate {
  ["size"]="optical size",
  ["smcp"]="small capitals",
  ["smpl"]="simplified forms",
- ["ssty"]="script style",
+ ["ssty"]="math script-style alternates",
  ["stch"]="stretching glyph decomposition",
  ["subs"]="subscript",
  ["sups"]="superscript",
@@ -21304,16 +21378,17 @@ local features=allocate {
  ["twid"]="third widths",
  ["unic"]="unicase",
  ["valt"]="alternate vertical metrics",
+ ["vapk"]="kerning for alternate proportional vertical metrics",
  ["vatu"]="vattu variants",
  ["vchw"]="vertical contextual half-width spacing",
- ["vert"]="vertical writing",
+ ["vert"]="vertical alternates",
  ["vhal"]="alternate vertical half metrics",
  ["vjmo"]="vowel jamo forms",
  ["vkna"]="vertical kana alternates",
  ["vkrn"]="vertical kerning",
  ["vpal"]="proportional alternate vertical metrics",
  ["vrtr"]="vertical alternates for rotation",
- ["vrt2"]="vertical rotation",
+ ["vrt2"]="vertical alternates and rotation",
  ["zero"]="slashed zero",
  ["trep"]="traditional tex replacements",
  ["tlig"]="traditional tex ligatures",
@@ -21326,7 +21401,7 @@ local features=allocate {
 local baselines=allocate {
  ["hang"]="hanging baseline",
  ["icfb"]="ideographic character face bottom edge baseline",
- ["icft"]="ideographic character face tope edige baseline",
+ ["icft"]="ideographic character face top edge baseline",
  ["ideo"]="ideographic em-box bottom edge baseline",
  ["idtp"]="ideographic em-box top edge baseline",
  ["math"]="mathematical centered baseline",
@@ -21348,7 +21423,7 @@ end
 local function swapped(h)
  local r={}
  for k,v in next,h do
-  r[gsub(v,"[^a-z0-9]","")]=k 
+  r[gsub(lower(v),"[^a-z0-9]","")]=k
  end
  return r
 end
@@ -21379,8 +21454,8 @@ setmetatableindex(scripts,function(t,k)
   if v then
    return v
   end
-  k=gsub(k," ","")
-  v=rawget(t,v)
+  k=gsub(k,"[^a-z0-9]","")
+  v=rawget(verbosescripts,k)
   if v then
    return v
   elseif acceptscripts then
@@ -21401,8 +21476,8 @@ setmetatableindex(languages,function(t,k)
   if v then
    return v
   end
-  k=gsub(k," ","")
-  v=rawget(t,v)
+  k=gsub(k,"[^a-z0-9]","")
+  v=rawget(verboselanguages,k)
   if v then
    return v
   elseif acceptlanguages then
@@ -21438,7 +21513,7 @@ local function resolve(t,k)
    else
     local v=rawget(t,tag.."..") 
     if v then
-     return (gsub(v,"%.%.",tonumber(dd))) 
+     return (gsub(v,"%.%.",tostring(dd))) 
     end
    end
   end
@@ -21500,7 +21575,7 @@ function otffeatures.normalize(features,wrap)
        uv=b
       end
      elseif type(value)=="table" then
-      uv=sequenced(t,",")
+      uv=sequenced(value,",")
      else
       uv=value
      end
@@ -21509,7 +21584,7 @@ function otffeatures.normalize(features,wrap)
      end
      local c=checkers[k]
      if c then
-      uv=c(uv) or vc
+      uv=c(uv)
      end
      uk[value]=uv
     end
@@ -21550,7 +21625,7 @@ local trace_defining=false  registertracker("fonts.defining",function(v) trace_d
 local report_otf=logs.reporter("fonts","otf loading")
 local fonts=fonts
 local otf=fonts.handlers.otf
-otf.version=3.150 
+otf.version=3.151 
 otf.cache=containers.define("fonts","otl",otf.version,true)
 otf.svgcache=containers.define("fonts","svg",otf.version,true)
 otf.pngcache=containers.define("fonts","png",otf.version,true)
@@ -28120,7 +28195,7 @@ function handlers.gsub_ligature(head,start,dataset,sequence,ligature,rlmode,skip
      match=true
     end
    end
-   if not match and not pre or not replace then
+   if not match and (not pre or not replace) then
     local n=getnext(discfound)
     local char=ischar(n,currentfont)
     if char and (not tonumber(ligature) and ligature[char]) then
@@ -28579,8 +28654,8 @@ function chainprocs.gsub_alternate(head,start,stop,dataset,sequence,currentlooku
       if trace_alternatives then
        logprocess("%s: replacing %s by alternative %a to %s, %s",cref(dataset,sequence),gref(currentchar),choice,gref(choice),comment)
       end
-      resetinjection(start)
-      setchar(start,choice)
+      resetinjection(current)
+      setchar(current,choice)
      else
       if trace_alternatives then
        logwarning("%s: no variant %a for %s, %s",cref(dataset,sequence),value,gref(currentchar),comment)
@@ -28715,7 +28790,7 @@ function chainprocs.gpos_single(head,start,stop,dataset,sequence,currentlookup,r
       logprocess("%s: shifting single %s by %s (%p,%p) and correction (%p,%p)",cref(dataset,sequence),gref(startchar),format,dx,dy,w,h)
      end
     else 
-     local k=(format=="move" and setmove or setkern)(start,factor,rlmode,kerns,injection)
+     local k=(format=="move" and setmove or setkern)(start,factor,rlmode,kerns,"injections")
      if trace_kerns then
       logprocess("%s: shifting single %s by %s %p",cref(dataset,sequence),gref(startchar),format,k)
      end
@@ -28812,7 +28887,7 @@ function chainprocs.gpos_mark2base(head,start,stop,dataset,sequence,currentlooku
        while base do
         base=getprev(base)
         if base then
-         local basechar=ischar(base,currentfont)
+         basechar=ischar(base,currentfont)
          if basechar then
           if not marks[basechar] then
            break
@@ -28876,7 +28951,7 @@ function chainprocs.gpos_mark2ligature(head,start,stop,dataset,sequence,currentl
        while base do
         base=getprev(base)
         if base then
-         local basechar=ischar(base,currentfont)
+         basechar=ischar(base,currentfont)
          if basechar then
           if not marks[basechar] then
            break
@@ -28905,7 +28980,7 @@ function chainprocs.gpos_mark2ligature(head,start,stop,dataset,sequence,currentl
          local dx,dy,bound=setmark(start,base,factor,rlmode,ba,ma,characters[basechar],false,checkmarks)
          if trace_marks then
           logprocess("%s, bound %s, anchoring mark %s to baselig %s at index %s => (%p,%p)",
-           cref(dataset,sequence),a or bound,gref(markchar),gref(basechar),index,dx,dy)
+           cref(dataset,sequence),bound,gref(markchar),gref(basechar),index,dx,dy)
          end
          return head,start,true
         end
@@ -29022,7 +29097,7 @@ function chainprocs.gpos_cursive(head,start,stop,dataset,sequence,currentlookup,
     end
    end
   elseif trace_cursive and trace_details then
-   logprocess("%s, cursive %s is already done",pref(dataset,sequence),gref(getchar(start)),alreadydone)
+   logprocess("%s, cursive %s is already done",pref(dataset,sequence),gref(getchar(start)))
   end
  end
  return head,start,false
@@ -29213,13 +29288,14 @@ local function chaindisk(head,start,dataset,sequence,rlmode,skiphash,ck)
      sweepnode=current
      current=getnext(current)
     else
+     local discnext=getnext(current)
      while replace and i<=l do
       if getid(replace)==glyph_code then
        i=i+1
       end
       replace=getnext(replace)
      end
-     current=getnext(replace)
+     current=replace or discnext
     end
     last=current
    else
@@ -32407,7 +32483,7 @@ end
 local function valid_one(s) for i=1,nofscripts do if s[scripts_one[i]] then return true end end end
 local function valid_two(s) for i=1,nofscripts do if s[scripts_two[i]] then return true end end end
 local function initializedevanagi(tfmdata)
- local script,language=otf.scriptandlanguage(tfmdata,attr) 
+ local script,language=otf.scriptandlanguage(tfmdata) 
  if scripts[script] then
   local resources=tfmdata.resources
   local devanagari=resources.devanagari
@@ -32446,15 +32522,17 @@ local function initializedevanagi(tfmdata)
              local chainlookups=ck[6]
              if chainlookups then
               local chainlookup=chainlookups[f]
-              for j=1,#chainlookup do
-               local chainstep=chainlookup[j]
-               local steps=chainstep.steps
-               local nofsteps=chainstep.nofsteps
-               for i=1,nofsteps do
-                local step=steps[i]
-                local coverage=step.coverage
-                if coverage then
-                 locl=coverage[k]
+              if chainlookup then
+               for j=1,#chainlookup do
+                local chainstep=chainlookup[j]
+                local steps=chainstep.steps
+                local nofsteps=chainstep.nofsteps
+                for i=1,nofsteps do
+                 local step=steps[i]
+                 local coverage=step.coverage
+                 if coverage then
+                  locl=coverage[k]
+                 end
                 end
                end
               end
@@ -32617,7 +32695,6 @@ local function initializedevanagi(tfmdata)
           local r=coverage[k]
           if r then
            base=k
-           local h=false
            if #r>0 then
             for j=1,#r do
              local ck=r[j]
@@ -32625,25 +32702,27 @@ local function initializedevanagi(tfmdata)
              local chainlookups=ck[6]
              if chainlookups then
               local chainlookup=chainlookups[f]
-              for j=1,#chainlookup do
-               local chainstep=chainlookup[j]
-               local steps=chainstep.steps
-               local nofsteps=chainstep.nofsteps
-               for i=1,nofsteps do
-                local step=steps[i]
-                local coverage=step.coverage
-                if coverage then
-                 local r=coverage[k]
-                 if r then
-                  for k,v in next,halant do
-                   local h=r[k]
-                   if h then
-                    reph=tonumber(h) or h.ligature or false
+              if chainlookup then
+               for j=1,#chainlookup do
+                local chainstep=chainlookup[j]
+                local steps=chainstep.steps
+                local nofsteps=chainstep.nofsteps
+                for i=1,nofsteps do
+                 local step=steps[i]
+                 local coverage=step.coverage
+                 if coverage then
+                  local r=coverage[k]
+                  if r then
+                   for k,v in next,halant do
+                    local h=r[k]
+                    if h then
+                     reph=tonumber(h) or h.ligature or false
+                     break
+                    end
+                   end
+                   if reph then
                     break
                    end
-                  end
-                  if h then
-                   break
                   end
                  end
                 end
@@ -32688,27 +32767,29 @@ local function initializedevanagi(tfmdata)
             local chainlookups=ck[6]
             if chainlookups then
              local chainlookup=chainlookups[f]
-             for j=1,#chainlookup do
-              local chainstep=chainlookup[j]
-              local steps=chainstep.steps
-              local nofsteps=chainstep.nofsteps
-              for i=1,nofsteps do
-               local step=steps[i]
-               local coverage=step.coverage
-               if coverage then
-                local h=coverage[k]
-                if h then
-                 for k,v in next,h do
-                  if v then
-                   found=tonumber(v) or v.ligature
-                   if found then
-                    pre_base_reordering_consonants[found]=true
-                    break
+             if chainlookup then
+              for j=1,#chainlookup do
+               local chainstep=chainlookup[j]
+               local steps=chainstep.steps
+               local nofsteps=chainstep.nofsteps
+               for i=1,nofsteps do
+                local step=steps[i]
+                local coverage=step.coverage
+                if coverage then
+                 local h=coverage[k]
+                 if h then
+                  for k,v in next,h do
+                   if v then
+                    found=tonumber(v) or v.ligature
+                    if found then
+                     pre_base_reordering_consonants[found]=true
+                     break
+                    end
                    end
                   end
-                 end
-                 if found then
-                  break
+                  if found then
+                   break
+                  end
                  end
                 end
                end
@@ -32757,6 +32838,7 @@ registerotffeature {
 }
 local function initializeconjuncts(tfmdata,value)
  if value then
+  local script=otf.scriptandlanguage(tfmdata)
   local resources=tfmdata.resources
   local devanagari=resources.devanagari
   if devanagari then
@@ -32770,9 +32852,7 @@ local function initializeconjuncts(tfmdata,value)
    if conjuncts=="auto" then
     conjuncts="mixed" 
    end
-   if movematra=="auto" and
-      script=="mlym" or
-      script=="taml" then
+   if movematra=="auto" and (script=="mlym" or script=="taml") then
     movematra="leftbeforebase"
    else
     movematra="default"
@@ -34637,10 +34717,13 @@ local function method_two(head,font,attr)
      nbspaces=nbspaces+1
      local p=getprev(current)
      if not p then
-     elseif ischar(p,font) then
-     elseif not separator[getchar(p)] then
      else
-      standalone=false
+      local prevchar=ischar(p,font)
+      if not prevchar then
+      elseif not separator[prevchar] then
+      else
+       standalone=false
+      end
      end
     end
     if standalone then

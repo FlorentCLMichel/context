@@ -60,9 +60,9 @@ function setmathparameters(t)
                 elseif factor == 0 then
                     setmath(li,si,0)
                 elseif unit == "axis" then
-                    setmath(li,si,factor * getmath(axis,i))
+                    setmath(li,si,factor * getmath(axis,si)) -- was i)
                 else
-                    setmath(li,si,factor * getmath(li,i))
+                    setmath(li,si,factor * getmath(li,si))   -- was i)
                 end
             end
 

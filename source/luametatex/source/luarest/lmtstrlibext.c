@@ -290,7 +290,10 @@ static int strlib_aux_utf_failed(lua_State *L, int new_ind)
     check (which is really needed!). The basic setup is still the same as we had.
 */
 
-// and when asked about the if's it then went (slightly adapted afterwards):
+/*tex
+    And when asked about the if's it then went (slightly adapted afterwards). But we might as well
+    consult the competition as this seems to be a common approach.
+*/
 
 static const unsigned char utf8_lengths[16] = {
     1, 1, 1, 1, 1, 1, 1, 1, /* 0x0 - 0x7 : ASCII (1 byte) */
@@ -1595,6 +1598,7 @@ static const luaL_Reg strlib_function_list[] = {
     { "hextointeger",      strlib_hextointeger       },
     { "chrtointeger",      strlib_chrtointeger       },
     { "splitintolines",    strlib_splitintolines     },
+    /* */
     { NULL,                NULL                      },
 };
 
@@ -1752,3 +1756,42 @@ int luaextend_string(lua_State * L)
     luaextend_string_buffer(L);
     return 1;
 }
+
+/*
+
+LUAMOD_API int luaopen_strlib(lua_State *L) {
+    // 1. Create the library table (or use luaL_newlib for other functions)
+    lua_newtable(L);
+
+    // 2. Push the upvalues onto the stack BEFORE creating the closure
+    lua_pushliteral(L, "0"); // Upvalue index 1
+    lua_pushliteral(L, "1"); // Upvalue index 2
+
+    // 3. Create the closure with 2 upvalues
+    // (This pops the 2 strings off the stack and attaches them to the function)
+    lua_pushcclosure(L, strlib_format_f6, 2);
+
+    // 4. Set the function in your library table ( equivalent to: lib["f6"] = strlib_format_f6 )
+    lua_setfield(L, -2, "f6");
+
+    return 1; // Return the library table
+}
+
+static int strlib_format_f6(lua_State *L)
+{
+    double n = luaL_optnumber(L, 1, 0.0);
+
+    if (n == 0.0) {
+        // Upvalue 1: "0"
+        lua_pushvalue(L, lua_upvalueindex(1));
+        return 1;
+    } else if (n == 1.0) {
+        // Upvalue 2: "1"
+        lua_pushvalue(L, lua_upvalueindex(2));
+        return 1;
+    }
+
+    // ...
+}
+
+*/

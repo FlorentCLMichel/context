@@ -114,6 +114,7 @@ extern int  luaopen_xzip        (lua_State *L);
 extern int  luaopen_serial      (lua_State *L);
 extern int  luaopen_vector      (lua_State *L);
 extern int  luaopen_zbuffer     (lua_State *L);
+//     int  luaopen_specific    (lua_State *L);
 
 extern int  luaextend_io        (lua_State *L);
 extern int  luaextend_os        (lua_State *L);
@@ -264,15 +265,20 @@ extern int  luaextend_xcomplex  (lua_State *L);
 
 /*tex Used in |lmtnodelib|. */
 
-# define NODE_METATABLE_INSTANCE   "node.instance"
-# define NODE_PROPERTIES_DIRECT    "node.properties"
-# define NODE_PROPERTIES_INDIRECT  "node.properties.indirect"
-# define NODE_PROPERTIES_INSTANCE  "node.properties.instance"
+# define NODE_METATABLE_INSTANCE  "node.instance"
+# define NODE_PROPERTIES_DIRECT   "node.properties"
+# define NODE_PROPERTIES_INDIRECT "node.properties.indirect"
+# define NODE_PROPERTIES_INSTANCE "node.properties.instance"
 
 /*tex Used in |lmttokenlib|. */
 
-# define TOKEN_METATABLE_INSTANCE  "token.instance"
-# define TOKEN_METATABLE_PACKAGE   "token.package"
+# define TOKEN_METATABLE_INSTANCE "token.instance"
+# define TOKEN_METATABLE_PACKAGE  "token.package"
+
+/*tex Used in |lmtlanguagelib|. */
+
+# define LANGUAGE_METATABLE_INSTANCE  "language.instance"
+# define LANGUAGE_FUNCTIONS_REGISTRY  "language.functions"
 
 /*tex Used in |lmtepdflib|. */
 
@@ -284,9 +290,9 @@ extern int  luaextend_xcomplex  (lua_State *L);
 
 /*tex Used in |lmtmplib|. */
 
-# define MP_METATABLE_INSTANCE     "mp.instance"
-# define MP_METATABLE_FIGURE       "mp.figure"
-# define MP_METATABLE_OBJECT       "mp.object"
+# define MP_METATABLE_INSTANCE "mp.instance"
+# define MP_METATABLE_FIGURE   "mp.figure"
+# define MP_METATABLE_OBJECT   "mp.object"
 
 /*tex Used in |lmtsparselib|. */
 
@@ -299,7 +305,6 @@ extern int  luaextend_xcomplex  (lua_State *L);
 /* Various */
 
 # define BITSET_METATABLE_INSTANCE   "bitset"
-
 # define VECTOR_METATABLE_INSTANCE   "vector"
 # define POINT_METATABLE_INSTANCE    "point"
 # define POINTS_METATABLE_INSTANCE   "points"
@@ -1589,6 +1594,9 @@ make_lua_key_alias(L, node_properties_indirect, NODE_PROPERTIES_INDIRECT);\
 make_lua_key_alias(L, token_instance,           TOKEN_METATABLE_INSTANCE);\
 make_lua_key_alias(L, token_package,            TOKEN_METATABLE_PACKAGE);\
 /* */ \
+make_lua_key_alias(L, language_instance,        LANGUAGE_METATABLE_INSTANCE);\
+make_lua_key_alias(L, language_functions,       LANGUAGE_FUNCTIONS_REGISTRY);\
+/* */ \
 make_lua_key_alias(L, sparse_instance,          SPARSE_METATABLE_INSTANCE);\
 /* */ \
 make_lua_key_alias(L, pdfe_instance,            PDFE_METATABLE_INSTANCE);\
@@ -1787,6 +1795,9 @@ extern lmt_keys_info lmt_keys;
 # define lmt_todouble(L,i)           (double)         lua_tonumber(L,i)
 # define lmt_optdouble(L,i,d)        (double)         luaL_optnumber(L,i,d)
 
+# define lmt_tofloat(L,i)            (float)          lua_tonumber(L,i)
+# define lmt_optfloat(L,i,d)         (float)          luaL_optnumber(L,i,d)
+
 # define lmt_tointeger(L,i)          (int)            lua_tointeger(L,i)
 # define lmt_checkinteger(L,i)       (int)            luaL_checkinteger(L,i)
 # define lmt_optinteger(L,i,j)       (int)            luaL_optinteger(L,i,j)
@@ -1943,6 +1954,11 @@ static inline void lua_set_boolean_by_index(lua_State *L, int a, int b)
 static inline void lmt_string_to_buffer(const char *str)
 {
     luaL_addstring(lmt_lua_state.used_buffer, str);
+}
+
+static inline void lmt_string_to_buffer_len(const char *str, int len)
+{
+    luaL_addlstring(lmt_lua_state.used_buffer, str, len);
 }
 
 static inline void lmt_char_to_buffer(char c)

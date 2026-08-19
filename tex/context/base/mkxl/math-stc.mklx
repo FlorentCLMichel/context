@@ -292,7 +292,7 @@
 % for now we do this:
 
 \setupmathstackers
-  [\c!mp=\ifcstok{\mathstackersparameter\c!plugin}\v!mp simplefun::math:default\else math:stacker:\the\scratchunicode\fi]
+  [\c!mp=minifun::math:stacker:\number\scratchunicode]
 
 % so far
 

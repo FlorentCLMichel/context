@@ -559,13 +559,14 @@ void tex_expand_current_token(void)
                         lmt_token_state.luacstrings = 0;
                         /* todo: use a private table as we can overflow, unless we register early */
                         lua_rawgeti(L, LUA_REGISTRYINDEX, code);
-                        if lmt_unlikely(lua_pcall(L, 0, 0, 0)) {
+                        int i = lua_pcall(L, 0, 0, 0);
+                        tex_restore_cur_string(u);
+                        if (lmt_token_state.luacstrings > 0) {
+                            tex_lua_string_start();
+                        }
+                        if (i) {
                             tex_formatted_warning("luacall", "local call error: %s", lua_tostring(L, -1));
-                        } else {
-                            tex_restore_cur_string(u);
-                            if (lmt_token_state.luacstrings > 0) {
-                                tex_lua_string_start();
-                            }
+                            lua_pop(L, 1);
                         }
                     } else {
                         tex_normal_error("luacall", "invalid local number in expansion");
@@ -585,10 +586,10 @@ void tex_expand_current_token(void)
                             if (lmt_fileio_state.name_in_progress) {
                                 tex_insert_relax_and_cur_cs();
                             } else if (code == normal_input_code) {
-                                tex_start_input(tex_read_file_name(0, NULL, texinput_extension), null);
+                                tex_start_input(tex_read_file_name(0, texinput_extension), null);
                             } else {
                                 halfword t = tex_scan_toks_normal(0, NULL);
-                                tex_start_input(tex_read_file_name(0, NULL, texinput_extension), t);
+                                tex_start_input(tex_read_file_name(0, texinput_extension), t);
                             }
                             break;
                         case end_of_input_code:
@@ -683,8 +684,8 @@ void tex_expand_current_token(void)
                             /*tex Complain about an undefined macro */
                             tex_handle_error(
                                 normal_error_type,
-                             // "Undefined control sequence %m", cur_cs,
-                                "Undefined control sequence",
+                             // "Undefined control sequence %m%h", cur_cs,
+                                "Undefined control sequence%h",
                                 "The control sequence at the end of the top line of your error message was never\n"
                                 "\\def'ed. You can just continue as I'll forget about whatever was undefined."
                             );
@@ -692,7 +693,7 @@ void tex_expand_current_token(void)
                             /*tex We ended up in a situation that is unlikely to happen in traditional \TEX. */
                             tex_handle_error(
                                 normal_error_type,
-                                "Control sequence expected instead of %C", cur_cmd, code,
+                                "Control sequence expected instead of %C%h", cur_cmd, code,
                                 "You injected something that confused the parser, maybe by using some Lua call."
                             );
                         }
@@ -722,7 +723,7 @@ static void tex_aux_complain_missing_csname(void)
 {
     tex_handle_error(
         back_error_type,
-        "Missing \\endcsname inserted",
+        "Missing \\endcsname inserted%h",
         "The control sequence marked <to be read again> should not appear between \\csname\n"
         "and \\endcsname."
     );
@@ -782,7 +783,7 @@ static inline int tex_aux_uni_to_buffer(unsigned char *b, int m, int c)
     much sense. It also long token lists that never (should) match anyway.
 */
 
-static int tex_aux_append_iterator(halfword *p, int *n)
+static int tex_aux_append_iterator(halfword *p, int *n, int *count)
 {
     int prv_cmd = cur_cmd;
     int prv_chr = cur_chr;
@@ -794,19 +795,21 @@ static int tex_aux_append_iterator(halfword *p, int *n)
             halfword c = h;
             while (c) {
                 c = token_link(c);
-                n++;
+                *n += 1;
+                *count += 1;
             }
             set_token_link(*p, h);
             *p = t;
-             return 1;
+            return 1;
         }
     }
     *p = tex_store_new_token(*p, token_val(prv_cmd, prv_chr));
     *n += 1;
+    *count += 1;
     return 0;
 }
 
-static int tex_aux_collect_cs_tokens(halfword *p, int *n)
+static int tex_aux_collect_cs_tokens(halfword *p, int *n, int *count)
 {
     while (1) {
         tex_get_next();
@@ -827,13 +830,14 @@ static int tex_aux_collect_cs_tokens(halfword *p, int *n)
             case active_char_cmd: /* new, here we don't expand */
                  *p = tex_store_new_token(*p, token_val(cur_cmd, cur_chr));
                  *n += 1;
+                 *count += 1;
                  break;
          /* case comment_cmd: */
          /* case invalid_char_cmd: */
          /*      break; */
             /* why not ... */
             case parameter_cmd:
-                if (tex_aux_append_iterator(p, n)) {
+                if (tex_aux_append_iterator(p, n, count)) {
                     break;
                 } else {
                     goto AGAIN;
@@ -852,14 +856,17 @@ static int tex_aux_collect_cs_tokens(halfword *p, int *n)
                                      *p = tex_store_new_token(*p, token_info(h));
                                      h = token_link(h);
                                      *n += 1;
+                                     *count += 1;
                                  }
                             } else {
                                 *p = tex_store_new_token(*p, token_val(deep_frozen_keep_constant_cmd, cur_chr));
                                 *n += 1;
+                                *count += 1;
                             }
                         } else {
                             *p = tex_store_new_token(*p, token_info(h));
                             *n += 1;
+                            *count += 1;
                         }
                     }
                 }
@@ -870,7 +877,8 @@ static int tex_aux_collect_cs_tokens(halfword *p, int *n)
                 if (cur_chr == cs_lastname_code) {
                     if (lmt_scanner_state.last_cs_name != null_cs) {
                         /*tex We cheat and abuse the |convert_cmd| as carrier for the current string. */
-                        *n += (int) str_length(cs_text(lmt_scanner_state.last_cs_name));
+                        *n += str_getintlen(cs_text(lmt_scanner_state.last_cs_name));
+                        *count += 1;
                         cur_chr = cs_text(lmt_scanner_state.last_cs_name) - cs_offset_value + 0xFF;
                         *p = tex_store_new_token(*p, token_val(cur_cmd, cur_chr));
                     }
@@ -906,8 +914,8 @@ static inline halfword tex_aux_cs_tokens_to_string(halfword h, halfword f)
          // if (token_chr(info) >= 0xFF) {
                 /*tex We know that we have something here. */
                 strnumber t = token_chr(info) + cs_offset_value - 0xFF;
-                memcpy(lmt_fileio_state.io_buffer + m,  str_string(t), str_length(t));
-                m += (int) str_length(t);
+                memcpy(lmt_fileio_state.io_buffer + m, str_getstr(t), str_getlen(t));
+                m += str_getintlen(t);
          // }
         } else {
             m = tex_aux_uni_to_buffer(lmt_fileio_state.io_buffer, m, token_chr(info));
@@ -924,8 +932,9 @@ int tex_is_valid_csname(void)
     halfword p = h;
     int b = 0;
     int n = 0;
+    int count = 0;
     lmt_expand_state.cs_name_level += 1;
-    if (! tex_aux_collect_cs_tokens(&p, &n)) {
+    if (! tex_aux_collect_cs_tokens(&p, &n, &count)) {
          /*tex We seldom end up here so there is no gain in optimizing. */
      //  if (1) {
      //      int level = 1;
@@ -962,7 +971,7 @@ int tex_is_valid_csname(void)
         /*tex Safeguard in case we accidentally redefined |null_cs|. */
      // copy_eqtb_entry(null_cs, undefined_control_sequence);
     }
-    tex_flush_token_list_head_tail(h, p, n + 1);
+    tex_flush_token_list_head_tail(h, p, count + 1);
     lmt_scanner_state.last_cs_name = cs;
     lmt_expand_state.cs_name_level -= 1;
     cur_cs = cs;
@@ -974,8 +983,9 @@ static inline halfword tex_aux_get_cs_name(void)
     halfword h = tex_get_available_token(null); /* hm */
     halfword p = h;
     int n = 0;
+    int count = 0;
     lmt_expand_state.cs_name_level += 1;
-    if (tex_aux_collect_cs_tokens(&p, &n)) {
+    if (tex_aux_collect_cs_tokens(&p, &n, &count)) {
         /*tex
             Here we have to make a choice wrt duplicating hashes. In \PDFTEX\ the hashes are
             duplicated when we csname a meaning of a macro with |#1| and |##1| or just |##|
@@ -996,7 +1006,7 @@ static inline halfword tex_aux_get_cs_name(void)
     }
     lmt_scanner_state.last_cs_name = cur_cs;
     lmt_expand_state.cs_name_level -= 1;
-    tex_flush_token_list_head_tail(h, p, n);
+    tex_flush_token_list_head_tail(h, p, count + 1);
     return cur_cs;
 }
 
@@ -1015,7 +1025,7 @@ static inline void tex_aux_manufacture_csname_use(void)
     if (tex_is_valid_csname()) {
         tex_back_input(cur_cs + cs_token_flag);
     } else {
-        lmt_scanner_state.last_cs_name = deep_frozen_relax_token;
+        lmt_scanner_state.last_cs_name = deep_frozen_cs_relax_code;
     }
 }
 
@@ -1025,7 +1035,7 @@ static inline void tex_aux_manufacture_csname_future(void)
     if (tex_is_valid_csname()) {
         tex_back_input(cur_cs + cs_token_flag);
     } else {
-        lmt_scanner_state.last_cs_name = deep_frozen_relax_token;
+        lmt_scanner_state.last_cs_name = deep_frozen_cs_relax_code;
         tex_back_input(t);
     }
 }
@@ -1210,9 +1220,11 @@ int tex_get_parameter_count(void)
 
 int tex_get_parameter_index(int n)
 {
-    n = lmt_input_state.cur_input.parameter_start + n - 1;
-    if (n < lmt_input_state.parameter_stack_data.ptr) {
-        return n;
+    if (n > 0) {
+        n = lmt_input_state.cur_input.parameter_start + n - 1;
+        if (n < lmt_input_state.parameter_stack_data.ptr) {
+            return n;
+        }
     }
     return -1;
 }
@@ -1315,13 +1327,12 @@ static void tex_aux_macro_call(halfword cs, halfword cmd, halfword chr)
             for less info here. Introducing an extra parameter makes no sense.
         */
         tex_begin_diagnostic();
-        tex_print_levels();
-        tex_print_cs_checked(cs);
+        tex_print_format("%l%m", cs);
         if (is_untraced(eq_flag(cs))) {
             tracing = false;
         } else {
             if (! get_token_preamble(chr)) {
-                tex_print_str("->");
+                tex_print_str_len("->", 2);
             } else {
                 /* maybe move the preamble scanner to here */
             }
@@ -1334,12 +1345,12 @@ static void tex_aux_macro_call(halfword cs, halfword cmd, halfword chr)
         tex_cleanup_input_state();
         if (token_link(chr)) {
             tex_begin_macro_list(chr);
-            lmt_expand_state.arguments = 0;
             lmt_input_state.cur_input.name = lmt_input_state.warning_index;
             lmt_input_state.cur_input.loc = token_link(chr);
         } else {
             /* We ignore empty bodies. */
         }
+        lmt_expand_state.arguments = 0;
     } else {
         halfword matchpointer = token_link(chr);
         halfword matchtoken = token_info(matchpointer);
@@ -1751,12 +1762,18 @@ case integer_match_token:
                 } else {
                     tex_handle_error(
                         normal_error_type,
-                        "Use of %S doesn't match its definition",
+                        "Use of %S doesn't match its definition%h",
                         lmt_input_state.warning_index,
                         "If you say, e.g., '\\def\\a1{...}', then you must always put '1' after '\\a',\n"
                         "since control sequence names are made up of letters only. The macro here has not\n"
                         "been followed by the required stuff, so I'm ignoring it."
                     );
+                    if (nofscanned > 0) {
+                        for (int i = 0; i < nofscanned; i++) {
+                            tex_flush_token_list(pstack[i]);
+                        }
+                        nofscanned = 0;
+                    }
                     goto EXIT;
                 }
             }
@@ -1844,7 +1861,7 @@ case integer_match_token:
                 /* till here */
                 tex_handle_error(
                     insert_error_type,
-                    "Argument of %S has an extra }",
+                    "Argument of %S has an extra }%h",
                     lmt_input_state.warning_index,
                     "I've run across a '}' that doesn't seem to match anything. For example,\n"
                     "'\\def\\a#1{...}' and '\\a}' would produce this error. The '\\par' that I've just\n"

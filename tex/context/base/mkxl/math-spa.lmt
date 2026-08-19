@@ -375,6 +375,8 @@ stages[2] = function(specification,stage)
         maxright   = 0
     end
     local position = 0
+    -- We only come back here if we encounter a problem (the manual is a good
+    -- test).
     if align == 1 then -- flushleft
         if trace then
             report("reposition %p, %s",0, "flush left")

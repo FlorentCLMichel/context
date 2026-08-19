@@ -37,7 +37,6 @@
 # define too_precise(a)           (a == (DEC_Inexact + DEC_Rounded))
 # define too_large(a)             (a & DEC_Overflow)
 
-# define odd(A)                   (abs(A) % 2 == 1)  /* hm potrace defines this */
 # define set_cur_cmd(A)           mp->cur_mod_->type = (A)
 # define set_cur_mod(A)           decNumberCopy((decNumber *) (mp->cur_mod_->data.n.data.num), A)
 
@@ -102,10 +101,10 @@ static mp_decimal_info mp_decimal_data = {
     .initialized           = 0,
 };
 
-static void mp_decimal_make_fraction (MP mp, decNumber *ret, decNumber *p, decNumber *q);
-static void mp_decimal_take_fraction (MP mp, decNumber *ret, decNumber *p, decNumber *q);
+static void mp_decimal_make_fraction (MP mp, decNumber *ret, const decNumber *p, const decNumber *q);
+static void mp_decimal_take_fraction (MP mp, decNumber *ret, const decNumber *p, const decNumber *q);
 
-static void mp_decnumber_check(MP mp, decNumber *dec, decContext *context)
+static inline void mp_decnumber_check(MP mp, decNumber *dec, decContext *context)
 {
     int test = 0;
     (void) mp;
@@ -143,21 +142,21 @@ static void mp_decnumber_check(MP mp, decNumber *dec, decContext *context)
 
 /* See mpmathdouble for documentation. */
 
-static void checkZero(decNumber *ret)
+static inline void checkZero(decNumber *ret)
 {
     if (decNumberIsZero(ret) && decNumberIsNegative(ret)) {
         decNumberZero(ret);
     }
 }
 
-static int decNumberLess(decNumber *a, decNumber *b)
+static inline int decNumberLess(const decNumber *a, const decNumber *b)
 {
     decNumber comp;
     decNumberCompare(&comp, a, b, &mp_decimal_data.set);
     return decNumberIsNegative(&comp);
 }
 
-static int decNumberGreater(decNumber *a, decNumber *b)
+static inline int decNumberGreater(const decNumber *a, const decNumber *b)
 {
     decNumber comp;
     decNumberCompare(&comp, a, b, &mp_decimal_data.set);
@@ -178,7 +177,7 @@ static void decNumberFromDouble(decNumber *A, double B)
     decNumberFromString(A, buffer, &mp_decimal_data.set);
 }
 
-static double decNumberToDouble(decNumber *A)
+static double decNumberToDouble(const decNumber *A)
 {
     char *buffer = mp_memory_allocate(A->digits + 14);
     double res = 0.0;
@@ -196,7 +195,7 @@ static double decNumberToDouble(decNumber *A)
 /*tex
 
     \startformula
-    \arctan(x) = x - \frac {x^3}{3} + \frac {x^5{5} - \frac {x^7}{7} + \ldots
+    \arctan(x) = x - \frac {x^3}{3} + \frac {x^5}{5} - \frac {x^7}{7} + \ldots
     \stopformula
 
     This power series works well, if $x$ is close to zero ($|x|<0.5$). If x is larger, the series 
@@ -212,7 +211,7 @@ static double decNumberToDouble(decNumber *A)
 
 */
 
-static void decNumberAtan(decNumber *result, decNumber *x_orig, decContext *localset)
+static void decNumberAtan(decNumber *result, const decNumber *x_orig, decContext *localset)
 {
     decNumber x;
     decNumberCopy(&x, x_orig);
@@ -249,7 +248,7 @@ static void decNumberAtan(decNumber *result, decNumber *x_orig, decContext *loca
     }
 }
 
-static void decNumberAtan2(decNumber *result, decNumber *y, decNumber *x, decContext *localset)
+static void decNumberAtan2(decNumber *result, const decNumber *y, const decNumber *x, decContext *localset)
 {
     if (! decNumberIsInfinite(x) && ! decNumberIsZero(y) && ! decNumberIsInfinite(y) && ! decNumberIsZero(x)) {
         decNumber temp;
@@ -301,7 +300,7 @@ static void mp_decimal_allocate_number(MP mp, mp_number *n, mp_number_type t)
     decNumberZero(n->data.num);
 }
 
-static void mp_decimal_allocate_clone(MP mp, mp_number *n, mp_number_type t, mp_number *v)
+static void mp_decimal_allocate_clone(MP mp, mp_number *n, mp_number_type t, const mp_number *v)
 {
     (void) mp;
     n->data.num = mp_memory_allocate(sizeof(decNumber));
@@ -310,7 +309,7 @@ static void mp_decimal_allocate_clone(MP mp, mp_number *n, mp_number_type t, mp_
     decNumberCopy(n->data.num, v->data.num);
 }
 
-static void mp_decimal_allocate_abs(MP mp, mp_number *n, mp_number_type t, mp_number *v)
+static void mp_decimal_allocate_abs(MP mp, mp_number *n, mp_number_type t, const mp_number *v)
 {
     (void) mp;
     n->data.num = mp_memory_allocate(sizeof(decNumber));
@@ -319,7 +318,7 @@ static void mp_decimal_allocate_abs(MP mp, mp_number *n, mp_number_type t, mp_nu
     decNumberAbs(n->data.num, v->data.num, &mp_decimal_data.set);
 }
 
-static void mp_decimal_allocate_div(MP mp, mp_number *n, mp_number_type t, mp_number *a, mp_number *b)
+static void mp_decimal_allocate_div(MP mp, mp_number *n, mp_number_type t, const mp_number *a, const mp_number *b)
 {
     (void) mp;
     n->data.num = mp_memory_allocate(sizeof(decNumber));
@@ -328,7 +327,7 @@ static void mp_decimal_allocate_div(MP mp, mp_number *n, mp_number_type t, mp_nu
     decNumberDivide(n->data.num, a->data.num, b->data.num, &mp_decimal_data.set);
 }
 
-static void mp_decimal_allocate_mul(MP mp, mp_number *n, mp_number_type t, mp_number *a, mp_number *b)
+static void mp_decimal_allocate_mul(MP mp, mp_number *n, mp_number_type t, const mp_number *a, const mp_number *b)
 {
     (void) mp;
     n->data.num = mp_memory_allocate(sizeof(decNumber));
@@ -337,7 +336,7 @@ static void mp_decimal_allocate_mul(MP mp, mp_number *n, mp_number_type t, mp_nu
     decNumberMultiply(n->data.num, a->data.num, b->data.num, &mp_decimal_data.set);
 }
 
-static void mp_decimal_allocate_add(MP mp, mp_number *n, mp_number_type t, mp_number *a, mp_number *b)
+static void mp_decimal_allocate_add(MP mp, mp_number *n, mp_number_type t, const mp_number *a, const mp_number *b)
 {
     (void) mp;
     n->data.num = mp_memory_allocate(sizeof(decNumber));
@@ -346,7 +345,7 @@ static void mp_decimal_allocate_add(MP mp, mp_number *n, mp_number_type t, mp_nu
     decNumberAdd(n->data.num, a->data.num, b->data.num, &mp_decimal_data.set);
 }
 
-static void mp_decimal_allocate_sub(MP mp, mp_number *n, mp_number_type t, mp_number *a, mp_number *b)
+static void mp_decimal_allocate_sub(MP mp, mp_number *n, mp_number_type t, const mp_number *a, const mp_number *b)
 {
     (void) mp;
     n->data.num = mp_memory_allocate(sizeof(decNumber));
@@ -397,12 +396,12 @@ static void mp_decimal_set_from_double(mp_number *A, double B)
     decNumberFromDouble(A->data.num, B);
 }
 
-static void mp_decimal_set_from_addition(mp_number *A, mp_number *B, mp_number *C)
+static void mp_decimal_set_from_addition(mp_number *A, const mp_number *B, const mp_number *C)
 {
     decNumberAdd(A->data.num, B->data.num, C->data.num, &mp_decimal_data.set);
 }
 
-static void mp_decimal_set_half_from_addition(mp_number *A, mp_number *B, mp_number *C)
+static void mp_decimal_set_half_from_addition(mp_number *A, const mp_number *B, const mp_number *C)
 {
     decNumber c;
     decNumberAdd(A->data.num, B->data.num, C->data.num, &mp_decimal_data.set);
@@ -410,12 +409,12 @@ static void mp_decimal_set_half_from_addition(mp_number *A, mp_number *B, mp_num
     decNumberDivide(A->data.num, A->data.num, &c, &mp_decimal_data.set);
 }
 
-static void mp_decimal_set_from_subtraction(mp_number *A, mp_number *B, mp_number *C)
+static void mp_decimal_set_from_subtraction(mp_number *A, const mp_number *B, const mp_number *C)
 {
     decNumberSubtract(A->data.num, B->data.num, C->data.num, &mp_decimal_data.set);
 }
 
-static void mp_decimal_set_half_from_subtraction(mp_number *A, mp_number *B, mp_number *C)
+static void mp_decimal_set_half_from_subtraction(mp_number *A, const mp_number *B, const mp_number *C)
 {
     decNumber c;
     decNumberSubtract(A->data.num, B->data.num, C->data.num, &mp_decimal_data.set);
@@ -423,31 +422,31 @@ static void mp_decimal_set_half_from_subtraction(mp_number *A, mp_number *B, mp_
     decNumberDivide(A->data.num, A->data.num, &c, &mp_decimal_data.set);
 }
 
-static void mp_decimal_set_from_div(mp_number *A, mp_number *B, mp_number *C)
+static void mp_decimal_set_from_div(mp_number *A, const mp_number *B, const mp_number *C)
 {
     decNumberDivide(A->data.num, B->data.num, C->data.num, &mp_decimal_data.set);
 }
 
-static void mp_decimal_set_from_mul(mp_number *A, mp_number *B, mp_number *C)
+static void mp_decimal_set_from_mul(mp_number *A, const mp_number *B, const mp_number *C)
 {
     decNumberMultiply(A->data.num, B->data.num, C->data.num, &mp_decimal_data.set);
 }
 
-static void mp_decimal_set_from_int_div(mp_number *A, mp_number *B, mp_scaled_t C)
+static void mp_decimal_set_from_int_div(mp_number *A, const mp_number *B, mp_scaled_t C)
 {
     decNumber c;
     decNumberFromScaled(&c, (int32_t) C);
     decNumberDivide(A->data.num, B->data.num, &c, &mp_decimal_data.set);
 }
 
-static void mp_decimal_set_from_int_mul(mp_number *A, mp_number *B, mp_scaled_t C)
+static void mp_decimal_set_from_int_mul(mp_number *A, const mp_number *B, mp_scaled_t C)
 {
     decNumber c;
     decNumberFromScaled(&c, (int32_t) C);
     decNumberMultiply(A->data.num, B->data.num, &c, &mp_decimal_data.set);
 }
 
-static void mp_decimal_set_from_of_the_way(MP mp, mp_number *A, mp_number *t, mp_number *B, mp_number *C)
+static void mp_decimal_set_from_of_the_way(MP mp, mp_number *A, const mp_number *t, const mp_number *B, const mp_number *C)
 {
     decNumber c;
     decNumber r1;
@@ -463,12 +462,12 @@ static void mp_decimal_negate(mp_number *A)
     checkZero(A->data.num);
 }
 
-static void mp_decimal_add(mp_number *A, mp_number *B)
+static void mp_decimal_add(mp_number *A, const mp_number *B)
 {
     decNumberAdd(A->data.num, A->data.num, B->data.num, &mp_decimal_data.set);
 }
 
-static void mp_decimal_subtract(mp_number *A, mp_number *B)
+static void mp_decimal_subtract(mp_number *A, const mp_number *B)
 {
     decNumberSubtract(A->data.num, A->data.num, B->data.num, &mp_decimal_data.set);
 }
@@ -515,18 +514,18 @@ static void mp_decimal_abs(mp_number *A)
     decNumberAbs(A->data.num, A->data.num, &mp_decimal_data.set);
 }
 
-static void mp_decimal_clone(mp_number *A, mp_number *B)
+static inline void mp_decimal_clone(mp_number *A, const mp_number *B)
 {
     decNumberCopy(A->data.num, B->data.num);
 }
 
-static void mp_decimal_negated_clone(mp_number *A, mp_number *B)
+static inline void mp_decimal_negated_clone(mp_number *A, const mp_number *B)
 {
     decNumberCopyNegate(A->data.num, B->data.num);
     checkZero(A->data.num);
 }
 
-static void mp_decimal_abs_clone(mp_number *A, mp_number *B)
+static inline void mp_decimal_abs_clone(mp_number *A, const mp_number *B)
 {
     decNumberAbs(A->data.num, B->data.num, &mp_decimal_data.set);
 }
@@ -563,7 +562,7 @@ static void mp_decimal_scaled_to_angle(mp_number *A)
     decNumberMultiply(A->data.num, A->data.num, &mp_decimal_data.angle_multiplier, &mp_decimal_data.set);
 }
 
-static mp_scaled_t mp_decimal_to_scaled(mp_number *A)
+static mp_scaled_t mp_decimal_to_scaled(const mp_number *A)
 {
     mp_scaled_t result;
     decNumber corrected;
@@ -574,7 +573,7 @@ static mp_scaled_t mp_decimal_to_scaled(mp_number *A)
     return result;
 }
 
-static mp_scaled_t mp_decimal_to_int(mp_number *A)
+static mp_scaled_t mp_decimal_to_int(const mp_number *A)
 {
     mp_scaled_t result;
     mp_decimal_data.set.status = 0;
@@ -588,7 +587,7 @@ static mp_scaled_t mp_decimal_to_int(mp_number *A)
     }
 }
 
-static mp_scaled_t mp_decimal_to_boolean(mp_number *A)
+static mp_scaled_t mp_decimal_to_boolean(const mp_number *A)
 {
     mp_scaled_t result;
     mp_decimal_data.set.status = 0;
@@ -602,7 +601,7 @@ static mp_scaled_t mp_decimal_to_boolean(mp_number *A)
     }
 }
 
-static double mp_decimal_to_double(mp_number *A)
+static double mp_decimal_to_double(const mp_number *A)
 {
     char *buffer = mp_memory_allocate((size_t) ((decNumber *) A->data.num)->digits + 14);
     double res = 0.0;
@@ -617,7 +616,7 @@ static double mp_decimal_to_double(mp_number *A)
     }
 }
 
-static int mp_decimal_odd(mp_number *A)
+static int mp_decimal_odd(const mp_number *A)
 {
     decNumber r1, r2;
     decNumberAbs(&r1, A->data.num, &mp_decimal_data.set);
@@ -626,28 +625,28 @@ static int mp_decimal_odd(mp_number *A)
     return decNumberIsZero(&r1);
 }
 
-static int mp_decimal_equal(mp_number *A, mp_number *B)
+static inline int mp_decimal_equal(const mp_number *A, const mp_number *B)
 {
     decNumber res;
     decNumberCompare(&res, A->data.num, B->data.num, &mp_decimal_data.set);
     return decNumberIsZero(&res);
 }
 
-static int mp_decimal_greater(mp_number *A, mp_number *B)
+static inline int mp_decimal_greater(const mp_number *A, const mp_number *B)
 {
     decNumber res;
     decNumberCompare(&res, A->data.num, B->data.num, &mp_decimal_data.set);
     return decNumberIsPositive(&res);
 }
 
-static int mp_decimal_less(mp_number *A, mp_number *B)
+static inline int mp_decimal_less(const mp_number *A, const mp_number *B)
 {
     decNumber res;
     decNumberCompare(&res, A->data.num, B->data.num, &mp_decimal_data.set);
     return decNumberIsNegative(&res);
 }
 
-static int mp_decimal_non_equal_abs(mp_number *A, mp_number *B)
+static int mp_decimal_non_equal_abs(const mp_number *A, const mp_number *B)
 {
     decNumber res, a, b;
     decNumberCopyAbs(&a, A->data.num);
@@ -656,86 +655,86 @@ static int mp_decimal_non_equal_abs(mp_number *A, mp_number *B)
     return ! decNumberIsZero(&res);
 }
 
-static char *mp_decnumber_tostring(decNumber *n)
+static char *mp_decnumber_tostring(const decNumber *n)
 {
     decNumber corrected;
-    char *buffer = mp_memory_allocate((size_t) ((decNumber *) n)->digits + 14);
+    char *buffer = mp_memory_allocate((size_t) n->digits + 14);
     decNumberCopy(&corrected, n);
     decNumberTrim(&corrected);
     decNumberToString(&corrected, buffer);
     return buffer;
 }
 
-static char *mp_decimal_number_tostring(MP mp, mp_number *n)
+static char *mp_decimal_number_tostring(MP mp, const mp_number *n)
 {
     (void) mp;
     return mp_decnumber_tostring(n->data.num);
 }
 
-static void mp_decimal_print_number(MP mp, mp_number *n)
+static void mp_decimal_print_number(MP mp, const mp_number *n)
 {
     char *str = mp_decnumber_tostring(n->data.num);
     mp_print_e_str(mp, str);
     mp_memory_free(str);
 }
 
-static void mp_decimal_slow_add(MP mp, mp_number *ret, mp_number *A, mp_number *B)
+static void mp_decimal_slow_add(MP mp, mp_number *ret, const mp_number *A, const mp_number *B)
 {
     (void) mp;
     decNumberAdd(ret->data.num, A->data.num, B->data.num, &mp_decimal_data.set);
 }
 
-static void mp_decimal_slow_sub(MP mp, mp_number *ret, mp_number *A, mp_number *B)
+static void mp_decimal_slow_sub(MP mp, mp_number *ret, const mp_number *A, const mp_number *B)
 {
     (void) mp;
     decNumberSubtract(ret->data.num, A->data.num, B->data.num, &mp_decimal_data.set);
 }
 
-static void mp_decimal_make_fraction(MP mp, decNumber *ret, decNumber *p, decNumber *q)
+static void mp_decimal_make_fraction(MP mp, decNumber *ret, const decNumber *p, const decNumber *q)
 {
     decNumberDivide(ret, p, q, &mp_decimal_data.set);
     mp_decnumber_check(mp, ret, &mp_decimal_data.set);
     decNumberMultiply(ret, ret, &mp_decimal_data.fraction_multiplier, &mp_decimal_data.set);
 }
 
-static void mp_decimal_number_make_fraction(MP mp, mp_number *ret, mp_number *p, mp_number *q)
+static void mp_decimal_number_make_fraction(MP mp, mp_number *ret, const mp_number *p, const mp_number *q)
 {
     mp_decimal_make_fraction(mp, ret->data.num, p->data.num, q->data.num);
 }
 
-static void mp_decimal_take_fraction(MP mp, decNumber *ret, decNumber *p, decNumber *q)
+static void mp_decimal_take_fraction(MP mp, decNumber *ret, const decNumber *p, const decNumber *q)
 {
     (void) mp;
     decNumberMultiply(ret, p, q, &mp_decimal_data.set);
     decNumberDivide(ret, ret, &mp_decimal_data.fraction_multiplier, &mp_decimal_data.set);
 }
 
-static void mp_decimal_number_take_fraction(MP mp, mp_number *ret, mp_number *p, mp_number *q)
+static void mp_decimal_number_take_fraction(MP mp, mp_number *ret, const mp_number *p, const mp_number *q)
 {
     mp_decimal_take_fraction(mp, ret->data.num, p->data.num, q->data.num);
 }
 
-static void mp_decimal_number_take_scaled(MP mp, mp_number *ret, mp_number *p_orig, mp_number *q_orig)
+static void mp_decimal_number_take_scaled(MP mp, mp_number *ret, const mp_number *p_orig, const mp_number *q_orig)
 {
     (void) mp;
     decNumberMultiply(ret->data.num, p_orig->data.num, q_orig->data.num, &mp_decimal_data.set);
 }
 
-static void mp_decimal_number_make_scaled(MP mp, mp_number *ret, mp_number *p_orig, mp_number *q_orig)
+static void mp_decimal_number_make_scaled(MP mp, mp_number *ret, const mp_number *p_orig, const mp_number *q_orig)
 {
     decNumberDivide(ret->data.num, p_orig->data.num, q_orig->data.num, &mp_decimal_data.set);
     mp_decnumber_check(mp, ret->data.num, &mp_decimal_data.set);
 }
 
-static void mp_decimal_aux_wrapup_numeric_token(MP mp, unsigned char *start, unsigned char *stop)
+static void mp_decimal_aux_wrapup_numeric_token(MP mp, const unsigned char *start, const unsigned char *stop)
 {
     decNumber result;
-    size_t l = stop-start+1;
+    size_t l = (size_t)(stop - start + 1);
     char *buf = mp_memory_allocate(l + 1);
     buf[l] = '\0';
     (void) strncpy(buf, (const char *) start, l);
     mp_decimal_data.set.status = 0;
-    decNumberFromString(&result,buf, &mp_decimal_data.set);
+    decNumberFromString(&result, buf, &mp_decimal_data.set);
     mp_memory_free(buf);
     if (mp_decimal_data.set.status == 0) {
         set_cur_mod(&result);
@@ -797,21 +796,21 @@ static void mp_decimal_aux_find_exponent(MP mp)
 
 static void mp_decimal_scan_fractional_token(MP mp, mp_scaled_t n)
 {
-    unsigned char *start = &mp->buffer[mp->cur_input.loc_field -1];
-    unsigned char *stop;
+    const unsigned char *start = &mp->buffer[mp->cur_input.loc_field - 1];
+    const unsigned char *stop;
     (void) n;
     while (mp->char_class[mp->buffer[mp->cur_input.loc_field]] == mp_digit_class) {
         mp->cur_input.loc_field++;
     }
     mp_decimal_aux_find_exponent(mp);
-    stop = &mp->buffer[mp->cur_input.loc_field-1];
+    stop = &mp->buffer[mp->cur_input.loc_field - 1];
     mp_decimal_aux_wrapup_numeric_token(mp, start, stop);
 }
 
 static void mp_decimal_scan_numeric_token(MP mp, mp_scaled_t n)
 {
-    unsigned char *start = &mp->buffer[mp->cur_input.loc_field -1];
-    unsigned char *stop;
+    const unsigned char *start = &mp->buffer[mp->cur_input.loc_field - 1];
+    const unsigned char *stop;
     (void) n;
     while (mp->char_class[mp->buffer[mp->cur_input.loc_field]] == mp_digit_class) {
         mp->cur_input.loc_field++;
@@ -823,11 +822,11 @@ static void mp_decimal_scan_numeric_token(MP mp, mp_scaled_t n)
         }
     }
     mp_decimal_aux_find_exponent(mp);
-    stop = &mp->buffer[mp->cur_input.loc_field-1];
+    stop = &mp->buffer[mp->cur_input.loc_field - 1];
     mp_decimal_aux_wrapup_numeric_token(mp, start, stop);
 }
 
-static void mp_decimal_velocity(MP mp, mp_number *ret, mp_number *st, mp_number *ct, mp_number *sf, mp_number *cf, mp_number *t)
+static void mp_decimal_velocity(MP mp, mp_number *ret, const mp_number *st, const mp_number *ct, const mp_number *sf, const mp_number *cf, const mp_number *t)
 {
     decNumber acc, num, denom; /* registers for intermediate calculations */
     decNumber r1, r2;
@@ -883,16 +882,16 @@ static void mp_decimal_velocity(MP mp, mp_number *ret, mp_number *st, mp_number 
     mp_decnumber_check(mp, ret->data.num, &mp_decimal_data.set);
 }
 
-static int mp_decimal_ab_vs_cd (mp_number *a_orig, mp_number *b_orig, mp_number *c_orig, mp_number *d_orig)
+static int mp_decimal_ab_vs_cd (const mp_number *a_orig, const mp_number *b_orig, const mp_number *c_orig, const mp_number *d_orig)
 {
     decNumber a, b, c, d;
     decNumber ab, cd;
-    decNumberCopy(&a, (decNumber *) a_orig->data.num);
-    decNumberCopy(&b, (decNumber *) b_orig->data.num);
-    decNumberCopy(&c, (decNumber *) c_orig->data.num);
-    decNumberCopy(&d, (decNumber *) d_orig->data.num);
-    decNumberMultiply(&ab, (decNumber *) a_orig->data.num, (decNumber *)b_orig->data.num, &mp_decimal_data.set);
-    decNumberMultiply(&cd, (decNumber *) c_orig->data.num, (decNumber *)d_orig->data.num, &mp_decimal_data.set);
+    decNumberCopy(&a, (const decNumber *) a_orig->data.num);
+    decNumberCopy(&b, (const decNumber *) b_orig->data.num);
+    decNumberCopy(&c, (const decNumber *) c_orig->data.num);
+    decNumberCopy(&d, (const decNumber *) d_orig->data.num);
+    decNumberMultiply(&ab, (const decNumber *) a_orig->data.num, (const decNumber *) b_orig->data.num, &mp_decimal_data.set);
+    decNumberMultiply(&cd, (const decNumber *) c_orig->data.num, (const decNumber *) d_orig->data.num, &mp_decimal_data.set);
     if (decNumberLess(&ab, &cd)) {
         return -1;
     } else if (decNumberGreater(&ab, &cd)) {
@@ -902,15 +901,15 @@ static int mp_decimal_ab_vs_cd (mp_number *a_orig, mp_number *b_orig, mp_number 
     }
 }
 
-static void mp_decimal_crossing_point(MP mp, mp_number *ret, mp_number *aa, mp_number *bb, mp_number *cc)
+static void mp_decimal_crossing_point(MP mp, mp_number *ret, const mp_number *aa, const mp_number *bb, const mp_number *cc)
 {
     decNumber a, b, c;
     double d; /* recursive counter */
     decNumber x, xx, x0, x1, x2; /* temporary registers for bisection */
     decNumber scratch, scratch2;
-    decNumberCopy(&a, (decNumber *) aa->data.num);
-    decNumberCopy(&b, (decNumber *) bb->data.num);
-    decNumberCopy(&c, (decNumber *) cc->data.num);
+    decNumberCopy(&a, (const decNumber *) aa->data.num);
+    decNumberCopy(&b, (const decNumber *) bb->data.num);
+    decNumberCopy(&c, (const decNumber *) cc->data.num);
     if (decNumberIsNegative(&a)) {
         decNumberCopy(ret->data.num, &mp_decimal_data.zero_crossing);
         goto RETURN;
@@ -976,7 +975,7 @@ static void mp_decimal_crossing_point(MP mp, mp_number *ret, mp_number *aa, mp_n
     mp_decnumber_check(mp, ret->data.num, &mp_decimal_data.set);
 }
 
-static mp_scaled_t mp_decimal_round_unscaled(mp_number *x_orig)
+static mp_scaled_t mp_decimal_round_unscaled(const mp_number *x_orig)
 {
     return mpscaledround(mp_decimal_to_double(x_orig));
 }
@@ -995,7 +994,7 @@ static void mp_decimal_fraction_to_round_scaled(mp_number *x_orig)
     decNumberDivide(x_orig->data.num, x_orig->data.num, &mp_decimal_data.fraction_multiplier, &mp_decimal_data.set);
 }
 
-static void mp_decimal_square_rt(MP mp, mp_number *ret, mp_number *x_orig)
+static void mp_decimal_square_rt(MP mp, mp_number *ret, const mp_number *x_orig)
 {
     decNumber x;
     decNumberCopy(&x, x_orig->data.num);
@@ -1019,7 +1018,7 @@ static void mp_decimal_square_rt(MP mp, mp_number *ret, mp_number *x_orig)
     mp_decnumber_check(mp, ret->data.num, &mp_decimal_data.set);
 }
 
-static void mp_decimal_pyth_add(MP mp, mp_number *ret, mp_number *a_orig, mp_number *b_orig)
+static void mp_decimal_pyth_add(MP mp, mp_number *ret, const mp_number *a_orig, const mp_number *b_orig)
 {
     decNumber a, b;
     decNumber asq, bsq;
@@ -1038,7 +1037,7 @@ static void mp_decimal_pyth_add(MP mp, mp_number *ret, mp_number *a_orig, mp_num
     mp_decnumber_check(mp, ret->data.num, &mp_decimal_data.set);
 }
 
-static void mp_decimal_pyth_add3(MP mp, mp_number *ret, mp_number *a_orig, mp_number *b_orig, mp_number *c_orig)
+static void mp_decimal_pyth_add3(MP mp, mp_number *ret, const mp_number *a_orig, const mp_number *b_orig, const mp_number *c_orig)
 {
     decNumber a, b, c;
     decNumber asq, bsq, csq;
@@ -1060,7 +1059,7 @@ static void mp_decimal_pyth_add3(MP mp, mp_number *ret, mp_number *a_orig, mp_nu
     mp_decnumber_check(mp, ret->data.num, &mp_decimal_data.set);
 }
 
-static void mp_decimal_pyth_sub(MP mp, mp_number *ret, mp_number *a_orig, mp_number *b_orig)
+static void mp_decimal_pyth_sub(MP mp, mp_number *ret, mp_number *a_orig, const mp_number *b_orig)
 {
     decNumber a, b;
     decNumberCopyAbs(&a, a_orig->data.num);
@@ -1092,15 +1091,15 @@ static void mp_decimal_pyth_sub(MP mp, mp_number *ret, mp_number *a_orig, mp_num
     mp_decnumber_check(mp, ret->data.num, &mp_decimal_data.set);
 }
 
-static void mp_decimal_power_of(MP mp, mp_number *ret, mp_number *a_orig, mp_number *b_orig)
+static void mp_decimal_power_of(MP mp, mp_number *ret, const mp_number *a_orig, const mp_number *b_orig)
 {
     decNumberPower(ret->data.num, a_orig->data.num, b_orig->data.num, &mp_decimal_data.set);
     mp_decnumber_check(mp, ret->data.num, &mp_decimal_data.set);
 }
 
-static void mp_decimal_m_log(MP mp, mp_number *ret, mp_number *x_orig)
+static void mp_decimal_m_log(MP mp, mp_number *ret, const mp_number *x_orig)
 {
-    if (! decNumberIsPositive((decNumber *) x_orig->data.num)) {
+    if (! decNumberIsPositive((const decNumber *) x_orig->data.num)) {
         char msg[256];
         char *xstr = mp_decimal_number_tostring(mp, x_orig);
         snprintf(msg, 256, "Logarithm of %s has been replaced by 0", xstr);
@@ -1122,7 +1121,7 @@ static void mp_decimal_m_log(MP mp, mp_number *ret, mp_number *x_orig)
     mp_decnumber_check(mp, ret->data.num, &mp_decimal_data.set);
 }
 
-static void mp_decimal_m_exp(MP mp, mp_number *ret, mp_number *x_orig)
+static void mp_decimal_m_exp(MP mp, mp_number *ret, const mp_number *x_orig)
 {
     decNumber temp, twofivesix;
     decNumberFromScaled(&twofivesix, 256); /* can be copy */
@@ -1130,7 +1129,7 @@ static void mp_decimal_m_exp(MP mp, mp_number *ret, mp_number *x_orig)
     mp_decimal_data.limitedset.status = 0;
     decNumberExp(ret->data.num, &temp, &mp_decimal_data.limitedset);
     if (mp_decimal_data.limitedset.status & DEC_Clamped) {
-        if (decNumberIsPositive((decNumber *) x_orig->data.num)) {
+        if (decNumberIsPositive((const decNumber *) x_orig->data.num)) {
             mp->arithmic_error = mp_error_code(mp, 6);
             decNumberCopy(ret->data.num, &mp_decimal_data.EL_GORDO);
         } else {
@@ -1141,10 +1140,10 @@ static void mp_decimal_m_exp(MP mp, mp_number *ret, mp_number *x_orig)
     mp_decimal_data.limitedset.status = 0;
 }
 
-static void mp_decimal_n_arg(MP mp, mp_number *ret, mp_number *x_orig, mp_number *y_orig)
+static void mp_decimal_n_arg(MP mp, mp_number *ret, const mp_number *x_orig, const mp_number *y_orig)
 {
-    if (decNumberIsZero((decNumber *) x_orig->data.num) && decNumberIsZero((decNumber *) y_orig->data.num)) {
-        if (decNumberIsNegative((decNumber *) internal_value(mp_default_zero_angle_internal).data.num)) {
+    if (decNumberIsZero((const decNumber *) x_orig->data.num) && decNumberIsZero((const decNumber *) y_orig->data.num)) {
+        if (decNumberIsNegative((const decNumber *) internal_value(mp_default_zero_angle_internal).data.num)) {
             mp_error(
                 mp,
                 "angle(0,0) is taken as zero",
@@ -1169,7 +1168,7 @@ static void mp_decimal_n_arg(MP mp, mp_number *ret, mp_number *x_orig, mp_number
     mp_decnumber_check(mp, ret->data.num, &mp_decimal_data.set);
 }
 
-static void sinecosine(decNumber *theangle, decNumber *c, decNumber *s)
+static void sinecosine(const decNumber *theangle, decNumber *c, decNumber *s)
 {
     int prec = mp_decimal_data.set.digits/2;
     decNumber p, pxa, fac, cc;
@@ -1214,7 +1213,7 @@ static void sinecosine(decNumber *theangle, decNumber *c, decNumber *s)
     }
 }
 
-static void mp_decimal_sin_cos(MP mp, mp_number *z_orig, mp_number *n_cos, mp_number *n_sin)
+static void mp_decimal_sin_cos(MP mp, const mp_number *z_orig, mp_number *n_cos, mp_number *n_sin)
 {
     decNumber rad;
     decNumber one_eighty;
@@ -1240,79 +1239,57 @@ static void mp_decimal_sin_cos(MP mp, mp_number *z_orig, mp_number *n_cos, mp_nu
     mp_decnumber_check(mp, n_sin->data.num, &mp_decimal_data.set);
 }
 
-# define KK            100                /* the long lag  */
-# define LL            37                 /* the short lag */
-# define MM            (1L<<30)           /* the modulus   */
-# define mod_diff(x,y) (((x)-(y))&(MM-1)) /* subtraction mod MM */
-# define QUALITY       1009               /* recommended quality level for high-res use */
-# define TT            70                 /* guaranteed separation between streams */
-# define is_odd(x)     ((x)&1)            /* units bit of x */
-
-typedef struct mp_decimal_random_info {
-    long  x[KK];
-    long  buf[QUALITY];
-    long  dummy;
-    long  started;
-    long *ptr;
-} mp_decimal_random_info;
-
-static mp_decimal_random_info mp_decimal_random_data = {
-    .dummy   = -1,
-    .started = -1,
-    .ptr     = &mp_decimal_random_data.dummy
-};
-
-static void ran_array(long aa[],int n)
+static void ran_array(MP mp, long aa[], int n)
 {
     int i, j;
-    for (j = 0; j < KK;j++) {
-        aa[j] = mp_decimal_random_data.x[j];
+    for (j = 0; j < mp_random_KK;j++) {
+        aa[j] = mp->random_data.x[j];
     }
     for (; j < n; j++) {
-        aa[j] = mod_diff(aa[j - KK], aa[j - LL]);
+        aa[j] = mp_random_mod_diff(aa[j - mp_random_KK], aa[j - mp_random_LL]);
     }
-    for (i = 0; i < LL ; i++, j++) {
-        mp_decimal_random_data.x[i] = mod_diff(aa[j - KK], aa[j - LL]);
+    for (i = 0; i < mp_random_LL ; i++, j++) {
+        mp->random_data.x[i] = mp_random_mod_diff(aa[j - mp_random_KK], aa[j - mp_random_LL]);
     }
-    for (;i < KK; i++, j++) {
-        mp_decimal_random_data.x[i] = mod_diff(aa[j - KK], mp_decimal_random_data.x[i - LL]);
+    for (;i < mp_random_KK; i++, j++) {
+        mp->random_data.x[i] = mp_random_mod_diff(aa[j - mp_random_KK], mp->random_data.x[i - mp_random_LL]);
     }
 }
 
-static void ran_start(long seed)
+static void ran_start(MP mp, long seed)
 {
     int t, j;
-    long x[KK+KK-1]; /* the preparation buffer */
-    long ss=(seed+2)&(MM-2);
-    for (j = 0; j < KK; j++) {
+    long x[mp_random_KK + mp_random_KK - 1]; /* the preparation buffer */
+    long ss = (seed + 2) & (mp_random_MM - 2);
+    for (j = 0; j < mp_random_KK; j++) {
         /* bootstrap the buffer */
         x[j] = ss;
         ss <<= 1;
-        if (ss >= MM) {
+        if (ss >= mp_random_MM) {
             /* cyclic shift 29 bits */
-            ss -= MM - 2;
+            ss -= mp_random_MM - 2;
         }
     }
     /* make x[1] (and only x[1]) odd */
     x[1]++;
-    for (ss = seed & (MM-1), t = TT - 1; t;) {
-        for (j = KK - 1; j > 0; j--) {
+    for (ss = seed & (mp_random_MM-1), t = mp_random_TT - 1; t;) {
+        for (j = mp_random_KK - 1; j > 0; j--) {
             /* square */
             x[j + j] = x[j];
             x[j + j - 1] = 0;
         }
-        for (j = KK + KK - 2; j >= KK; j--) {
-            x[j - (KK - LL)] = mod_diff(x[j - (KK - LL)], x[j]);
-            x[j - KK] = mod_diff(x[j - KK], x[j]);
+        for (j = mp_random_KK + mp_random_KK - 2; j >= mp_random_KK; j--) {
+            x[j - (mp_random_KK - mp_random_LL)] = mp_random_mod_diff(x[j - (mp_random_KK - mp_random_LL)], x[j]);
+            x[j - mp_random_KK] = mp_random_mod_diff(x[j - mp_random_KK], x[j]);
         }
-        if (is_odd(ss)) {
+        if (odd_long(ss)) {
             /* "multiply by z" */
-            for (j = KK; j > 0; j--) {
+            for (j = mp_random_KK; j > 0; j--) {
                 x[j] = x[j-1];
             }
-            x[0] = x[KK];
-            /* shift the buffer cyclically */
-            x[LL] = mod_diff(x[LL], x[KK]);
+            x[0] = x[mp_random_KK];
+            /* shift the buffer cyclicamp_random_LLy */
+            x[mp_random_LL] = mp_random_mod_diff(x[mp_random_LL], x[mp_random_KK]);
         }
         if (ss) {
             ss >>= 1;
@@ -1320,33 +1297,38 @@ static void ran_start(long seed)
             t--;
         }
     }
-    for (j = 0; j < LL; j++) {
-        mp_decimal_random_data.x[j + KK -LL] = x[j];
+    for (j = 0; j < mp_random_LL; j++) {
+        mp->random_data.x[j + mp_random_KK - mp_random_LL] = x[j];
     }
-    for (; j < KK; j++) {
-        mp_decimal_random_data.x[j - LL] = x[j];
+    for (; j < mp_random_KK; j++) {
+        mp->random_data.x[j - mp_random_LL] = x[j];
     }
     for (j = 0; j < 10; j++) {
         /* warm things up */
-        ran_array(x, KK + KK - 1);
+        ran_array(mp, x, mp_random_KK + mp_random_KK - 1);
     }
-    mp_decimal_random_data.ptr = &mp_decimal_random_data.started;
+    mp->random_data.ptr = &mp->random_data.started;
 }
 
-static long ran_arr_cycle(void)
+static long ran_arr_cycle(MP mp)
 {
-    if (mp_decimal_random_data.ptr == &mp_decimal_random_data.dummy) {
+    if (mp->random_data.ptr == &mp->random_data.dummy) {
         /* the user forgot to initialize */
-        ran_start(314159L);
+        ran_start(mp, 314159L);
     }
-    ran_array(mp_decimal_random_data.buf, QUALITY);
-    mp_decimal_random_data.buf[KK] = -1;
-    mp_decimal_random_data.ptr = mp_decimal_random_data.buf + 1;
-    return mp_decimal_random_data.buf[0];
+    ran_array(mp, mp->random_data.buf, mp_random_QUALITY);
+    mp->random_data.buf[mp_random_KK] = -1;
+    mp->random_data.ptr = mp->random_data.buf + 1;
+    return mp->random_data.buf[0];
 }
 
 static void mp_decimal_init_randoms(MP mp, int seed)
 {
+    mp->random_data = (mp_random_info) {
+        .dummy   = -1,
+        .started = -1,
+        .ptr     = &mp->random_data.dummy
+    };
     int k = 1; /* more or less random integers */
     int j = abs(seed);
     while (j >= mp_fraction_multiplier) {
@@ -1365,10 +1347,10 @@ static void mp_decimal_init_randoms(MP mp, int seed)
     mp_new_randoms(mp);
     mp_new_randoms(mp);
     mp_new_randoms(mp);
-    ran_start((unsigned long) seed);
+    ran_start(mp, (unsigned long) seed);
 }
 
-static void mp_decimal_number_modulo(mp_number *a, mp_number *b)
+static void mp_decimal_number_modulo(mp_number *a, const mp_number *b)
 {
     decNumberRemainder(a->data.num, a->data.num, b->data.num, &mp_decimal_data.set);
 }
@@ -1377,10 +1359,10 @@ static void mp_next_unif_random(MP mp, mp_number *ret)
 {
     decNumber a;
     decNumber b;
-    unsigned long int op = (unsigned) (*mp_decimal_random_data.ptr >= 0? *mp_decimal_random_data.ptr++: ran_arr_cycle());
+    unsigned long int op = (unsigned) (*mp->random_data.ptr >= 0 ? *mp->random_data.ptr++ : ran_arr_cycle(mp));
     (void) mp;
     decNumberFromScaled(&a, op);
-    decNumberFromScaled(&b, MM);
+    decNumberFromScaled(&b, mp_random_MM);
     decNumberDivide(&a, &a, &b, &mp_decimal_data.set); /* a = a/b */
     decNumberCopy(ret->data.num, &a);
     mp_decnumber_check(mp, ret->data.num, &mp_decimal_data.set);
@@ -1396,7 +1378,7 @@ static void mp_next_random(MP mp, mp_number *ret)
     mp_decimal_clone(ret, &(mp->randoms[mp->j_random]));
 }
 
-static void mp_decimal_m_unif_rand(MP mp, mp_number *ret, mp_number *x_orig)
+static void mp_decimal_m_unif_rand(MP mp, mp_number *ret, const mp_number *x_orig)
 {
     mp_number x, abs_x, u, y; /* |y| is trial value */
     mp_decimal_allocate_number(mp, &y, mp_fraction_type);
@@ -1453,7 +1435,7 @@ static void mp_decimal_m_norm_rand(MP mp, mp_number *ret)
 
 static void mp_decimal_set_precision(MP mp)
 {
-    int i = decNumberToInt32((decNumber *) internal_value(mp_number_precision_internal).data.num, &mp_decimal_data.set);
+    int i = decNumberToInt32((const decNumber *) internal_value(mp_number_precision_internal).data.num, &mp_decimal_data.set);
     mp_decimal_data.set.digits = i;
     mp_decimal_data.limitedset.digits = i;
 }

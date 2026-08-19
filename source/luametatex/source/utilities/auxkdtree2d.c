@@ -31,10 +31,10 @@ static inline int kd2_equal(kd2_point_data *a, kd2_point_data *b)
     return (fabs(a->x - b->x) < epsilon) && (fabs(a->y - b->y) < epsilon);
 }
 
-static inline int kd2_exact(kd2_point_data *a, kd2_point_data *b)
-{
-    return (a->x == b->x) && (a->y == b->y);
-}
+// static inline int kd2_exact(kd2_point_data *a, kd2_point_data *b)
+// {
+//     return (a->x == b->x) && (a->y == b->y);
+// }
 
 static inline double kd2_squared_distance(kd2_point_data *a, kd2_point_data *b)
 {

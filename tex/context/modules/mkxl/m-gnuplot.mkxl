@@ -12,7 +12,10 @@
 %C details.
 
 %D This is a variant on the \GNUPLOT\ terminal code. At some point (when there is a
-%D reason) I will make a proper environment that can be used for embedded code.
+%D reason) I will make a proper environment that can be used for embedded code. We
+%D actually could do with a simpler context interface but then i need to be able to
+%D compile the thing. I have no time to look into fonts or Mojca's \MKII\ context
+%D terminal code either.
 
 \permanent\protected\def\includegnuplotsvgfile[#1]%
   {\hbox\bgroup
@@ -77,21 +80,120 @@ figures.remappers.gp = { svg = remap }
 \continueifinputfile{m-gnuplot.mkxl}
 
 \startluacode
-io.savedata("m-gnuplot-demo.gp", [[
+io.savedata("m-gnuplot-demo-1.gp", [[
 set format xy "$%g$"
 
 set title  'This is a plot of $y=\\sin(x)$'
 set xlabel 'This is the $x$ axis'
 set ylabel 'This is the $y$ axis'
 
-plot [0:6.28] [0:1] sin(x)
+plot [0:6.28] [0:1] sin(4*x)
+]])
+\stopluacode
+
+% from the demo site
+
+\startluacode
+io.savedata("m-gnuplot-demo-2.gp", [[
+set view 42, 33, 1, 1
+set samples 201, 201
+set isosamples 201, 201
+set hidden3d back offset 1 trianglepattern 3 undefined 1 altdiagonal bentover
+set style data lines
+set xyplane relative 0
+set title "Modified Bessel functions of the second kind"
+set trange [ * : * ] noreverse nowriteback
+set urange [ * : * ] noreverse nowriteback
+set vrange [ * : * ] noreverse nowriteback
+set xlabel "x"
+set xrange [ -5.00000 : 5.00000 ] noreverse nowriteback
+set x2range [ * : * ] noreverse writeback
+set ylabel "iy"
+set yrange [ -5.00000 : 5.00000 ] noreverse nowriteback
+set y2range [ * : * ] noreverse writeback
+set zrange [ -10.0000 : 5.00000 ] noreverse writeback
+set cbrange [ * : * ] noreverse writeback
+set rrange [ * : * ] noreverse writeback
+set colorbox vertical origin screen 0.9, 0.2 size screen 0.05, 0.6 front  noinvert bdefault
+unset colorbox
+VERSION = "gnuplot version 6.0.3"
+NO_ANIMATION = 1
+save_encoding = "utf8"
+splot real(BesselK(0, x+y*I)) with lines lw .2
+
+]])
+\stopluacode
+
+% from the demo site
+
+\startluacode
+io.savedata("m-gnuplot-demo-3.gp", [[
+set border 4095 front lt black linewidth 1.000 dashtype solid
+set style fill  transparent solid 0.50 border
+unset key
+set view 60, 60, 1.1, 0.6
+set samples 40, 40
+set isosamples 40, 40
+set style data lines
+set xyplane relative 0
+set xtics border in scale 1,0.5 mirror norotate  offset character 0, -0.5, 0 autojustify
+set xtics  norangelimit 2
+set ytics border in scale 1,0.5 mirror norotate  offset character 0, -0.5, 0 autojustify
+set ytics  norangelimit 2
+set ztics  norangelimit 5
+set title "set pm3d clip (Gnuplot 6)"
+set xrange [ -1.00000 : 5.00000 ] noreverse
+set yrange [ -3.00000 : 3.00000 ] noreverse
+set zrange [ -10.0000 : 10.0000 ] noreverse
+set bmargin  6
+set pm3d depthorder
+set pm3d interpolate 1,1 flush begin noftriangles border linewidth 0.100 dashtype solid corners2color mean
+set pm3d lighting primary 0.5 specular 0.2 spec2 0
+unset colorbox
+f(x,y) = x**2 + y**2 * (1 - x)**3
+NO_ANIMATION = 1
+## Last plot was a multiplot
+# saved multiplot
+set multiplot layout 1,2 title "Gnuplot 6 pm3d default is smooth clipping against zrange"
+set title "set pm3d clip4in (old default)"
+set pm3d clip4in
+splot f(x,y) with pm3d fc "cyan"
+set title "set pm3d clip (Gnuplot 6)"
+set pm3d clip
+replot
+unset multiplot
+]])
+\stopluacode
+
+% from the demo site
+
+\startluacode
+io.savedata("m-gnuplot-demo-4.gp", [[
+set dummy u, v
+set key bmargin center horizontal Right noreverse enhanced autotitle nobox
+set parametric
+set view 50, 30, 1, 1
+set isosamples 50, 20
+set hidden3d back offset 1 trianglepattern 3 undefined 1 altdiagonal bentover
+set style data lines
+set xyplane relative 0
+set title "Interlocking Tori"
+set urange [ -3.14159 : 3.14159 ] noreverse
+set vrange [ -3.14159 : 3.14159 ] noreverse
+NO_ANIMATION = 1
+splot cos(u)+.5*cos(u)*cos(v),sin(u)+.5*sin(u)*cos(v),.5*sin(v) with lines,       1+cos(u)+.5*cos(u)*cos(v),.5*sin(v),sin(u)+.5*sin(u)*cos(v) with lines
 ]])
 \stopluacode
 
 \starttext
 
-    \externalfigure[m-gnuplot-demo.gp][conversion=svg,width=4cm]
-
-    \externalfigure[m-gnuplot-demo.gp][conversion=svg,width=8cm]
+%     \dorecurse {4} {
+    \dorecurse {1} {
+        \startTEXpage[offset=1ts]
+          % \externalfigure[m-gnuplot-demo-#1.gp][conversion=svg,width=4cm,frame=on]
+          % \vskip1ex
+            \externalfigure[m-gnuplot-demo-#1.gp][conversion=svg,width=8cm,frame=on]
+        \stopTEXpage
+    }
 
 \stoptext

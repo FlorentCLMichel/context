@@ -78,7 +78,8 @@ local helpinfo = [[
  <flags>
   <category name="basic">
    <subcategory>
-    <flag name="whatever"><short>do whatever</short></flag>
+    <flag name="whatever"><short>do whatever needed (default)</short></flag>
+    <flag name="convert"><short>generate more efficient char-def.lmt file</short></flag>
    </subcategory>
   </category>
  </flags>
@@ -100,6 +101,7 @@ local lpegmatch = lpeg.match
 local P, C, S, R, Cs, Ct, Cg, Cf, Cc = lpeg.P, lpeg.C, lpeg.S, lpeg.R, lpeg.Cs, lpeg.Ct, lpeg.Cg, lpeg.Cf, lpeg.Cc
 local formatters = string.formatters
 local utfchar = utf.char
+local char, byte = string.char, string.byte
 
 local report = application.report
 
@@ -676,14 +678,14 @@ function scripts.unicode.save(filename)
                 d.variants = h
             end
         end
-        variants = table.concat(variants,"\n\n")
+        variants = concat(variants,"\n\n")
         --
         local data = serialize(characters.data,"characters.data", {
             hexify   = true,
             noquotes = true,
         })
         --
-        data = string.gsub(data,"variants=\"(variants_%d+)\"","variants=%1")
+        data = gsub(data,"variants=\"(variants_%d+)\"","variants=%1")
         --
         io.savedata(filename,preamble .. "\n\n" .. variants .. "\n\n" .. data)
     end
@@ -847,13 +849,7 @@ do
 
 end
 
--- the action
-
-local filename = environment.files[1]
-
-if environment.arguments.exporthelp then
-    application.export(environment.arguments.exporthelp,filename)
-else
+local function generate()
     report("start working on %a, input char-def.lua",lfs.currentdir())
     if scripts.unicode.load() then
         scripts.unicode.update()
@@ -861,9 +857,253 @@ else
         scripts.unicode.save("char-def-new.lua")
         scripts.unicode.emoji("char-emj-new.lua")
         report("saved file %a","char-def-new.lua")
+        report("saved file %a","char-emj-new.lua")
         report("saved file %a (current 15.1, check for updates, see above!)","char-emj-new.lua")
     else
         report("nothing to do")
     end
     report("stop working on %a\n",lfs.currentdir())
+end
+
+local convert  do
+
+    local template = [[
+
+    do
+
+        local gsub         = string.gsub
+        local setmetatable = setmetatable
+
+        local pattern = %q
+
+        %s
+
+        local mt = {
+            __index = function(t,k)
+                if k == "description" then
+                    local d = rawget(t,"pd")
+                    if d then
+                        d = gsub(d,pattern,reverse)
+                        t.pd = nil
+                        t.description = d
+                        return d
+                    end
+                end
+            end,
+        }
+
+        for k, v in next, characters.data do
+            setmetatable(v,mt)
+        end
+
+        local luafile = resolvers.findfile("char-def.lua")
+        local thesize = file.size(luafile)
+        local luasize = %i
+
+        characters.packdata = {
+            luasize = luasize,
+            oldsize = %i,
+            newsize = %i,
+            version = %i,
+        }
+
+        if thesize == luasize then
+            return
+        end
+
+        logs.report("unicode")
+        logs.report("unicode", "char-def.[lua|lmt] mismatch, remove 'char-def.lmt'")
+        logs.report("unicode")
+
+    end
+    ]]
+
+    convert = function()
+
+        statistics.starttiming("hpd")
+
+        local oldfile = "char-def.lua"
+        local newfile = "char-def.lmt"
+        local logfile = "char-def.txt"
+
+        if not oldfile or oldfile == "" then
+            report("no 'char-def.lua' in the current path")
+            return
+        end
+
+        dofile(oldfile)
+
+        local olddata = characters.data
+        local words   = table.setmetatableindex("number")
+        local okay    = { }
+        local mapping = { }
+        local reverse = { }
+        local index   = 1
+        local oldsize = 0
+        local newsize = 0
+        local used    = { }
+        local errors  = 0
+
+        -- local max, pattern = 5, "[\1\2\3\4\5]."
+        -- local max, pattern = 4, "[\1\2\3\4]."
+        local max, pattern = 3, "[\1\2\3]*."
+        -- local max, pattern = 2, "[\1\2]*."
+
+        for k, v in next, olddata do
+            local d = v.description
+            if d then
+             -- for s in gmatch(d,"[\xC2-\xFD]") do
+             --     print("!!!!",d,s)
+             -- end
+                for s in gmatch(d,".") do
+                    used[s] = true
+                end
+             -- for s in gmatch(d,"0x") do
+             --     words[s] = words[s] + 1
+             -- end
+                for s in gmatch(d,"[A-Z][A-Z][A-Z]+") do
+                    words[s] = words[s] + 1
+                end
+            end
+        end
+
+        for k, v in next, words do
+            okay[#okay+1] = { k, v * #k }
+        end
+
+        sort(okay,function(a,b)
+            return a[2] > b[2]
+        end)
+
+        local blocked = lua.newindex(255,false)
+
+        blocked[ 0] = true
+        blocked[10] = true -- nicer for tracing
+        blocked[13] = true -- nicer for tracing
+        blocked[32] = true
+
+        for i=1,max do
+            blocked[i] = true
+        end
+
+        for k, v in next, used do
+            blocked[byte(k)] = true -- inludes space anyway
+        end
+
+        for k, v in next, words do
+            okay[#okay+1] = { k, v * #k }
+        end
+
+        -- single byte
+
+        for i=1,255 do
+            if not blocked[i] then
+                local n = okay[index][1]
+                local m = char(i)
+                mapping[n] = m
+                reverse[m] = n
+                index = index + 1
+            end
+        end
+
+        -- multi-byte
+
+        for j=max,1,-1 do
+            for i=1,255 do
+            if not blocked[i] then
+                    local n = okay[index][1]
+                    if #n > j then
+                        local n = okay[index][1]
+                        local m = char(j,i)
+                        mapping[n] = m
+                        reverse[m] = n
+                        index = index + 1
+                    end
+                end
+            end
+        end
+
+        local back = { "local reverse={" }
+        for k, v in table.sortedhash(reverse) do
+            back[#back+1] = format(" [%q]=%q,",k,v)
+        end
+        back[#back+1] = "}"
+        back = concat(back,"\n")
+
+        local luadata = io.loaddata(oldfile)
+        local luasize = #luadata
+
+        luadata = gsub(luadata,[[description="(.-)"]],function(old)
+            local new = gsub(old,"[A-Z][A-Z][A-Z]+",mapping)
+         -- new = gsub(new,"0x",mapping)
+            oldsize = oldsize + #old
+            newsize = newsize + #new
+            return string.format("pd=%q",new)
+        end)
+
+        luadata = luadata .. format(
+            template,
+            pattern,
+            back,
+            luasize,
+            oldsize,
+            newsize,
+            1
+        )
+
+        io.savedata(newfile,luadata)
+
+        dofile(newfile)
+
+        local newdata    = characters.data
+        local done       = { }
+        local percentage = math.round(100*(oldsize - newsize)/oldsize)
+
+        for k, v in next, olddata do
+            local old = v.description
+            if old then
+                done[#done+1] = rawget(v,"pd")
+                local new = newdata[k].description
+                if old ~= new then
+                    report("original  : %i %a", #old, old)
+                    report("roundtrip : %i %a", #new, new)
+                    errors = errors + 1
+                end
+            end
+        end
+
+        sort(done)
+
+        io.savedata(logfile,concat(done,"\n"))
+
+        statistics.stoptiming("hpd")
+
+        report("old size    : %7i",oldsize)
+        report("new size    : %7i",newsize)
+        report("delta       : %7i",oldsize - newsize)
+        report()
+        report("file loaded : %s", oldfile)
+        report("file saved  : %s", newfile)
+        report("file saved  : %s", logfile)
+        report()
+        report("lua size    : %i original",luasize)
+        report("reduction   : %i percent",percentage)
+        report("roundtrip   : %i errors",errors)
+        report()
+        report("time spent  : %s seconds",statistics.elapsedtime("hpd"))
+
+    end
+
+end
+
+-- the action
+
+local filename = environment.files[1]
+
+if environment.arguments.exporthelp then
+    application.export(environment.arguments.exporthelp,filename)
+elseif environment.arguments.convert then
+    convert()
+else
+    generate()
 end

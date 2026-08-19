@@ -873,7 +873,7 @@ function handlers.gsub_ligature(head,start,dataset,sequence,ligature,rlmode,skip
                     match = true
                 end
             end
-            if not match and not pre or not replace then
+            if not match and (not pre or not replace) then
                 local n    = getnext(discfound)
                 local char = ischar(n,currentfont)
                 if char and (not tonumber(ligature) and ligature[char]) then
@@ -1410,8 +1410,8 @@ function chainprocs.gsub_alternate(head,start,stop,dataset,sequence,currentlooku
                         if trace_alternatives then
                             logprocess("%s: replacing %s by alternative %a to %s, %s",cref(dataset,sequence),gref(currentchar),choice,gref(choice),comment)
                         end
-                        resetinjection(start)
-                        setchar(start,choice)
+                        resetinjection(current)
+                        setchar(current,choice)
                     else
                         if trace_alternatives then
                             logwarning("%s: no variant %a for %s, %s",cref(dataset,sequence),value,gref(currentchar),comment)
@@ -1564,7 +1564,7 @@ function chainprocs.gpos_single(head,start,stop,dataset,sequence,currentlookup,r
                         logprocess("%s: shifting single %s by %s (%p,%p) and correction (%p,%p)",cref(dataset,sequence),gref(startchar),format,dx,dy,w,h)
                     end
                 else -- needs checking .. maybe no kerns format for single
-                    local k = (format == "move" and setmove or setkern)(start,factor,rlmode,kerns,injection)
+                    local k = (format == "move" and setmove or setkern)(start,factor,rlmode,kerns,"injections")
                     if trace_kerns then
                         logprocess("%s: shifting single %s by %s %p",cref(dataset,sequence),gref(startchar),format,k)
                     end
@@ -1666,7 +1666,7 @@ function chainprocs.gpos_mark2base(head,start,stop,dataset,sequence,currentlooku
                             while base do
                                 base = getprev(base)
                                 if base then
-                                    local basechar = ischar(base,currentfont)
+                                    basechar = ischar(base,currentfont)
                                     if basechar then
                                         if not marks[basechar] then
                                             break
@@ -1731,7 +1731,7 @@ function chainprocs.gpos_mark2ligature(head,start,stop,dataset,sequence,currentl
                             while base do
                                 base = getprev(base)
                                 if base then
-                                    local basechar = ischar(base,currentfont)
+                                    basechar = ischar(base,currentfont)
                                     if basechar then
                                         if not marks[basechar] then
                                             break
@@ -1760,7 +1760,7 @@ function chainprocs.gpos_mark2ligature(head,start,stop,dataset,sequence,currentl
                                     local dx, dy, bound = setmark(start,base,factor,rlmode,ba,ma,characters[basechar],false,checkmarks)
                                     if trace_marks then
                                         logprocess("%s, bound %s, anchoring mark %s to baselig %s at index %s => (%p,%p)",
-                                            cref(dataset,sequence),a or bound,gref(markchar),gref(basechar),index,dx,dy)
+                                            cref(dataset,sequence),bound,gref(markchar),gref(basechar),index,dx,dy)
                                     end
                                     return head, start, true
                                 end
@@ -1880,7 +1880,7 @@ function chainprocs.gpos_cursive(head,start,stop,dataset,sequence,currentlookup,
                 end
             end
         elseif trace_cursive and trace_details then
-            logprocess("%s, cursive %s is already done",pref(dataset,sequence),gref(getchar(start)),alreadydone)
+            logprocess("%s, cursive %s is already done",pref(dataset,sequence),gref(getchar(start)))
         end
     end
     return head, start, false
@@ -2156,13 +2156,14 @@ local function chaindisk(head,start,dataset,sequence,rlmode,skiphash,ck)
                     current       = getnext(current)
                 else
                     -- we can use an iterator
+                    local discnext = getnext(current)
                     while replace and i <= l do
                         if getid(replace) == glyph_code then
                             i = i + 1
                         end
                         replace = getnext(replace)
                     end
-                    current = getnext(replace)
+                    current = replace or discnext
                 end
                 last = current
             else

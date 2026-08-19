@@ -588,69 +588,73 @@ static int mplib_gettolerance(lua_State *L)
 
 static int mplib_aux_register_function(lua_State *L, int old_id)
 {
-    if (! (lua_isfunction(L, -1) || lua_isnil(L, -1))) {
-        return 0;
-    } else {
-        lua_pushvalue(L, -1);
-        if (old_id) {
-            luaL_unref(L, LUA_REGISTRYINDEX, old_id);
-        }
-        return luaL_ref(L, LUA_REGISTRYINDEX); /*tex |new_id| */
+    if (old_id) {
+        luaL_unref(L, LUA_REGISTRYINDEX, old_id);
+    }
+    switch (lua_type(L, -1)) {
+        case LUA_TFUNCTION:
+            /* play safe and push */
+            lua_pushvalue(L, -1);
+            return luaL_ref(L, LUA_REGISTRYINDEX); /*tex |new_id| */
+        case LUA_TNIL:
+            return 0;
+        default:
+            return 0;
     }
 }
 
 static int mplib_aux_find_file_function(lua_State *L, MP_options *options)
 {
     options->find_file_id = mplib_aux_register_function(L, options->find_file_id);
-    return (! options->find_file_id);
+    return ! options->find_file_id;
 }
 
 static int mplib_aux_run_script_function(lua_State *L, MP_options *options)
 {
     options->run_script_id = mplib_aux_register_function(L, options->run_script_id);
-    return (! options->run_script_id);
+    return ! options->run_script_id;
 }
 
 static int mplib_aux_run_internal_function(lua_State *L, MP_options *options)
 {
     options->run_internal_id = mplib_aux_register_function(L, options->run_internal_id);
-    return (! options->run_internal_id);
+    return ! options->run_internal_id;
 }
 
 static int mplib_aux_make_text_function(lua_State *L, MP_options *options)
 {
     options->make_text_id = mplib_aux_register_function(L, options->make_text_id);
-    return (! options->make_text_id);
+    return ! options->make_text_id;
 }
 
 static int mplib_aux_run_logger_function(lua_State *L, MP_options *options)
 {
     options->run_logger_id = mplib_aux_register_function(L, options->run_logger_id);
-    return (! options->run_logger_id);
+    return ! options->run_logger_id;
 }
 
 static int mplib_aux_run_overload_function(lua_State *L, MP_options *options)
 {
     options->run_overload_id = mplib_aux_register_function(L, options->run_overload_id);
-    return (! options->run_overload_id);
+    return ! options->run_overload_id;
 }
 
 static int mplib_aux_run_error_function(lua_State *L, MP_options *options)
 {
     options->run_error_id = mplib_aux_register_function(L, options->run_error_id);
-    return (! options->run_error_id);
+    return ! options->run_error_id;
 }
 
 static int mplib_aux_run_status_function(lua_State *L, MP_options *options)
 {
     options->run_status_id = mplib_aux_register_function(L, options->run_status_id);
-    return (! options->run_status_id);
+    return ! options->run_status_id;
 }
 
 static int mplib_aux_open_file_function(lua_State *L, MP_options *options)
 {
     options->open_file_id = mplib_aux_register_function(L, options->open_file_id);
-    return (! options->open_file_id);
+    return ! options->open_file_id;
 }
 
 static char *mplib_aux_find_file(MP mp, const char *fname, const char *fmode, int ftype)
@@ -1157,13 +1161,19 @@ static void *mplib_aux_open_file(MP mp, const char *fname, const char *fmode, in
             }
             ++mplib_state.file_callbacks;
             if (lua_pcall(L, 3, 1, 0)) {
-                *((int*) index) = 0;
+                const char *error = lua_tostring(L, -1);
+                tex_formatted_warning("mplib", "open file: %s", error ? error : "callback failed");
+                lua_settop(L, stacktop);
+                mp_memory_free(index);
+                return NULL;
             } else if (lua_istable(L, -1)) {
                 lua_pushvalue(L, -1);
                 *((int*) index) = luaL_ref(L, LUA_REGISTRYINDEX);
             } else {
                 tex_normal_warning("mplib", "open file: table expected");
-                *((int*) index) = 0;
+                lua_settop(L, stacktop);
+                mp_memory_free(index);
+                return NULL;
             }
             lua_settop(L, stacktop);
             return index;
@@ -1179,24 +1189,22 @@ static void *mplib_aux_open_file(MP mp, const char *fname, const char *fmode, in
 
 static void mplib_aux_close_file(MP mp, void *index)
 {
-    if (mp->open_file_id && index) {
+    if (index) {
         int idx = *((int*) index);
         lua_State *L = (lua_State *) mp_userdata(mp);
         int stacktop = lua_gettop(L);
-        mplib_pop_function(idx, close)
-        if (lua_isfunction(L, -1)) {
-            ++mplib_state.file_callbacks;
-            if (lua_pcall(L, 0, 0, 0)) {
-                /* no message */
-            } else {
-                /* nothing to be done here */
+        if (mp->open_file_id && idx > 0) {
+            mplib_pop_function(idx, close)
+            if (lua_isfunction(L, -1)) {
+                ++mplib_state.file_callbacks;
+                if (lua_pcall(L, 0, 0, 0)) {
+                    /* no message */
+                }
             }
         }
-        /*
-        if (index) {
-            luaL_unref(L, idx));
+        if (idx > 0) {
+            luaL_unref(L, LUA_REGISTRYINDEX, idx);
         }
-        */
         lua_settop(L, stacktop);
         mp_memory_free(index);
     }
@@ -1660,19 +1668,34 @@ static void aux_mplib_knot_to_path(lua_State *L, MP mp, mp_knot h, int ispen, in
 # define kind_of_expression(n) \
     lmt_optinteger(L, n, 0)
 
+// static int mplib_scan_string(lua_State *L)
+// {
+//     MP mp = mplib_aux_is_mp(L, 1);
+//     if (mp) {
+//         char *s = NULL;
+//         size_t l = 0;
+//         mp_scan_string_value(mp, kind_of_expression(2), &s, &l) ;
+//         if (s) {
+//             lua_pushlstring(L, s, l);
+//             return 1;
+//         }
+//     }
+//     lua_pushliteral(L,"");
+//     return 1;
+// }
+
 static int mplib_scan_string(lua_State *L)
 {
     MP mp = mplib_aux_is_mp(L, 1);
     if (mp) {
         char *s = NULL;
         size_t l = 0;
-        mp_scan_string_value(mp, kind_of_expression(2), &s, &l) ;
-        if (s) {
+        if (mp_scan_string_value(mp, kind_of_expression(2), &s, &l) && s) {
             lua_pushlstring(L, s, l);
             return 1;
         }
     }
-    lua_pushliteral(L,"");
+    lua_pushliteral(L, "");
     return 1;
 }
 
@@ -1994,6 +2017,54 @@ static int mplib_inject_transform(lua_State *L)
     return 0;
 }
 
+static void mplib_aux_release_options(lua_State *L, MP_options *options)
+{
+    int ids[] = {
+        options->find_file_id,
+        options->run_script_id,
+        options->run_internal_id,
+        options->run_logger_id,
+        options->run_overload_id,
+        options->run_error_id,
+        options->run_warning_id,
+        options->run_status_id,
+        options->make_text_id,
+        options->open_file_id,
+    };
+    for (unsigned int i = 0; i < sizeof(ids) / sizeof(ids[0]); i++) {
+        if (ids[i]) {
+            luaL_unref(L, LUA_REGISTRYINDEX, ids[i]);
+        }
+    }
+    if (options->job_name) {
+        lmt_memory_free(options->job_name);
+        options->job_name = NULL;
+    }
+    mp_memory_free(options);
+}
+
+static void mplib_aux_finish(lua_State *L, MP mp)
+{
+    int ids[] = {
+        mp->find_file_id,
+        mp->run_script_id,
+        mp->run_internal_id,
+        mp->run_logger_id,
+        mp->run_overload_id,
+        mp->run_error_id,
+        mp->run_warning_id,
+        mp->run_status_id,
+        mp->make_text_id,
+        mp->open_file_id,
+    };
+    mp_finish(mp);
+    for (unsigned int i = 0; i < sizeof(ids) / sizeof(ids[0]); i++) {
+        if (ids[i]) {
+            luaL_unref(L, LUA_REGISTRYINDEX, ids[i]);
+        }
+    }
+}
+
 static int mplib_new(lua_State *L)
 {
     MP *mpud = lua_newuserdatauv(L, sizeof(MP *), 2);
@@ -2032,6 +2103,9 @@ static int mplib_new(lua_State *L)
                         options->interaction = luaL_checkoption(L, -1, "silent", mplib_interaction_options);
                     } else if (lua_key_eq(s, job_name)) {
                      // options->job_name = lmt_generic_strdup(lua_tostring(L, -1));
+                        if (options->job_name) {
+                            lmt_memory_free(options->job_name);
+                        }
                         options->job_name = lmt_memory_strdup(lua_tostring(L, -1));
                     } else if (lua_key_eq(s, find_file)) {
                         if (mplib_aux_find_file_function(L, options)) {
@@ -2089,13 +2163,16 @@ static int mplib_new(lua_State *L)
             }
         }
         if (! options->job_name || ! *(options->job_name)) {
-            mp_memory_free(options); /* leaks */
             tex_normal_warning("mplib", "job_name is not set");
+            mplib_aux_release_options(L, options);
+            /* lua will clean up the userdata */
             goto BAD;
         }
         mp = mp_initialize(options);
-        mp_memory_free(options); /* leaks */
         if (mp) {
+            lmt_memory_free(options->job_name);
+            options->job_name = NULL;
+            mp_memory_free(options);
             *mpud = mp;
             mplib_aux_set_bend_tolerance(L, bendtolerance);
             mplib_aux_set_move_tolerance(L, movetolerance);
@@ -2103,34 +2180,20 @@ static int mplib_new(lua_State *L)
             lua_setmetatable(L, -2);
             return 1;
         }
+        mplib_aux_release_options(L, options);
     }
   BAD:
     lua_pushnil(L);
     return 1;
 }
 
-# define mplib_collect_id(id) do { \
-    if (id) { \
-        luaL_unref(L, LUA_REGISTRYINDEX, id); \
-    } \
-} while(0)
-
 static int mplib_instance_collect(lua_State *L)
 {
     MP *mpud = mplib_aux_is_mpud(L, 1);
     if (*mpud) {
         MP mp = *mpud;
-        int run_logger_id = (mp)->run_logger_id;
-        mplib_collect_id((mp)->find_file_id);
-        mplib_collect_id((mp)->run_script_id);
-        mplib_collect_id((mp)->run_internal_id);
-        mplib_collect_id((mp)->run_overload_id);
-        mplib_collect_id((mp)->run_error_id);
-        mplib_collect_id((mp)->make_text_id);
-        mplib_collect_id((mp)->open_file_id);
-        mp_finish(mp);
+        mplib_aux_finish(L, mp);
         *mpud = NULL;
-        mplib_collect_id(run_logger_id);
     }
     return 0;
 }
@@ -2203,7 +2266,7 @@ static int mplib_finish(lua_State *L)
         int h = mp_execute(mp, NULL, 0);
         mp_run_data *res = mp_rundata(mp);
         int i = mplib_aux_wrapresults(L, mp, res, h, bendtolerance, movetolerance);
-        mp_finish(mp);
+        mplib_aux_finish(L, mp);
         *mpud = NULL;
         return i;
     } else {
@@ -4366,7 +4429,10 @@ static int mplib_bytemap_downgrade(lua_State *L)
         bytemap_data *target = mp_bytemap_get_by_index(mp, lmt_tointeger(L, 3));
         int r = lmt_optinteger(L, 4, 2);
         if (source && target) { 
+            size_t oldsize = (size_t) target->nx * target->ny * target->nz;
             bytemap_downgrade(source, target, r);
+            mp->memory_pool[mp_bytemap_data_pool].count -= oldsize;
+            mp->memory_pool[mp_bytemap_data_pool].count += (size_t) target->nx * target->ny * target->nz;
         }
     }
     return 0;

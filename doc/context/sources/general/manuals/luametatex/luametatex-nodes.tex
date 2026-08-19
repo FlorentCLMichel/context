@@ -37,7 +37,6 @@
 % attributes : node.direct.unsetattributes
 % attributes : node.direct.patchattributes
 % attributes : node.direct.getusedattributes
-% attributes : node.direct.currentattributes
 %
 % node.direct.isitalicglyph
 % node.direct.issimilarglyph   (a, b) font data scales slant weight
@@ -2100,7 +2099,7 @@ content. You get back a hlist or vlist that has the uleaders package property
 set.
 
 \starttyping[option=LUA]
-function node.direct.traverseleaders ( <t:direct> n )
+function node.direct.traverseleader ( <t:direct> n )
     return
         <t:direct>, -- list
         <t:integer> -- type
@@ -2165,7 +2164,7 @@ end
 \stoptyping
 
 \starttyping[option=LUA]
-function node.direct.getkerndimensions ( <t:direct> kern )
+function node.direct.getkerndimension ( <t:direct> kern )
     return <t:integer>, -- width (includes expansion)
 end
 \stoptyping
@@ -2286,7 +2285,7 @@ end
 function node.direct.getyscale  ( <t:direct> node )
     return <t:number>
 end
-function node.direct.getxyscale ( <t:direct> node )
+function node.direct.getxyscales ( <t:direct> node )
     return <t:number>,  <t:number>
 end
 \stoptyping
@@ -2294,7 +2293,7 @@ end
 Watch out, this setter again uses integers:
 
 \starttyping[option=LUA]
-function node.direct.setxyscale (
+function node.direct.setxyscales (
     <t:direct>  node,
     <t:integer> xscale,
     <t:integer> yscale
@@ -2438,19 +2437,19 @@ also because details might change.
 This returns the currently active list of attributes, if there is one.
 
 \starttyping[option=LUA]
-function node.direct.currentattr()
+function node.direct.currentattributes()
     return <t:direct> -- list
 end
 \stoptyping
 
-The intended usage of \type {currentattr} is as follows (we use the userdata
+The intended usage of \type {currentattributes} is as follows (we use the userdata
 interface here):
 
 \starttyping[option=LUA]
 local x1 = node.new("glyph")
-x1.attr = node.currentattr()
+x1.attr = node.currentattributes()
 local x2 = node.new("glyph")
-x2.attr = node.currentattr()
+x2.attr = node.currentattributes()
 \stoptyping
 
 or:
@@ -2458,7 +2457,7 @@ or:
 \starttyping[option=LUA]
 local x1 = node.new("glyph")
 local x2 = node.new("glyph")
-local ca = node.currentattr()
+local ca = node.currentattributes()
 x1.attr = ca
 x2.attr = ca
 \stoptyping
@@ -2848,7 +2847,7 @@ The next function checks if protrusion is active at a line boundary, in which ca
 node can be skipped. It's not that useful in the end.
 
 \starttyping[option=LUA]
-function node.direct.protrusionskipable ( <t:direct> n )
+function node.direct.protrusionskippable ( <t:direct> n )
     return <t:boolean> -- skippable
 end
 \stoptyping
@@ -3536,7 +3535,7 @@ The combined one ignores values that are no number, so passing (e.g.) \type {nil
 or (nicer) \type {false} will retain the value.
 
 \starttyping[option=LUA]
-function nodedirect.setwhd (
+function node.direct.setwhd (
     <t:direct>  node,
     <t:integer> width,
     <t:integer> height,
@@ -4025,18 +4024,6 @@ You can set and query the \SYNCTEX\ fields, a file number aka tag and a line
 number, for a \type {glue}, \type {kern}, \type {hlist}, \type {vlist}, \type
 {rule} and \type {math} nodes as well as \type {glyph} nodes (although this last
 one is not used in native \SYNCTEX).
-
-\starttyping[option=LUA]
-function node.direct.setsynctexfields ( <t:integer> fileid, <t:integer> line )
-    -- no return values
-end
-
-function node.direct.getsynctexfields ( <t:direct> n )
-    return
-        <t:integer>, -- fileid
-        <t:integer>  -- line
-end
-\stoptyping
 
 Of course you need to know what you're doing as no checking on sane values takes
 place. Also, the \SYNCTEX\ interpreter used in editors is rather peculiar and has

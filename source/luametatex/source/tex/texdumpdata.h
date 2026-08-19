@@ -55,21 +55,42 @@
 
 */
 
-# define luametatex_format_fingerprint 731
+# define luametatex_format_fingerprint 736
 
-/* These end up in the string pool. */
+typedef enum dump_statistics {
+    dump_stat_fingerprint,
+    dump_stat_engine,
+    dump_stat_preamble,
+    dump_stat_constants,
+    dump_stat_stringpool,
+    dump_stat_nodes,
+    dump_stat_tokens,
+    dump_stat_equivalents,
+    dump_stat_specifications,
+    dump_stat_mathcodes,
+    dump_stat_textcodes,
+    dump_stat_primitives,
+    dump_stat_hashtable,
+    dump_stat_fonts,
+    dump_stat_math,
+    dump_stat_languages,
+    dump_stat_inserts,
+    dump_stat_bytecodes,
+    dump_stat_housekeeping,
+    dump_stat_total,
+} dump_statistics;
 
 typedef struct dump_state_info {
-    int fingerprint;
-    int padding;
+    int statistics[dump_stat_total + 1];
 } dump_state_info;
 
 extern dump_state_info lmt_dump_state;
 
-extern void tex_store_fmt_file         (void);
-extern int  tex_load_fmt_file          (void);
-extern int  tex_fatal_undump_error     (const char *s);
-extern void tex_initialize_dump_state  (void);
+extern void         tex_store_fmt_file           (void);
+extern int          tex_load_fmt_file            (void);
+extern int          tex_fatal_undump_error       (const char *s);
+extern void         tex_initialize_dump_state    (void);
+extern const char * tex_get_dump_statistics_name (dump_statistics s);
 
 //define   dump_items(f,p,item_size,nitems)       fwrite((void *) p, (size_t) item_size, (size_t) nitems, f)
 //define undump_items(f,p,item_size,nitems) { if (fread ((void *) p, (size_t) item_size, (size_t) nitems, f)) { } }

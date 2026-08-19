@@ -239,7 +239,10 @@ static halfword lmt_maybe_isnode(lua_State *L, int i)
     if (p && lua_getmetatable(L, i)) {
         lua_get_metatablelua(node_instance);
         if (lua_rawequal(L, -1, -2)) {
-            n = *p;
+            halfword candidate = *p;
+            if (candidate && _valid_node_(candidate)) {
+                n = candidate;
+            }
         }
         lua_pop(L, 2);
     }
@@ -479,7 +482,7 @@ void lmt_push_node(lua_State *L)
         n = lmt_tohalfword(L, -1);
     }
     lua_pop(L, 1);
-    if (n && n <= lmt_node_memory_state.nodes_data.allocated) {
+    if (n && _valid_node_(n)) {
         halfword *a = lua_newuserdatauv(L, sizeof(halfword), 0);
         *a = n;
         lua_get_metatablelua(node_instance);
@@ -686,7 +689,7 @@ static int nodelib_direct_setexpansion(lua_State *L)
 /* node.direct.getfont */
 /* node.direct.setfont */
 
-# define getfont_usage (glyph_usage | glue_usage | math_char_usage | math_text_char_usage | delimiter_usage)
+# define getfont_usage (glyph_usage | rule_usage | glue_usage | math_char_usage | math_text_char_usage | delimiter_usage)
 # define setfont_usage (glyph_usage | rule_usage | glue_usage)
 
 static int nodelib_direct_getfont(lua_State *L)
@@ -706,6 +709,9 @@ static int nodelib_direct_getfont(lua_State *L)
                 break;
             case delimiter_node:
                 lua_pushinteger(L, tex_fam_fnt(delimiter_small_family(n), 0));
+                break;
+            case rule_node:
+                lua_pushinteger(L, rule_strut_font(n));
                 break;
             default:
                 lua_pushnil(L);
@@ -729,7 +735,7 @@ static int nodelib_direct_setfont(lua_State *L)
                 }
                 break;
             case rule_node:
-                tex_set_rule_font(n, lmt_tohalfword(L, 2));
+                tex_set_rule_font(n, tex_checked_font(lmt_tohalfword(L, 2)));
                 if (lua_type(L, 3) == LUA_TNUMBER) {
                     rule_strut_character(n) = lmt_tohalfword(L, 3);
                 }
@@ -842,20 +848,21 @@ static int nodelib_direct_setchar(lua_State *L)
 {
     halfword n = nodelib_valid_direct_from_index(L, 1);
     if (n && lua_type(L, 2) == LUA_TNUMBER) {
+        halfword chr = lmt_tohalfword(L, 2); /* maybe check range */
         switch (node_type(n)) {
             case glyph_node:
-                glyph_character(n) = lmt_tohalfword(L, 2);
+                glyph_character(n) = chr;
                 break;
             case rule_node:
-                rule_strut_character(n) = lmt_tohalfword(L, 2);
+                rule_strut_character(n) = chr;
                 break;
             case math_char_node:
             case math_text_char_node:
-                math_kernel_character(n) = lmt_tohalfword(L, 2);
+                math_kernel_character(n) = chr;
                 break;
             case delimiter_node:
                 /* used in wide fonts */
-                delimiter_small_character(n) = lmt_tohalfword(L, 2);
+                delimiter_small_character(n) = chr;
                 break;
         }
     }
@@ -865,7 +872,7 @@ static int nodelib_direct_setchar(lua_State *L)
 /* bonus */
 
 # define getcharspec_usage (glyph_usage | rule_usage | simple_usage | math_char_usage | math_text_char_usage | delimiter_usage)
-# define setcharspec_usage getcharspec_usage
+//define setcharspec_usage getcharspec_usage
 
 static int nodelib_direct_getcharspec(lua_State *L)
 {
@@ -880,7 +887,7 @@ static int nodelib_direct_getcharspec(lua_State *L)
             case rule_node:
                 lua_pushinteger(L, rule_strut_character(n));
                 lua_pushinteger(L, tex_get_rule_font(n, text_style));
-                break;
+                return 2;
             case simple_noad:
                 n = noad_nucleus(n);
                 if (n) {
@@ -3718,6 +3725,8 @@ static int nodelib_direct_hasdimensions(lua_State *L)
 
 # define getglyphdimensions_usage glyph_usage
 
+const double INV_1000 = 1.0 / 1000.0;
+
 static int nodelib_direct_getglyphdimensions(lua_State *L)
 {
     halfword n = nodelib_valid_direct_from_index(L, 1);
@@ -3728,8 +3737,8 @@ static int nodelib_direct_getglyphdimensions(lua_State *L)
         lua_pushinteger(L, whd.dp);
         lua_pushinteger(L, glyph_expansion(n)); /* in case we need it later on */
         nodelib_aux_pushxyscales(L, n);
-        lua_pushnumber(L, (double) glyph_slant(n) / 1000.0);
-        lua_pushnumber(L, (double) glyph_weight(n) / 1000.0);
+        lua_pushnumber(L, (double) glyph_slant(n) * INV_1000);
+        lua_pushnumber(L, (double) glyph_weight(n) * INV_1000);
      // lua_pushinteger(L, glyph_slant(n));
         return 8;
     } else {
@@ -8617,7 +8626,7 @@ static int nodelib_common_getfield(lua_State *L, int direct, halfword n)
                             } else if (lua_key_eq(s, font)) {
                                 lua_pushinteger(L, tex_get_rule_font(n, text_style));
                             } else if (lua_key_eq(s, fam)) {
-                                lua_pushinteger(L, tex_get_rule_font(n, text_style));
+                                lua_pushinteger(L, tex_get_rule_family(n));
                             } else if (lua_key_eq(s, key_char)) {
                                 lua_pushinteger(L, rule_strut_character(n));
                             } else if (lua_key_eq(s, thickness)) {
@@ -10089,10 +10098,7 @@ static int nodelib_direct_ligaturing(lua_State *L)
             tex_couple_nodes(tmp_head, h);
             node_tail(tmp_head) = t;
             t = tex_handle_ligaturing(tmp_head, t);
-            if (p) {
-                node_next(p) = node_next(tmp_head) ;
-            }
-            node_prev(node_next(tmp_head)) = p ;
+            tex_try_couple_nodes(p, node_next(tmp_head));
             lua_pushinteger(L, node_next(tmp_head));
             lua_pushinteger(L, t);
             lua_pushboolean(L, 1);
@@ -10120,10 +10126,7 @@ static int nodelib_direct_kerning(lua_State *L)
             tex_couple_nodes(tmp_head, h);
             node_tail(tmp_head) = t;
             t = tex_handle_kerning(tmp_head, t);
-            if (p) {
-                node_next(p) = node_next(tmp_head) ;
-            }
-            node_prev(node_next(tmp_head)) = p ;
+            tex_try_couple_nodes(p, node_next(tmp_head));
             lua_pushinteger(L, node_next(tmp_head));
             if (t) {
                 lua_pushinteger(L, t);
@@ -13028,7 +13031,7 @@ static const usage_record usage_data[] = {
     { .name = "setbox",                  .target = direct_usage_target,   .usage = setbox_usage                  },
     { .name = "setchar",                 .target = direct_usage_target,   .usage = setchar_usage                 },
     { .name = "setchardict",             .target = direct_usage_target,   .usage = setchardict_usage             },
-    { .name = "setcharspec",             .target = direct_usage_target,   .usage = setcharspec_usage             },
+ // { .name = "setcharspec",             .target = direct_usage_target,   .usage = setcharspec_usage             },
     { .name = "setchoice",               .target = direct_usage_target,   .usage = setchoice_usage               },
     { .name = "setclass",                .target = direct_usage_target,   .usage = setclass_usage                },
     { .name = "setcontinuation",         .target = direct_usage_target,   .usage = setcontinuation_usage         },
@@ -13676,13 +13679,12 @@ halfword lmt_node_list_from_lua(lua_State *L, int n)
     return lua_isnil(L, n) ? null : lmt_check_isnode(L, n);
 }
 
-void lmt_push_head_to_callback(lua_State *L, halfword n)
+void lmt_push_head_to_callback(lua_State *L, int callback, halfword n)
 {
-    if (lmt_callback_state.options & callback_option_direct) {
-        nodelib_push_direct_or_nil_node_prev(L, n);
-    } else { 
-        lmt_push_node_fast(L, n);
+    if (n && callback > 0 && (lmt_callback_state.items[callback].contracts & callback_item_input_head)) {
+        node_prev(n) = null;
     }
+    lmt_push_node_to_callback(L, n);
 }
 
 void lmt_push_node_to_callback(lua_State *L, halfword n)
@@ -13700,9 +13702,29 @@ halfword lmt_pop_node_from_callback(lua_State *L, int index)
         case LUA_TNIL:
         case LUA_TBOOLEAN:
             return null;
+        case LUA_TNUMBER:
+            return (lmt_callback_state.options & callback_option_direct) ? nodelib_valid_direct_from_index(L, index) : lmt_check_isnode(L, index);
+        case LUA_TUSERDATA:
+            return (lmt_callback_state.options & callback_option_direct) ? null : lmt_check_isnode(L, index);
         default:
-            return (lmt_callback_state.options & callback_option_direct) ? lmt_tohalfword (L, index) : lmt_check_isnode(L, index);
+            return (lmt_callback_state.options & callback_option_direct) ? null : lmt_check_isnode(L, index);
     }
+}
+
+halfword lmt_take_callback_node(lua_State *L, int callback, int index, halfword *input)
+{
+    halfword result = lmt_pop_node_from_callback(L, index);
+    if (callback > 0) {
+        unsigned contracts = lmt_callback_state.items[callback].contracts;
+        if (input && ((contracts & callback_item_consumes) || (result && (contracts & callback_item_replaces)))) {
+            /* The callback owns the old input, either unconditionally or after replacement. */
+            *input = null;
+        }
+        if (result && (contracts & callback_item_output_head)) {
+            node_prev(result) = null;
+        }
+    }
+    return result;
 }
 
 /*tex
@@ -13787,7 +13809,7 @@ void lmt_buildpage_callback(
         if (lmt_callback_okay(L, callback_id, &top)) {
             int i; 
             lmt_push_page_context(L, context);
-            lmt_push_head_to_callback(L, node_next(contribute_head));
+            lmt_push_head_to_callback(L, callback_id, node_next(contribute_head));
             lmt_push_node_to_callback(L, page_head == page_tail ? null : node_next(page_head));
             lmt_push_node_to_callback(L, page_head == page_tail ? null : page_tail);
             lmt_push_node_to_callback(L, boundary);
@@ -13795,7 +13817,7 @@ void lmt_buildpage_callback(
             if lmt_unlikely(i) {
                 lmt_callback_error(L, top, i);
             } else {
-                tex_set_special_node_list(contribute_list_type, lmt_pop_node_from_callback(L, -1));
+                tex_set_special_node_list(contribute_list_type, lmt_take_callback_node(L, callback_id, -1, NULL));
                 lmt_callback_wrapup(L, top);
             }
         }
@@ -13825,13 +13847,14 @@ void lmt_append_line_callback(
             int top = 0;
             if (lmt_callback_okay(L, callback_id, &top)) {
                 int i;
-                lmt_push_node_to_callback(L, node_next(cur_list.head));
+                halfword input = node_next(cur_list.head);
+                lmt_push_node_to_callback(L, input);
                 lmt_push_node_to_callback(L, cur_list.tail);
                 i = lmt_callback_call(L, 2, 1, top);
                 if lmt_unlikely(i) {
                     lmt_callback_error(L, top, i);
                 } else {
-                    halfword n = lmt_pop_node_from_callback(L, -1);
+                    halfword n = lmt_take_callback_node(L, callback_id, -1, &input);
                     if (n) {
                         node_next(cur_list.head) = n;
                         cur_list.tail = tex_tail_of_node_list(n);
@@ -13855,7 +13878,8 @@ void lmt_append_adjust_callback(
             int top = 0;
             if (lmt_callback_okay(L, callback_id, &top)) {
                 int i;
-                lmt_push_node_to_callback(L, node_next(cur_list.head));
+                halfword input = node_next(cur_list.head);
+                lmt_push_node_to_callback(L, input);
                 lmt_push_node_to_callback(L, cur_list.tail);
                 lmt_push_append_adjust_context(L, context);
                 lua_push_halfword(L, index);
@@ -13863,7 +13887,7 @@ void lmt_append_adjust_callback(
                 if lmt_unlikely(i) {
                     lmt_callback_error(L, top, i);
                 } else {
-                    halfword n = lmt_pop_node_from_callback(L, -1);
+                    halfword n = lmt_take_callback_node(L, callback_id, -1, &input);
                     if (n) {
                         node_next(cur_list.head) = n;
                         cur_list.tail = tex_tail_of_node_list(n);
@@ -13886,14 +13910,15 @@ void lmt_append_migrate_callback(
             int top = 0;
             if (lmt_callback_okay(L, callback_id, &top)) {
                 int i;
-                lmt_push_node_to_callback(L, node_next(cur_list.head));
+                halfword input = node_next(cur_list.head);
+                lmt_push_node_to_callback(L, input);
                 lmt_push_node_to_callback(L, cur_list.tail);
                 lmt_push_append_migrate_context(L, context);
                 i = lmt_callback_call(L, 3, 1, top);
                 if lmt_unlikely(i) {
                     lmt_callback_error(L, top, i);
                 } else {
-                    halfword n = lmt_pop_node_from_callback(L, -1);
+                    halfword n = lmt_take_callback_node(L, callback_id, -1, &input);
                     if (n) {
                         node_next(cur_list.head) = n;
                         cur_list.tail = tex_tail_of_node_list(n);
@@ -13934,17 +13959,15 @@ void lmt_around_linebreak_callback(
                 int top = 0;
                 if (lmt_callback_okay(L, callback_id, &top)) {
                     int i;
-                    /*tex We make sure we have no prev */
-                    node_prev(start) = null;
                     /*tex the action */
-                    lmt_push_node_to_callback(L, start);
+                    lmt_push_head_to_callback(L, callback_id, start);
                     lmt_push_group_code(L, extrainfo);
                     i = lmt_callback_call(L, 2, 1, top);
                     if lmt_unlikely(i) {
                         lmt_callback_error(L, top, i);
                     } else {
                         /*tex append to old head */
-                        halfword list = lmt_pop_node_from_callback(L, -1);
+                        halfword list = lmt_take_callback_node(L, callback_id, -1, &start);
                         tex_try_couple_nodes(head, list);
                         /*tex redundant as we set top anyway */
                         lua_pop(L, 2);
@@ -13979,14 +14002,13 @@ int lmt_linebreak_callback(
                 if (callback_id > 0 && lmt_callback_okay(L, callback_id, &top)) {
                     int i;
                     int ret = 0;
-                    node_prev(start) = null;
-                    lmt_push_node_to_callback(L, start);
+                    lmt_push_head_to_callback(L, callback_id, start);
                     lua_pushboolean(L, isbroken);
                     i = lmt_callback_call(L, 2, 1, top);
                     if lmt_unlikely(i) {
                         lmt_callback_error(L, top, i);
                     } else {
-                        halfword result = lmt_pop_node_from_callback(L, -1);
+                        halfword result = lmt_take_callback_node(L, callback_id, -1, &start);
                         if (result) {
                             tex_try_couple_nodes(*newhead, result);
                             ret = 1;
@@ -14114,7 +14136,7 @@ int lmt_append_to_vlist_callback(
                 if lmt_unlikely(i) {
                     lmt_callback_error(L, top, i);
                 } else {
-                    *result = lmt_pop_node_from_callback(L, -3);
+                    *result = lmt_take_callback_node(L, callback_id, -3, &box);
                     if (lua_type(L, -2) == LUA_TNUMBER) {
                         *nextdepth = lmt_roundnumber(L, -2);
                         *prevset = 1;
@@ -14151,8 +14173,7 @@ halfword lmt_hpack_callback(
             int top = 0;
             if (lmt_callback_okay(L, callback_id, &top)) {
                 int i;
-                node_prev(head) = null;
-                lmt_push_node_to_callback(L, head);
+                lmt_push_head_to_callback(L, callback_id, head);
                 lmt_push_group_code(L, extrainfo);
                 lua_pushinteger(L, size);
                 lmt_push_pack_type(L, packtype);
@@ -14166,7 +14187,7 @@ halfword lmt_hpack_callback(
                 if lmt_unlikely(i) {
                     lmt_callback_error(L, top, i);
                 } else {
-                    head = lmt_pop_node_from_callback(L, -1);
+                    head = lmt_take_callback_node(L, callback_id, -1, &head);
                     lmt_callback_wrapup(L, top);
                 }
             }
@@ -14193,7 +14214,7 @@ extern halfword lmt_packed_vbox_callback(
                 if lmt_unlikely(i) {
                     lmt_callback_error(L, top, i);
                 } else {
-                    box = lmt_pop_node_from_callback(L, -1);
+                    box = lmt_take_callback_node(L, callback_id, -1, &box);
                     lmt_callback_wrapup(L, top);
                 }
             }
@@ -14219,7 +14240,7 @@ halfword lmt_vpack_callback(
             int top = 0;
             if (lmt_callback_okay(L, callback_id, &top)) {
                 int i;
-                lmt_push_head_to_callback(L, head);
+                lmt_push_head_to_callback(L, callback_id, head);
                 lmt_push_group_code(L, extrainfo);
                 lua_pushinteger(L, size);
                 lmt_push_pack_type(L, packtype);
@@ -14234,7 +14255,7 @@ halfword lmt_vpack_callback(
                 if lmt_unlikely(i) {
                     lmt_callback_error(L, top, i);
                 } else {
-                    head = lmt_pop_node_from_callback(L, -1);
+                    head = lmt_take_callback_node(L, callback_id, -1, &head);
                     lmt_callback_wrapup(L, top);
                 }
             }
@@ -14378,7 +14399,7 @@ halfword lmt_uleader_callback(
             int top = 0;
             if (lmt_callback_okay(L, callback_id, &top)) {
                 int i;
-                lmt_push_node_to_callback(L, head);
+                lmt_push_head_to_callback(L, callback_id, head);
              // lua_pushinteger(L, context);
                 lmt_push_group_code(L, context);
                 lua_pushinteger(L, index);
@@ -14388,7 +14409,7 @@ halfword lmt_uleader_callback(
                 if lmt_unlikely(i) {
                     lmt_callback_error(L, top, i);
                 } else {
-                    head = lmt_pop_node_from_callback(L, -1);
+                    head = lmt_take_callback_node(L, callback_id, -1, &head);
                     lmt_callback_wrapup(L, top);
                 }
             }
@@ -14423,7 +14444,7 @@ halfword lmt_uinsert_callback(
                 if lmt_unlikely(i) {
                     lmt_callback_error(L, top, i);
                 } else {
-                    halfword result = lmt_pop_node_from_callback(L, -1); 
+                    halfword result = lmt_take_callback_node(L, callback_id, -1, &packed);
                     if (result) { 
                         packed = result; 
                     }

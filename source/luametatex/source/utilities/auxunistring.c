@@ -117,6 +117,28 @@ unsigned char *aux_uni2str(unsigned unic)
     return buf;
 }
 
+void aux_uni2str_callback(unsigned unic, void (*handle) (int))
+{
+    if (unic < 0x80) {
+        handle((unsigned char) unic);
+    } else if (unic < 0x800) {
+        handle((unsigned char) (0xC0 | (unic >> 6)));
+        handle((unsigned char) (0x80 | (unic & 0x3F)));
+    } else if (unic < 0x10000) {
+        handle((unsigned char) (0xE0 | (unic >> 12)));
+        handle((unsigned char) (0x80 | ((unic >> 6) & 0x3F)));
+        handle((unsigned char) (0x80 | (unic & 0x3F)));
+    } else if (unic < 0x110000) {
+        int u;
+        unic -= 0x10000;
+        u = (int) (((unic & 0xF0000) >> 16) + 1);
+        handle((unsigned char) (0xF0 | (u >> 2)));
+        handle((unsigned char) (0x80 | ((u & 3) << 4) | ((unic & 0xF000) >> 12)));
+        handle((unsigned char) (0x80 | ((unic & 0xFC0) >> 6)));
+        handle((unsigned char) (0x80 | (unic & 0x3F)));
+    }
+}
+
 /*tex
 
     Function |buffer_to_unichar| converts a sequence of bytes in the |buffer| into a \UNICODE\

@@ -1264,39 +1264,34 @@ typedef enum rule_option_codes {
     rule_option_keep_spacing  = 0x20,
     rule_option_snapping      = 0x40,
     rule_option_no_snapping   = 0x80,
-    rule_option_valid         = 0x8F,
+    rule_option_valid         = 0xFF,
 } rule_option_codes;
 
 # define last_rule_subtype spacing_rule_subtype
 # define first_rule_code   normal_rule_code
 # define last_rule_code    strut_rule_code
 
-# define rule_node_size         9
-# define rule_width(a)          memtwo(a,2)
-# define rule_x_offset(a)       memone(a,2)
-# define rule_depth(a)          memtwo(a,3)
-# define rule_y_offset(a)       memone(a,3)
-# define rule_height(a)         memtwo(a,4)
-# define rule_data(a)           memone(a,4)  /* used for linewidth */
-# define rule_options(a)        memtwo(a,5)
-# define rule_thickness(a)      memone(a,5)  /* future see data */
-# define rule_left(a)           memone(a,6)  /* depends on subtype */
-# define rule_right(a)          memtwo(a,6)  /* depends on subtype */
-# define rule_extra_1(a)        memone(a,7)  /* depends on subtype */
-# define rule_extra_2(a)        memtwo(a,7)  /* depends on subtype */
-# define rule_discardable(a)    memone(a,8)  /* internal usage */
-# define rule_snapping(a)       memtwo(a,8)
-
-# define rule_line_on         rule_extra_1 /* for user rules */
-# define rule_line_off        rule_extra_2 /* for user rules */
-
-# define rule_strut_font      rule_extra_1 /* for strut rules */
-# define rule_strut_character rule_extra_2 /* for strut rules */
-
-# define rule_virtual_width   rule_left
-# define rule_virtual_height  rule_right
-# define rule_virtual_depth   rule_extra_1 /* we could use rule_reserved instead */
-# define rule_virtual_unused  rule_extra_2
+# define rule_node_size          12
+# define rule_width(a)           memtwo(a,2)
+# define rule_x_offset(a)        memone(a,2)
+# define rule_depth(a)           memtwo(a,3)
+# define rule_y_offset(a)        memone(a,3)
+# define rule_height(a)          memtwo(a,4)
+# define rule_data(a)            memone(a,4)
+# define rule_options(a)         memtwo(a,5)
+# define rule_thickness(a)       memone(a,5)
+# define rule_left(a)            memone(a,6)  /* rule_top */
+# define rule_right(a)           memtwo(a,6)  /* rule_bottom */
+# define rule_line_on(a)         memone(a,7)
+# define rule_line_off(a)        memtwo(a,7)
+# define rule_discardable(a)     memone(a,8)  /* internal usage */
+# define rule_snapping(a)        memtwo(a,8)
+# define rule_strut_font(a)      memone(a,9)
+# define rule_strut_character(a) memtwo(a,9)
+# define rule_virtual_width(a)   memone(a,10)
+# define rule_virtual_height(a)  memtwo(a,10)
+# define rule_virtual_depth(a)   memone(a,11)
+# define rule_virtual_unused(a)  memtwo(a,11)
 
 # define rule_total(a) (rule_height(a) + rule_depth(a))
 
@@ -1399,6 +1394,8 @@ static inline int  tex_has_rule_option    (halfword a, halfword r) { return (rul
 # define glyph_left(a)       memone(a,11)
 # define glyph_right(a)      memtwo(a,11)
 
+# define glyph_margins(p)    (-(glyph_left(p) + glyph_right(p)))
+
 # define glyph_x_offset(a)   memone(a,12)
 # define glyph_y_offset(a)   memtwo(a,12)
 
@@ -1452,8 +1449,12 @@ static inline int  tex_has_rule_option    (halfword a, halfword r) { return (rul
 # define set_glyph_rhmin(a,b)      glyph_rhmin(a) = ((singleword) (b))
 # define set_glyph_hyphenate(a,b)  glyph_hyphenate(a) = ((halfword) (b))
 # define set_glyph_options(a,b)    glyph_options(a) = ((halfword) (b))
-# define set_glyph_discpart(a,b)   glyph_discpart(a) = (glyph_discpart(a) | (singleword)  ((b) & 0xF)      )
-# define set_glyph_discafter(a,b)  glyph_discpart(a) = (glyph_discpart(a) | (singleword) (((b) & 0xF) << 4))
+
+//define set_glyph_discpart(a,b)   glyph_discpart(a) = (glyph_discpart(a) | (singleword)  ((b) & 0xF)      )
+//define set_glyph_discafter(a,b)  glyph_discpart(a) = (glyph_discpart(a) | (singleword) (((b) & 0xF) << 4))
+
+# define set_glyph_discpart(a,b)   (glyph_discpart(a) = (singleword) ((glyph_discpart(a) & 0xF0) |  ((b) & 0x0F)      ))
+# define set_glyph_discafter(a,b)  (glyph_discpart(a) = (singleword) ((glyph_discpart(a) & 0x0F) | (((b) & 0x0F) << 4)))
 
 # define get_glyph_dohyph(a) (hyphenation_permitted(glyph_hyphenate(a), syllable_hyphenation_mode ) || hyphenation_permitted(glyph_hyphenate(a), force_handler_hyphenation_mode))
 # define get_glyph_uchyph(a) (hyphenation_permitted(glyph_hyphenate(a), uppercase_hyphenation_mode) || hyphenation_permitted(glyph_hyphenate(a), force_handler_hyphenation_mode))
@@ -1923,7 +1924,7 @@ static inline int tex_same_mathspec(halfword a, halfword b)
     Here are some more stack related nodes.
 */
 
-# define align_stack_node_size                19
+# define align_stack_node_size                20
 # define align_stack_align_ptr(a)             memone(a,1)
 # define align_stack_cur_align(a)             memtwo(a,1)
 # define align_stack_preamble(a)              memone(a,2)
@@ -1943,7 +1944,7 @@ static inline int tex_same_mathspec(halfword a, halfword b)
 # define align_stack_options(a)               memone(a,9)
 # define align_stack_attr_list(a)             memtwo(a,9)
 # define align_stack_callback(a)              memone(a,10)
-# define align_stack_min_height(a)            memone(a,10)
+# define align_stack_min_height(a)            memtwo(a,10)
 # define align_stack_min_depth(a)             memone(a,11)
 # define align_stack_tabskip_amount(a)        memtwo(a,11)
 # define align_stack_row_number(a)            memone(a,12)
@@ -1961,6 +1962,9 @@ static inline int tex_same_mathspec(halfword a, halfword b)
 # define align_stack_row_source(a)            memtwo(a,17)
 # define align_stack_row_target(a)            memone(a,18)
 # define align_stack_row_anchor(a)            memtwo(a,18)
+
+# define align_stack_cell_source(a)           memone(a,19)
+# define align_stack_row_state_set(a)         memtwo(a,19)
 
 /*tex
     If nodes are for nesting conditionals. We have more state information that in (for instance)
@@ -2061,6 +2065,8 @@ typedef enum simple_choice_subtypes {
     demanding. Although delimiter, accent, fraction and radical share the same structure we do use
     specific field names because of clarity. Not all fields are used always.
 
+    Needs updating:
+
     \starttabulate[|l|l|l|l|l|l|]
     \FL
     \BC            \BC noad       \BC accent            \BC fraction         \BC radical          \NC fence           \NC \NR
@@ -2144,7 +2150,7 @@ typedef enum simple_choice_subtypes {
 # define noad_supshift(a)     memtwo(a,11) /* continuation */
 # define noad_script_kern(a)  memone(a,12) /* continuation */
 # define noad_primeshift(a)   memtwo(a,12) /* continuation */
-# define noad_reserved(a)     memone(a,13)
+# define noad_callback(a)     memone(a,13)
 # define noad_extra_attr(a)   memtwo(a,13)
 # define noad_extra_2(a)      memone(a,14)
 # define noad_extra_1(a)      memtwo(a,14)
@@ -2289,7 +2295,7 @@ typedef enum noad_options {
 # define noad_option_single                     (uint64_t) 0x0000020000000000
 # define noad_option_no_rule                    (uint64_t) 0x0000040000000000
 # define noad_option_auto_middle                (uint64_t) 0x0000080000000000
-# define noad_option_reflected                  (uint64_t) 0x0000100000000000
+# define noad_option_reflected                  (uint64_t) 0x0000100000000000 /* put the (top) rule at the bottom */
 # define noad_option_continuation               (uint64_t) 0x0000200000000000 /* relates to script continuation */
 # define noad_option_inherit_class              (uint64_t) 0x0000400000000000 /* idem */
 # define noad_option_discard_shape_kern         (uint64_t) 0x0000800000000000 /* idem */
@@ -3216,14 +3222,6 @@ extern void     tex_copy_node_properties          (halfword target, halfword sou
 # define get_attribute_list(target) \
     node_attr(target)
 
-/*
-# define add_attribute_reference(a) do { \
-    if (a && a != attribute_cache_disabled) { \
-        ++attribute_count(a); \
-    } \
-} while (0)
-*/
-
 static inline void add_attribute_reference(halfword a)
 {
  // if (a && a != attribute_cache_disabled) {
@@ -3231,14 +3229,6 @@ static inline void add_attribute_reference(halfword a)
         ++attribute_list_count(a);
     }
 }
-
-/*
-# define delete_attribute_reference(a) do { \
-    if (a && a != attribute_cache_disabled) { \
-        tex_dereference_attribute_list(a); \
-    } \
-} while (0)
-*/
 
 static inline void delete_attribute_reference(halfword a)
 {
@@ -3248,22 +3238,14 @@ static inline void delete_attribute_reference(halfword a)
     }
 }
 
-# define remove_attribute_list(target) do { \
-    halfword old_a = node_attr(target); \
-    delete_attribute_reference(old_a); \
-    node_attr(target) = null; \
-} while (0)
-
-/*
 static inline void remove_attribute_list(halfword target)
 {
     halfword a_old = node_attr(target);
     if (a_old && a_old != attribute_cache_disabled) {
-        dereference_attribute_list(a_old);
+        tex_dereference_attribute_list(a_old);
     }
     node_attr(target) = null;
 }
-*/
 
 /* This can be dangerous: */
 
@@ -3522,4 +3504,3 @@ extern halfword tex_get_special_node_list (special_node_list_types list, halfwor
 extern void     tex_set_special_node_list (special_node_list_types list, halfword head);
 
 # endif
-

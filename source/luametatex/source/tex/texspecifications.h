@@ -219,6 +219,7 @@ typedef enum passes_features {
     passes_if_math              = 0x0200,
     passes_unless_math          = 0x0400,
     passes_if_looseness         = 0x0800,
+    passes_if_emergency_shrink  = 0x1000,
     passes_test_set             = passes_if_adjust_spacing
                                 | passes_if_emergency_stretch
                                 | passes_if_text             
@@ -226,7 +227,8 @@ typedef enum passes_features {
                                 | passes_if_space_factor
                                 | passes_if_math             
                                 | passes_unless_math         
-                                | passes_if_looseness,         
+                                | passes_if_looseness
+                                | passes_if_emergency_shrink,
     /* */
 } passes_features;
 
@@ -296,7 +298,8 @@ typedef enum passes_parameter_okay {
     passes_looseness_okay            = 0x20000000,
     /* */
     passes_raggedness_okay           = 0x40000000,
-    passes_reserved_okay             = 0x80000000,
+    passes_emergencyshrink_okay      = 0x80000000,
+    passes_reserved_okay             = passes_emergencyshrink_okay,
     /* nicer */
     passes_balancepenalty_okay       = 0x00000800, // passes_linepenalty_okay
     passes_balancechecks_okay        = 0x00800000, // passes_linebreakchecks_okay
@@ -471,7 +474,8 @@ static inline void     tex_set_balance_passes_looseness           (halfword a, h
 static inline void     tex_set_balance_passes_pagebreakchecks     (halfword a, halfword n, halfword v) { specification_index(a,balance_passes_slot(n,7)).half1 = v; };
 static inline void     tex_set_balance_passes_pagepenalty         (halfword a, halfword n, halfword v) { specification_index(a,balance_passes_slot(n,7)).half0 = v; };
 static inline void     tex_set_balance_passes_adjdemerits         (halfword a, halfword n, halfword v) { specification_index(a,balance_passes_slot(n,8)).half1 = v; };
-static inline void     tex_set_balance_passes_reserved            (halfword a, halfword n, halfword v) { specification_index(a,balance_passes_slot(n,8)).half0 = v; };
+static inline void     tex_set_balance_passes_emergencyshrink     (halfword a, halfword n, halfword v) { specification_index(a,balance_passes_slot(n,8)).half0 = v; };
+static inline void     tex_set_balance_passes_reserved            (halfword a, halfword n, halfword v) { tex_set_balance_passes_emergencyshrink(a, n, v); };
 
 static inline uint64_t tex_get_balance_passes_okay                (halfword a, halfword n) { return specification_index(a,balance_passes_slot(n,1)).long0;   };
 static inline halfword tex_get_balance_passes_features            (halfword a, halfword n) { return specification_index(a,balance_passes_slot(n,2)).quart00; };
@@ -487,7 +491,8 @@ static inline halfword tex_get_balance_passes_looseness           (halfword a, h
 static inline halfword tex_get_balance_passes_pagebreakchecks     (halfword a, halfword n) { return specification_index(a,balance_passes_slot(n,7)).half1;   };
 static inline halfword tex_get_balance_passes_pagepenalty         (halfword a, halfword n) { return specification_index(a,balance_passes_slot(n,7)).half0;   };
 static inline halfword tex_get_balance_passes_adjdemerits         (halfword a, halfword n) { return specification_index(a,balance_passes_slot(n,8)).half1;   };
-static inline halfword tex_get_balance_passes_reserved            (halfword a, halfword n) { return specification_index(a,balance_passes_slot(n,8)).half0;   };
+static inline halfword tex_get_balance_passes_emergencyshrink     (halfword a, halfword n) { return specification_index(a,balance_passes_slot(n,8)).half0;   };
+static inline halfword tex_get_balance_passes_reserved            (halfword a, halfword n) { return tex_get_balance_passes_emergencyshrink(a, n); };
 
 /* line snapping */
 

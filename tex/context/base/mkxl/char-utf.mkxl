@@ -21,7 +21,7 @@
 
 \unprotect
 
-\registerctxluafile{char-def}{}
+\registerctxluafile{char-def}{autosuffix}
 \registerctxluafile{char-ini}{}
 \registerctxluafile{char-utf}{}
 \registerctxluafile{char-cjk}{}

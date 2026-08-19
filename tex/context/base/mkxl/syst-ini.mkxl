@@ -1816,6 +1816,16 @@
 \aliased\let\lastlinewidth\breaklastlinewidth
 \aliased\let\lastlinecount\breaklastlinecount
 
+%D Because we can. We keep the normal alias so that we can demonstrate the stupidity of
+%D users and macro writers abusing this primitive.
+
+\pushoverloadmode
+
+\permanent\immutable\let\romannumeral      \romannumerical
+%permanent\immutable\let\normalromannumeral\romannumerical
+
+\popoverloadmode
+
 \protect \endinput
 
 % performance experiment:

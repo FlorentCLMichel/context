@@ -13,7 +13,7 @@
     typedef double zstipp;
 # endif
 
-typedef pointsdata *points;
+// typedef pointsdata *points;
 
 typedef struct zbuffervector {
     double x;

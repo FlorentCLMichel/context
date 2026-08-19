@@ -388,6 +388,87 @@ def PerlinOverlay(expr kind, min, max, med, n, code) = % updated
 enddef ;
 \stoptyping
 
+At this moment we have several methods, four are shown in \in {figure}
+[fig:allnoise]: perlin, simplex, angle, detail, worley and brownian and maybe we
+will add some more.
+
+\startbuffer[worley-1]
+\startMPcode
+draw lmt_noise [
+    bytemap    = 1,
+    nx         = 200,
+    ny         = 200,
+    nz         = 1,
+    iterations = 1,
+    frequency  = 0.05,
+    minimum    = 0,
+    maximum    = 255,
+    method     = "worley",
+] xsized 5cm ;
+\stopMPcode
+\stopbuffer
+
+\startbuffer[worley-2]
+\startMPcode
+draw lmt_noise [
+    bytemap    = 1,
+    nx         = 200,
+    ny         = 200,
+    nz         = 1,
+    iterations = 2,
+    frequency  = 0.05,
+    minimum    = 0,
+    maximum    = 255,
+    method     = "worley",
+] xsized 5cm ;
+\stopMPcode
+\stopbuffer
+
+\startbuffer[brownian-1]
+\startMPcode
+draw lmt_noise [
+    bytemap    = 1,
+    nx         = 200,
+    ny         = 200,
+    nz         = 1,
+    iterations = 1,
+    frequency  = 0.05,
+    minimum    = 0,
+    maximum    = 255,
+    method     = "brownian",
+] xsized 5cm ;
+\stopMPcode
+\stopbuffer
+
+\startbuffer[brownian-2]
+\startMPcode
+draw lmt_noise [
+    bytemap    = 1,
+    nx         = 200,
+    ny         = 200,
+    nz         = 1,
+    iterations = 2,
+    frequency  = 0.05,
+    minimum    = 0,
+    maximum    = 255,
+    method     = "brownian",
+] xsized 5cm ;
+\stopMPcode
+\stopbuffer
+
+\startplacefigure[location=top,reference=fig:allnoise,title={Perlin, Simplex, Worley and Brownian, one or two iterations.}]
+    \startcombination[nx=2,ny=4]
+        {\getbuffer[perlin-1]}   {perlin   1}
+        {\getbuffer[perlin-2]}   {perlin   2}
+        {\getbuffer[simplex-1]}  {simplex  1}
+        {\getbuffer[simplex-2]}  {simplex  2}
+        {\getbuffer[worley-1]}   {worley   1}
+        {\getbuffer[worley-2]}   {worley   2}
+        {\getbuffer[brownian-1]} {brownian 1}
+        {\getbuffer[brownian-2]} {brownian 2}
+    \stopcombination
+\stopplacefigure
+
 \stopchapter
 
 \stopcomponent

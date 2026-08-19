@@ -1038,24 +1038,113 @@ function language.gethjcode (
 end
 \stoptyping
 
-There are similar function for \type {\hccode}:
+You can check if a node list has a language other than zero set:
 
 \starttyping [option=LUA]
-function language.sethccode (
-    <t:userdata> language,
-    <t:number>   character,
-    <t:number>   usedchar
-)
-    -- no return value
-end
-
-function language.gethccode (
-    <t:userdata> language,
-    <t:number>   character
-)
-    return <t:number> -- usedchar
+function language.haslanguage( <t:node> head )
+    return <t:boolean> indeed
 end
 \stoptyping
+
+The current language can be fetched with the following function, here we get
+\quote {\cldcontext{language.current()}} for English, but you can of course never
+really know what the macro package assigns to a specific language. In \CONTEXT\
+zero is a language without patterns.
+
+\starttyping [option=LUA]
+function language.current()
+    return <t:integer> language
+end
+\stoptyping
+
+A somewhat special feature is the word handler. You can register a
+function like this:
+
+\starttyping [option=LUA]
+function language.setwordhandler(
+    <t:userdata> language,
+    <t:function> action
+)
+    return <t:integer> | <t:string>
+end
+\stoptyping
+
+The function is called with six arguments: the language id, the original (what
+the engine sees as) word, the remapped (codes applied) word, the length and a
+start and end node. The function returns a string or integer:
+
+\starttabulate[|c|l|]
+\FL
+\NC string \NC exception \NC \NR
+\ML
+\NC 1      \NC restart (likely replaced) \NC \NR
+\NC 2      \NC exceptions & patterns     \NC \NR
+\NC 3      \NC patterns & next word      \NC \NR
+\LL
+\stoptabulate
+
+We will not go into much detail here because this mechanism was made for
+\CONTEXT\ language support. Here is a simple example:
+
+\startbuffer
+\startluacode
+local t = { }
+local f = function(...) t[#t+1] = { ... } end
+languages.setwordhandler("en",f);
+languages.setwordhandler("sv",f);
+
+document.words = t
+\stopluacode
+
+\setbox\scratchbox\vbox\bgroup
+    This is English with
+    {\nl wat nederlands}
+    {\sv och svenska}
+    mixed in.
+\egroup
+
+\box\scratchbox
+
+\startluacode
+languages.setwordhandler("en", false)
+\stopluacode
+\stopbuffer
+
+\typebuffer[option=TEX]
+
+\startlinecorrection
+    \getbuffer
+\stoplinecorrection
+
+\testpage[3]
+
+The collected arguments are:
+
+\startluacode
+local context = context
+local NC, BC, NR = context.NC, context.BC, context.NR
+
+local t = document.words
+context.starttabulate { "|c|||r|r|r|" }
+    context.FL()
+    BC() context("language")
+    BC() context("original")
+    BC() context("remapped")
+    BC() context("length")
+    BC() context("first")
+    BC() context("last")
+    NC() NR()
+    context.ML()
+    for i=1,#t do
+        local ti = t[i]
+        for i=1,#ti do
+            NC()
+            context(ti[i])
+        end
+        NC() NR()
+    end
+context.stoptabulate()
+\stopluacode
 
 \stopsection
 

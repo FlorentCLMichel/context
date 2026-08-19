@@ -222,17 +222,17 @@ static void tex_aux_run_text_char_number(void)
                 halfword chr = 0;
                 halfword glyph;
                 while (1) {
-                    switch (tex_scan_character("xyofisklrwXYOFISKLRW", 0, 1, 0)) {
+                    switch (tex_scan_character("xyofisklrw", 0, 1, 0)) {
                         case 0:
                             goto DONE;
-                        case 'x': case 'X':
-                            switch (tex_scan_character("osOS", 0, 0, 0)) {
-                                case 'o': case 'O':
+                        case 'x':
+                            switch (tex_scan_character("os", 0, 0, 0)) {
+                                case 'o':
                                     if (tex_scan_mandate_keyword("xoffset", 2)) {
                                         xoffset = tex_scan_dimension(0, 0, 0, 0, NULL, NULL);
                                     }
                                     break;
-                                case 's': case 'S':
+                                case 's':
                                     if (tex_scan_mandate_keyword("xscale", 2)) {
                                         xscale = tex_scan_integer(0, NULL, NULL);
                                     }
@@ -242,14 +242,14 @@ static void tex_aux_run_text_char_number(void)
                                     goto DONE;
                             }
                             break;
-                        case 'y': case 'Y':
-                            switch (tex_scan_character("osOS", 0, 0, 0)) {
-                                case 'o': case 'O':
+                        case 'y':
+                            switch (tex_scan_character("os", 0, 0, 0)) {
+                                case 'o':
                                     if (tex_scan_mandate_keyword("yoffset", 2)) {
                                         yoffset = tex_scan_dimension(0, 0, 0, 0, NULL, NULL);
                                     }
                                     break;
-                                case 's': case 'S':
+                                case 's':
                                     if (tex_scan_mandate_keyword("yscale", 2)) {
                                         yscale = tex_scan_integer(0, NULL, NULL);
                                     }
@@ -259,23 +259,23 @@ static void tex_aux_run_text_char_number(void)
                                     goto DONE;
                             }
                             break;
-                        case 'o': case 'O':
+                        case 'o':
                             if (tex_scan_mandate_keyword("options", 1)) {
                                 /* resets ! */
                                 options = tex_scan_integer(0, NULL, NULL) & glyph_option_valid;
                             }
                             break;
-                        case 'k': case 'K':
+                        case 'k':
                             if (tex_scan_mandate_keyword("keepspacing", 1)) {
                                 options |= glyph_option_keep_spacing;
                             }
                             break;
-                        case 'f': case 'F':
+                        case 'f':
                             if (tex_scan_mandate_keyword("font", 1)) {
                                 font = tex_scan_font_identifier(NULL);
                             }
                             break;
-                        case 'i': case 'I':
+                        case 'i':
                             if (tex_scan_mandate_keyword("id", 1)) {
                                 halfword f = tex_scan_integer(0, NULL, NULL);
                                 if (f > 0 && tex_is_valid_font(f)) {
@@ -283,14 +283,14 @@ static void tex_aux_run_text_char_number(void)
                                 }
                             }
                             break;
-                        case 's': case 'S':
-                            switch (tex_scan_character("clCL", 0, 0, 0)) {
-                                case 'c': case 'C':
+                        case 's':
+                            switch (tex_scan_character("cl", 0, 0, 0)) {
+                                case 'c':
                                     if (tex_scan_mandate_keyword("scale", 2)) {
                                         scale = tex_scan_integer(0, NULL, NULL);
                                     }
                                     break;
-                                case 'l': case 'L':
+                                case 'l':
                                     if (tex_scan_mandate_keyword("slant", 2)) {
                                         slant = tex_scan_integer(0, NULL, NULL);
                                     }
@@ -300,19 +300,19 @@ static void tex_aux_run_text_char_number(void)
                                     goto DONE;
                             }
                             break;
-                        case 'l': case 'L':
+                        case 'l':
                             if (tex_scan_mandate_keyword("left", 1)) {
                                 left = tex_scan_dimension(0, 0, 0, 0, NULL, NULL);
                             }
                             break;
-                        case 'r': case 'R':
-                            switch (tex_scan_character("aiAI", 0, 0, 0)) {
-                                case 'i': case 'I':
+                        case 'r':
+                            switch (tex_scan_character("ai", 0, 0, 0)) {
+                                case 'i':
                                     if (tex_scan_mandate_keyword("right", 2)) {
                                         right = tex_scan_dimension(0, 0, 0, 0, NULL, NULL);
                                     }
                                     break;
-                                case 'a': case 'A':
+                                case 'a':
                                     if (tex_scan_mandate_keyword("raise", 2)) {
                                         raise = tex_scan_dimension(0, 0, 0, 0, NULL, NULL);
                                     }
@@ -322,7 +322,7 @@ static void tex_aux_run_text_char_number(void)
                                     goto DONE;
                             }
                             break;
-                        case 'w': case 'W':
+                        case 'w':
                             if (tex_scan_mandate_keyword("weight", 1)) {
                                 weight = tex_scan_integer(0, NULL, NULL);
                             }
@@ -865,10 +865,23 @@ static void tex_aux_scan_box(int boxcontext, int optional_equal, scaled shift, h
                     tex_aux_run_lua_protected_call();
                     tex_get_next();
                     if (cur_cmd == node_cmd) {
-                        /*tex So we only fetch the tail; the rest can mess up in the current list! */
-                        halfword boxnode = null;
+                        halfword head;
+                        halfword rest;
+                        halfword boxnode;
+                        tex_push_nest();
+                        head = cur_list.head;
                         tex_aux_run_node();
                         boxnode = tex_pop_tail();
+                        rest = node_next(head);
+                        node_next(head) = null;
+                        tex_pop_nest();
+                        if (rest) {
+                            tex_flush_node_list(rest);
+                            if (boxnode) {
+                                tex_flush_node(boxnode);
+                                boxnode = null;
+                            }
+                        }
                         if (boxnode) {
                             switch (node_type(boxnode)) {
                                 case hlist_node:
@@ -878,6 +891,7 @@ static void tex_aux_scan_box(int boxcontext, int optional_equal, scaled shift, h
                                     tex_box_end(boxcontext, boxnode, shift, unset_noad_class, slot, callback, leaders);
                                     return;
                             }
+                            tex_flush_node(boxnode);
                         }
                     }
                     tex_formatted_error("lua", "invalid function call, proper leader content expected");
@@ -942,7 +956,7 @@ static void tex_aux_scan_box(int boxcontext, int optional_equal, scaled shift, h
     }
     tex_handle_error(
         back_error_type,
-        "A <box> was supposed to be here",
+        "A <box> was supposed to be here%h",
         "I was expecting to see \\hbox or \\vbox or \\copy or \\box or something like\n"
         "that. So you might find something missing in your output. But keep trying; you\n"
         "can fix this later."
@@ -981,20 +995,20 @@ static void tex_aux_run_leader(void)
     halfword options = 0;
     if (code == u_leaders_code) { 
         while (1) {
-            switch (tex_scan_character("clnCLN", 0, 1, 0)) {
+            switch (tex_scan_character("cln", 0, 1, 0)) {
                 case 0:
                     goto DONE;
-                case 'l': case 'L':
+                case 'l':
                     if (tex_scan_mandate_keyword("line", 1)) {
                         options |= glue_option_u_leaders_line;
                     }
                     break;
-                case 'n': case 'N':
+                case 'n':
                     if (tex_scan_mandate_keyword("nobreak", 1)) {
                         options |= glue_option_no_auto_break;
                     }
                     break;
-                case 'c': case 'C':
+                case 'c':
                     if (tex_scan_mandate_keyword("callback", 1)) {
                         callback = tex_scan_integer(0, NULL, NULL);
                     }
@@ -1199,7 +1213,7 @@ static void tex_aux_run_begin_paragraph_hmode(void)
                     } else {
                         tex_handle_error(
                             normal_error_type,
-                            "I expected a {",
+                            "I expected a {%h",
                             "The '\\wrapuppar' command only accepts an explicit token list."
                         );
                     }
@@ -1572,7 +1586,7 @@ static void tex_aux_run_after_something(void)
                 } else {
                     tex_handle_error(
                         normal_error_type,
-                        "I expected a {",
+                        "I expected a {%h",
                         "The '\\aftergrouped' command only accepts an explicit token list."
                     );
                 }
@@ -1592,14 +1606,18 @@ static void tex_aux_run_after_something(void)
                     halfword source = tex_scan_toks_normal(1, NULL);
                     if (source) {
                         /*tex Always, also when empty. */
-                        lmt_main_control_state.after_tokens = token_link(source);
+                        if (lmt_main_control_state.after_tokens) {
+                            token_link(tex_tail_of_token_list(lmt_main_control_state.after_tokens)) = token_link(source);
+                        } else {
+                            lmt_main_control_state.after_tokens = token_link(source);
+                        }
                         token_link(source) = null;
                         tex_put_available_token(source);
                     }
                 } else {
                     tex_handle_error(
                         normal_error_type,
-                        "I expected a {",
+                        "I expected a {%h",
                         "The '\\afterassigned' command only accepts an explicit token list."
                     );
                 }
@@ -1614,7 +1632,7 @@ static void tex_aux_run_after_something(void)
                         /*tex We don't want to crash. */
                         tex_handle_error(
                             normal_error_type,
-                            "I don't expected a { or }",
+                            "I don't expected a { or }%h",
                             "The '\\atendofgroup' command won't handle this, maybe you want \\atendofgrouped instead."
                         );
                         break;
@@ -1654,7 +1672,7 @@ static void tex_aux_run_after_something(void)
                 } else {
                     tex_handle_error(
                         normal_error_type,
-                        "I expected a {",
+                        "I expected a {%h",
                         "The '\\endofgrouped' command only accepts an explicit token list."
                     );
                 }
@@ -1678,7 +1696,7 @@ static void tex_aux_run_after_something(void)
                 } else {
                     tex_handle_error(
                         normal_error_type,
-                        "I expected a {",
+                        "I expected a {%h",
                         "The '\\endoffiled' command only accepts an explicit token list."
                     );
                 }
@@ -1703,7 +1721,7 @@ static void tex_aux_invalid_catcode_table_error(void)
 {
     tex_handle_error(
         normal_error_type,
-        "Invalid \\catcode table",
+        "Invalid \\catcode table%h",
         "All \\catcode table ids must be between 0 and " LMT_TOSTRING(max_n_of_catcode_tables - 1)
     );
 }
@@ -1712,7 +1730,7 @@ static void tex_aux_overwrite_catcode_table_error(void)
 {
     tex_handle_error(
         normal_error_type,
-        "Invalid \\catcode table",
+        "Invalid \\catcode table%h",
         "You cannot overwrite the current \\catcode table"
     );
 }
@@ -2129,10 +2147,14 @@ void tex_begin_local_control(void)
                                 halfword tt = null;
                                 halfword t = h;
                                 halfword b = 0; /* we can count and then break out */
-                                while (token_link(t)) {
-                                    t = token_link(t);
+                                while (t) {
                                     if (! b && tex_aux_is_iterator_value(token_info(t))) {
                                         b = 1;
+                                    }
+                                    if (! token_link(t)) {
+                                        break;
+                                    } else {
+                                    	t = token_link(t);
                                     }
                                 }
                                 tt = t;
@@ -2265,7 +2287,7 @@ static void tex_aux_run_insert_dollar_sign(void)
     cur_tok = dollar_token_m;
     tex_handle_error(
         insert_error_type,
-        "Missing $ inserted",
+        "Missing $ inserted%h",
         "I've inserted a begin-math/end-math symbol since I think you left one out.\n"
         "Proceed, with fingers crossed."
     );
@@ -2282,7 +2304,7 @@ void tex_you_cant_error(const char *helpinfo)
 {
     tex_handle_error(
         normal_error_type,
-        "You can't use '%C' in %M", cur_cmd, cur_chr, cur_list.mode,
+        "You can't use '%C' in %M%h", cur_cmd, cur_chr, cur_list.mode,
         helpinfo
     );
 }
@@ -2462,7 +2484,7 @@ void tex_off_save(void)
 {
     if (cur_group == bottom_level_group) {
         /*tex Drop current token and complain that it was unmatched */
-        tex_handle_error(normal_error_type, "Extra %C", cur_cmd, cur_chr,
+        tex_handle_error(normal_error_type, "Extra %C%h", cur_cmd, cur_chr,
             "Things are pretty mixed up, but I think the worst is over."
         );
     } else {
@@ -2483,7 +2505,7 @@ void tex_off_save(void)
                     set_token_info(h, deep_frozen_end_group_token);
                     tex_handle_error(
                         normal_error_type,
-                        "Missing \\endgroup inserted",
+                        "Missing \\endgroup inserted%h",
                         helpinfo
                     );
                     break;
@@ -2495,7 +2517,7 @@ void tex_off_save(void)
                     set_token_info(h, math_shift_token + '$');
                     tex_handle_error(
                         normal_error_type,
-                        "Missing $ inserted",
+                        "Missing $ inserted%h",
                         helpinfo
                     );
                     break;
@@ -2517,7 +2539,7 @@ void tex_off_save(void)
                     if (! (f && node_type(f) == fence_noad && has_noad_option_nocheck(f))) {
                         tex_handle_error(
                             normal_error_type,
-                            "Missing \\right\\nomathchar inserted",
+                            "Missing \\right\\nomathchar inserted%h",
                             helpinfo
                         );
                     }
@@ -2528,7 +2550,7 @@ void tex_off_save(void)
                     set_token_info(h, right_brace_token + '}');
                     tex_handle_error(
                         normal_error_type,
-                        "Missing } inserted",
+                        "Missing } inserted%h",
                         helpinfo
                      );
                     break;
@@ -2561,14 +2583,14 @@ static void tex_aux_extra_right_brace_error(void)
         case semi_simple_group:
             tex_handle_error(
                 normal_error_type,
-                "Extra }, or forgotten %eendgroup",
+                "Extra }, or forgotten %eendgroup%h",
                 helpinfo
             );
             break;
         case math_simple_group:
             tex_handle_error(
                 normal_error_type,
-                "Extra }, or forgotten %eendmathgroup",
+                "Extra }, or forgotten %eendmathgroup%h",
                 helpinfo
             );
             break;
@@ -2577,7 +2599,7 @@ static void tex_aux_extra_right_brace_error(void)
         case math_equation_number_group:
             tex_handle_error(
                 normal_error_type,
-                "Extra }, or forgotten $",
+                "Extra }, or forgotten $%h",
                 helpinfo
             );
             break;
@@ -2595,7 +2617,7 @@ static void tex_aux_extra_right_brace_error(void)
                 } else {
                     tex_handle_error(
                         normal_error_type,
-                        "Extra }, or forgotten %eright",
+                        "Extra }, or forgotten %eright%h",
                         helpinfo
                     );
                     break;
@@ -2654,7 +2676,7 @@ static void tex_aux_finish_bottom_level_group(void)
 {
     tex_handle_error(
         normal_error_type,
-        "Too many }'s",
+        "Too many }'s%h",
         "You've closed more groups than you opened. Such booboos are generally harmless,\n"
         "so keep going."
     );
@@ -2882,7 +2904,7 @@ static void tex_aux_wrapup_leader_box(halfword boxcontext, halfword boxnode, hal
     } else {
         tex_handle_error(
             back_error_type,
-            "Leaders not followed by proper glue",
+            "Leaders not followed by proper glue%h",
             "You should say '\\leaders <box or rule><hskip or vskip>'. I found the <box or\n"
             "rule>, but there's no suitable <hskip or vskip>, so I'm ignoring these leaders."
         );
@@ -3044,14 +3066,20 @@ void tex_begin_paragraph(int doindent, int context)
             tex_local_control(1);
          // tex_cleanup_input_state();
         }
-     // if (tex_delayed_glue_par_skipped()) {
-     //   /*tex We have already included the parskip into preceding glue. */
-     // } else {
+# if (delayed_glue_supported == 1)
+        if (tex_delayed_glue_par_skipped()) {
+            /*tex We have already included the parskip into preceding glue. */
+        } else {
             tex_tail_append(tex_new_param_glue_node(par_skip_code, par_skip_glue));
-     // }
-     // tex_delayed_glue_check(delayed_glue_target_current, delayed_glue_location_parskip);
+        }
+        tex_delayed_glue_check(delayed_glue_target_current, delayed_glue_location_parskip);
+# else
+        tex_tail_append(tex_new_param_glue_node(par_skip_code, par_skip_glue));
+# endif
     } else {
-     // tex_delayed_glue_check(delayed_glue_target_current, delayed_glue_location_paragraph);
+# if (delayed_glue_supported == 1)
+        tex_delayed_glue_check(delayed_glue_target_current, delayed_glue_location_paragraph);
+# endif
     }
     lmt_begin_paragraph_callback(isvmode, &indented, context);
     /*tex We'd better not messed up things in the callback! */
@@ -3127,7 +3155,7 @@ static void tex_aux_run_head_for_vmode(void)
     } else {
         tex_handle_error(
             normal_error_type,
-            "You can't use '\\hrule' here except with leaders",
+            "You can't use '\\hrule' here except with leaders%h",
             "To put a horizontal rule in an hbox or an alignment, you should use \\leaders or\n"
             "\\hrulefill (see The TeXbook)."
         );
@@ -3508,13 +3536,13 @@ static void tex_aux_run_text_accent(void)
     scaled xoffset = 0;
     scaled yoffset = 0;
     while (1) {
-        switch (tex_scan_character("xyXY", 0, 1, 0)) {
-            case 'x': case 'X':
+        switch (tex_scan_character("xy", 0, 1, 0)) {
+            case 'x':
                 if (tex_scan_mandate_keyword("xoffset", 1)) {
                     xoffset = tex_scan_dimension(0, 0, 0, 0, NULL, NULL);
                 }
                 break;
-            case 'y': case 'Y':
+            case 'y':
                 if (tex_scan_mandate_keyword("yoffset", 1)) {
                     yoffset = tex_scan_dimension(0, 0, 0, 0, NULL, NULL);
                 }
@@ -3616,7 +3644,7 @@ static void tex_aux_run_cs_error(void)
 {
     tex_handle_error(
         normal_error_type,
-        "Extra \\endcsname",
+        "Extra \\endcsname%h",
         "I'm ignoring this, since I wasn't doing a \\csname."
     );
 }
@@ -3663,14 +3691,12 @@ static void tex_aux_show_frozen_error(halfword cs)
     if (cs) {
         tex_handle_error(
             normal_error_type,
-            "You can't redefine the frozen macro %S.", cs,
-            NULL
+            "You can't redefine the frozen macro %S.", cs
         );
     } else {
         tex_handle_error(
             normal_error_type,
-            "You can't redefine a frozen macro.",
-            NULL
+            "You can't redefine a frozen macro."
         );
     }
 }
@@ -3820,7 +3846,7 @@ static int tex_aux_valid_arithmic(int cmd, int *index, int *level, int *varcmd, 
         default:
             tex_handle_error(
                 normal_error_type,
-                "You can't use '%C' after %C",
+                "You can't use '%C' after %C%h",
                 cur_cmd, cur_chr, cmd, 0,
                 "I'm forgetting what you said and not changing anything."
             );
@@ -3835,7 +3861,7 @@ static void tex_aux_arithmic_overflow_error(int level, halfword value)
     }
     tex_handle_error(
         normal_error_type,
-        "Arithmetic overflow",
+        "Arithmetic overflow%h",
         "I can't carry out that multiplication or division, since the result is out of\n"
         "range."
     );
@@ -3873,7 +3899,7 @@ static inline void tex_aux_update_register(int a, int level, halfword index, hal
             }
             break;
         case muglue_val_level:
-            tex_define(a, index, cmd == internal_glue_cmd ? internal_muglue_reference_cmd : register_muglue_reference_cmd, value);
+            tex_define(a, index, cmd == internal_muglue_cmd ? internal_muglue_reference_cmd : register_muglue_reference_cmd, value);
             break;
         default:
             /* can't happen */
@@ -4580,8 +4606,12 @@ static void tex_aux_set_box_property(void)
                     halfword first = null; 
                     halfword last = null; 
                     tex_migrate(b, &first, &last, what & auto_migrate_insert, what & auto_migrate_mark);
-                    if (first) { 
-                        box_post_migrated(b) = first;
+                    if (first) {
+                        if (box_post_migrated(b)) {
+                            tex_couple_nodes(tex_tail_of_node_list(box_post_migrated(b)), first);
+                        } else {
+                            box_post_migrated(b) = first;
+                        }
                     }
                 }
             }
@@ -4608,6 +4638,7 @@ static void tex_aux_set_box_property(void)
                 if (b && snapping) {
                     tex_snapping_line(b, snapping);
                 }
+                tex_flush_specification_node(snapping);
             }
             break;
         case box_limit_code:
@@ -4641,7 +4672,7 @@ static void tex_aux_set_box_property(void)
             if (b) { 
                 tex_set_vadjust(b);
             } else { 
-                tex_run_vadjust(); /* maybe error */
+                tex_set_vadjust(0);
             }
             break;
         case box_inserts_code:
@@ -4669,7 +4700,7 @@ static void tex_aux_set_box(int a)
     } else {
         tex_handle_error(
             normal_error_type,
-            "Improper \\setbox",
+            "Improper \\setbox%h",
             "Sorry, \\setbox is not allowed after \\halign in a display, between \\accent and\n"
             "an accented character, or in immediate assignments."
         );
@@ -4856,7 +4887,7 @@ static void tex_aux_set_association(int flags, int force)
                     if lmt_unlikely(tex_get_unit_class(index)) {
                         tex_handle_error(
                             normal_error_type,
-                            "Imvalid \\associateunit, unit %i is already taken", index, 
+                            "Imvalid \\associateunit, unit %i is already taken%h", index, 
                             "Units can only be bound once and not overload built-in ones."
                         );
                     } else if (force || tex_define_permitted(cs, flags)) {
@@ -4865,7 +4896,7 @@ static void tex_aux_set_association(int flags, int force)
                 } else {
                     tex_handle_error(
                         normal_error_type,
-                        "Invalid \\associateunit target",
+                        "Invalid \\associateunit target%h",
                         "Only existing dimension equivalent commands are accepted."
                     );
                 }
@@ -5170,8 +5201,7 @@ static void tex_aux_set_let(int flags, int force)
                 } else {
                     tex_handle_error(
                         normal_error_type,
-                        "invalid number for \\letcharcode",
-                        NULL
+                        "invalid number for \\letcharcode"
                     );
                 }
                 break;
@@ -5364,16 +5394,28 @@ static void tex_aux_set_assign_toks(int a, halfword cmd, halfword cs, halfword l
         */
         if (cur_cmd == register_cmd && cur_chr == token_val_level) {
             chr = eq_value(register_toks_location(tex_scan_toks_register_number()));
-            if (chr) {
-                tex_add_token_reference(chr);
+            if (loc == internal_toks_location(output_routine_code)) {
+                if (chr) {
+                    chr = tex_copy_token_list(chr, &tail);
+                }
+            } else {
+                if (chr) {
+                    tex_add_token_reference(chr);
+                }
+                goto DEFINE;
             }
-            goto DEFINE;
         } else if (cur_cmd == register_toks_cmd || cur_cmd == internal_toks_cmd) {
             chr = eq_value(cur_chr);
-            if (chr) {
-                tex_add_token_reference(chr);
+            if (loc == internal_toks_location(output_routine_code)) {
+                if (chr) {
+                    chr = tex_copy_token_list(chr, &tail);
+                }
+            } else {
+                if (chr) {
+                    tex_add_token_reference(chr);
+                }
+                goto DEFINE;
             }
-            goto DEFINE;
         } else {
             /*tex Recover possibly with error message. */
             tex_back_input(cur_tok);
@@ -5384,8 +5426,10 @@ static void tex_aux_set_assign_toks(int a, halfword cmd, halfword cs, halfword l
         cur_cs = cs;
         chr = tex_scan_toks_normal(1, &tail);
     }
-    if (! token_link(chr)) {
-        tex_put_available_token(chr);
+    if (! chr || ! token_link(chr)) {
+        if (chr) {
+            tex_put_available_token(chr);
+        }
         chr = null;
     } else if (loc == internal_toks_location(output_routine_code)) {
         halfword head = token_link(chr);
@@ -5513,6 +5557,7 @@ static void tex_aux_skip_optional_equal(void)
 static void tex_aux_set_math_parameter(int a)
 {
     halfword code = cur_chr;
+    halfword command = code;
     halfword value = null; /* can also be scaled */
     switch (code) {
         case math_parameter_reset_spacing:
@@ -5525,7 +5570,7 @@ static void tex_aux_set_math_parameter(int a)
             {
                 halfword left = tex_scan_math_class_number(0);
                 halfword right = tex_scan_math_class_number(0);
-                switch (code) {
+                switch (command) {
                     case math_parameter_set_spacing:
                         code = tex_to_math_spacing_parameter(left, right);
                         break;
@@ -5536,10 +5581,10 @@ static void tex_aux_set_math_parameter(int a)
                 if lmt_unlikely(code < 0) {
                     tex_handle_error(
                         normal_error_type,
-                        "Invalid math class pair",
+                        "Invalid math class pair%h",
                         "I'm going to assume ordinary atoms."
                     );
-                    switch (code) {
+                    switch (command) {
                         case math_parameter_set_spacing:
                             code = tex_to_math_spacing_parameter(ordinary_noad_subtype, ordinary_noad_subtype);
                             break;
@@ -5573,7 +5618,7 @@ static void tex_aux_set_math_parameter(int a)
                 } else {
                     tex_handle_error(
                         normal_error_type,
-                        "Invalid math class",
+                        "Invalid math class%h",
                         "I'm going to ignore this alias."
                     );
                 }
@@ -5604,7 +5649,7 @@ static void tex_aux_set_math_parameter(int a)
                 } else {
                     tex_handle_error(
                         normal_error_type,
-                        "Invalid math class",
+                        "Invalid math class%h",
                         "I'm going to ignore this alias."
                     );
                 }
@@ -5637,7 +5682,7 @@ static void tex_aux_set_math_parameter(int a)
                 } else {
                     tex_handle_error(
                         normal_error_type,
-                        "Invalid math class",
+                        "Invalid math class%h",
                         "I'm going to ignore this atom penalty."
                     );
                 }
@@ -5658,7 +5703,7 @@ static void tex_aux_set_math_parameter(int a)
                 } else {
                     tex_handle_error(
                         normal_error_type,
-                        "Invalid math class",
+                        "Invalid math class%h",
                         "I'm going to ignore this penalty alias."
                     );
                 }
@@ -5685,7 +5730,7 @@ static void tex_aux_set_math_parameter(int a)
                 } else {
                     tex_handle_error(
                         normal_error_type,
-                        "Invalid math class",
+                        "Invalid math class%h",
                         "I'm going to ignore these options."
                     );
                 }
@@ -5715,6 +5760,10 @@ static void tex_aux_set_math_parameter(int a)
                             value = cur_chr;
                             indirect = indirect_math_register_integer;
                             break;
+                        case internal_integer_cmd:
+                            value = cur_chr;
+                            indirect = indirect_math_internal_integer;
+                            break;
                     }
                     break;
                 case math_dimension_parameter:
@@ -5723,9 +5772,17 @@ static void tex_aux_set_math_parameter(int a)
                             value = cur_cs;
                             indirect = indirect_math_dimension;
                             break;
+                        case posit_cmd:
+                            value = cur_cs;
+                            indirect = indirect_math_dimension;
+                            break;
                         case register_dimension_cmd:
                             value = cur_chr;
                             indirect = indirect_math_register_dimension;
+                            break;
+                        case internal_dimension_cmd:
+                            value = cur_chr;
+                            indirect = indirect_math_internal_dimension;
                             break;
                     }
                     break;
@@ -5744,6 +5801,10 @@ static void tex_aux_set_math_parameter(int a)
                             indirect = indirect_math_internal_mugluespec;
                             break;
                         case dimension_cmd:
+                            value = cur_cs;
+                            indirect = indirect_math_dimension;
+                            break;
+                        case posit_cmd:
                             value = cur_cs;
                             indirect = indirect_math_dimension;
                             break;
@@ -5776,7 +5837,7 @@ static void tex_aux_set_math_parameter(int a)
             if lmt_unlikely(indirect == indirect_math_regular) {
                 tex_handle_error(
                     normal_error_type,
-                    "Invalid inherited math parameter type",
+                    "Invalid inherited math parameter type%h",
                     "The inheritance type should match the math parameter type"
                 );
                 return;
@@ -6265,7 +6326,7 @@ static void tex_run_prefixed_command(void)
             } else {
                 tex_handle_error(
                     normal_error_type,
-                    "You can't use a prefix %C with %C",
+                    "You can't use a prefix %C with %C%h",
                     prefix_cmd, lastprefix, cur_cmd, cur_chr,
                     "A prefix should be followed by a quantity that can be assigned to. Intermediate\n"
                     "spaces and \\relax tokens are gobbled in the process.\n"
@@ -6313,7 +6374,7 @@ void tex_get_r_token(void)
         */
         tex_handle_error(
             insert_error_type,
-            "Missing control sequence inserted",
+            "Missing control sequence inserted%h",
             "Please don't say '\\def cs{...}', say '\\def\\cs{...}'. I've inserted an\n"
             "inaccessible control sequence so that your definition will be completed without\n"
             "mixing me up too badly.\n"
@@ -6387,7 +6448,7 @@ void tex_assign_internal_integer_value(int a, halfword p, int val)
             } else {
                 tex_handle_error(
                     normal_error_type,
-                    "Invalid \\catcode table",
+                    "Invalid \\catcode table%h",
                     "You can only switch to a \\catcode table that is initialized using\n"
                     "\\savecatcodetable or \\initcatcodetable, or to table 0"
                 );
@@ -6415,7 +6476,7 @@ void tex_assign_internal_integer_value(int a, halfword p, int val)
             if lmt_unlikely(val < min_math_style_scale || val > max_math_style_scale) {
                 tex_handle_error(
                     normal_error_type,
-                    "Invalid \\glyph..scale",
+                    "Invalid \\glyph..scale%h",
                     "The value for \\glyph..scale has to be between " LMT_TOSTRING(min_math_style_scale) " and " LMT_TOSTRING(max_math_style_scale) " where\n"
                     "a value of zero forces font percentage scaling to be used."
                 );
@@ -6427,7 +6488,7 @@ void tex_assign_internal_integer_value(int a, halfword p, int val)
             if lmt_unlikely(val < min_space_skip_factor || val > max_space_skip_factor) {
                 tex_handle_error(
                     normal_error_type,
-                    "Invalid \\spaceskipfactor",
+                    "Invalid \\spaceskipfactor%h",
                     "The value for \\spaceskipfactor has to be between " LMT_TOSTRING(min_space_skip_factor) " and " LMT_TOSTRING(max_space_skip_factor) "."
                 );
                 val = max_limited_scale;
@@ -6447,7 +6508,7 @@ void tex_assign_internal_integer_value(int a, halfword p, int val)
             if lmt_unlikely(val < 0 || val > max_box_index) {
                 tex_handle_error(
                     normal_error_type,
-                    "Invalid \\outputbox",
+                    "Invalid \\outputbox%h",
                     "The value for \\outputbox has to be between 0 and " LMT_TOSTRING(max_box_index) "."
                 );
             } else {
@@ -6458,7 +6519,7 @@ void tex_assign_internal_integer_value(int a, halfword p, int val)
             if lmt_unlikely(val > max_newline_character) {
                 tex_handle_error(
                     normal_error_type,
-                    "Invalid \\newlinechar",
+                    "Invalid \\newlinechar%h",
                     "The value for \\newlinechar has to be no higher than " LMT_TOSTRING(max_newline_character) ".\n"
                     "Your invalid assignment will be ignored."
                 );
@@ -6470,7 +6531,7 @@ void tex_assign_internal_integer_value(int a, halfword p, int val)
             if lmt_unlikely(val > max_endline_character) {
                tex_handle_error(
                    normal_error_type,
-                   "Invalid \\endlinechar",
+                   "Invalid \\endlinechar%h",
                    "The value for \\endlinechar has to be no higher than " LMT_TOSTRING(max_endline_character) "."
                );
             } else {
@@ -6487,7 +6548,7 @@ void tex_assign_internal_integer_value(int a, halfword p, int val)
             } else {
                 tex_handle_error(
                     normal_error_type,
-                    "Invalid \\language",
+                    "Invalid \\language%h",
                     "The value for \\language has to be defined and in the range 0 .. " LMT_TOSTRING(max_n_of_languages) "."
                 );
             }
@@ -6501,7 +6562,7 @@ void tex_assign_internal_integer_value(int a, halfword p, int val)
             } else {
                 tex_handle_error(
                     normal_error_type,
-                    "Invalid \\fontid",
+                    "Invalid \\fontid%h",
                     "The value for \\fontid has to be defined and in the range 0 .. " LMT_TOSTRING(max_n_of_fonts) "."
                 );
             }
@@ -6742,18 +6803,17 @@ static void tex_aux_run_message(void)
                 strnumber s = tex_aux_scan_string();
                 if (error_help_par) {
                     strnumber helpinfo = tex_tokens_to_string(error_help_par);
-                    const char *h = tex_to_cstring(helpinfo);
                     tex_handle_error(
                         normal_error_type,
-                        "%T",
+                        "%T%h",
                         s,
-                        h
+                        str_getconstr(helpinfo)
                     );
                     tex_flush_str(helpinfo);
                 } else if (lmt_error_state.long_help_seen) {
                     tex_handle_error(
                         normal_error_type,
-                        "%T",
+                        "%T%h",
                         s,
                         "(That was another \\errmessage.)"
                     );
@@ -6763,7 +6823,7 @@ static void tex_aux_run_message(void)
                     }
                     tex_handle_error(
                         normal_error_type,
-                        "%T",
+                        "%T%h",
                         s,
                         "This error message was generated by an \\errmessage command, so I can't give any\n"
                         "explicit help. Pretend that you're Hercule Poirot: Examine all clues, and deduce\n"
@@ -6807,11 +6867,10 @@ static void tex_aux_run_show_whatever(void)
             /*tex Show the current meaning of a token, then |goto common_ending|. */
             {
                 tex_get_token();
-                tex_print_nlp();
-                tex_print_str("> ");
                 if (cur_cs != 0) {
-                    tex_print_cs(cur_cs);
-                    tex_print_char('=');
+                    tex_print_format("\n> %S=", cur_cs);
+                } else {
+                    tex_print_format("\n> ");
                 }
                 tex_print_meaning(meaning_full_code);
                 goto COMMON_ENDING;
@@ -6825,28 +6884,28 @@ static void tex_aux_run_show_whatever(void)
                 int online = 0;
                 int max = 0;
                 while (1) {
-                    switch (tex_scan_character("ocdnaOCDNA", 0, 1, 0)) {
-                        case 'a': case 'A':
+                    switch (tex_scan_character("ocdna", 0, 1, 0)) {
+                        case 'a':
                             if (tex_scan_mandate_keyword("all", 1)) {
                                 max = 1;
                             }
                             break;
-                        case 'c': case 'C':
+                        case 'c':
                             if (tex_scan_mandate_keyword("content", 1)) {
                                 content = 1;
                             }
                             break;
-                        case 'd': case 'D':
+                        case 'd':
                             if (tex_scan_mandate_keyword("diagnose", 1)) {
                                 diagnose = 1;
                             }
                             break;
-                        case 'n': case 'N':
+                        case 'n':
                             if (tex_scan_mandate_keyword("nolevels", 1)) {
                                 nolevels = 1;
                             }
                             break;
-                        case 'o': case 'O':
+                        case 'o':
                             if (tex_scan_mandate_keyword("online", 1)) {
                                 online = 1;
                             }
@@ -6884,7 +6943,7 @@ static void tex_aux_run_show_whatever(void)
                     if (r) {
                         tex_show_box(r);
                     } else {
-                        tex_print_str("void");
+                        tex_print_str_len("void", 4);
                     }
                     if (diagnose) {
                         tex_end_diagnostic();
@@ -6899,8 +6958,7 @@ static void tex_aux_run_show_whatever(void)
         case show_the_code:
             {
                 halfword head = tex_the_value_toks(the_code, NULL, 0);
-                tex_print_nlp();
-                tex_print_str("> ");
+                tex_print_format("\n> ");
                 tex_show_token_list(head, 0, 0);
                 tex_flush_token_list(head);
                 goto COMMON_ENDING;
@@ -6940,8 +6998,7 @@ static void tex_aux_run_show_whatever(void)
         case show_tokens_code:
             {
                 halfword head = tex_the_detokenized_toks(NULL, 0, 0);
-                tex_print_nlp();
-                tex_print_str("> ");
+                tex_print_format("\n> ");
                 tex_show_token_list(head, 0, 0);
                 tex_flush_token_list(head);
                 goto COMMON_ENDING;
@@ -6980,15 +7037,14 @@ static void tex_aux_run_show_whatever(void)
     } else if (lmt_error_state.interaction < error_stop_mode) {
         tex_handle_error(
             normal_error_type,
-            NULL, /* no message */
-            NULL  /* no help */
+            "" /* no message */
         );
         --lmt_error_state.error_count;
  /* } else if (tracing_online_par > 0) { */
     } else {
         tex_handle_error(
             normal_error_type,
-            NULL, /* no message */
+            "%h", /* no message */
             "This isn't an error message; I'm just \\showing something.\n"
         );
     }

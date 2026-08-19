@@ -5,6 +5,10 @@
 # ifndef LMT_COMPILER_H
 # define LMT_COMPILER_H
 
+# include <stdbool.h>
+# include <stdint.h>
+# include <math.h>
+
 /*tex
 
     Let's see if C 23 works out ok. We have to make sure that some assumed to be present functions
@@ -136,5 +140,45 @@
 # else
     # define FALLTHROUGH ((void) 0);
 # endif
+
+# if (! defined(__STDC_VERSION__) || __STDC_VERSION__ < 199901L) && ! defined(hypot)
+
+    static inline double hypot(double x, double y)
+    {
+        double ax = fabs(x);
+        double ay = fabs(y);
+        if (ax == 0.0 && ay == 0.0) return 0.0;
+        if (ax > ay) {
+            double r = ay / ax;
+            return ax * sqrt(1.0 + r * r);
+        } else {
+            double r = ax / ay;
+            return ay * sqrt(1.0 + r * r);
+        }
+    }
+
+# endif
+
+static inline bool odd_int    (int                a) { return (a & 1) != 0; }
+static inline bool odd_uint   (unsigned int       a) { return (a & 1u) != 0; }
+static inline bool odd_long   (long long          a) { return (a & 1ll) != 0; }
+static inline bool odd_ulong  (unsigned long long a) { return (a & 1ull) != 0; }
+static inline bool odd_double (double             a) { return fabs(fmod(a, 2.0)) == 1.0; }
+
+/* some day:
+
+# define odd(X) _Generic((X),       \
+    unsigned int:       odd_uint,   \
+    unsigned long:      odd_ulong,  \
+    unsigned long long: odd_ulong,  \
+    float:              odd_double, \
+    double:             odd_double, \
+    long double:        odd_double, \
+    default:            odd_long    \
+)(X)
+
+*/
+
+# define SAFE __attribute__((annotate("safe")))
 
 # endif

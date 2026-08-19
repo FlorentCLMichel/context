@@ -103,7 +103,6 @@ extern primitive_state_info lmt_primitive_state;
 
 # define prim_next(a)        lmt_primitive_state.prim[(a)].half0         /*tex Link for coalesced lists. */
 # define prim_text(a)        lmt_primitive_state.prim[(a)].half1         /*tex String number for control sequence name. */
-//define prim_origin(a)      lmt_primitive_state.prim_eqtb[(a)].quart01 
 # define prim_origin(a)      lmt_primitive_state.prim_eqtb[(a)].single02
 # define prim_legacy(a)      lmt_primitive_state.prim_eqtb[(a)].single03
 
@@ -118,9 +117,8 @@ extern primitive_state_info lmt_primitive_state;
 
 extern void      tex_initialize_primitives (void);
 extern void      tex_initialize_hash_mem   (void);
-/*     int       tex_room_in_hash          (void); */
 extern halfword  tex_primitive_lookup      (strnumber s);
-/*     int       tex_cs_is_primitive       (strnumber csname); */
+extern halfword  tex_primitive_lookup_only (strnumber s);
 extern void      tex_primitive             (int origin, int legacy, const char *ss, singleword cmd, halfword chr, halfword offset);
 extern void      tex_primitive_def         (const char *str, size_t length, singleword cmd, halfword chr);
 extern void      tex_print_cmd_chr         (singleword cmd, halfword chr);
@@ -128,16 +126,15 @@ extern void      tex_dump_primitives       (dumpstream f);
 extern void      tex_undump_primitives     (dumpstream f);
 extern void      tex_dump_hashtable        (dumpstream f);
 extern void      tex_undump_hashtable      (dumpstream f);
-/*     halfword  tex_string_lookup         (const char *s, size_t l); */
 extern halfword  tex_string_locate         (const char *s, size_t l, int create);
 extern halfword  tex_string_locate_only    (const char *s, size_t l);
 extern halfword  tex_located_string        (const char *s);
-/*     halfword  tex_id_lookup             (int j, int l); */
 extern halfword  tex_id_locate             (int j, int l, int create);
 extern halfword  tex_id_locate_only        (int j, int l);
 extern int       tex_id_locate_steps       (const char *s);
 extern void      tex_print_cmd_flags       (halfword cs, halfword cmd, int flags, int escape);
 extern int       tex_primitive_found       (const char *name, halfword *cmd, halfword *chr);
+extern int       tex_primitive_index       (halfword cmd, halfword chr);
 extern int       tex_inhibit_primitive     (halfword cmd, halfword chr, int permanent);
 extern strnumber tex_primitive_name        (halfword cmd, halfword ch);
 

@@ -1,5 +1,21 @@
 % language=us runpath=texruns:manuals/luametatex
 
+% \startluacode
+%     local n = callback.names()
+%     local cv = callback.getcontractvalues()
+%     for i=1,#n do
+%         local c = callback.getcontracts(i)
+%         local t = { }
+%         for k, v in next, cv do
+%             if (k & c) ~= 0 then
+%                 t[#t+1] = v
+%             end
+%         end
+%         table.sort(t)
+%         print(n[i],table.concat(t," "))
+%     end
+% \stopluacode
+
 \environment luametatex-style
 
 \startdocument[title=Callbacks]

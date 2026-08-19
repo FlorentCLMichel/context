@@ -151,7 +151,7 @@ function mathematics.dimensions(dimens)  -- beware, dimens get spoiled
         dimens["7*defaultrulethickness"]                             = 7 * defaultrulethickness
         dimens["(5/18)*quad"]                                        = (mathquad * 5) / 18
         dimens["(-10/18)*quad"]                                      = - (mathquad * 10) / 18
-        dimens["mathxheight*3"]                                      = mathxheight * 3 -- needs checking
+        dimens["mathxheight*3"]                                      = mathxheight * 3
         dimens["abs(mathxheight*4)/5"]                               = abs(mathxheight * 4) / 5
         dimens["defaultrulethickness+(abs(defaultrulethickness)/4)"] = defaultrulethickness+(abs(defaultrulethickness) / 4)
         dimens["defaultrulethickness+(abs(mathxheight)/4)"]          = defaultrulethickness+(abs(mathxheight) / 4)

@@ -959,6 +959,28 @@ static int filelib_symlinktarget(lua_State *L)
     return 1;
 }
 
+static int filelib_expandpath(lua_State *L)
+{
+    const char *file = aux_utf8_expandpath(luaL_checkstring(L, 1));
+    if (file) {
+        lua_pushstring(L, file);
+    } else {
+        lua_pushnil(L);
+    }
+    return 1;
+}
+
+static int filelib_canonicalize(lua_State *L)
+{
+    const char *file = aux_utf8_canonicalize(luaL_checkstring(L, 1));
+    if (file) {
+        lua_pushstring(L, file);
+    } else {
+        lua_pushnil(L);
+    }
+    return 1;
+}
+
 static const struct luaL_Reg filelib_function_list[] = {
     { "attributes",        filelib_attributes        },
     { "chdir",             filelib_chdir             },
@@ -967,6 +989,8 @@ static const struct luaL_Reg filelib_function_list[] = {
     { "mkdir",             filelib_mkdir             },
     { "rmdir",             filelib_rmdir             },
     { "touch",             filelib_touch             },
+    { "expandpath",        filelib_expandpath        },
+    { "canonicalize",      filelib_canonicalize      },
     /* */
  // { "collect",           filelib_collect           },
     /* */

@@ -673,14 +673,14 @@ end
 function mathematics.syncboth(alphabet,style)
     local data = alphabet and alphabets[alphabet] or regular
     data = style and data[style] or data.tf
-    texsetattribute(mathalphabet,data and data.attribute or texattribute[mathalphabet])
+    texsetattribute(mathalphabet,data and data.attribute or texgetattribute(mathalphabet))
 end
 
 function mathematics.syncstyle(style)
     local r = mathremap[texgetattribute(mathalphabet)]
     local alphabet = r and r.alphabet or "regular"
     local data = alphabets[alphabet][style]
-    texsetattribute(mathalphabet,data and data.attribute or texattribute[mathalphabet])
+    texsetattribute(mathalphabet,data and data.attribute or texgetattribute(mathalphabet))
 end
 
 function mathematics.syncname(alphabet)
@@ -688,7 +688,7 @@ function mathematics.syncname(alphabet)
     local r = mathremap[texgetattribute(mathalphabet)]
     local style = r and r.style or "tf"
     local data = alphabets[alphabet][style]
-    texsetattribute(mathalphabet,data and data.attribute or texattribute[mathalphabet])
+    texsetattribute(mathalphabet,data and data.attribute or texgetattribute(mathalphabet))
 end
 
 implement {
@@ -710,7 +710,7 @@ implement {
             end
             setmacro("currentmathalphabet",alphabet == "regular" and "rm" or alphabet)
             setmacro("currentmathfontstyle",style)
-            texsetattribute(mathalphabet,used and used.attribute or texattribute[mathalphabet])
+            texsetattribute(mathalphabet,used and used.attribute or texgetattribute(mathalphabet))
         end
     end
 }
@@ -726,7 +726,7 @@ implement {
             local alphabet = r and r.alphabet or "regular"
             local data = alphabets[alphabet][style]
             setmacro("currentmathfontstyle",style)
-            texsetattribute(mathalphabet,data and data.attribute or texattribute[mathalphabet])
+            texsetattribute(mathalphabet,data and data.attribute or texgetattribute(mathalphabet))
         end
     end
 }
@@ -806,8 +806,7 @@ function mathematics.remapalphabets(char,mathalphabet,mathgreek)
     local g = gaps[char]
     if g then
         report_remapping("gap character %U changed into %C",char,g)
-        char = g
-        return
+        return g
     end
     if mathgreek and mathgreek > 0 then
         if not isgreek[char] then

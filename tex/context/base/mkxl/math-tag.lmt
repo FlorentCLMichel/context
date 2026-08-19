@@ -924,7 +924,8 @@ do
                             stop_tagged()
                         end
                     elseif subtype == delimited_code then
-                        start_tagged("mdelimited",properties)
+                        -- maybe set properties to indicate that we have left/right
+                        start_tagged("mdelimited")
                         if left then
                             local properties = getproperties(left,subtype) or { }
                             properties.delimiterlocation = "left"
@@ -1206,7 +1207,7 @@ do
         if trace_blobs then
             report_blob("get math mapping, purpose %a, order %i, index %i, mapping %04X",purpose,order,index,mapping)
         end
-        return index
+        return mapping -- was wrong: index (needs checking)
     end
 
     local function markblobindexdone(language,n)

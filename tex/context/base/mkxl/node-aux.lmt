@@ -449,7 +449,7 @@ do
 
     local properties   = { }
 
-    local setproperty  = nuts.setproperty
+    local setproperty  = nuts.setprop -- context one
     local luaboundary  = nuts.pool.luaboundary
 
     local a_properties <const> = 1

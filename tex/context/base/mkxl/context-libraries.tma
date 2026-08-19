@@ -259,6 +259,7 @@ return {
   ["meta-imp-txt.mkxl"]=true,
   ["minion-math.lfg"]=true,
   ["minion.lfg"]=true,
+  ["mlib-thr-imp-external.lmt"]=true,
   ["modern-math.lfg"]=true,
   ["modern-text.lfg"]=true,
   ["mtx-install-imp-modules.lua"]=true,

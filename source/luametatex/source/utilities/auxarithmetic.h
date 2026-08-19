@@ -41,8 +41,13 @@ in some places we clip to the official maxima but not always.
 # define tfloor(x) ( (size_t)     (floor((double)(x))) )
 # define ifloor(x) ( (int)        (floor((double)(x))) )
 
-static inline int fastfloor(double x) { return (int) x <= x ? (int) x : (int) x - 1; }
-static inline int fastceil (double x) { return (int) x >= x ? (int) x : (int) x + 1; }
+static inline int fastfloor (double x) { return (int) x <= x ? (int) x : (int) x - 1; }
+static inline int fastfloord(double x) { return (int) x <= x ? (int) x : (int) x - 1; }
+static inline int fastfloorf(float  x) { return (int) x <= x ? (int) x : (int) x - 1; }
+static inline int fastceil  (double x) { return (int) x >= x ? (int) x : (int) x + 1; }
+
+// static inline int fastfloor (float x) { int i = (int) x;  return i - (x < (float) i); }
+// static inline int fastfloorf(float x) { int i = (int) x;  return i - (x < (float) i); }
 
 //define lround(x) ( ((double) x >= 0.0) ? (lua_Integer) ((double) x + 0.5) : (lua_Integer) ((double) x - 0.5) )
 //define tround(x) ( ((double) x >= 0.0) ? (size_t)      ((double) x + 0.5) : (size_t)      ((double) x - 0.5) )

@@ -952,7 +952,43 @@ static int siolib_readintegertable(lua_State *L)
 
 /* from ff */
 
-static int fiolib_readfixed2(lua_State *L)
+/*
+
+    signed :
+
+    // assemble bytes into a signed 16-bit integer/
+    int16_t n = (int16_t)((a << 8) | b);
+    // direct division by 256.0 handles integer and fractional parts together
+    lua_pushnumber(L, (double) n / 256.0);
+
+    unsigned :
+
+    // assemble bytes into an unsigned 16-bit integer
+    uint16_t n = (uint16_t)((a << 8) | b);
+    lua_pushnumber(L, (double) n / 256.0);
+
+*/
+
+// static int fiolib_readfixed2_unsigned(lua_State *L)
+// {
+//     FILE *f = lmt_valid_file(L);
+//     if (f) {
+//         int a = getc(f);
+//         int b = getc(f);
+//         if (b == EOF) {
+//             lua_pushnil(L);
+//         } else {
+//             /* assemble bytes into an unsigned 16-bit integer */
+//             uint16_t n = (uint16_t) ((a << 8) | b);
+//             lua_pushnumber(L, (double) n / 256.0);
+//         }
+//         return 1;
+//     } else {
+//         return 0;
+//     }
+// }
+
+static int fiolib_readfixed2(lua_State *L) // signed
 {
     FILE *f = lmt_valid_file(L);
     if (f) {
@@ -961,8 +997,12 @@ static int fiolib_readfixed2(lua_State *L)
         if (b == EOF) {
             lua_pushnil(L);
         } else {
-            int n = (a << 8) | b; /* really an int because we shift */
-            lua_pushnumber(L, (double) ((n >> 8) + ((n & 0xFF) / 256.0)));
+         // int n = (a << 8) | b; /* really an int because we shift */
+         // lua_pushnumber(L, (double) ((n >> 8) + ((n & 0xFF) / 256.0)));
+            /* assemble bytes into a signed 16-bit integer */
+            int16_t n = (int16_t) ((a << 8) | b);
+            /* direct division by 256.0 handles integer and fractional parts together */
+            lua_pushnumber(L, (double) n / 256.0);
         }
         return 1;
     } else {
@@ -970,22 +1010,45 @@ static int fiolib_readfixed2(lua_State *L)
     }
 }
 
-static int siolib_readfixed2(lua_State *L)
+static int siolib_readfixed2(lua_State *L) // signed
 {
     size_t p;
     const char *s = siolib_okay(L, 2, &p, NULL, NULL);
     if (s) {
         int a = uchar(s[p++]);
         int b = uchar(s[p]);
-        int n = (a << 8) | b; /* really an int because we shift */
-        lua_pushnumber(L, (double) ((n >> 8) + ((n & 0xFF) / 256.0)));
+     // int n = (a << 8) | b; /* really an int because we shift */
+     // lua_pushnumber(L, (double) ((n >> 8) + ((n & 0xFF) / 256.0)));
+        int16_t n = (int16_t) ((a << 8) | b);
+        /* direct division by 256.0 handles integer and fractional parts together */
+        lua_pushnumber(L, (double) n / 256.0);
     } else {
         lua_pushnil(L);
     }
     return 1;
 }
 
-static int fiolib_readfixed4(lua_State *L)
+// static int fiolib_readfixed4_unsigned(lua_State *L)
+// {
+//     FILE *f = lmt_valid_file(L);
+//     if (f) {
+//         int a = getc(f);
+//         int b = getc(f);
+//         int c = getc(f);
+//         int d = getc(f);
+//         if (d == EOF) {
+//             lua_pushnil(L);
+//         } else {
+//             uint32_t u = ((uint32_t) a << 24) | ((uint32_t) b << 16) | ((uint32_t) c << 8) | (uint32_t) d;
+//             lua_pushnumber(L, (double) u / 65536.0);
+//         }
+//         return 1;
+//     } else {
+//         return 0;
+//     }
+// }
+
+static int fiolib_readfixed4(lua_State *L) // signed
 {
     FILE *f = lmt_valid_file(L);
     if (f) {
@@ -996,8 +1059,14 @@ static int fiolib_readfixed4(lua_State *L)
         if (d == EOF) {
             lua_pushnil(L);
         } else {
-            int n = (a << 24) | (b << 16) | (c << 8) | d; /* really an int because we shift */
-            lua_pushnumber(L, (double) ((n >> 16) + ((n & 0xFFFF) / 65536.0)));
+         // int n = (a << 24) | (b << 16) | (c << 8) | d; /* really an int because we shift */
+         // lua_pushnumber(L, (double) ((n >> 16) + ((n & 0xFFFF) / 65536.0)));
+            /* assemble using uint32_t to safely prevent undefined behavior during shifting */
+            uint32_t u = ((uint32_t) a << 24) | ((uint32_t) b << 16) | ((uint32_t) c << 8) | (uint32_t) d;
+            /* cast to signed int32_t to correctly preserve two's complement negative values */
+            int32_t n = (int32_t) u;
+            /* dividing the entire 32-bit signed value by 65536.0 correctly converts integer & fraction */
+            lua_pushnumber(L, (double) n / 65536.0);
         }
         return 1;
     } else {
@@ -1014,8 +1083,14 @@ static int siolib_readfixed4(lua_State *L)
         int b = uchar(s[p++]);
         int c = uchar(s[p++]);
         int d = uchar(s[p]);
-        int n = (a << 24) | (b << 16) | (c << 8) | d; /* really an int because we shift */
-        lua_pushnumber(L, (double) ((n >> 16) + ((n & 0xFFFF) / 65536.0)));
+     // int n = (a << 24) | (b << 16) | (c << 8) | d; /* really an int because we shift */
+     // lua_pushnumber(L, (double) ((n >> 16) + ((n & 0xFFFF) / 65536.0)));
+        /* assemble using uint32_t to safely prevent undefined behavior during shifting */
+        uint32_t u = ((uint32_t) a << 24) | ((uint32_t) b << 16) | ((uint32_t) c << 8) | (uint32_t) d;
+        /* cast to signed int32_t to correctly preserve two's complement negative values */
+        int32_t n = (int32_t) u;
+        /* dividing the entire 32-bit signed value by 65536.0 correctly converts integer & fraction */
+        lua_pushnumber(L, (double) n / 65536.0);
     } else {
         lua_pushnil(L);
     }
@@ -1031,8 +1106,12 @@ static int fiolib_read2dot14(lua_State *L)
         if (b == EOF) {
             lua_pushnil(L);
         } else {
-            int n = (a << 8) | b; /* really an int because we shift */
-            lua_pushnumber(L, (double) (((n << 16) >> (16 + 14)) + ((n & 0x3FFF) / 16384.0)));
+         // int n = (a << 8) | b; /* really an int because we shift */
+         // lua_pushnumber(L, (double) (((n << 16) >> (16 + 14)) + ((n & 0x3FFF) / 16384.0)));
+            /* assemble bytes and cast to signed 16-bit integer */
+            int16_t n = (int16_t) ((a << 8) | b);
+            /* dividing by 16384.0 (2^14) converts both integer and fractional parts seamlessly */
+            lua_pushnumber(L, (double) n / 16384.0);
         }
         return 1;
     } else {
@@ -1047,8 +1126,12 @@ static int siolib_read2dot14(lua_State *L)
     if (s) {
         int a = uchar(s[p++]);
         int b = uchar(s[p]);
-        int n = (a << 8) | b; /* really an int because we shift */
-        lua_pushnumber(L, (double) (((n << 16) >> (16 + 14)) + ((n & 0x3FFF) / 16384.0)));
+     // int n = (a << 8) | b; /* really an int because we shift */
+     // lua_pushnumber(L, (double) (((n << 16) >> (16 + 14)) + ((n & 0x3FFF) / 16384.0)));
+        /* assemble bytes and cast to signed 16-bit integer */
+        int16_t n = (int16_t) ((a << 8) | b);
+        /* dividing by 16384.0 (2^14) converts both integer and fractional parts seamlessly */
+        lua_pushnumber(L, (double) n / 16384.0);
     } else {
         lua_pushnil(L);
     }

@@ -237,8 +237,6 @@ definitions as these are in the header file.
 
 */
 
-# define odd(A) (llabs(A) % 2 == 1)
-
 /*tex
 
 The principal computations performed by \MP\ are done entirely in terms of integers less than
@@ -1866,8 +1864,13 @@ static mp_symbol           mp_new_symbols_entry           (MP mp, unsigned char 
 
 static void                mp_fix_date_and_time           (MP mp);
 
+/*tex
+    Testing with as static mp_number actually gives a good idea where these numbers can get adapted
+    when passed around. Sometimes it happens as side effect so we might look intio that one day.
+*/
+
 static inline void         mp_do_set_value_sym            (MP mp, mp_token_node A, mp_symbol B);
-static inline void         mp_do_set_value_number         (MP mp, mp_token_node A, mp_number *B);
+static inline void         mp_do_set_value_number         (MP mp, mp_token_node A, const mp_number *B);
 static inline void         mp_do_set_value_str            (MP mp, mp_token_node A, mp_string B);
 static inline void         mp_do_set_value_node           (MP mp, mp_token_node A, mp_node B);
 static inline void         mp_do_set_value_knot           (MP mp, mp_token_node A, mp_knot B);
@@ -1891,7 +1894,7 @@ static void                mp_solve_rising_cubic          (MP mp, mp_number *ret
 static mp_knot             mp_convex_hull                 (MP mp, mp_knot h);
 void                       mp_simplify_path               (MP mp, mp_knot h);
 static void                mp_move_knot                   (MP mp, mp_knot p, mp_knot q);
-static void                mp_sqrt_det                    (MP mp, mp_number *ret, mp_number *a_orig, mp_number *b_orig, mp_number *c_orig, mp_number *d_orig);
+static void                mp_sqrt_det                    (MP mp, mp_number *ret, const mp_number *a_orig, const mp_number *b_orig, const mp_number *c_orig, const mp_number *d_orig);
 static void                mp_flush_dash_list             (MP mp, mp_edge_header_node h);
 static void                mp_toss_edges                  (MP mp, mp_edge_header_node h);
 static mp_edge_header_node mp_copy_objects                (MP mp, mp_node p, mp_node q);
@@ -2097,6 +2100,8 @@ static void                mp_final_cleanup               (MP mp);
 
 */
 
+/* todo: as in tex, use %h for last help */
+
 static inline void mp_print_format_args(MP mp, const char *format, va_list args)
 {
     while (1) {
@@ -2198,7 +2203,7 @@ static inline void mp_print_format_args(MP mp, const char *format, va_list args)
 void mp_print_format(MP mp, const char *format, ...)
 {
     va_list args;
-    va_start(args, format); /* hm, weird, no number */
+    va_start(args, format);
     mp_print_format_args(mp, format, args);
     va_end(args);
 }
@@ -2316,6 +2321,8 @@ static MP mp_new_instance(void)
 
 static void mp_free_instance(MP mp)
 {
+    /* Close callback-owned handles before releasing the instance state. */
+    mp_close_files(mp);
     mp_memory_free(mp->banner);
     mp_memory_free(mp->buffer);
     mp_free_strings(mp);
@@ -2421,7 +2428,6 @@ static void mp_free_instance(MP mp)
     }
     mp_memory_free(mp->bytemaps);
     /* */
-    mp_close_files(mp);
     if (mp->read_filenames != NULL) {
         mp_memory_free(mp->read_filehandles);
         mp_memory_free(mp->read_filenames);
@@ -2434,9 +2440,6 @@ static void mp_free_instance(MP mp)
         mp->write_filehandles = NULL;
         mp->write_filenames = NULL;
     }
-    /*tex  finish non-interactive use */
-    mp_memory_free(mp->term_in);
-    mp->term_in = NULL;
     mp_memory_free(mp->jump_buffer);
     /*tex  free table entries */
     mp_free_symbolic_node(mp, mp->spec_head);
@@ -2848,6 +2851,16 @@ void *mp_memory_reallocate(void *p, size_t size)
     return w;
 }
 
+void *mp_memory_clear_reallocate(void *p, size_t oldsize, size_t newsize)
+{
+    void *w = lmt_memory_recalloc(p, oldsize, newsize, 1);
+    if (! w) {
+        printf("mplib ran out of memory, case 4");
+        exit(EXIT_FAILURE);
+    }
+    return w;
+}
+
 void mp_memory_free(void *p)
 {
     lmt_memory_free(p);
@@ -3084,8 +3097,7 @@ static void mp_print_string_length(MP mp, const char *str, size_t len)
             case mp_no_print_selector:
                 break;
             case mp_new_string_selector:
-                mp_str_room(mp, (int) len);
-                mp_append_str(mp, str);
+                mp_append_str(mp, str, (int) len);
                 break;
             default:
                 mp_fputs(str, mp->write_filehandles[mp->selector - mp_first_file_selector]);
@@ -3812,7 +3824,7 @@ static void mp_begin_diagnostic_print(MP mp, const char *s, const char *t, int n
 
 /*tex
 
-Here are the functions needed for the avl construction.The avl comparison function is a
+Here are the functions needed for the avl construction. The avl comparison function is a
 straight forward version of |strcmp|, except that checks for the string lengths first.
 
 */
@@ -4025,7 +4037,7 @@ static inline void mp_do_set_value_sym(MP mp, mp_token_node tok, mp_symbol sym)
     tok->data.sym = sym;
 }
 
-static inline void mp_do_set_value_number(MP mp, mp_token_node tok, mp_number *num)
+static inline void mp_do_set_value_number(MP mp, mp_token_node tok, const mp_number *num)
 {
     (void) mp;
     tok->data.p = NULL;
@@ -4184,7 +4196,7 @@ for a spacy layout because we have more screen real estate today.
 
 */
 
-void mp_show_token_list(MP mp, mp_node p, mp_node q)
+static void mp_show_token_list(MP mp, mp_node p, mp_node q)
 {
     int cclass = mp_percent_class;
     (void) q;
@@ -4267,7 +4279,7 @@ void mp_show_token_list(MP mp, mp_node p, mp_node q)
     return;
 }
 
-void mp_show_token_list_space(MP mp, mp_node p, mp_node q)
+static void mp_show_token_list_space(MP mp, mp_node p, mp_node q)
 {
     (void) q;
     while (p != NULL) {
@@ -4830,7 +4842,7 @@ which displays the full name of a variable given only a pointer to its value.
 
 */
 
-void mp_print_variable_name(MP mp, mp_node p)
+static void mp_print_variable_name(MP mp, mp_node p)
 {
     mp_node q = NULL; /* a token list that will name the variable's suffix */
     mp_node r = NULL; /* temporary for token list creation */
@@ -5292,7 +5304,7 @@ The next procedure is simpler; it wipes out everything but |p| itself, which bec
 
 */
 
-void mp_flush_below_variable(MP mp, mp_node p)
+static void mp_flush_below_variable(MP mp, mp_node p)
 {
     if (p->type != mp_structured_type) {
         /*tex This sets |type(p) = undefined|. */
@@ -6375,7 +6387,7 @@ are of type |fraction|; the $\theta$'s and $v$'s are of type |angle|.
 
 */
 
-void mp_reallocate_paths(MP mp, int l)
+static void mp_reallocate_paths(MP mp, int l)
 {
     mp->delta_x = mp_memory_reallocate(mp->delta_x, (size_t) (l + 1) * sizeof(mp_number));
     mp->delta_y = mp_memory_reallocate(mp->delta_y, (size_t) (l + 1) * sizeof(mp_number));
@@ -6406,7 +6418,7 @@ overall computation.
 
 */
 
-void mp_solve_choices(MP mp, mp_knot p, mp_knot q, int n)
+static void mp_solve_choices(MP mp, mp_knot p, mp_knot q, int n)
 {
     int k = 0; /*tex current knot number */
     mp_knot r = 0;
@@ -6942,7 +6954,7 @@ and tension are both large.) The values of $\alpha$ and $\beta$ will be at most~
 
 */
 
-void mp_curl_ratio(MP mp, mp_number *ret, mp_number *gamma_orig, mp_number *a_tension, mp_number *b_tension)
+static void mp_curl_ratio(MP mp, mp_number *ret, mp_number *gamma_orig, mp_number *a_tension, mp_number *b_tension)
 {
     mp_number alpha, beta, gamma, num, denom, ff;
     mp_number arg1;
@@ -7005,7 +7017,7 @@ pair of consecutive nodes |p| and~|q|. Global variables are used to record the v
 
 */
 
-void mp_set_controls(MP mp, mp_knot p, mp_knot q, int k)
+static void mp_set_controls(MP mp, mp_knot p, mp_knot q, int k)
 {
     mp_number rr, ss; /*tex velocities, divided by thrice the tension */
     mp_number lt, rt; /*tex tensions */
@@ -8246,7 +8258,7 @@ function value reaches |x| and the slope is positive.
 
 */
 
-void mp_solve_rising_cubic(MP mp, mp_number *ret, mp_number *a_orig, mp_number *b_orig, mp_number *c_orig, mp_number *x_orig)
+static void mp_solve_rising_cubic(MP mp, mp_number *ret, mp_number *a_orig, mp_number *b_orig, mp_number *c_orig, mp_number *x_orig)
 {
     mp_number abc;
     mp_number a, b, c, x; /*tex local versions of arguments */
@@ -8685,7 +8697,7 @@ Printing a polygonal pen is very much like printing a path
 
 */
 
-void mp_print_pen_only(MP mp, mp_knot h)
+static void mp_print_pen_only(MP mp, mp_knot h)
 {
     if (mp_pen_is_elliptical(h)) {
         /*tex
@@ -8725,7 +8737,7 @@ void mp_print_pen_only(MP mp, mp_knot h)
 
 */
 
-void mp_print_pen(MP mp, mp_knot h, const char *s, int nuline) {
+static void mp_print_pen(MP mp, mp_knot h, const char *s, int nuline) {
     mp_begin_diagnostic_print(mp, "Pen", s, nuline);
     mp_print_ln(mp);
     mp_print_pen_only(mp, h);
@@ -8841,7 +8853,7 @@ Geometry}, Springer-Verlag, 1985].
 
 */
 
-mp_knot mp_convex_hull(MP mp, mp_knot h)
+static mp_knot mp_convex_hull(MP mp, mp_knot h)
 {
     if (mp_pen_is_elliptical(h)) {
         return h;
@@ -9055,7 +9067,7 @@ All comparisons are done primarily on $x$ and secondarily on $y$.The |move_knot|
 
 */
 
-void mp_move_knot(MP mp, mp_knot p, mp_knot q)
+static void mp_move_knot(MP mp, mp_knot p, mp_knot q)
 {
     (void) mp;
     mp_next_knot(mp_prev_knot(p)) = mp_next_knot(p);
@@ -9348,12 +9360,12 @@ static mp_shape_node mp_copy_shape_node(MP mp, mp_shape_node source)
     mp_new_number_clone(target->miterlimit, source->miterlimit);
     mp_new_number_clone(target->dashscale, source->dashscale);
     mp_path_ptr(target) = mp_copy_path(mp, mp_path_ptr(source));
-    if (mp_pre_script(source) != NULL) {
+ // if (mp_pre_script(source) != NULL) {
         mp_add_string_reference(mp, mp_pre_script(source));
-    }
-    if (mp_post_script(source) != NULL) {
+ // }
+ // if (mp_post_script(source) != NULL) {
         mp_add_string_reference(mp, mp_post_script(source));
-    }
+ // }
     if (mp_pen_ptr(source) != NULL) {
         mp_pen_ptr(target) = mp_copy_pen(mp, mp_pen_ptr(source));
     }
@@ -9370,12 +9382,12 @@ static mp_edge_header_node mp_free_shape_node(MP mp, mp_shape_node p)
     if (mp_pen_ptr(p) != NULL) {
         mp_toss_knot_list(mp, mp_pen_ptr(p));
     }
-    if (mp_pre_script(p) != NULL) {
+ // if (mp_pre_script(p) != NULL) {
         mp_delete_string_reference(mp, mp_pre_script(p));
-    }
-    if (mp_post_script(p) != NULL) {
+ // }
+ // if (mp_post_script(p) != NULL) {
         mp_delete_string_reference(mp, mp_post_script(p));
-    }
+ // }
     e = (mp_edge_header_node) mp_dash_ptr(p);
     mp_free_number(p->red);
     mp_free_number(p->green);
@@ -9417,7 +9429,7 @@ scales its result by $2^8$ while we need $2^{14}$ to counteract the effect of |m
 
 */
 
-void mp_sqrt_det(MP mp, mp_number *ret, mp_number *a_orig, mp_number *b_orig, mp_number *c_orig, mp_number *d_orig)
+static void mp_sqrt_det(MP mp, mp_number *ret, const mp_number *a_orig, const mp_number *b_orig, const mp_number *c_orig, const mp_number *d_orig)
 {
     mp_number a, b, c, d;
     mp_number maxabs; /*tex $max(|a|,|b|,|c|,|d|)$ */
@@ -9525,24 +9537,24 @@ static mp_start_node mp_copy_start_node(MP mp, mp_start_node source)
     memcpy(target, source, (size_t) sizeof(mp_start_node_data));
     target->link = NULL;
     mp_path_ptr(target) = mp_copy_path(mp, mp_path_ptr(source));
-    if (mp_pre_script(source) != NULL) {
+ // if (mp_pre_script(source) != NULL) {
         mp_add_string_reference(mp, mp_pre_script(source));
-    }
-    if (mp_post_script(source) != NULL) {
+ // }
+ // if (mp_post_script(source) != NULL) {
         mp_add_string_reference(mp, mp_post_script(source));
-    }
+ // }
     return target;
 }
 
 static void mp_free_start_node(MP mp, mp_start_node p)
 {
     mp_toss_knot_list(mp, mp_path_ptr(p));
-    if (mp_pre_script(p) != NULL) {
+ // if (mp_pre_script(p) != NULL) {
         mp_delete_string_reference(mp, mp_pre_script(p));
-    }
-    if (mp_post_script(p) != NULL) {
+ // }
+ // if (mp_post_script(p) != NULL) {
         mp_delete_string_reference(mp, mp_post_script(p));
-    }
+ // }
     /* */
     mp->memory_pool[mp_start_pool].used--;
     if (mp->memory_pool[mp_start_pool].pool < mp->memory_pool[mp_start_pool].kept) {
@@ -9794,7 +9806,7 @@ static mp_edge_header_node mp_toss_graphic_object(MP mp, mp_node p)
     }
 }
 
-void mp_toss_edges(MP mp, mp_edge_header_node h)
+static void mp_toss_edges(MP mp, mp_edge_header_node h)
 {
     mp_node q;             /* pointers that scan the list being recycled */
     mp_edge_header_node r; /* an edge structure that object |p| refers to */
@@ -9811,7 +9823,7 @@ void mp_toss_edges(MP mp, mp_edge_header_node h)
     mp_free_edge_header_node(mp, h);
 }
 
-void mp_flush_dash_list(MP mp, mp_edge_header_node h)
+static void mp_flush_dash_list(MP mp, mp_edge_header_node h)
 {
     mp_dash_node q = mp_get_dash_list(h);
     while (q != mp->null_dash) {
@@ -9889,7 +9901,7 @@ headed at |p|. The resulting edge structure requires further initialization by |
 
 */
 
-mp_edge_header_node mp_copy_objects(MP mp, mp_node p, mp_node q) {
+static mp_edge_header_node mp_copy_objects(MP mp, mp_node p, mp_node q) {
     mp_node pp; /*tex the last newly copied object */
     mp_edge_header_node hh = mp_new_edge_header_node(mp); /* the new edge header */
     mp_set_dash_list(hh, mp->null_dash);
@@ -9961,7 +9973,7 @@ Here is a diagnostic routine for printing an edge structure in symbolic form.
 
 */
 
-void mp_print_edges(MP mp, mp_node h, const char *s, int nuline)
+static void mp_print_edges(MP mp, mp_node h, const char *s, int nuline)
 {
     mp_node p = mp_edge_list(h); /*tex a graphical object to be printed */
     mp_number scf;               /*tex a scale factor for the dash pattern */
@@ -10174,7 +10186,7 @@ Here is a routine that prints the color of a graphical object if it isn't black 
 
 */
 
-void mp_print_obj_color(MP mp, mp_node p)
+static void mp_print_obj_color(MP mp, mp_node p)
 {
     mp_shape_node p0 = (mp_shape_node) p;
     switch (mp_color_model(p)) {
@@ -10527,7 +10539,7 @@ static mp_edge_header_node mp_make_dashes(MP mp, mp_edge_header_node h)
     A similar error occurs when monotonicity fails.
 */
 
-void mp_x_retrace_error(MP mp)
+static void mp_x_retrace_error(MP mp)
 {
     mp_back_error(
         mp,
@@ -10710,7 +10722,7 @@ clipped. Such calls are distinguished by the fact that the boolean parameter |to
 
 */
 
-void mp_set_bbox(MP mp, mp_edge_header_node h, int top_level)
+static void mp_set_bbox(MP mp, mp_edge_header_node h, int top_level)
 {
     /*tex
         Wipe out any existing bounding box information if |bbtype(h)| is incompatible with
@@ -11453,7 +11465,7 @@ paths.
 
 */
 
-void mp_split_cubic(MP mp, mp_knot p, mp_number *t)
+static void mp_split_cubic(MP mp, mp_knot p, mp_number *t)
 {
     mp_number v;    mp_knot q = mp_next_knot(p);
     mp_knot r = mp_new_knot(mp);
@@ -11516,7 +11528,7 @@ static mp_knot mp_split_cubic_knot(MP mp, mp_knot p, mp_number *t) /* can be les
 
 */
 
-void mp_remove_cubic(MP mp, mp_knot p)
+static void mp_remove_cubic(MP mp, mp_knot p)
 {
     mp_knot q = mp_next_knot(p); /* the node that disappears */
     mp_prev_knot(q) = mp_next_knot(p);
@@ -11549,7 +11561,7 @@ We may have to split a cubic into many pieces before each piece corresponds to a
 
 */
 
-mp_knot mp_pen_walk(MP mp, mp_knot w, int k)
+static mp_knot mp_pen_walk(MP mp, mp_knot w, int k)
 {
     /*tex
         Walk |k| steps around a pen from |w|:
@@ -11634,7 +11646,7 @@ must be careful to stop after crossing the first such edge in order to avoid an 
 
 */
 
-void mp_fin_offset_prep(MP mp, mp_knot p, mp_knot w, mp_number *x0, mp_number *x1, mp_number *x2, mp_number *y0, mp_number *y1, mp_number *y2, int rise, int turn_amt)
+static void mp_fin_offset_prep(MP mp, mp_knot p, mp_knot w, mp_number *x0, mp_number *x1, mp_number *x2, mp_number *y0, mp_number *y1, mp_number *y2, int rise, int turn_amt)
 {
     mp_number du, dv;     /*tex for slope calculation */
     mp_number t0, t1, t2; /*tex test coefficients */
@@ -11771,7 +11783,7 @@ void mp_fin_offset_prep(MP mp, mp_knot p, mp_knot w, mp_number *x0, mp_number *x
     mp_free_number(t2);
 }
 
-int mp_get_turn_amt(MP mp, mp_knot w, mp_number *dx, mp_number *dy, int ccw)
+static int mp_get_turn_amt(MP mp, mp_knot w, mp_number *dx, mp_number *dy, int ccw)
 {
     int s = 0; /*tex The turn amount so far. */
     mp_number arg1, arg2;
@@ -12300,7 +12312,7 @@ static mp_knot mp_make_envelope(MP mp, mp_knot c, mp_knot h, int linejoin, int l
 
 */
 
-mp_knot mp_insert_knot(MP mp, mp_knot q, mp_number *x, mp_number *y)
+static mp_knot mp_insert_knot(MP mp, mp_knot q, mp_number *x, mp_number *y)
 {
     /* returns the inserted knot */
     mp_knot r = mp_new_knot(mp);
@@ -12716,7 +12728,7 @@ comparisons are made in each branch.This was a macro but a function is way more 
 
 */
 
-void mp_set_min_max(MP mp, int v)
+static void mp_set_min_max(MP mp, int v)
 {
     if (mp_number_negative(stack_1(v))) {
         if (mp_number_nonnegative (stack_3(v))) {
@@ -12933,10 +12945,8 @@ static int mp_cubic_intersection(MP mp, mp_knot p, mp_knot pp, int run, int cubi
         /*tex
             Advance to the next pair |(cur_t,cur_tt)|.
         */
-        if (odd(mp_number_to_scaled(mp->cur_tt))) {
-     // if (mp_number_odd(mp->cur_tt)) {
-            if (odd(mp_number_to_scaled(mp->cur_t))) {
-         // if (mp_number_odd(mp->cur_t)) {
+        if (odd_long(mp_number_to_scaled(mp->cur_tt))) {
+            if (odd_long(mp_number_to_scaled(mp->cur_t))) {
                 /*tex
                     Descend to the previous level and |goto not_found|.
                 */
@@ -12990,6 +13000,7 @@ static int mp_cubic_intersection(MP mp, mp_knot p, mp_knot pp, int run, int cubi
     }
     mp_free_number(x_two_t);
     mp_free_number(x_two_t_low_precision);
+    return 0;
 }
 
 static mp_knot mp_path_intersection_add(MP mp, mp_knot list, mp_knot *last, mp_number *t, mp_number *tt)
@@ -13819,7 +13830,7 @@ points to the variable, and |q| points to the dependency list (which is one node
 
 */
 
-void mp_make_known(MP mp, mp_value_node p, mp_value_node q)
+static void mp_make_known(MP mp, mp_value_node p, mp_value_node q)
 {
     mp_variable_type t = p->type; /* the previous type */
     mp_number absval;
@@ -14289,7 +14300,7 @@ simply detaches a quantity from its ring, without recycling the storage.
 
 */
 
-void mp_ring_delete(MP mp, mp_node p)
+static void mp_ring_delete(MP mp, mp_node p)
 {
     mp_node q = mp_get_value_node(p);
     (void) mp;
@@ -14740,7 +14751,7 @@ it as well.
 
 */
 
-int mp_true_line(MP mp)
+static int mp_true_line(MP mp)
 {
     if (file_state && (mp_input_name > mp_input_last_special)) {
         return mp_input_line;
@@ -14898,7 +14909,7 @@ initially, the same properties as the old). We could have a maximum depth here.
 
 */
 
-void mp_push_input(MP mp)
+static void mp_push_input(MP mp)
 {
     if (mp->input_ptr > mp->max_input_stack) {
         mp->max_input_stack = mp->input_ptr;
@@ -15475,7 +15486,7 @@ The |runaway| procedure displays the first part of the text that occurred when \
 
 */
 
-void mp_runaway(MP mp)
+static void mp_runaway(MP mp)
 {
     if (mp->scanner_status > mp_flushing_state) {
         mp_print_nl(mp, "Runaway ");
@@ -15505,7 +15516,7 @@ signs and double quotes need to be passed over when skipping TeX material. The g
 
 */
 
-void mp_get_next(MP mp)
+static void mp_get_next(MP mp)
 {
     mp_symbol cur_sym_;
   RESTART:
@@ -15791,7 +15802,7 @@ instead of the line in the file.
 
 */
 
-void mp_firm_up_the_line(MP mp)
+static void mp_firm_up_the_line(MP mp)
 {
     mp_input_limit = (int) mp->last;
 }
@@ -16775,7 +16786,7 @@ processing of |endinput| is trivial.
 
 */
 
-void mp_check_script_result(MP mp, char *s)
+static void mp_check_script_result(MP mp, char *s)
 {
     if (s) {
         size_t size = strlen(s);
@@ -17222,7 +17233,7 @@ contained in a group.
 
 */
 
-void mp_scan_text_arg(MP mp, mp_symbol l_delim, mp_symbol r_delim)
+static void mp_scan_text_arg(MP mp, mp_symbol l_delim, mp_symbol r_delim)
 {
     int balance = 1;           /*tex excess of |l_delim| over |r_delim| */
     mp_node p = mp->hold_head; /*tex list tail */
@@ -17360,7 +17371,7 @@ bit simpler.
 
 */
 
-void mp_pass_text(MP mp)
+static void mp_pass_text(MP mp)
 {
     int level = 0;
     mp->scanner_status = mp_skipping_state;
@@ -17609,7 +17620,7 @@ static void mp_flush_loop_pool(MP mp)
     }
 }
 
-void mp_begin_iteration(MP mp)
+static void mp_begin_iteration(MP mp)
 {
     mp_node q;              /*tex link manipulation register */
     mp_symbol n = cur_sym;  /*tex hash address of the current symbol */
@@ -17819,7 +17830,7 @@ apparatus by the |resume_iteration| routine.
 
 */
 
-void mp_resume_iteration(MP mp)
+static void mp_resume_iteration(MP mp)
 {
     mp_node p = mp->loop_ptr->type;
     mp_node q; /* link registers */
@@ -17933,7 +17944,7 @@ A level of loop control disappears when |resume_iteration| has decided not to re
 
 */
 
-void mp_stop_iteration(MP mp)
+static void mp_stop_iteration(MP mp)
 {
     mp_node p = mp->loop_ptr->type;
     if (p == MP_PROGRESSION_FLAG) {
@@ -18038,7 +18049,7 @@ Here are the routines for file name scanning.
 
 */
 
-void mp_begin_name(MP mp)
+static void mp_begin_name(MP mp)
 {
     mp_memory_free(mp->cur_name);
     mp->cur_name = NULL;
@@ -18153,7 +18164,7 @@ command is being processed.
 
 */
 
-void mp_start_input(MP mp)
+static void mp_start_input(MP mp)
 {
     /*tex
         Put the desired file name in |cur_name|.
@@ -18264,7 +18275,7 @@ static void mp_open_write_file(MP mp, char *s, int n)
     }
 }
 
-void mp_set_cur_exp_node(MP mp, mp_node n)
+static void mp_set_cur_exp_node(MP mp, mp_node n)
 {
     if (cur_exp_str) {
         mp_delete_string_reference(mp, cur_exp_str);
@@ -18275,7 +18286,7 @@ void mp_set_cur_exp_node(MP mp, mp_node n)
     mp_set_number_to_zero(cur_exp_value_number);
 }
 
-void mp_set_cur_exp_knot(MP mp, mp_knot n)
+static void mp_set_cur_exp_knot(MP mp, mp_knot n)
 {
     if (cur_exp_str) {
         mp_delete_string_reference(mp, cur_exp_str);
@@ -18286,7 +18297,7 @@ void mp_set_cur_exp_knot(MP mp, mp_knot n)
     mp_set_number_to_zero(cur_exp_value_number);
 }
 
-void mp_set_cur_exp_value_boolean(MP mp, int b)
+static void mp_set_cur_exp_value_boolean(MP mp, int b)
 {
     if (cur_exp_str) {
         mp_delete_string_reference(mp, cur_exp_str);
@@ -18297,7 +18308,7 @@ void mp_set_cur_exp_value_boolean(MP mp, int b)
     cur_exp_knot = NULL;
 }
 
-void mp_set_cur_exp_value_scaled(MP mp, int s)
+static void mp_set_cur_exp_value_scaled(MP mp, int s)
 {
     if (cur_exp_str) {
         mp_delete_string_reference(mp, cur_exp_str);
@@ -18308,7 +18319,7 @@ void mp_set_cur_exp_value_scaled(MP mp, int s)
     cur_exp_knot = NULL;
 }
 
-void mp_set_cur_exp_value_number(MP mp, mp_number *n)
+static void mp_set_cur_exp_value_number(MP mp, mp_number *n)
 {
     if (cur_exp_str) {
         mp_delete_string_reference(mp, cur_exp_str);
@@ -18319,7 +18330,7 @@ void mp_set_cur_exp_value_number(MP mp, mp_number *n)
     cur_exp_knot = NULL;
 }
 
-void mp_set_cur_exp_str(MP mp, mp_string s)
+static void mp_set_cur_exp_str(MP mp, mp_string s)
 {
     if (cur_exp_str) {
         mp_delete_string_reference(mp, cur_exp_str);
@@ -18542,7 +18553,7 @@ procedure assumes that they are dead or dormant; it resuscitates them.
 
 */
 
-void mp_unstash_cur_exp(MP mp, mp_node p)
+static void mp_unstash_cur_exp(MP mp, mp_node p)
 {
     cur_exp_type = p->type;
     switch (cur_exp_type) {
@@ -18608,7 +18619,7 @@ greater than~1, complicated structures (pens, pictures, and paths) will be displ
 
 */
 
-void mp_print_exp(MP mp, mp_node p, int verbosity)
+static void mp_print_exp(MP mp, mp_node p, int verbosity)
 {
     int restore_cur_exp; /*tex should |cur_exp| be restored? */
     mp_variable_type t;  /*tex the type of the expression */
@@ -18774,7 +18785,7 @@ void mp_print_exp(MP mp, mp_node p, int verbosity)
     mp_free_number(vv);
 }
 
-void mp_print_big_node(MP mp, mp_node v, int verbosity)
+static void mp_print_big_node(MP mp, mp_node v, int verbosity)
 {
     switch (v->type) {
         case mp_known_type:
@@ -18813,7 +18824,7 @@ error message, using |disp_err| just before |mp_error|.
 
 */
 
-void mp_display_error(MP mp, mp_node p)
+static void mp_display_error(MP mp, mp_node p)
 {
     if (mp->interaction >= mp_error_stop_mode) {
         mp_print_flush_line(mp);
@@ -18844,7 +18855,7 @@ can think of |cur_type| and |cur_exp| as either alive or dormant after this has 
 
 */
 
-void mp_flush_cur_exp(MP mp, mp_value v)
+static void mp_flush_cur_exp(MP mp, mp_value v)
 {
     if (is_number(cur_exp_value_number)) {
         mp_free_number(cur_exp_value_number);
@@ -19584,7 +19595,7 @@ the current expression is flushed.
 
 */
 
-void mp_known_pair(MP mp)
+static void mp_known_pair(MP mp)
 {
     mp_value new_expr;
     memset(&new_expr, 0, sizeof(mp_value));
@@ -22804,6 +22815,7 @@ static void mp_bad_binary(MP mp, mp_node p, int c)
     );
     mp_get_x_next(mp);
 }
+
 static void mp_bad_envelope_pen(MP mp)
 {
     mp_display_error(mp, NULL);
@@ -23834,6 +23846,7 @@ static void mp_set_up_direction_time(MP mp, mp_node p, int c)
         mp_bad_binary(mp, p, c);
     }
 }
+
 static void mp_set_up_envelope(MP mp, mp_node p, int c)
 {
     if ((p->type != mp_pen_type && p->type != mp_nep_type) || (cur_exp_type != mp_path_type)) {
@@ -23874,6 +23887,7 @@ static void mp_set_up_envelope(MP mp, mp_node p, int c)
         }
     }
 }
+
 static void mp_set_up_boundingpath(MP mp, mp_node p, int c)
 {
     if ((p->type != mp_pen_type && p->type != mp_nep_type) || (cur_exp_type != mp_path_type)) {
@@ -25607,7 +25621,7 @@ a statement that starts with, e.g., |string|, as a type declaration rather than 
 static void worry_about_bad_statement            (MP mp);
 static void flush_unparsable_junk_after_statement(MP mp);
 
-void mp_do_statement(MP mp)
+static void mp_do_statement(MP mp)
 {
     cur_exp_type = mp_vacuous_type;
     mp_get_x_next(mp);
@@ -25858,7 +25872,7 @@ side (which will normally be equal to the left-hand side).
 
 */
 
-void mp_do_equation(MP mp)
+static void mp_do_equation(MP mp)
 {
     mp_node lhs = mp_stash_cur_exp(mp); /* capsule for the left-hand side */
     mp_get_x_next(mp);
@@ -26008,7 +26022,7 @@ And |do_assignment| is similar to |do_equation|:
 
 */
 
-void mp_do_assignment(MP mp)
+static void mp_do_assignment(MP mp)
 {
     if (cur_exp_type != mp_token_list_type) {
         mp_bad_lhs(mp);
@@ -26169,7 +26183,7 @@ to be equated to the current expression.
 
 */
 
-void mp_make_eq(MP mp, mp_node lhs)
+static void mp_make_eq(MP mp, mp_node lhs)
 {
     mp_value new_expr;
     mp_variable_type t; /*tex type of the left-hand side */
@@ -26318,7 +26332,7 @@ static void deal_with_redundant_or_inconsistent_equation(MP mp, mp_value_node p,
     mp_free_dep_node(mp, p, 20);
 }
 
-void mp_try_eq(MP mp, mp_node l, mp_node r)
+static void mp_try_eq(MP mp, mp_node l, mp_node r)
 {
     mp_value_node p;     /*tex dependency list for right operand minus left operand */
     mp_value_node q;     /*tex the constant term of |p| is here */
@@ -26457,7 +26471,7 @@ it will appear in |cur_cmd|, |cur_mod|, and~|cur_sym|.
 
 */
 
-mp_node mp_scan_declared_variable(MP mp)
+static mp_node mp_scan_declared_variable(MP mp)
 {
     mp_symbol x;  /*tex hash address of the variable's root */
     mp_node h, t; /*tex head and tail of the token list to be returned */
@@ -26557,7 +26571,7 @@ static void flush_spurious_symbols_after_declared_variable(MP mp)
     mp->scanner_status = mp_normal_state;
 }
 
-void mp_do_type_declaration(MP mp)
+static void mp_do_type_declaration(MP mp)
 {
     int t = mp_numeric_type; /* cur_mod >= mp_transform_type ? cur_mod : cur_mod + mp_unknown_tag; */ /* the type being declared */
     switch (cur_mod) {
@@ -26605,7 +26619,8 @@ user's program. Each execution of |do_statement| concludes with |cur_cmd=semicol
 
 */
 
-static void mp_main_control(MP mp) {
+static void mp_main_control(MP mp)
+{
     do {
         mp_do_statement(mp);
         if (cur_cmd == mp_end_group_command) {
@@ -26872,7 +26887,7 @@ genericmessage).
 
 */
 
-void mp_do_max_knot_pool(MP mp)
+static void mp_do_max_knot_pool(MP mp)
 {
     mp_value new_expr;
     memset(&new_expr, 0, sizeof(mp_value));
@@ -26909,7 +26924,7 @@ void mp_do_max_knot_pool(MP mp)
     }
 }
 
-void mp_do_random_seed(MP mp)
+static void mp_do_random_seed(MP mp)
 {
     mp_value new_expr;
     memset(&new_expr, 0, sizeof(mp_value));
@@ -26954,7 +26969,7 @@ The |inner| and |outer| commands are only slightly harder.
 
 */
 
-void mp_do_protection(MP mp)
+static void mp_do_protection(MP mp)
 {
 //  int m = cur_mod; /* 0 to unprotect, 1 to protect */
     do {
@@ -26986,7 +27001,7 @@ mechanism is quite experimental and used in \CONTEXT\ for protecting definitions
 
 */
 
-void mp_do_property(MP mp)
+static void mp_do_property(MP mp)
 {
    int p = 0;
    mp_get_x_next(mp);
@@ -27021,7 +27036,7 @@ and |right_delimiter| to |)|; the |equiv| of each delimiter is the hash address 
 
 */
 
-void mp_do_delimiters(MP mp)
+static void mp_do_delimiters(MP mp)
 {
     mp_symbol l_delim, r_delim; /* the new delimiter pair */
     mp_get_clear_symbol(mp);
@@ -27042,7 +27057,7 @@ mandatory.
 
 */
 
-void mp_check_delimiter(MP mp, mp_symbol l_delim, mp_symbol r_delim)
+static void mp_check_delimiter(MP mp, mp_symbol l_delim, mp_symbol r_delim)
 {
     if (cur_cmd == mp_right_delimiter_command && eq_symbol(cur_sym) == l_delim) {
         return;
@@ -27073,7 +27088,7 @@ The next four commands save or change the values associated with tokens.
 
 */
 
-void mp_do_interim(MP mp) {
+static void mp_do_interim(MP mp) {
     mp_get_x_next(mp);
     if (cur_cmd != mp_internal_command) {
         char msg[256];
@@ -27096,7 +27111,7 @@ The following procedure is careful not to undefine the left-hand symbol too soon
 
 */
 
-void mp_do_let(MP mp)
+static void mp_do_let(MP mp)
 {
     mp_symbol l; /*tex Hash location of the left-hand symbol. */
     mp_get_symbol(mp);
@@ -27258,8 +27273,9 @@ static int mp_bytemap_grow(MP mp) /* todo */
     int oldmax = mp->memory_pool[mp_bytemaps_pool].max;
     int newmax = oldmax + mp->memory_pool[mp_bytemaps_pool].step;
     if (newmax > max_bytemaps) {
-        /* todo: messaage */
-     // mp_confusion(mp, "out of memory"); /* can't be reached */
+        newmax = max_bytemaps;
+    }
+    if (newmax <= oldmax) {
         return 0;
     } else {
         size_t newsize = (size_t) (newmax + 1) * sizeof(bytemap_data);
@@ -27273,6 +27289,7 @@ static int mp_bytemap_grow(MP mp) /* todo */
                 .ox      = 0,
                 .oy      = 0,
                 .options = 0,
+                .model   = bytemap_gray,
             };
         }
         mp->memory_pool[mp_bytemaps_pool].max = newmax;
@@ -27280,15 +27297,26 @@ static int mp_bytemap_grow(MP mp) /* todo */
     return 1;
 }
 
-static int mp_bytemap_valid(MP mp, int index) /* todo */
+static int mp_bytemap_valid(MP mp, int index)
 {
-    return (index >= 0 && (index < mp->memory_pool[mp_bytemaps_pool].max || mp_bytemap_grow(mp)));
+    return index >= 0 && index < mp->memory_pool[mp_bytemaps_pool].max;
 }
 
-static int mp_bytemap_valid_data(MP mp, int index) /* todo */
+static int mp_bytemap_ensure(MP mp, int index)
 {
- // return index >= 0 && (index < mp->memory_pool[mp_bytemaps_pool].max || mp_bytemap_grow(mp))
- //     && mp->bytemaps[index].data;
+    if (index < 0 || index >= max_bytemaps) {
+        return 0;
+    }
+    while (index >= mp->memory_pool[mp_bytemaps_pool].max) {
+        if (! mp_bytemap_grow(mp)) {
+            return 0;
+        }
+    }
+    return 1;
+}
+
+static int mp_bytemap_valid_data(MP mp, int index)
+{
     return mp_bytemap_valid(mp, index) && mp->bytemaps[index].data;
 }
 
@@ -27342,7 +27370,7 @@ static inline void mp_aux_bytemap_set_byte(MP mp, bytemap_data *bytemap, mp_numb
 
 static inline void mp_aux_set_bytemap_channel(bytemap_data *bytemap, int x, int y, int z, int v)
 {
-    if (x >= 0 && y >= 0 && x < bytemap->nx && y < bytemap->ny && z < bytemap->nz) {
+    if (x >= 0 && y >= 0 && x < bytemap->nx && y < bytemap->ny && z >= 0 && z < bytemap->nz) {
         switch (bytemap->nz) {
             case 1:
                 bytemap->data[bm_current_y(bytemap->ny,y) * bytemap->nx + x] = mp_valid_byte(v);
@@ -27374,6 +27402,7 @@ static int mp_aux_bytemap_allocate(MP mp, int index, int nx, int ny, int nz, uns
             .ox      = 0,
             .oy      = 0,
             .options = 0,
+            .model   = nz == 3 ? bytemap_rgb : bytemap_gray,
         };
         mp->memory_pool[mp_bytemap_data_pool].count += nx * ny * nz;
         mp->memory_pool[mp_bytemaps_pool].used++;
@@ -27401,7 +27430,7 @@ bytemap_data *mp_bytemap_get_by_index(MP mp, int index)
 
 int mp_bytemap_new_by_index(MP mp, int index, int nx, int ny, int nz, unsigned char *data)
 {
-    return mp_bytemap_valid(mp, index) && mp_aux_bytemap_allocate(mp, index, nx, ny, nz, data);
+    return mp_bytemap_ensure(mp, index) && mp_aux_bytemap_allocate(mp, index, nx, ny, nz, data);
 }
 
 /* end of public */
@@ -27422,8 +27451,14 @@ static void mp_bytemap_copy(MP mp) /* done */
                     case mp_known_type:
                         {
                             int newindex = (int) mp_round_unscaled(cur_exp_value_number);
-                            if (mp_bytemap_valid(mp, oldindex) && mp_bytemap_valid(mp, newindex)) {
-                                bytemap_copy(&(mp->bytemaps[oldindex]), &(mp->bytemaps[newindex]), &(mp->memory_pool[mp_bytemap_data_pool].count));
+                            if (mp_bytemap_valid(mp, oldindex) && mp_bytemap_ensure(mp, newindex)) {
+                                bytemap_data *source = &(mp->bytemaps[oldindex]);
+                                bytemap_data *target = &(mp->bytemaps[newindex]);
+                                int target_had_data = target->data != NULL;
+                                bytemap_copy(source, target, &(mp->memory_pool[mp_bytemap_data_pool].count));
+                                if (! target_had_data && target->data) {
+                                    mp->memory_pool[mp_bytemaps_pool].used++;
+                                }
                             }
                         }
                         break;
@@ -27489,13 +27524,13 @@ static void mp_bytemap_new(MP mp) /* todo */
                 switch (cur_exp_type) {
                     case mp_numeric_type:
                     case mp_known_type:
-                        if (mp_bytemap_valid(mp, index)) {
+                        if (mp_bytemap_ensure(mp, index)) {
                             nx = (int) mp_round_unscaled(cur_exp_value_number);
                             ny = 1;
                         }
                         break;
                     case mp_pair_type:
-                        if (mp_bytemap_valid(mp, index)) {
+                        if (mp_bytemap_ensure(mp, index)) {
                             if (mp_pair_is_known(mp_get_value_node(cur_exp_node))) {
                                 nx = (int) mp_round_unscaled(mp_get_value_number(mp_x_part(mp_get_value_node(cur_exp_node))));
                                 ny = (int) mp_round_unscaled(mp_get_value_number(mp_y_part(mp_get_value_node(cur_exp_node))));
@@ -27503,7 +27538,7 @@ static void mp_bytemap_new(MP mp) /* todo */
                         }
                         break;
                     case mp_color_type:
-                        if (mp_bytemap_valid(mp, index)) {
+                        if (mp_bytemap_ensure(mp, index)) {
                             if (mp_rgb_color_is_known(mp_get_value_node(cur_exp_node))) {
                                 nx = (int) mp_round_unscaled(mp_get_value_number(mp_red_part(mp_get_value_node(cur_exp_node))));
                                 ny = (int) mp_round_unscaled(mp_get_value_number(mp_green_part(mp_get_value_node(cur_exp_node))));
@@ -27639,9 +27674,9 @@ static void mp_bytemap_found(MP mp, mp_node p, int c) /* done */ /* todo */
                             /* here posit */
                             if (mp_bytemap_valid_data(mp, index)) {
                                 found = bytemap_has_byte_rgb(&mp->bytemaps[index],
-                                    (int) mp_round_unscaled(mp_get_value_number(mp_red_part(mp_get_value_node(p)))),
-                                    (int) mp_round_unscaled(mp_get_value_number(mp_green_part(mp_get_value_node(p)))),
-                                    (int) mp_round_unscaled(mp_get_value_number(mp_blue_part(mp_get_value_node(p))))
+                                    mp_aux_bytemap_get_byte(mp, &(mp->bytemaps[index]), &(mp_get_value_number(mp_red_part(mp_get_value_node(p))))),
+                                    mp_aux_bytemap_get_byte(mp, &(mp->bytemaps[index]), &(mp_get_value_number(mp_green_part(mp_get_value_node(p))))),
+                                    mp_aux_bytemap_get_byte(mp, &(mp->bytemaps[index]), &(mp_get_value_number(mp_blue_part(mp_get_value_node(p)))))
                                 );
                             }
                         }
@@ -27697,9 +27732,9 @@ static void mp_bytemap_path(MP mp, mp_node p, int c) /* no need */
                                         if (mp_rgb_color_is_known(mp_get_value_node(p))) {
                                             /* here posit */
                                             value = mp_aux_weighted(
-                                                (int) mp_round_unscaled(mp_get_value_number(mp_red_part(mp_get_value_node(p)))),
-                                                (int) mp_round_unscaled(mp_get_value_number(mp_green_part(mp_get_value_node(p)))),
-                                                (int) mp_round_unscaled(mp_get_value_number(mp_blue_part(mp_get_value_node(p))))
+                                                mp_aux_bytemap_get_byte(mp, &(mp->bytemaps[index]), &(mp_get_value_number(mp_red_part(mp_get_value_node(p))))),
+                                                mp_aux_bytemap_get_byte(mp, &(mp->bytemaps[index]), &(mp_get_value_number(mp_green_part(mp_get_value_node(p))))),
+                                                mp_aux_bytemap_get_byte(mp, &(mp->bytemaps[index]), &(mp_get_value_number(mp_blue_part(mp_get_value_node(p)))))
                                             );
                                         }
                                         break;
@@ -27758,15 +27793,15 @@ static void mp_bytemap_path(MP mp, mp_node p, int c) /* no need */
                                 switch (p->type) {
                                     case mp_numeric_type:  /* needed ? */
                                     case mp_known_type:
-                                        r = (int) mp_round_unscaled(mp_get_value_number(p));
+                                        r = mp_aux_bytemap_get_byte(mp, &(mp->bytemaps[index]), &(mp_get_value_number(p)));
                                         g = r;
                                         b = r;
                                         break;
                                     case mp_color_type:
                                         if (mp_rgb_color_is_known(mp_get_value_node(p))) {
-                                            r = (int) mp_round_unscaled(mp_get_value_number(mp_red_part(mp_get_value_node(p))));
-                                            g = (int) mp_round_unscaled(mp_get_value_number(mp_green_part(mp_get_value_node(p))));
-                                            b = (int) mp_round_unscaled(mp_get_value_number(mp_blue_part(mp_get_value_node(p))));
+                                            r = mp_aux_bytemap_get_byte(mp, &(mp->bytemaps[index]), &(mp_get_value_number(mp_red_part(mp_get_value_node(p)))));
+                                            g = mp_aux_bytemap_get_byte(mp, &(mp->bytemaps[index]), &(mp_get_value_number(mp_green_part(mp_get_value_node(p)))));
+                                            b = mp_aux_bytemap_get_byte(mp, &(mp->bytemaps[index]), &(mp_get_value_number(mp_blue_part(mp_get_value_node(p)))));
                                         }
                                         break;
                                     default:
@@ -27775,12 +27810,15 @@ static void mp_bytemap_path(MP mp, mp_node p, int c) /* no need */
                                 }
                                 if (r >= 0) {
                                     /* can be a single loop and div/mod */
-                                    unsigned char *p = mp->bytemaps[index].data;
+                                    unsigned char *bytes = mp->bytemaps[index].data;
                                     for (int y = 0; y < ny; y++) {
                                         int yy = bm_current_y(ny,y);
                                         for (int x = 0; x < nx; x++) {
-                                            /* here posit */
-                                            if ((*p++ == r) && (*p++ == g) && (*p++ == b)) {
+                                            unsigned char red   = bytes[0];
+                                            unsigned char green = bytes[1];
+                                            unsigned char blue  = bytes[2];
+                                            bytes += 3;
+                                            if (red == r && green == g && blue == b) {
                                                 mp_knot k = mp_simple_int_knot(mp, x, yy);
                                                 if (head) {
                                                     mp_prev_knot(k) = tail;
@@ -27910,9 +27948,9 @@ static void mp_bytemap_set(MP mp) /* done */
                                 bytemap_slice_rgb(
                                     &(mp->bytemaps[index]),
                                     0, 0, mp->bytemaps[index].nx, mp->bytemaps[index].ny,
-                                    (int) mp_round_unscaled(mp_get_value_number(mp_red_part(mp_get_value_node(cur_exp_node)))),
-                                    (int) mp_round_unscaled(mp_get_value_number(mp_green_part(mp_get_value_node(cur_exp_node)))),
-                                    (int) mp_round_unscaled(mp_get_value_number(mp_blue_part(mp_get_value_node(cur_exp_node))))
+                                    mp_aux_bytemap_get_byte(mp, &(mp->bytemaps[index]), &(mp_get_value_number(mp_red_part(mp_get_value_node(cur_exp_node))))),
+                                    mp_aux_bytemap_get_byte(mp, &(mp->bytemaps[index]), &(mp_get_value_number(mp_green_part(mp_get_value_node(cur_exp_node))))),
+                                    mp_aux_bytemap_get_byte(mp, &(mp->bytemaps[index]), &(mp_get_value_number(mp_blue_part(mp_get_value_node(cur_exp_node)))))
                                 );
                             }
                         }
@@ -28020,9 +28058,9 @@ static void mp_bytemap_set_byte(MP mp) /* done */ /* todo */
                                                 bytemap_set_rgb(
                                                     &(mp->bytemaps[index]),
                                                     x, y,
-                                                    (int) mp_round_unscaled(mp_get_value_number(mp_red_part(mp_get_value_node(cur_exp_node)))),
-                                                    (int) mp_round_unscaled(mp_get_value_number(mp_green_part(mp_get_value_node(cur_exp_node)))),
-                                                    (int) mp_round_unscaled(mp_get_value_number(mp_blue_part(mp_get_value_node(cur_exp_node))))
+                                                    mp_aux_bytemap_get_byte(mp, &(mp->bytemaps[index]), &(mp_get_value_number(mp_red_part(mp_get_value_node(cur_exp_node))))),
+                                                    mp_aux_bytemap_get_byte(mp, &(mp->bytemaps[index]), &(mp_get_value_number(mp_green_part(mp_get_value_node(cur_exp_node))))),
+                                                    mp_aux_bytemap_get_byte(mp, &(mp->bytemaps[index]), &(mp_get_value_number(mp_blue_part(mp_get_value_node(cur_exp_node)))))
                                                 );
                                             }
                                         }
@@ -28142,9 +28180,9 @@ static void mp_bytemap_set_byte(MP mp) /* done */ /* todo */
                                                     bytemap_slice_rgb(
                                                         &(mp->bytemaps[index]),
                                                         x, y, dx, dy,
-                                                        (int) mp_round_unscaled(mp_get_value_number(mp_red_part  (mp_get_value_node(cur_exp_node)))),
-                                                        (int) mp_round_unscaled(mp_get_value_number(mp_green_part(mp_get_value_node(cur_exp_node)))),
-                                                        (int) mp_round_unscaled(mp_get_value_number(mp_blue_part (mp_get_value_node(cur_exp_node))))
+                                                        mp_aux_bytemap_get_byte(mp, &(mp->bytemaps[index]), &(mp_get_value_number(mp_red_part  (mp_get_value_node(cur_exp_node))))),
+                                                        mp_aux_bytemap_get_byte(mp, &(mp->bytemaps[index]), &(mp_get_value_number(mp_green_part(mp_get_value_node(cur_exp_node))))),
+                                                        mp_aux_bytemap_get_byte(mp, &(mp->bytemaps[index]), &(mp_get_value_number(mp_blue_part (mp_get_value_node(cur_exp_node)))))
                                                     );
                                                 }
                                                 break;
@@ -28215,7 +28253,7 @@ structures are abbreviated, otherwise they aren't.
 
 */
 
-void mp_do_show(MP mp)
+static void mp_do_show(MP mp)
 {
     do {
         mp_value new_expr;
@@ -28265,7 +28303,7 @@ don't necessarily correspond to primitive tokens.
 
 */
 
-void mp_do_show_token(MP mp)
+static void mp_do_show_token(MP mp)
 {
     do {
         mp_get_t_next(mp);
@@ -28274,7 +28312,7 @@ void mp_do_show_token(MP mp)
     } while (cur_cmd == mp_comma_command);
 }
 
-void mp_do_show_stats(MP mp)
+static void mp_do_show_stats(MP mp)
 {
  // if (0) {
  //     mp_print_ln(mp);
@@ -28300,7 +28338,7 @@ Here's a recursive procedure that gives an abbreviated account of a variable, fo
 
 */
 
-void mp_display_var(MP mp, mp_node p)
+static void mp_display_var(MP mp, mp_node p)
 {
     if (p->type == mp_structured_type) {
         /* Descend the structure */
@@ -28331,7 +28369,7 @@ void mp_display_var(MP mp, mp_node p)
     }
 }
 
-void mp_do_show_var(MP mp)
+static void mp_do_show_var(MP mp)
 {
     do {
         mp_get_t_next(mp);
@@ -28347,7 +28385,7 @@ void mp_do_show_var(MP mp)
     } while (cur_cmd == mp_comma_command);
 }
 
-void mp_do_show_dependencies(MP mp)
+static void mp_do_show_dependencies(MP mp)
 {
     if (mp_number_positive(internal_value(mp_tracing_dependencies_internal))) {
         mp_value_node p = (mp_value_node) mp->dep_head->link;
@@ -28400,7 +28438,7 @@ Finally we are ready for the procedure that governs all of the show commands.
 
 */
 
-void mp_do_show_whatever(MP mp)
+static void mp_do_show_whatever(MP mp)
 {
     if (mp->interaction == mp_error_stop_mode) {
         mp_print_flush_line(mp);
@@ -28590,7 +28628,7 @@ static mp_string mp_aux_prepend_post_script(MP mp, mp_string target)
     return target;
 }
 
-void mp_scan_with_list(MP mp, mp_node p, mp_node pstop)
+static void mp_scan_with_list(MP mp, mp_node p, mp_node pstop)
 {
     mp_node cp = MP_VOID;
     mp_node pp = MP_VOID;
@@ -29233,7 +29271,7 @@ about to be updated, we use |private_edges| to make sure that this is possible.
 
 */
 
-mp_edge_header_node mp_find_edges_var(MP mp, mp_node t)
+static mp_edge_header_node mp_find_edges_var(MP mp, mp_node t)
 {
     mp_edge_header_node cur_edges = NULL;
     mp_node p = mp_find_variable(mp, t);
@@ -29284,7 +29322,7 @@ list for the variable and stores the command modifier for the separator token in
 
 */
 
-mp_node mp_start_draw_cmd(MP mp, int sep)
+static mp_node mp_start_draw_cmd(MP mp, int sep)
 {
     mp_node lhv = NULL; /*tex variable to add to left */
     int add_type = 0;   /*tex value to be returned in |last_add_type| */
@@ -29325,7 +29363,7 @@ Here is an example of how to use |start_draw_cmd|.
 
 */
 
-void mp_do_bounds(MP mp)
+static void mp_do_bounds(MP mp)
 {
     mp_edge_header_node lhe;
     int c = cur_cmd;
@@ -29393,7 +29431,7 @@ The |do_add_to| procedure is a little like |do_clip| but there are a lot more ca
 
 */
 
-void mp_do_add_to(MP mp)
+static void mp_do_add_to(MP mp)
 {
     mp_node lhv = mp_start_draw_cmd(mp, mp_thing_to_add_command);
     if (lhv != NULL) {
@@ -29510,7 +29548,7 @@ void mp_do_add_to(MP mp)
     }
 }
 
-void mp_do_ship_out(MP mp)
+static void mp_do_ship_out(MP mp)
 {
     mp_value new_expr;
     memset(&new_expr, 0, sizeof(mp_value));
@@ -29529,7 +29567,7 @@ void mp_do_ship_out(MP mp)
     }
 }
 
-void mp_do_message(MP mp)
+static void mp_do_message(MP mp)
 {
     mp_value new_expr;
     int m = cur_mod; /* the type of message */
@@ -29600,7 +29638,7 @@ once.
 
 */
 
-void mp_do_write(MP mp)
+static void mp_do_write(MP mp)
 {
     mp_value new_expr;
     memset(&new_expr, 0, sizeof(mp_value));
@@ -30557,17 +30595,19 @@ void mp_scan_boolean_value(MP mp, int primary, int *b)
     }
 }
 
-void mp_scan_string_value(MP mp, int primary, char **s, size_t *l)
+int mp_scan_string_value(MP mp, int primary, char **s, size_t *l)
 {
     mp_scan_something(mp, primary);
     if (cur_exp_type != mp_string_type) {
-        mp_back_input(mp); /* hm */
-        *s = NULL ;
+        mp_back_input(mp);
+        *s = NULL;
         *l = 0;
+        return 0;
     } else {
-        mp_back_input(mp); /* hm */
-        *s = (char *) cur_exp_str->str ;
+        mp_back_input(mp);
+        *s = (char *) cur_exp_str->str;
         *l = cur_exp_str->len;
+        return 1;
     }
 }
 
@@ -31633,8 +31673,8 @@ static int mp_scan_path(MP mp)
         doesn't have a suitable type. Keep in mind that as we progress, cur_cmd can be ahead
         of the expression we just consumed.
     */
-mp_number_clone(mp->previous_x, mp_inf_t);
-mp_number_clone(mp->previous_y, mp_inf_t);
+    mp_number_clone(mp->previous_x, mp_inf_t);
+    mp_number_clone(mp->previous_y, mp_inf_t);
     switch (cur_exp_type) {
         case mp_pair_type:
             {
@@ -32254,6 +32294,10 @@ static void mp_close_files(MP mp)
                 mp->write_filenames[k] = NULL;
             }
         }
+    }
+    if (mp->term_in != NULL) {
+        (mp->close_file)(mp, mp->term_in);
+        mp->term_in = NULL;
     }
 }
 
@@ -32981,11 +33025,11 @@ some lines of code in already long functions. This procedure gets things started
 
 MP mp_initialize(MP_options *opt)
 {
-    MP mp = mp_new_instance();
-    if (! mp) {
+    if (! opt || ! opt->job_name || ! *(opt->job_name)) {
         return NULL;
     }
-    if (! opt->job_name || ! *(opt->job_name)) {
+    MP mp = mp_new_instance();
+    if (! mp) {
         return NULL;
     }
     mp->job_name        = mp_strdup(opt->job_name);
@@ -33124,7 +33168,7 @@ MP mp_initialize(MP_options *opt)
         set_internal_type(mp_single_quote_mode_internal, mp_boolean_type);
     }
 
-    mp_bytemap_valid(mp, 0); /* forces an initial lot */
+    mp_bytemap_ensure(mp, 0); /* forces an initial lot */
 
     mp->symbols = avl_create(mp_compare_symbols_entry, mp_copy_symbols_entry, mp_delete_symbols_entry, mp_memory_allocate, mp_memory_free, NULL);
     mp->frozen_symbols = avl_create(mp_compare_symbols_entry, mp_copy_symbols_entry, mp_delete_symbols_entry, mp_memory_allocate, mp_memory_free, NULL);

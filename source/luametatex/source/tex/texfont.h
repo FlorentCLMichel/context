@@ -406,10 +406,11 @@ typedef enum boundarychar_codes {
     a good idea nowadays.
 */
 
-extern void tex_set_font_parameters      (halfword f, int b);
-extern void tex_set_font_math_parameters (halfword f, int b);
-extern int  tex_get_font_max_id          (void);
-extern int  tex_get_font_max_id          (void);
+extern int tex_set_font_parameters      (halfword f, int b);
+extern int tex_set_font_math_parameters (halfword f, int b);
+extern int tex_get_font_max_id          (void);
+extern int tex_get_font_max_id          (void);
+extern int tex_valid_font_parameter     (halfword f, halfword code);
 
 extern halfword tex_checked_font_adjust (
     halfword adjust_spacing,
@@ -473,11 +474,12 @@ typedef enum font_math_kern_codes {
     top_left_kern,
 } font_math_kern_codes;
 
-extern charinfo *tex_get_charinfo     (halfword f, int c);
-extern int       tex_char_exists      (halfword f, int c);
-extern void      tex_char_process     (halfword f, int c);
-extern int       tex_math_char_exists (halfword f, int c, int size);
-extern int       tex_get_math_char    (halfword f, int c, int size, scaled *scale, scaled *xscale, scaled *ysale, scaled *weight, int direction);
+extern charinfo *tex_get_charinfo       (halfword f, int c);
+extern charinfo *tex_existing_char_info (halfword f, int c);
+extern int       tex_char_exists        (halfword f, int c);
+extern void      tex_char_process       (halfword f, int c);
+extern int       tex_math_char_exists   (halfword f, int c, int size);
+extern int       tex_get_math_char      (halfword f, int c, int size, scaled *scale, scaled *xscale, scaled *ysale, scaled *weight, int direction);
 
 /*tex 
     These used to be small integers, bit 22 upto 31, but now we have a 32 bit set. We actually don't 
@@ -549,10 +551,10 @@ typedef enum char_tag_codes {
 # define set_charinfo_kerns(ci,val)                        { lmt_memory_free(ci->kerns);     ci->kerns     = val; }
 # define set_charinfo_math(ci,val)                         { lmt_memory_free(ci->math);      ci->math      = val; }
 
-# define set_charinfo_top_left_math_kern_array(ci,val)     if (ci->math) { lmt_memory_free(ci->math->top_left_math_kern_array);     ci->math->top_left_math_kern_array = val; }
-# define set_charinfo_top_right_math_kern_array(ci,val)    if (ci->math) { lmt_memory_free(ci->math->top_right_math_kern_array);    ci->math->top_left_math_kern_array = val; }
-# define set_charinfo_bottom_right_math_kern_array(ci,val) if (ci->math) { lmt_memory_free(ci->math->bottom_right_math_kern_array); ci->math->top_left_math_kern_array = val; }
-# define set_charinfo_bottom_left_math_kern_array(ci,val)  if (ci->math) { lmt_memory_free(ci->math->bottom_left_math_kern_array);  ci->math->top_left_math_kern_array = val; }
+# define set_charinfo_top_left_math_kern_array(ci,val)     if (ci->math) { lmt_memory_free(ci->math->top_left_math_kern_array);     ci->math->top_left_math_kern_array     = val; }
+# define set_charinfo_top_right_math_kern_array(ci,val)    if (ci->math) { lmt_memory_free(ci->math->top_right_math_kern_array);    ci->math->top_right_math_kern_array    = val; }
+# define set_charinfo_bottom_left_math_kern_array(ci,val)  if (ci->math) { lmt_memory_free(ci->math->bottom_left_math_kern_array);  ci->math->bottom_left_math_kern_array  = val; }
+# define set_charinfo_bottom_right_math_kern_array(ci,val) if (ci->math) { lmt_memory_free(ci->math->bottom_right_math_kern_array); ci->math->bottom_right_math_kern_array = val; }
 
 //define set_charinfo_options(ci,val)                      if (ci->math) { ci->math->options = val; }
 
@@ -734,13 +736,15 @@ typedef enum missing_character_locations {
 
 extern halfword      tex_checked_font          (halfword f);
 extern int           tex_is_valid_font         (halfword f);
-extern int           tex_raw_get_kern          (halfword f, int lc, int rc);
+//     int           tex_raw_get_kern          (halfword f, int lc, int rc);
 extern int           tex_get_kern              (halfword f, int lc, int rc);
-extern ligatureinfo  tex_get_ligature          (halfword f, int lc, int rc);
+//     ligatureinfo  tex_get_ligature          (halfword f, int lc, int rc);
 extern int           tex_new_font              (void);
 extern int           tex_new_font_id           (void);
 extern void          tex_font_malloc_charinfo  (halfword f, int num);
 extern void          tex_char_malloc_mathinfo  (charinfo *ci);
+extern void          tex_reset_charinfo        (charinfo *ci);
+extern void          tex_reset_font            (halfword f);
 extern void          tex_dump_font_data        (dumpstream f);
 extern void          tex_undump_font_data      (dumpstream f);
 extern void          tex_create_null_font      (void);

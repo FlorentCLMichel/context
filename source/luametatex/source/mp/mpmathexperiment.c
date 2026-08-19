@@ -63,33 +63,41 @@
 # define  mp_interval_double_max    DBL_MAX // 1e17
 # define  mp_interval_double_min    DBL_MIN // 1e-17
 
-# define  odd(A)         (llabs(A) % 2 == 1)
 # define  two_to_the(A)  (1 << (unsigned)(A))
 # define  set_cur_cmd(A) mp->cur_mod_->command = (A)
 # define  set_cur_mod(A) memcpy(mp->cur_mod_->data.n.data.num, &(A), sizeof(interval))
 
-/* todo use pointers */
-
 typedef interval * inum;
 
 # define to_internum(num) (interval) { ((inum) (num))->INF, ((inum) (num))->SUP }
-# define to_interval(i)   (interval) { ((inum) (i->data.num))->INF, ((inum) (i->data.num))->SUP }
-# define to_constant(c)   (interval) { c, c }
 
-static inline inum mp_new_inum(interval i) /* const */
+static inline interval to_interval(const mp_number *i)
+{
+    return (interval) { ((inum) (i->data.num))->INF, ((inum) (i->data.num))->SUP };
+}
+
+static inline interval to_constant(const double c)
+{
+    return (interval) { c, c };
+}
+
+static inline inum mp_new_inum(const interval i)
 {
     inum num = mp_memory_allocate(sizeof(interval));
     memcpy(num, &i, sizeof(interval));
     return num;
 }
 
-static inline interval interval_neg(interval i)
+static inline interval interval_neg(const interval i)
 {
     return (interval) { - i.SUP, - i.INF };
 }
 
-static inline interval interval_mod(interval a, interval b)
+static inline interval interval_mod(const interval a, const interval b)
 {
+    if (b.INF <= 0.0 && b.SUP >= 0.0) {
+        return (interval){ -mp_interval_double_max, mp_interval_double_max };
+    }
     double d;
     interval i = div_ii(a, b);
     i.INF = modf(i.INF, &d);
@@ -101,7 +109,7 @@ static inline interval interval_mod(interval a, interval b)
 # define interval_trace_compare_gt 0
 # define interval_trace_compare_lt 0
 
-static inline int interval_eq(interval a, interval b)
+static inline int interval_eq(const interval a, const interval b)
 {
     # if interval_trace_compare_eq
         printf("EQ [%3.24g %3.24g] [%3.24g %3.24g] %i\n",a.INF,a.SUP,b.INF,b.SUP,a.INF == b.INF && a.SUP == b.SUP);
@@ -109,28 +117,28 @@ static inline int interval_eq(interval a, interval b)
     return a.INF == b.INF && a.SUP == b.SUP;
 }
 
-static int interval_gt(interval a, interval b)
+static inline int interval_gt(const interval a, const interval b)
 {
     # if interval_trace_compare_gt
-        printf("GT [%3.24g %3.24g] [%3.24g %3.24g] %i\n",a.INF,a.SUP,b.INF,b.SUP,a.INF > b.INF && a.SUP > b.SUP);
+        printf("GT [%3.24g %3.24g] [%3.24g %3.24g] %i\n",a.INF,a.SUP,b.INF,b.SUP,a.INF > b.SUP);
     # endif
-    return a.INF > b.INF && a.SUP > b.SUP;
+    return a.INF > b.SUP;
 }
 
-static int interval_lt(interval a, interval b)
+static inline int interval_lt(const interval a, const interval b)
 {
     # if interval_trace_compare_lt
-        printf("LT [%3.24g %3.24g] [%3.24g %3.24g] %i\n",a.INF,a.SUP,b.INF,b.SUP,a.INF < b.INF && a.SUP < b.SUP);
+        printf("LT [%3.24g %3.24g] [%3.24g %3.24g] %i\n",a.INF,a.SUP,b.INF,b.SUP,a.SUP < b.INF);
     # endif
-    return a.INF < b.INF && a.SUP < b.SUP;
+    return a.SUP < b.INF;
 }
 
-static inline int interval_ge(interval a, interval b)
+static inline int interval_ge(const interval a, const interval b)
 {
     return interval_gt(a,b) || interval_eq(a,b);
 }
 
-static inline int interval_le(interval a, interval b)
+static inline int interval_le(const interval a, const interval b)
 {
     return interval_lt(a,b) || interval_eq(a,b);
 }
@@ -196,30 +204,30 @@ typedef struct mp_interval_info {
     interval sqrt_five_minus_one_mul_fraction_one_and_half;
     interval three_minus_sqrt_five_mul_fraction_one_and_half;
     interval d180_divided_by_pi_mul_angle;
-    int     initialized;
+    int      initialized;
 } mp_interval_info;
 
 static mp_interval_info mp_interval_data = {
     .initialized = 0,
 };
 
-static inline interval mp_interval_aux_make_fraction (interval p, interval q) { return mul_id(div_ii(p,q), mp_fraction_multiplier); }
-static inline interval mp_interval_aux_take_fraction (interval p, interval q) { return div_id(mul_ii(p,q), mp_fraction_multiplier); }
-static inline interval mp_interval_aux_make_scaled   (interval p, interval q) { return div_ii(p,q); }
+static inline interval mp_interval_aux_make_fraction (const interval p, const interval q) { return mul_id(div_ii(p,q), mp_fraction_multiplier); }
+static inline interval mp_interval_aux_take_fraction (const interval p, const interval q) { return div_id(mul_ii(p,q), mp_fraction_multiplier); }
+static inline interval mp_interval_aux_make_scaled   (const interval p, const interval q) { return div_ii(p,q); }
 
 /*tex Here we don't optimize for zero's. */
 
-static inline interval mp_interval_make_fraction(interval p, interval q)
+static inline interval mp_interval_make_fraction(const interval p, const interval q)
 {
     return mul_id(div_ii(p, q), mp_fraction_multiplier);
 }
 
-static inline interval mp_interval_take_fraction(interval p, interval q)
+static inline interval mp_interval_take_fraction(const interval p, const interval q)
 {
     return div_id(mul_ii(p, q), mp_fraction_multiplier);
 }
 
-static inline interval mp_interval_make_scaled(interval p, interval q)
+static inline interval mp_interval_make_scaled(const interval p, const interval q)
 {
     /* probably not ok, see usage */
     return div_ii(p, q);
@@ -232,48 +240,49 @@ static void mp_interval_allocate_number(MP mp, mp_number *n, mp_number_type t)
     n->data.num = mp_new_inum(to_constant(0));
 }
 
-static void mp_interval_allocate_clone(MP mp, mp_number *n, mp_number_type t, mp_number *v)
+static void mp_interval_allocate_clone(MP mp, mp_number *n, mp_number_type t, const mp_number *v)
 {
     (void) mp;
     n->type = t;
     n->data.num = mp_new_inum(to_interval(v));
 }
 
-static void mp_interval_allocate_abs(MP mp, mp_number *n, mp_number_type t, mp_number *v)
+static void mp_interval_allocate_abs(MP mp, mp_number *n, mp_number_type t, const mp_number *v)
 {
     (void) mp;
     n->type = t;
     n->data.num = mp_new_inum(j_abs(to_interval(v)));
 }
 
-static void mp_interval_allocate_div(MP mp, mp_number *n, mp_number_type t, mp_number *a, mp_number *b)
+static void mp_interval_allocate_div(MP mp, mp_number *n, mp_number_type t, const mp_number *a, const mp_number *b)
 {
     (void) mp;
     n->type = t;
     n->data.num = mp_new_inum(div_ii(to_interval(a), to_interval(b)));
 }
 
-static void mp_interval_allocate_mul(MP mp, mp_number *n, mp_number_type t, mp_number *a, mp_number *b)
+static void mp_interval_allocate_mul(MP mp, mp_number *n, mp_number_type t, const mp_number *a, const mp_number *b)
 {
     (void) mp;
     n->type = t;
     n->data.num = mp_new_inum(mul_ii(to_interval(a), to_interval(b)));
 }
 
-static void mp_interval_allocate_add(MP mp, mp_number *n, mp_number_type t, mp_number *a, mp_number *b)
+static void mp_interval_allocate_add(MP mp, mp_number *n, mp_number_type t, const mp_number *a, const mp_number *b)
 {
     (void) mp;
     n->type = t;
     n->data.num = mp_new_inum(add_ii(to_interval(a), to_interval(b)));
 }
-static void mp_interval_allocate_sub(MP mp, mp_number *n, mp_number_type t, mp_number *a, mp_number *b)
+
+static void mp_interval_allocate_sub(MP mp, mp_number *n, mp_number_type t, const mp_number *a, const mp_number *b)
 {
     (void) mp;
     n->type = t;
     n->data.num = mp_new_inum(sub_ii(to_interval(a), to_interval(b)));
 }
 
-static void mp_interval_allocate_double(MP mp, mp_number *n, double v)
+static void mp_interval_allocate_double(MP mp, mp_number *n, const double v)
 {
     (void) mp;
     n->type = mp_scaled_type;
@@ -283,85 +292,87 @@ static void mp_interval_allocate_double(MP mp, mp_number *n, double v)
 static void mp_interval_free_number(MP mp, mp_number *n)
 {
     (void) mp;
-    mp_memory_free(n->data.num);
-    n->data.num = NULL;
+    if (n->data.num) {
+        mp_memory_free(n->data.num);
+        n->data.num = NULL;
+    }
     n->type = mp_nan_type;
 }
 
-static void mp_interval_set_from_int(mp_number *a, mp_scaled_t b)
+static inline void mp_interval_set_from_int(mp_number *a, const mp_scaled_t b)
 {
-    interval i = { b, b };
+    interval i = { (double) b, (double) b };
     memcpy(a->data.num, &i, sizeof(interval));
 }
 
-static void mp_interval_set_from_boolean(mp_number *a, mp_scaled_t b)
+static inline void mp_interval_set_from_boolean(mp_number *a, const mp_scaled_t b)
 {
-    interval i = { b, b };
+    interval i = { (double) b, (double) b };
     memcpy(a->data.num, &i, sizeof(interval));
 }
 
-static void mp_interval_set_from_scaled(mp_number *a, mp_scaled_t b)
+static inline void mp_interval_set_from_scaled(mp_number *a, const mp_scaled_t b)
 {
     double d = b == 0 ? 0.0 : b / 65536.0;
     interval i = { d, d };
     memcpy(a->data.num, &i, sizeof(interval));
 }
 
-static void mp_interval_set_from_double(mp_number *a, double b)
+static inline void mp_interval_set_from_double(mp_number *a, const double b)
 {
     interval i = { b, b };
     memcpy(a->data.num, &i, sizeof(interval));
 }
 
-static void mp_interval_set_from_addition(mp_number *a, mp_number *b, mp_number *c)
+static inline void mp_interval_set_from_addition(mp_number *a, const mp_number *b, const mp_number *c)
 {
     interval i = add_ii(to_interval(b), to_interval(c));
     memcpy(a->data.num, &i, sizeof(interval));
 }
 
-static void mp_interval_set_half_from_addition(mp_number *a, mp_number *b, mp_number *c)
+static inline void mp_interval_set_half_from_addition(mp_number *a, const mp_number *b, const mp_number *c)
 {
     interval i = div_id(add_ii(to_interval(b), to_interval(c)), 2.0);
     memcpy(a->data.num, &i, sizeof(interval));
 }
 
-static void mp_interval_set_from_subtraction(mp_number *a, mp_number *b, mp_number *c)
+static inline void mp_interval_set_from_subtraction(mp_number *a, const mp_number *b, const mp_number *c)
 {
     interval i = sub_ii(to_interval(b), to_interval(c));
     memcpy(a->data.num, &i, sizeof(interval));
 }
 
-static void mp_interval_set_half_from_subtraction(mp_number *a, mp_number *b, mp_number *c)
+static inline void mp_interval_set_half_from_subtraction(mp_number *a, const mp_number *b, const mp_number *c)
 {
     interval i = div_id(sub_ii(to_interval(b), to_interval(c)), 2.0);
     memcpy(a->data.num, &i, sizeof(interval));
 }
 
-static void mp_interval_set_from_div(mp_number *a, mp_number *b, mp_number *c)
+static inline void mp_interval_set_from_div(mp_number *a, const mp_number *b, const mp_number *c)
 {
     interval i = div_ii(to_interval(b), to_interval(c));
     memcpy(a->data.num, &i, sizeof(interval));
 }
 
-static void mp_interval_set_from_mul(mp_number *a, mp_number *b, mp_number *c)
+static inline void mp_interval_set_from_mul(mp_number *a, const mp_number *b, const mp_number *c)
 {
     interval i = mul_ii(to_interval(b), to_interval(c));
     memcpy(a->data.num, &i, sizeof(interval));
 }
 
-static void mp_interval_set_from_int_div(mp_number *a, mp_number *b, mp_scaled_t c)
+static inline void mp_interval_set_from_int_div(mp_number *a, const mp_number *b, const mp_scaled_t c)
 {
     interval i = div_id(to_interval(b), c);
     memcpy(a->data.num, &i, sizeof(interval));
 }
 
-static void mp_interval_set_from_int_mul(mp_number *a, mp_number *b, mp_scaled_t c)
+static inline void mp_interval_set_from_int_mul(mp_number *a, const mp_number *b, const mp_scaled_t c)
 {
     interval i = mul_id(to_interval(b), c);
     memcpy(a->data.num, &i, sizeof(interval));
 }
 
-static void mp_interval_set_from_of_the_way(MP mp, mp_number *a, mp_number *t, mp_number *b, mp_number *c)
+static inline void mp_interval_set_from_of_the_way(MP mp, mp_number *a, const mp_number *t, const mp_number *b, const mp_number *c)
 {
     (void) mp;
     interval d = sub_ii(to_interval(b), to_interval(c));
@@ -369,158 +380,170 @@ static void mp_interval_set_from_of_the_way(MP mp, mp_number *a, mp_number *t, m
     memcpy(a->data.num, &i, sizeof(interval));
 }
 
-static void mp_interval_negate(mp_number *a)
+static inline void mp_interval_negate(mp_number *a)
 {
     interval i = interval_neg(to_interval(a));
     memcpy(a->data.num, &i, sizeof(interval));
 }
 
-static void mp_interval_add(mp_number *a, mp_number *b)
+static inline void mp_interval_add(mp_number *a, const mp_number *b)
 {
     interval i = add_ii(to_interval(a), to_interval(b));
     memcpy(a->data.num, &i, sizeof(interval));
 }
 
-static void mp_interval_subtract(mp_number *a, mp_number *b)
+static inline void mp_interval_subtract(mp_number *a, const mp_number *b)
 {
     interval i = sub_ii(to_interval(a), to_interval(b));
     memcpy(a->data.num, &i, sizeof(interval));
 }
 
-static void mp_interval_half(mp_number *a)
+static inline void mp_interval_half(mp_number *a)
 {
     interval i = div_id(to_interval(a), 2.0);
     memcpy(a->data.num, &i, sizeof(interval));
 }
 
-static void mp_interval_double(mp_number *a)
+static inline void mp_interval_double(mp_number *a)
 {
     interval i = mul_id(to_interval(a), 2.0);
     memcpy(a->data.num, &i, sizeof(interval));
 }
 
-static void mp_interval_add_scaled(mp_number *a, mp_scaled_t b)
+static inline void mp_interval_add_scaled(mp_number *a, const mp_scaled_t b)
 {
     interval i = add_id(to_interval(a), b / 65536.0);
     memcpy(a->data.num, &i, sizeof(interval));
 }
 
-static void mp_interval_multiply_int(mp_number *a, mp_scaled_t b)
+static inline void mp_interval_multiply_int(mp_number *a, const mp_scaled_t b)
 {
     interval i = mul_id(to_interval(a), b);
     memcpy(a->data.num, &i, sizeof(interval));
 }
 
-static void mp_interval_divide_int(mp_number *a, mp_scaled_t b)
+static inline void mp_interval_divide_int(mp_number *a, const mp_scaled_t b)
 {
     interval i = div_id(to_interval(a), b);
     memcpy(a->data.num, &i, sizeof(interval));
 }
 
-static void mp_interval_abs(mp_number *a)
+static inline void mp_interval_abs(mp_number *a)
 {
     interval i = j_abs(to_interval(a));
     memcpy(a->data.num, &i, sizeof(interval));
 }
 
-static void mp_interval_clone(mp_number *a, mp_number *b)
+static inline void mp_interval_clone(mp_number *a, const mp_number *b)
 {
-    memcpy(a->data.num, b->data.num, sizeof(interval));
+    if (!a->data.num) {
+        a->data.num = mp_new_inum(to_interval(b));
+    } else {
+        memcpy(a->data.num, b->data.num, sizeof(interval));
+    }
 }
 
-static void mp_interval_negated_clone(mp_number *a, mp_number *b)
+static inline void mp_interval_negated_clone(mp_number *a, const mp_number *b)
 {
     interval i = interval_neg(to_interval(b));
-    memcpy(a->data.num, &i, sizeof(interval));
+    if (!a->data.num) {
+        a->data.num = mp_new_inum(i);
+    } else {
+        memcpy(a->data.num, &i, sizeof(interval));
+    }
 }
 
-static void mp_interval_abs_clone(mp_number *a, mp_number *b)
+static inline void mp_interval_abs_clone(mp_number *a, const mp_number *b)
 {
     interval i = j_abs(to_interval(b));
-    memcpy(a->data.num, &i, sizeof(interval));
+    if (!a->data.num) {
+        a->data.num = mp_new_inum(i);
+    } else {
+        memcpy(a->data.num, &i, sizeof(interval));
+    }
 }
 
-static void mp_interval_swap(mp_number *a, mp_number *b)
+static inline void mp_interval_swap(mp_number *a, mp_number *b)
 {
     interval swap_tmp = to_interval(a);
     memcpy(a->data.num, b->data.num, sizeof(interval));
     memcpy(b->data.num, &swap_tmp, sizeof(interval));
 }
 
-static void mp_interval_fraction_to_scaled(mp_number *a)
+static inline void mp_interval_fraction_to_scaled(mp_number *a)
 {
     interval i = div_id(to_interval(a), mp_fraction_multiplier);
     memcpy(a->data.num, &i, sizeof(interval));
     a->type = mp_scaled_type;
 }
 
-static void mp_interval_angle_to_scaled(mp_number *a)
+static inline void mp_interval_angle_to_scaled(mp_number *a)
 {
     interval i = div_id(to_interval(a), mp_angle_multiplier);
     memcpy(a->data.num, &i, sizeof(interval));
     a->type = mp_scaled_type;
 }
 
-static void mp_interval_scaled_to_fraction(mp_number *a)
+static inline void mp_interval_scaled_to_fraction(mp_number *a)
 {
     interval i = mul_id(to_interval(a), mp_fraction_multiplier);
     memcpy(a->data.num, &i, sizeof(interval));
     a->type = mp_fraction_type;
 }
 
-static void mp_interval_scaled_to_angle(mp_number *a)
+static inline void mp_interval_scaled_to_angle(mp_number *a)
 {
     interval i = mul_id(to_interval(a), mp_angle_multiplier);
     memcpy(a->data.num, &i, sizeof(interval));
     a->type = mp_angle_type;
 }
 
-static mp_scaled_t mp_interval_to_scaled(mp_number *a)
+static inline mp_scaled_t mp_interval_to_scaled(const mp_number *a)
 {
     return (mp_scaled_t) mpscaledround(q_mid(to_interval(a)) * 65536.0);
 }
 
-static mp_scaled_t mp_interval_to_int(mp_number *a)
+static inline mp_scaled_t mp_interval_to_int(const mp_number *a)
 {
     return (mp_scaled_t) q_mid(to_interval(a));
 }
 
-static mp_scaled_t mp_interval_to_boolean(mp_number *a)
+static inline mp_scaled_t mp_interval_to_boolean(const mp_number *a)
 {
     return (mp_scaled_t) q_mid(to_interval(a));
 }
 
-static double mp_interval_to_double(mp_number *a)
+static inline double mp_interval_to_double(const mp_number *a)
 {
     return q_mid(to_interval(a));
 }
 
-static int mp_interval_odd(mp_number *a)
+static inline int mp_interval_odd(const mp_number *a)
 {
-    return odd((mp_scaled_t) mpscaledround(q_mid(to_interval(a))));
+    return odd_long(lround(q_mid(to_interval(a))));
 }
 
-static int mp_interval_equal(mp_number *a, mp_number *b)
+static inline int mp_interval_equal(const mp_number *a, const mp_number *b)
 {
     return interval_eq(to_interval(a), to_interval(b));
 }
 
-static int mp_interval_greater(mp_number *a, mp_number *b)
+static inline int mp_interval_greater(const mp_number *a, const mp_number *b)
 {
     return interval_gt(to_interval(a), to_interval(b));
 }
 
-static int mp_interval_less(mp_number *a, mp_number *b)
+static inline int mp_interval_less(const mp_number *a, const mp_number *b)
 {
     return interval_lt(to_interval(a), to_interval(b));
 }
 
-static int mp_interval_non_equal_abs(mp_number *a, mp_number *b)
+static inline int mp_interval_non_equal_abs(const mp_number *a, const mp_number *b)
 {
     return ! interval_eq(j_abs(to_interval(a)), j_abs(to_interval(b)));
 }
 
-static char *mp_interval_number_tostring(MP mp, mp_number *n)
+static char *mp_interval_number_tostring(MP mp, const mp_number *n)
 {
     static char set[64];
     int l = 0;
@@ -534,87 +557,49 @@ static char *mp_interval_number_tostring(MP mp, mp_number *n)
     return ret;
 }
 
-static void mp_interval_print_number(MP mp, mp_number *n)
+static void mp_interval_print_number(MP mp, const mp_number *n)
 {
     char *str = mp_interval_number_tostring(mp, n);
     mp_print_e_str(mp, str);
     mp_memory_free(str);
 }
 
-static void mp_interval_slow_add(MP mp, mp_number *ret, mp_number *x, mp_number *y)
+static inline void mp_interval_slow_add(MP mp, mp_number *ret, const mp_number *x, const mp_number *y)
 {
-# if 0
-    interval ix = to_interval(x);
-    interval iy = to_interval(y);
-    /* This is kind of expensive, especially in other than scaled and double models. */
-    if (interval_ge(ix, mp_interval_data.zero)) {
-        if (interval_le(iy, sub_ii(mp_interval_data.EL_GORDO, ix))) {
-            interval i = add_ii(ix, iy);
-            memcpy(ret->data.num, &i, sizeof(interval));
-        } else {
-            mp->arithmic_error = mp_error_code(mp, 1);
-            memcpy(ret->data.num, &mp_interval_data.EL_GORDO, sizeof(interval));
-        }
-    } else if (interval_le(interval_neg(iy), add_ii(mp_interval_data.EL_GORDO, ix))) {
-        interval i = add_ii(ix, iy);
-        memcpy(ret->data.num, &i, sizeof(interval));
-    } else {
-        mp->arithmic_error = mp_error_code(mp, 2);
-        memcpy(ret->data.num, &mp_interval_data.negative_EL_GORDO, sizeof(interval));
-    }
-# else
+    (void) mp;
     interval i = add_ii(to_interval(x), to_interval(y));
     memcpy(ret->data.num, &i, sizeof(interval));
-# endif
 }
 
-static void mp_interval_slow_sub(MP mp, mp_number *ret, mp_number *x, mp_number *y)
+static inline void mp_interval_slow_sub(MP mp, mp_number *ret, const mp_number *x, const mp_number *y)
 {
-# if 0
-    interval ix = to_interval(x);
-    interval iy = to_interval(y);
-    /* This is kind of expensive, especially in other than scaled and double models. */
-    if (interval_ge(ix, mp_interval_data.zero)) {
-        if (interval_le(interval_neg(iy), sub_ii(mp_interval_data.EL_GORDO, ix))) {
-            interval i = sub_ii(ix, iy);
-            memcpy(ret->data.num, &i, sizeof(interval));
-        } else {
-            mp->arithmic_error = mp_error_code(mp, 1);
-            memcpy(ret->data.num, &mp_interval_data.EL_GORDO, sizeof(interval));
-        }
-    } else if (interval_le(iy, add_ii(mp_interval_data.EL_GORDO, ix))) {
-        interval i = sub_ii(ix, iy);
-        memcpy(ret->data.num, &i, sizeof(interval));
-    } else {
-        mp->arithmic_error = mp_error_code(mp, 2);
-        memcpy(ret->data.num, &mp_interval_data.negative_EL_GORDO, sizeof(interval));
-    }
-# else
+    (void) mp;
     interval i = sub_ii(to_interval(x), to_interval(y));
     memcpy(ret->data.num, &i, sizeof(interval));
-# endif
 }
 
-static void mp_interval_number_make_fraction(MP mp, mp_number *ret, mp_number *p, mp_number *q) {
+static inline void mp_interval_number_make_fraction(MP mp, mp_number *ret, const mp_number *p, const mp_number *q)
+{
     (void) mp;
     interval i = mp_interval_make_fraction(to_interval(p), to_interval(q));
     memcpy(ret->data.num, &i, sizeof(interval));
 }
 
-static void mp_interval_number_take_fraction(MP mp, mp_number *ret, mp_number *p, mp_number *q) {
-   (void) mp;
+static inline void mp_interval_number_take_fraction(MP mp, mp_number *ret, const mp_number *p, const mp_number *q)
+{
+    (void) mp;
     interval i = mp_interval_take_fraction(to_interval(p), to_interval(q));
     memcpy(ret->data.num, &i, sizeof(interval));
 }
 
-static void mp_interval_number_take_scaled(MP mp, mp_number *ret, mp_number *p, mp_number *q)
+static inline void mp_interval_number_take_scaled(MP mp, mp_number *ret, const mp_number *p, const mp_number *q)
 {
     (void) mp;
     interval i = mul_ii(to_interval(p), to_interval(q));
     memcpy(ret->data.num, &i, sizeof(interval));
 }
 
-static void mp_interval_number_make_scaled(MP mp, mp_number *ret, mp_number *p, mp_number *q)
+static inline void mp_interval_number_make_scaled(MP mp, mp_number *ret, const mp_number *p, const mp_number *q)
 {
     (void) mp;
     interval i = div_ii(to_interval(p), to_interval(q));
@@ -697,7 +682,6 @@ static void mp_interval_scan_fractional_token(MP mp, mp_scaled_t n) /* n is scal
     mp_wrapup_numeric_token(mp, start, stop);
 }
 
-
 static void mp_interval_scan_numeric_token(MP mp, mp_scaled_t n)
 {
     unsigned char *start = &mp->buffer[mp->cur_input.loc_field -1];
@@ -721,7 +705,7 @@ static void mp_interval_scan_numeric_token(MP mp, mp_scaled_t n)
     The similarities end here.
 */
 
-static void mp_interval_velocity(MP mp, mp_number *ret, mp_number *st, mp_number *ct, mp_number *sf, mp_number *cf, mp_number *t)
+static void mp_interval_velocity(MP mp, mp_number *ret, const mp_number *st, const mp_number *ct, const mp_number *sf, const mp_number *cf, const mp_number *t)
 {
     interval sti = to_interval(st);
     interval cti = to_interval(ct);
@@ -768,7 +752,7 @@ static void mp_interval_velocity(MP mp, mp_number *ret, mp_number *st, mp_number
     }
 }
 
-static int mp_interval_ab_vs_cd(mp_number *a_orig, mp_number *b_orig, mp_number *c_orig, mp_number *d_orig)
+static inline int mp_interval_ab_vs_cd(const mp_number *a_orig, const mp_number *b_orig, const mp_number *c_orig, const mp_number *d_orig)
 {
     interval ab = mul_ii(to_interval(a_orig), to_interval(b_orig));
     interval cd = mul_ii(to_interval(c_orig), to_interval(d_orig));
@@ -781,7 +765,7 @@ static int mp_interval_ab_vs_cd(mp_number *a_orig, mp_number *b_orig, mp_number 
     }
 }
 
-static void mp_interval_crossing_point(MP mp, mp_number *ret, mp_number *aa, mp_number *bb, mp_number *cc)
+static void mp_interval_crossing_point(MP mp, mp_number *ret, const mp_number *aa, const mp_number *bb, const mp_number *cc)
 {
     interval ai = to_interval(aa);
     interval bi = to_interval(bb);
@@ -794,7 +778,7 @@ static void mp_interval_crossing_point(MP mp, mp_number *ret, mp_number *aa, mp_
         if (interval_ge(bi, mp_interval_data.zero)) {
             if (interval_gt(ci, mp_interval_data.zero)) {
                 memcpy(ret->data.num, &mp_interval_data.no_crossing, sizeof(interval));
-            } else if (interval_eq(ai, mp_interval_data.zero) && ieq_ii(bi, mp_interval_data.zero)) {
+            } else if (interval_eq(ai, mp_interval_data.zero) && interval_eq(bi, mp_interval_data.zero)) {
                 memcpy(ret->data.num, &mp_interval_data.no_crossing, sizeof(interval));
             } else {
                 memcpy(ret->data.num, &mp_interval_data.one_crossing, sizeof(interval));
@@ -815,8 +799,7 @@ static void mp_interval_crossing_point(MP mp, mp_number *ret, mp_number *aa, mp_
         interval x1 = sub_ii(ai, bi);
         interval x2 = sub_ii(bi, ci);
         do {
-            /* not sure why the error correction has to be >= 1E-12 */
-            interval x = div_id(add_ii(x1, x2), 2 + 1E-12); // hm
+            interval x = div_id(add_ii(x1, x2), 2.0 + 1E-12);
             if (interval_gt(sub_ii(x1, x0), x0)) {
                 x2 = x;
                 x0 = add_ii(x0, x0);
@@ -843,25 +826,26 @@ static void mp_interval_crossing_point(MP mp, mp_number *ret, mp_number *aa, mp_
     }
 }
 
-static mp_scaled_t mp_interval_unscaled(mp_number *v)
+static inline mp_scaled_t mp_interval_unscaled(const mp_number *v)
 {
     return (mp_scaled_t) mpscaledround(q_mid(to_interval(v)));
 }
 
-static void mp_interval_floor(mp_number *i)
+static inline void mp_interval_floor(mp_number *v)
 {
-    /* TODO */
- // i->data.dval = floor(i->data.dval);
+    interval i = to_interval(v);
+    i.INF = floor(i.INF);
+    i.SUP = floor(i.SUP);
 }
 
-static void mp_interval_fraction_to_round_scaled(mp_number *v)
+static inline void mp_interval_fraction_to_round_scaled(mp_number *v)
 {
     interval i = div_id(to_interval(v), mp_fraction_multiplier);
     v->type = mp_scaled_type;
     memcpy(v->data.num, &i, sizeof(interval));
 }
 
-static void mp_interval_square_rt(MP mp, mp_number *ret, mp_number *v)
+static void mp_interval_square_rt(MP mp, mp_number *ret, const mp_number *v)
 {
     interval i = to_interval(v);
     if (interval_gt(i, mp_interval_data.zero)) {
@@ -884,24 +868,18 @@ static void mp_interval_square_rt(MP mp, mp_number *ret, mp_number *v)
     }
 }
 
-/* todo: take from posit */
-
-static void mp_interval_pyth_add(MP mp, mp_number *ret, mp_number *a, mp_number *b)
+static void mp_interval_pyth_add(MP mp, mp_number *ret, const mp_number *a, const mp_number *b)
 {
+    (void) mp;
     interval ia = j_abs(to_interval(a));
     interval ib = j_abs(to_interval(b));
     interval rt = j_sqrt(add_ii(mul_ii(ia, ia), mul_ii(ib, ib)));
     memcpy(ret->data.num, &rt, sizeof(interval));
- // errno = 0;
- // ret->data.dval = sqrt(a*a + b*b);
- // if (errno) {
- //     mp->arithmic_error = mp_error_code(mp, 3);
- //     ret->data.dval = EL_GORDO;
- // }
 }
 
-static void mp_interval_pyth_add3(MP mp, mp_number *ret, mp_number *a, mp_number *b, mp_number *c)
+static void mp_interval_pyth_add3(MP mp, mp_number *ret, const mp_number *a, const mp_number *b, const mp_number *c)
 {
+    (void) mp;
     interval ia = j_abs(to_interval(a));
     interval ib = j_abs(to_interval(b));
     interval ic = j_abs(to_interval(c));
@@ -909,7 +887,7 @@ static void mp_interval_pyth_add3(MP mp, mp_number *ret, mp_number *a, mp_number
     memcpy(ret->data.num, &rt, sizeof(interval));
 }
 
-static void mp_interval_pyth_sub(MP mp, mp_number *ret, mp_number *a, mp_number *b)
+static void mp_interval_pyth_sub(MP mp, mp_number *ret, mp_number *a, const mp_number *b)
 {
     interval ia = j_abs(to_interval(a));
     interval ib = j_abs(to_interval(b));
@@ -936,13 +914,14 @@ static void mp_interval_pyth_sub(MP mp, mp_number *ret, mp_number *a, mp_number 
     }
 }
 
-static void mp_interval_power_of(MP mp, mp_number *ret, mp_number *a_orig, mp_number *b_orig)
+static void mp_interval_power_of(MP mp, mp_number *ret, const mp_number *a_orig, const mp_number *b_orig)
 {
+    (void) mp;
     interval ri = j_exp(mul_ii(to_interval(b_orig), j_log(to_interval(a_orig))));
     memcpy(ret->data.num, &(ri), sizeof(interval));
 }
 
-static void mp_interval_m_log(MP mp, mp_number *ret, mp_number *x)
+static void mp_interval_m_log(MP mp, mp_number *ret, const mp_number *x)
 {
     interval i = j_abs(to_interval(x));
     if (interval_gt(i, mp_interval_data.zero)) {
@@ -963,12 +942,12 @@ static void mp_interval_m_log(MP mp, mp_number *ret, mp_number *x)
     }
 }
 
-static void mp_interval_m_exp(MP mp, mp_number *ret, mp_number *x)
+static void mp_interval_m_exp(MP mp, mp_number *ret, const mp_number *x)
 {
     interval i;
     interval xi = to_interval(x);
     errno = 0;
-    i = j_exp(div_ii(xi, mp_interval_data.d256)); /* maybe just div_id */
+    i = j_exp(div_ii(xi, mp_interval_data.d256));
     if (! errno) {
         memcpy(ret->data.num, &i, sizeof(interval));
     } else if (interval_gt(xi, mp_interval_data.zero)) {
@@ -979,12 +958,11 @@ static void mp_interval_m_exp(MP mp, mp_number *ret, mp_number *x)
     }
 }
 
-static void mp_interval_n_arg(MP mp, mp_number *ret, mp_number *x_orig, mp_number *y_orig)
+static void mp_interval_n_arg(MP mp, mp_number *ret, const mp_number *x_orig, const mp_number *y_orig)
 {
     interval xi = to_interval(x_orig);
     interval yi = to_interval(y_orig);
     interval ri;
- // if (ieq_ii(xi, mp_interval_data.zero) && ieq_ii(yi, mp_interval_data.zero)) {
     if (interval_eq(xi, mp_interval_data.zero) && interval_eq(yi, mp_interval_data.zero)) {
         ri = to_internum(internal_value(mp_default_zero_angle_internal).data.num);
         if (interval_le(ri, mp_interval_data.zero)) {
@@ -999,7 +977,6 @@ static void mp_interval_n_arg(MP mp, mp_number *ret, mp_number *x_orig, mp_numbe
         }
     } else {
         ret->type = mp_angle_type;
-     // ri = mul_id(mul_ii(j_atan2(yi, xi), div_ii(mp_interval_data.dp180, zero,mp_interval_data.pi)), mp_angle_multiplier);
         ri = mul_id(mul_ii(
             to_constant(atan2(q_mid(yi), q_mid(xi))),
             div_ii(mp_interval_data.dp180, mp_interval_data.pi)
@@ -1008,7 +985,7 @@ static void mp_interval_n_arg(MP mp, mp_number *ret, mp_number *x_orig, mp_numbe
     memcpy(ret->data.num, &ri, sizeof(interval));
 }
 
-static void mp_interval_sin_cos(MP mp, mp_number *z_orig, mp_number *n_cos, mp_number *n_sin)
+static void mp_interval_sin_cos(MP mp, const mp_number *z_orig, mp_number *n_cos, mp_number *n_sin)
 {
     interval rad = div_id(to_interval(z_orig), mp_angle_multiplier); /* still degrees */
     (void) mp;
@@ -1037,83 +1014,51 @@ static void mp_interval_sin_cos(MP mp, mp_number *z_orig, mp_number *n_cos, mp_n
     same method.
 */
 
-# define KK            100                /* the long lag  */
-# define LL            37                 /* the short lag */
-# define MM            (1L<<30)           /* the modulus   */
-# define mod_diff(x,y) (((x)-(y))&(MM-1)) /* subtraction mod MM */
-# define TT            70                 /* guaranteed separation between streams */
-# define is_odd(x)     ((x)&1)            /* units bit of x */
-# define QUALITY       1009               /* recommended quality level for high-res use */
-
-/*tex
-    The destination array length (must be at least KK).
-*/
-
-typedef struct mp_interval_random_info {
-    long  x[KK];
-    long  buf[QUALITY];
-    long  dummy;
-    long  started;
-    long *ptr;
-} mp_interval_random_info;
-
-static mp_interval_random_info mp_interval_random_data = {
-    .dummy   = -1,
-    .started = -1,
-    .ptr     = &mp_interval_random_data.dummy
-};
-
-static void mp_interval_aux_ran_array(long aa[], int n)
+static void mp_interval_aux_ran_array(MP mp, long aa[], int n)
 {
     int i, j;
-    for (j = 0; j < KK; j++) {
-        aa[j] = mp_interval_random_data.x[j];
+    for (j = 0; j < mp_random_KK; j++) {
+        aa[j] = mp->random_data.x[j];
     }
     for (; j < n; j++) {
-        aa[j] = mod_diff(aa[j - KK], aa[j - LL]);
+        aa[j] = mp_random_mod_diff(aa[j - mp_random_KK], aa[j - mp_random_LL]);
     }
-    for (i = 0; i < LL; i++, j++) {
-        mp_interval_random_data.x[i] = mod_diff(aa[j - KK], aa[j - LL]);
+    for (i = 0; i < mp_random_LL; i++, j++) {
+        mp->random_data.x[i] = mp_random_mod_diff(aa[j - mp_random_KK], aa[j - mp_random_LL]);
     }
-    for (; i < KK; i++, j++) {
-        mp_interval_random_data.x[i] = mod_diff(aa[j - KK], mp_interval_random_data.x[i - LL]);
+    for (; i < mp_random_KK; i++, j++) {
+        mp->random_data.x[i] = mp_random_mod_diff(aa[j - mp_random_KK], mp->random_data.x[i - mp_random_LL]);
     }
 }
 
-static void mp_interval_aux_ran_start(long seed)
+static void mp_interval_aux_ran_start(MP mp, long seed)
 {
     int t, j;
-    long x[KK + KK - 1]; /* the preparation buffer */
-    long ss = (seed + 2) & (MM - 2);
-    for (j = 0; j < KK; j++) {
-        /* bootstrap the buffer */
+    long x[mp_random_KK + mp_random_KK - 1];
+    long ss = (seed + 2) & (mp_random_MM - 2);
+    for (j = 0; j < mp_random_KK; j++) {
         x[j] = ss;
-        /* cyclic shift 29 bits */
         ss <<= 1;
-        if (ss >= MM) {
-            ss -= MM - 2;
+        if (ss >= mp_random_MM) {
+            ss -= mp_random_MM - 2;
         }
     }
-    /* make x[1] (and only x[1]) odd */
     x[1]++;
-    for (ss = seed & (MM - 1), t = TT - 1; t;) {
-        for (j = KK - 1; j > 0; j--) {
-            /* "square" */
+    for (ss = seed & (mp_random_MM - 1), t = mp_random_TT - 1; t;) {
+        for (j = mp_random_KK - 1; j > 0; j--) {
             x[j + j] = x[j];
             x[j + j - 1] = 0;
         }
-        for (j = KK + KK - 2; j >= KK; j--) {
-            x[j - (KK -LL)] = mod_diff(x[j - (KK - LL)], x[j]);
-            x[j - KK] = mod_diff(x[j - KK], x[j]);
+        for (j = mp_random_KK + mp_random_KK - 2; j >= mp_random_KK; j--) {
+            x[j - (mp_random_KK -mp_random_LL)] = mp_random_mod_diff(x[j - (mp_random_KK - mp_random_LL)], x[j]);
+            x[j - mp_random_KK] = mp_random_mod_diff(x[j - mp_random_KK], x[j]);
         }
-        if (is_odd(ss)) {
-            /* "multiply by z" */
-            for (j = KK; j > 0; j--) {
+        if (odd_long(ss)) {
+            for (j = mp_random_KK; j > 0; j--) {
                 x[j] = x[j-1];
             }
-            x[0] = x[KK];
-            /* shift the buffer cyclically */
-            x[LL] = mod_diff(x[LL], x[KK]);
+            x[0] = x[mp_random_KK];
+            x[mp_random_LL] = mp_random_mod_diff(x[mp_random_LL], x[mp_random_KK]);
         }
         if (ss) {
             ss >>= 1;
@@ -1121,36 +1066,39 @@ static void mp_interval_aux_ran_start(long seed)
             t--;
         }
     }
-    for (j = 0; j < LL; j++) {
-        mp_interval_random_data.x[j + KK - LL] = x[j];
+    for (j = 0; j < mp_random_LL; j++) {
+        mp->random_data.x[j + mp_random_KK - mp_random_LL] = x[j];
     }
-    for (;j < KK; j++) {
-        mp_interval_random_data.x[j - LL] = x[j];
+    for (;j < mp_random_KK; j++) {
+        mp->random_data.x[j - mp_random_LL] = x[j];
     }
     for (j = 0; j < 10; j++) {
-        /* warm things up */
-        mp_interval_aux_ran_array(x, KK + KK - 1);
+        mp_interval_aux_ran_array(mp, x, mp_random_KK + mp_random_KK - 1);
     }
-    mp_interval_random_data.ptr = &mp_interval_random_data.started;
+    mp->random_data.ptr = &mp->random_data.started;
 }
 
-static long mp_interval_aux_ran_arr_cycle(void)
+static long mp_interval_aux_ran_arr_cycle(MP mp)
 {
-    if (mp_interval_random_data.ptr == &mp_interval_random_data.dummy) {
-        /* the user forgot to initialize */
-        mp_interval_aux_ran_start(314159L);
+    if (mp->random_data.ptr == &mp->random_data.dummy) {
+        mp_interval_aux_ran_start(mp, 314159L);
     }
-    mp_interval_aux_ran_array(mp_interval_random_data.buf, QUALITY);
-    mp_interval_random_data.buf[KK] = -1;
-    mp_interval_random_data.ptr = mp_interval_random_data.buf + 1;
-    return mp_interval_random_data.buf[0];
+    mp_interval_aux_ran_array(mp, mp->random_data.buf, QUALITY);
+    mp->random_data.buf[mp_random_KK] = -1;
+    mp->random_data.ptr = mp->random_data.buf + 1;
+    return mp->random_data.buf[0];
 }
 
 static void mp_interval_init_randoms(MP mp, int seed)
 {
+    mp->random_data = (mp_random_info) {
+        .dummy   = -1,
+        .started = -1,
+        .ptr     = &mp->random_data.dummy
+    };
     int k = 1;
     int j = abs(seed);
-    int f = (int) mp_fraction_multiplier; /* avoid warnings */
+    int f = (int) mp_fraction_multiplier;
     while (j >= f) {
         j = j / 2;
     }
@@ -1166,26 +1114,25 @@ static void mp_interval_init_randoms(MP mp, int seed)
     mp_new_randoms(mp);
     mp_new_randoms(mp);
     mp_new_randoms(mp);
-    /* warm up the array */
     mp_interval_aux_ran_start((unsigned long) seed);
 }
 
-static void mp_interval_modulo(mp_number *a, mp_number *b)
+static inline void mp_interval_modulo(mp_number *a, const mp_number *b)
 {
     interval i = interval_mod(to_interval(a), to_interval(b));
     memcpy(a->data.num, &i, sizeof(interval));
 }
 
-static void mp_interval_aux_next_unif_random(MP mp, mp_number *ret)
+static inline void mp_interval_aux_next_unif_random(MP mp, mp_number *ret)
 {
-    unsigned long int op = (unsigned) (*mp_interval_random_data.ptr >= 0? *mp_interval_random_data.ptr++: mp_interval_aux_ran_arr_cycle());
-    double a = op / (MM * 1.0);
+    unsigned long int op = (unsigned) (*mp->random_data.ptr >= 0 ? *mp->random_data.ptr++ : mp_interval_aux_ran_arr_cycle(mp));
+    double a = op / (mp_random_MM * 1.0);
     interval i = to_constant(a);
     memcpy(ret->data.num, &i, sizeof(interval));
     (void) mp;
 }
 
-static void mp_interval_aux_next_random(MP mp, mp_number *ret)
+static inline void mp_interval_aux_next_random(MP mp, mp_number *ret)
 {
     if (mp->j_random == 0) {
         mp_new_randoms(mp);
@@ -1195,9 +1142,9 @@ static void mp_interval_aux_next_random(MP mp, mp_number *ret)
     mp_interval_clone(ret, &(mp->randoms[mp->j_random]));
 }
 
-static void mp_interval_m_unif_rand(MP mp, mp_number *ret, mp_number *x_orig)
+static void mp_interval_m_unif_rand(MP mp, mp_number *ret, const mp_number *x_orig)
 {
-    mp_number x, abs_x, u, y; /* |y| is trial value */
+    mp_number x, abs_x, u, y;
     mp_interval_allocate_number(mp, &y, mp_fraction_type);
     mp_interval_allocate_clone(mp, &x, mp_scaled_type, x_orig);
     mp_interval_allocate_abs(mp, &abs_x, mp_scaled_type, &x);
@@ -1250,7 +1197,7 @@ static void mp_interval_m_norm_rand(MP mp, mp_number *ret)
     mp_interval_free_number(mp, &u);
 }
 
-static void mp_interval_set_precision(MP mp)
+static inline void mp_interval_set_precision(MP mp)
 {
     (void) mp;
 }

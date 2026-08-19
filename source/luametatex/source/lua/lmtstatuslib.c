@@ -32,6 +32,15 @@ static int statslib_memory_mode(lua_State* L)
     return 1;
 }
 
+static int statslib_dumpstate(lua_State *L)
+{
+    lua_createtable(L, 0, dump_stat_total + 1);
+    for (int i=dump_stat_fingerprint; i <= dump_stat_total; i++) {
+        lua_set_integer_by_key(L, tex_get_dump_statistics_name(i), lmt_dump_state.statistics[i]);
+    }
+    return 1;
+}
+
 static int statslib_callbackstate(lua_State *L)
 {
     lmt_push_callback_usage(L);
@@ -60,7 +69,7 @@ static int statslib_linebreakstate(lua_State *L)
 
 static int statslib_balancestate(lua_State *L)
 {
-    lua_createtable(L, 9, 0);
+    lua_createtable(L, 0, 9);
     lua_set_integer_by_key(L, "calls",          lmt_balance_state.passes.n_of_break_calls);
     lua_set_integer_by_key(L, "first",          lmt_balance_state.passes.n_of_first_passes);
     lua_set_integer_by_key(L, "second",         lmt_balance_state.passes.n_of_second_passes);
@@ -657,6 +666,8 @@ static const struct luaL_Reg statslib_function_list[] = {
     { "getinsertstate",        statslib_insertstate        },
     { "getsparsestate",        statslib_sparsestate        },
     { "getmvlstate",           statslib_mvlstate           },
+
+    { "getdumpstate",          statslib_dumpstate          },
 
     { NULL,                    NULL                        },
 };

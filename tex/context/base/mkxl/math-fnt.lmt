@@ -36,9 +36,6 @@ local addcharacters   = font.addcharacters
 
 local texconditionals = tex.conditionals
 
--- not yet ok for compact fonts .. needs checking .. or just make this non-compact only
--- there's also an inaccuracy creeping in: \sqrt{\quad\blackrule[height=25pt,depth=25pt]}
-
 local cache = setmetatableindex(function(t,width)
     local v = setmetatableindex(function(t,height)
         local v = setmetatableindex(function(t,depth)

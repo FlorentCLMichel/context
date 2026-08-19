@@ -724,9 +724,11 @@ static int vectorlib_div(lua_State *L) {
         if (a) {
             double d = lua_tonumber(L, 2);
             vector v = vectorlib_aux_push(L, a->rows, a->columns, a->stacking);
-            for (int i = 0; i < a->size; i++) {
-                /* Should we check for d == 0.0 or not here? */
-                v->data[i] = a->data[i] / d;
+            if (d != 0) {
+                double inv_d = 1.0 / d;
+                for (int i = 0; i < a->size; i++) {
+                    v->data[i] = a->data[i] * inv_d;
+                }
             }
         } else {
             lua_pushnil(L);
@@ -1254,10 +1256,11 @@ static int vectorlib_inverse(lua_State *L)
                                         goto BAD;
                                     } else {
                                         vector w = vectorlib_aux_push(L, a->rows, a->columns, a->stacking);
-                                        w->data[0] =   a->data[3] / d;
-                                        w->data[1] = - a->data[1] / d;
-                                        w->data[2] = - a->data[2] / d;
-                                        w->data[3] =   a->data[0] / d;
+                                        double inv_d = 1.0 / d;
+                                        w->data[0] =   a->data[3] * inv_d;
+                                        w->data[1] = - a->data[1] * inv_d;
+                                        w->data[2] = - a->data[2] * inv_d;
+                                        w->data[3] =   a->data[0] * inv_d;
                                     }
                                 }
                             }
@@ -1270,15 +1273,16 @@ static int vectorlib_inverse(lua_State *L)
                                         goto BAD;
                                     } else {
                                         vector w = vectorlib_aux_push(L, a->rows, a->columns, a->stacking);
-                                        w->data[0] = (a->data[4] * a->data[8] - a->data[5] * a->data[7]) / d;
-                                        w->data[1] = (a->data[2] * a->data[7] - a->data[1] * a->data[8]) / d;
-                                        w->data[2] = (a->data[1] * a->data[5] - a->data[2] * a->data[4]) / d;
-                                        w->data[3] = (a->data[5] * a->data[6] - a->data[3] * a->data[8]) / d;
-                                        w->data[4] = (a->data[0] * a->data[8] - a->data[2] * a->data[6]) / d;
-                                        w->data[5] = (a->data[2] * a->data[3] - a->data[0] * a->data[5]) / d;
-                                        w->data[6] = (a->data[3] * a->data[7] - a->data[4] * a->data[6]) / d;
-                                        w->data[7] = (a->data[1] * a->data[6] - a->data[0] * a->data[7]) / d;
-                                        w->data[8] = (a->data[0] * a->data[4] - a->data[1] * a->data[3]) / d;
+                                        double inv_d = 1.0 / d;
+                                        w->data[0] = (a->data[4] * a->data[8] - a->data[5] * a->data[7]) * inv_d;
+                                        w->data[1] = (a->data[2] * a->data[7] - a->data[1] * a->data[8]) * inv_d;
+                                        w->data[2] = (a->data[1] * a->data[5] - a->data[2] * a->data[4]) * inv_d;
+                                        w->data[3] = (a->data[5] * a->data[6] - a->data[3] * a->data[8]) * inv_d;
+                                        w->data[4] = (a->data[0] * a->data[8] - a->data[2] * a->data[6]) * inv_d;
+                                        w->data[5] = (a->data[2] * a->data[3] - a->data[0] * a->data[5]) * inv_d;
+                                        w->data[6] = (a->data[3] * a->data[7] - a->data[4] * a->data[6]) * inv_d;
+                                        w->data[7] = (a->data[1] * a->data[6] - a->data[0] * a->data[7]) * inv_d;
+                                        w->data[8] = (a->data[0] * a->data[4] - a->data[1] * a->data[3]) * inv_d;
                                     }
                                 }
                             }
@@ -1407,9 +1411,9 @@ static int vectorlib_normalize(lua_State *L)
         }
         if (d > 0.0) {
             vector v = vectorlib_aux_push(L, a->rows, a->columns, a->stacking);
-            d = sqrt(d);
+            double inv_d = 1.0 / sqrt(d);
             for (int i = 0; i < a->size; i++) {
-                v->data[i] = a->data[i] / d;
+                v->data[i] = a->data[i] * inv_d;
             }
             return 1;
         }
@@ -1426,11 +1430,14 @@ static int vectorlib_homogenize(lua_State *L)
         if (! vectorlib_aux_zero_in_column(a, a->columns - 1, epsilon)) {
             vector v = vectorlib_aux_push(L, a->rows, a->columns, a->stacking);
             for (int r = 0; r < a->rows; r++) {
-                double d = a->data[r * a->columns + a->columns - 1];
                 long index = r * a->columns;
-                for (int c = 0; c < a->columns - 1; c++) {
-                    v->data[index] = a->data[index] / d;
-                    index++;
+                double d = a->data[r * a->columns + a->columns - 1];
+                if (d != 0) {
+                    double inv_d = 1.0 / d;
+                    for (int c = 0; c < a->columns - 1; c++) {
+                        v->data[index] = a->data[index] * inv_d;
+                        index++;
+                    }
                 }
                 v->data[index] = 1.0;
             }
@@ -2010,7 +2017,7 @@ int vectorlib_mesh_aux_get_points_okay(const mesh triangles, const points vertic
     }
 }
 
-static inline mesh vectorlib_mesh_aux_push(lua_State *L, int rows, int type)
+static inline mesh vectorlib_mesh_aux_push(lua_State *L, int rows, int columns, int type)
 {
     mesh m = lua_newuserdatauv(L, sizeof(meshdata), 0);
     if (m && rows > 0) {
@@ -2019,22 +2026,22 @@ static inline mesh vectorlib_mesh_aux_push(lua_State *L, int rows, int type)
         } else {
             m->type = type;
         }
-        m->size = rows;
-        m->rows = rows;
-        m->columns = 0;
-        m->index = 0;
+        m->rows    = rows;
+        m->columns = columns;
+        m->size    = rows * columns;
+        m->index   = 0;
         if (is_virtual_mesh_type(m->type)) {
-            m->dimension = 0;
-            m->points = NULL;
-            m->average = NULL;
-            m->pointsbytes = 0;
+            m->dimension    = 0;
+            m->pointsbytes  = 0;
             m->averagebytes = 0;
+            m->points       = NULL;
+            m->average      = NULL;
         } else {
-            m->dimension = m->type;
-            m->pointsbytes = m->rows * m->dimension * sizeof(unsigned);
+            m->dimension    = m->type;
+            m->pointsbytes  = m->rows * m->dimension * sizeof(unsigned);
             m->averagebytes = m->rows * sizeof(double);
-            m->points = vectorlib_memory_calloc(m->rows * m->dimension, sizeof(unsigned));
-            m->average = vectorlib_memory_calloc(m->rows, sizeof(double));
+            m->points       = vectorlib_memory_calloc(m->rows * m->dimension, sizeof(unsigned));
+            m->average      = vectorlib_memory_calloc(m->rows, sizeof(double));
         }
         lua_get_metatablelua(mesh_instance);
         lua_setmetatable(L, -2);
@@ -2044,9 +2051,23 @@ static inline mesh vectorlib_mesh_aux_push(lua_State *L, int rows, int type)
 
 static int vectorlib_mesh_new(lua_State *L)
 {
-    int rows = lmt_optinteger(L, 1, 1);
-    int type = lmt_optinteger(L, 2, triangle_mesh_type);
-    mesh m = vectorlib_mesh_aux_push(L, rows, type);
+    int rows    = lmt_tointeger(L, 1);
+    int columns = 1;
+    int type    = triangle_mesh_type;
+    switch (lua_gettop(L)) {
+        case 3:
+            // contours_make_mesh expects columns,rows, here only used for type 6
+         // columns = rows;
+         // rows    = lmt_tointeger(L, 2);
+            //
+            columns = lmt_tointeger(L, 2);
+            type    = lmt_tointeger(L, 3);
+            break;
+        case 2:
+            type    = lmt_tointeger(L, 2);
+            break;
+    }
+    mesh m = vectorlib_mesh_aux_push(L, rows, columns, type);
     if (m) {
         return 1;
     } else {
@@ -3029,7 +3050,7 @@ int vectorlib_contour_aux_makemesh(lua_State *L, int columns, int rows, int type
                 FALLTHROUGH
             case triangle_5_mesh_type:
                 {
-                    mesh m  = vectorlib_mesh_aux_push(L, 1, type); /* we need to pass the test */
+                    mesh m = vectorlib_mesh_aux_push(L, 1, 1, type); /* we need to pass the test */
                     if (m) {
                         m->size    = size;
                         m->type    = type;
@@ -3046,7 +3067,7 @@ int vectorlib_contour_aux_makemesh(lua_State *L, int columns, int rows, int type
         }
         /*tex When we arrived here we're okay. */
         {
-            mesh m = vectorlib_mesh_aux_push(L, size, type);
+            mesh m = vectorlib_mesh_aux_push(L, size, 1, type);
             if (m) {
                 int index = 0;
                 int offset = columns + 1;
@@ -3581,8 +3602,8 @@ static int vectorlib_point_normalize(lua_State *L)
 
 points vectorlib_points_aux_push(lua_State *L, int r, int c, int type, int wipe, int step)
 {
-    if (r < 1 || c < 1 || r > max_vector_rows || c > max_vector_columns || r * c > max_vector) {
-        tex_formatted_error("vector lib", "you can have [1..%i] rows, [1..%i] columns and at most %i entries, requested: %i x %i = %i", max_vector_rows, max_vector_columns, max_vector, r, c, r * c);
+    if (r < 1 || c < 1 || r > max_point_rows || c > max_point_columns || r * c > max_point) {
+        tex_formatted_error("vector lib", "you can have [1..%i] rows, [1..%i] columns and at most %i entries, requested: %i x %i = %i", max_point_rows, max_point_columns, max_point, r, c, r * c);
         return NULL;
     } else {
         points p = lua_newuserdatauv(L, sizeof(pointsdata), 0);

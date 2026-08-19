@@ -89,6 +89,7 @@ static int fontlib_getparameterfields(lua_State *L)
 
 static void fontlib_aux_read_lua_parameters(lua_State *L, int f)
 {
+    int top = lua_gettop(L);
     lua_push_key(parameters);
     if (lua_rawget(L, -2) == LUA_TTABLE) {
         /*tex We determine the the number of parameters in the |max(nofintegerkeys(L), 7)|. */
@@ -107,71 +108,65 @@ static void fontlib_aux_read_lua_parameters(lua_State *L, int f)
             We enlarge the parameter array. The first zeven values are already initialized to zero
             when the font structure is allocated.
         */
-        if (maxindex > 7) {
-            tex_set_font_parameters(f, maxindex);
-        }
-        /*tex
-            First we pick up the numeric entries. The values set with keys can later overload
-            these. It's there for old times sake, because numeric parameters are gone.
-        */
-        for (int i = 1; i <= maxindex; i++) {
-            if (lua_rawgeti(L, -1, i) == LUA_TNUMBER) {
-                halfword value = lmt_roundnumber(L, -1);
-                tex_set_font_parameter(f, i, value);
+        if (tex_set_font_parameters(f, maxindex)) {
+            /*tex
+                First we pick up the numeric entries. The values set with keys can later overload
+                these. It's there for old times sake, because numeric parameters are gone.
+            */
+            for (int i = 1; i <= maxindex; i++) {
+                if (lua_rawgeti(L, -1, i) == LUA_TNUMBER) {
+                    halfword value = lmt_roundnumber(L, -1);
+                    tex_set_font_parameter(f, i, value);
+                }
+                lua_pop(L, 1);
             }
-            lua_pop(L, 1);
-        }
-        lua_pushnil(L);
-        while (lua_next(L, -2)) {
-            halfword value = lua_type(L, -1) == LUA_TNUMBER ? lmt_roundnumber(L, -1) : 0;
-            switch (lua_type(L, -2)) {
-                case LUA_TSTRING:
-                    {
-                        /* These can overload the already set-by-index values. */
-                        const char *s = lua_tostring(L, -2);
-                        if (lua_key_eq(s, slant)) {
-                            tex_set_font_parameter(f, slant_code, value);
-                        } else if (lua_key_eq(s, space)) {
-                            tex_set_font_parameter(f, space_code, value);
-                        } else if (lua_key_eq(s, spacestretch)) {
-                            tex_set_font_parameter(f, space_stretch_code, value);
-                        } else if (lua_key_eq(s, spaceshrink)) {
-                            tex_set_font_parameter(f, space_shrink_code, value);
-                        } else if (lua_key_eq(s, xheight)) {
-                            tex_set_font_parameter(f, ex_height_code, value);
-                        } else if (lua_key_eq(s, quad)) {
-                            tex_set_font_parameter(f, em_width_code, value);
-                        } else if (lua_key_eq(s, extraspace)) {
-                            tex_set_font_parameter(f, extra_space_code, value);
-                        } else { 
-                            break;
+            lua_pushnil(L);
+            while (lua_next(L, -2)) {
+                halfword value = lua_type(L, -1) == LUA_TNUMBER ? lmt_roundnumber(L, -1) : 0;
+                switch (lua_type(L, -2)) {
+                    case LUA_TSTRING:
+                        {
+                            /* These can overload the already set-by-index values. */
+                            const char *s = lua_tostring(L, -2);
+                            if (lua_key_eq(s, slant)) {
+                                tex_set_font_parameter(f, slant_code, value);
+                            } else if (lua_key_eq(s, space)) {
+                                tex_set_font_parameter(f, space_code, value);
+                            } else if (lua_key_eq(s, spacestretch)) {
+                                tex_set_font_parameter(f, space_stretch_code, value);
+                            } else if (lua_key_eq(s, spaceshrink)) {
+                                tex_set_font_parameter(f, space_shrink_code, value);
+                            } else if (lua_key_eq(s, xheight)) {
+                                tex_set_font_parameter(f, ex_height_code, value);
+                            } else if (lua_key_eq(s, quad)) {
+                                tex_set_font_parameter(f, em_width_code, value);
+                            } else if (lua_key_eq(s, extraspace)) {
+                                tex_set_font_parameter(f, extra_space_code, value);
+                            } else {
+                                break;
+                            }
                         }
-// lua_pop(L, 1);
-// lua_push_string(L, s);
-// lua_push_integer(L, value);
-// lua_rawset(L, -3);
-// return;
-                    }
-                    break;
-                case LUA_TNUMBER:
-                    {
-                        /* Math fonts can have more than 7. */
-                        int index = lmt_tointeger(L, -2);
-                        if (index >= 8) {
-                            tex_set_font_parameter(f, index, value);
+                        break;
+                    case LUA_TNUMBER:
+                        {
+                            /* Math fonts can have more than 7. */
+                            int index = lmt_tointeger(L, -2);
+                            if (index >= 8) {
+                                tex_set_font_parameter(f, index, value);
+                            }
                         }
-                    }
-                    break;
+                        break;
+                }
+                lua_pop(L, 1);
             }
-            lua_pop(L, 1);
         }
     }
-    lua_pop(L, 1);
-
+    lua_settop(L, top);
 }
 
 static void fontlib_aux_read_lua_math_parameters(lua_State *L, int f)
 {
+    int top = lua_gettop(L);
     lua_push_key(MathConstants);
     if (lua_rawget(L, -2) == LUA_TTABLE) {
         lua_pushnil(L);
@@ -187,17 +182,16 @@ static void fontlib_aux_read_lua_math_parameters(lua_State *L, int f)
                     break;
             }
             if (i > 0) {
-             // set_font_math_parameter(f, i, n);
-                tex_set_font_math_parameters(f, i);
-             // if (n > undefined_math_parameter || i < - undefined_math_parameter) {
-             //     n = undefined_math_parameter;
-             // }
-                font_math_parameter(f, i) = n;
+                if (tex_set_font_math_parameters(f, i)) {
+                    font_math_parameter(f, i) = n;
+                } else {
+                    break;
+                }
             }
             lua_pop(L, 1);
         }
     }
-    lua_pop(L, 1);
+    lua_settop(L, top);
 }
 
 /*tex
@@ -786,10 +780,7 @@ static int lmt_characters_from_lua(lua_State *L, int f)
                     if (i >= 0) {
                         if (tex_char_exists(f, i)) {
                             charinfo *co = tex_get_charinfo(f, i);
-                            set_charinfo_ligatures(co, NULL);
-                            set_charinfo_kerns(co, NULL);
-                            set_charinfo_math(co, NULL);
-                            tex_set_charinfo_extensible_recipe(co, NULL);
+                            tex_reset_charinfo(co);
                         }
                         fontlib_aux_font_char_from_lua(L, f, i, ! no_math);
                     }
@@ -877,6 +868,7 @@ static int fontlib_setfont(lua_State *L)
     if (i) {
         luaL_checktype(L, 2, LUA_TTABLE);
         if lmt_likely(tex_is_valid_font(i)) {
+            tex_reset_font(i);
             lua_settop(L, 2);
             lmt_font_from_lua(L, i);
         } else {
@@ -925,10 +917,14 @@ static int fontlib_define(lua_State *L)
 {
     if (lua_type(L, 1) == LUA_TTABLE) {
         int i = lmt_optinteger(L, 2, 0);
+        int reset = i != 0;
         if lmt_likely(! i) {
             i = tex_new_font();
         } else if (! tex_is_valid_font(i)) {
             return luaL_error(L, "invalid font id %d passed", i);
+        }
+        if (reset) {
+            tex_reset_font(i);
         }
         lua_settop(L, 1);
         if lmt_likely(lmt_font_from_lua(L, i)) {
@@ -995,10 +991,12 @@ static int fontlib_aux_valid_fontdimen(lua_State *L, halfword *fnt, halfword *n)
 {
     *fnt = lmt_tohalfword(L, 1);
     *n = lmt_tohalfword(L, 2);
-    if lmt_likely(*n > 0 && *n <= font_parameter_count(*fnt)) {
+    if lmt_likely(tex_is_valid_font(*fnt) && *n > 0 && *n <= font_parameter_count(*fnt)) {
         return 1;
+    } else if (! tex_is_valid_font(*fnt)) {
+        return luaL_error(L, "invalid font id %i", *fnt);
     } else {
-        return luaL_error(L, "font with id %i has only %d fontdimens", fnt, n);
+        return luaL_error(L, "font with id %i has only %d fontdimens", *fnt, font_parameter_count(*fnt));
     }
 }
 

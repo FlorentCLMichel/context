@@ -2200,6 +2200,7 @@ local function readdata(f,offset,specification)
     readtable("vmtx",f,fontdata,specification)
     readtable("vorg",f,fontdata,specification)
     readtable("post",f,fontdata,specification)
+    readtable("gasp",f,fontdata,specification)
 
     readtable("mvar",f,fontdata,specification)
     readtable("hvar",f,fontdata,specification)
@@ -2225,6 +2226,7 @@ local function readdata(f,offset,specification)
     readtable("cblc",f,fontdata,specification)
     readtable("ebdt",f,fontdata,specification)
     readtable("eblc",f,fontdata,specification)
+    readtable("ebsc",f,fontdata,specification)
 
     readtable("kern",f,fontdata,specification)
     readtable("gsub",f,fontdata,specification)
@@ -2443,29 +2445,38 @@ function readers.loadfont(filename,n,instance)
                 nofsubfonts   = fontdata.subfonts and #fontdata.subfonts or nil,
             },
             resources     = {
-             -- filename        = fontdata.filename,
-                filename        = filename,
-                private         = privateoffset,
-                duplicates      = fontdata.duplicates  or { },
-                features        = fontdata.features    or { }, -- we need to add these in the loader
-                sublookups      = fontdata.sublookups  or { }, -- we need to add these in the loader
-                marks           = fontdata.marks       or { }, -- we need to add these in the loader
-                markclasses     = fontdata.markclasses or { }, -- we need to add these in the loader
-                marksets        = fontdata.marksets    or { }, -- we need to add these in the loader
-                sequences       = fontdata.sequences   or { }, -- we need to add these in the loader
-                variants        = fontdata.variants, -- variant -> unicode -> glyph
-                version         = getname(fontdata,"version"),
-                cidinfo         = fontdata.cidinfo,
-                mathconstants   = fontdata.mathconstants,
-                colorpalettes   = fontdata.colorpalettes,
-                colorpaintdata  = fontdata.colorpaintdata,
-                colorpaintlist  = fontdata.colorpaintlist,
-                colorlinesdata  = fontdata.colorlinesdata,
-                coloraffinedata = fontdata.coloraffinedata,
-                svgshapes       = fontdata.svgshapes,
-                pngshapes       = fontdata.pngshapes,
-                variabledata    = fontdata.variabledata,
-                foundtables     = fontdata.foundtables,
+             -- filename         = fontdata.filename,
+                filename         = filename,
+                private          = privateoffset,
+                duplicates       = fontdata.duplicates  or { },
+                features         = fontdata.features    or { }, -- we need to add these in the loader
+                sublookups       = fontdata.sublookups  or { }, -- we need to add these in the loader
+                marks            = fontdata.marks       or { }, -- we need to add these in the loader
+                markclasses      = fontdata.markclasses or { }, -- we need to add these in the loader
+                marksets         = fontdata.marksets    or { }, -- we need to add these in the loader
+                sequences        = fontdata.sequences   or { }, -- we need to add these in the loader
+                variants         = fontdata.variants, -- variant -> unicode -> glyph
+                version          = getname(fontdata,"version"),
+                cidinfo          = fontdata.cidinfo,
+                mathconstants    = fontdata.mathconstants,
+                gasp             = fontdata.gasp,
+                colorpalettes    = fontdata.colorpalettes,
+                colorpaintdata   = fontdata.colorpaintdata,
+                colorpaintlist   = fontdata.colorpaintlist,
+                colorlinesdata   = fontdata.colorlinesdata,
+                coloraffinedata  = fontdata.coloraffinedata,
+                colorclips       = fontdata.colorclips,
+                colorpaletteinfo = fontdata.colorpaletteinfo,
+                svgshapes        = fontdata.svgshapes,
+                pngshapes        = fontdata.pngshapes,
+                bitmapshapes     = fontdata.bitmapshapes,
+                bitmapstrikes    = fontdata.bitmapstrikes,
+                bitmapformats    = fontdata.bitmapformats,
+                bitmapscales     = fontdata.bitmapscales,
+                attachments      = fontdata.attachments,
+                ligaturecarets   = fontdata.ligaturecarets,
+                variabledata     = fontdata.variabledata,
+                foundtables      = fontdata.foundtables,
             },
         }
     end

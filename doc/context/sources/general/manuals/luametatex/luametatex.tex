@@ -67,6 +67,7 @@
 % \nopdfcompression
 
 % \enabletrackers[resolvers.virtual]
+
 % \enabletrackers[resolvers.*]
 
 \environment luametatex-style
@@ -77,6 +78,9 @@
 
 \setupalign
   [depth]
+
+% \setupalign
+%   [mathbookpasses]
 
 \setuplayout
   [vz=2]
@@ -120,3 +124,14 @@
 
 \stopdocument
 
+% 2026-08-09 @ Dell 7220: Intel(R) Xeon(R) CPU E3-1505M v6 @ 3.00GHz
+%
+% \starttext
+% \dorecurse{1000}{\samplefile{tufte}\par}
+% \stopttext
+%
+% mkxl run stats  > runtime: 2.292 seconds, 231 processed pages, 231 shipped pages, 100.769 pages/second
+%
+% 2.292 in scite log
+% 2.202 in console        with --silent
+% 2.750 in cmd console    way to much overhead for some 385 lines of log

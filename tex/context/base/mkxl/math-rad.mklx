@@ -197,6 +197,9 @@
     \fi}%
    \endgroup}
 
+\setupmathradical
+  [\c!mp=minifun::math:radical:default]
+
 % \def\m_math_no_degree{{}}
 
 % for every font

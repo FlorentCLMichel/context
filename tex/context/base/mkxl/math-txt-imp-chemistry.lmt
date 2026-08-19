@@ -28,7 +28,7 @@ return {
  ["presuper"]={
   ["en"]="isotope",
   ["sv"]="Cupphöjd",
-  ["nl"]="CTODO",
+  ["nl"]="isotoop",
  },
  ["postsub"]={
   ["en"]="count",

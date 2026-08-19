@@ -254,7 +254,7 @@ static inline void saved_alignment_initialize(void)
 
 int tex_show_alignment_record(void)
 {
-    tex_print_str("alignment ");
+    tex_print_str_len("alignment ", 10);
     switch (saved_type(0)) { 
        case saved_record_0:
             tex_print_format("mode %i, amount %p", saved_value_1(0), saved_value_2(0));
@@ -396,18 +396,18 @@ void tex_alignment_scan_options(void)
 {
     halfword options = lmt_alignment_state.align_ptr ? lmt_alignment_state.options : 0;
     while (1) {
-        switch (tex_scan_character("flnFLN", 1, 1, 1)) {
+        switch (tex_scan_character("flnp", 1, 1, 1)) {
             case 0:
                 goto DONE;
-            case 'n': case 'N':
-                if (tex_scan_character("oO", 0, 0, 0)) {
-                    switch (tex_scan_character("flFL", 0, 0, 0)) {
-                        case 'l': case 'L':
+            case 'n':
+                if (tex_scan_character("o", 0, 0, 0)) {
+                    switch (tex_scan_character("fl", 0, 0, 0)) {
+                        case 'l':
                             if (tex_scan_mandate_keyword("nolastskip", 3)) {
                                 options |= align_option_nolastskip;
                             }
                             break;
-                        case 'f': case 'F':
+                        case 'f':
                             if (tex_scan_mandate_keyword("nofirstskip", 3)) {
                                 options |= align_option_nofirstskip;
                             }
@@ -421,17 +421,17 @@ void tex_alignment_scan_options(void)
                     tex_aux_show_keyword_error("nofirstskip|nolastskip");
                     goto DONE;
                 }
-            case 'f': case 'F':
+            case 'f':
                 if (tex_scan_mandate_keyword("firstskip", 1)) {
                     options &= ~align_option_nofirstskip;
                 }
                 break;
-            case 'l': case 'L':
+            case 'l':
                 if (tex_scan_mandate_keyword("lastskip", 1)) {
                     options &= ~align_option_nolastskip;
                 }
                 break;
-            case 'p': case 'P':
+            case 'p':
                 if (tex_scan_mandate_keyword("prune", 1)) {
                     if (options & align_option_prune) {
                         options |= align_option_prune_twice;
@@ -524,58 +524,63 @@ static void tex_aux_push_alignment(void)
     /*tex The new alignment stack node: */
     halfword p = tex_new_node(align_stack_node, 0);
     /* todo: just a memory copy */
-    align_stack_align_ptr(p) = lmt_alignment_state.align_ptr;
-    align_stack_cur_align(p) = lmt_alignment_state.cur_align;
-    align_stack_preamble(p) = preamble; /* node_next(align_head) */
-    align_stack_cur_span(p) = lmt_alignment_state.cur_span;
-    align_stack_cur_loop(p) = lmt_alignment_state.cur_loop;
-    align_stack_wrap_source(p) = lmt_alignment_state.wrap_source;
-    align_stack_align_state(p) = lmt_input_state.align_state;
-    align_stack_no_align_level(p) = lmt_alignment_state.no_align_level;
-    align_stack_cur_post_adjust_head(p) = lmt_alignment_state.cur_post_adjust_head;
-    align_stack_cur_post_adjust_tail(p) = lmt_alignment_state.cur_post_adjust_tail;
-    align_stack_cur_pre_adjust_head(p) = lmt_alignment_state.cur_pre_adjust_head;
-    align_stack_cur_pre_adjust_tail(p) = lmt_alignment_state.cur_pre_adjust_tail;
+    align_stack_align_ptr            (p) = lmt_alignment_state.align_ptr;
+    align_stack_cur_align            (p) = lmt_alignment_state.cur_align;
+    align_stack_preamble             (p) = preamble; /* node_next(align_head) */
+    align_stack_cur_span             (p) = lmt_alignment_state.cur_span;
+    align_stack_cur_loop             (p) = lmt_alignment_state.cur_loop;
+    align_stack_wrap_source          (p) = lmt_alignment_state.wrap_source;
+    align_stack_align_state          (p) = lmt_input_state.align_state;
+    align_stack_no_align_level       (p) = lmt_alignment_state.no_align_level;
+    align_stack_cur_post_adjust_head (p) = lmt_alignment_state.cur_post_adjust_head;
+    align_stack_cur_post_adjust_tail (p) = lmt_alignment_state.cur_post_adjust_tail;
+    align_stack_cur_pre_adjust_head  (p) = lmt_alignment_state.cur_pre_adjust_head;
+    align_stack_cur_pre_adjust_tail  (p) = lmt_alignment_state.cur_pre_adjust_tail;
     align_stack_cur_post_migrate_head(p) = lmt_alignment_state.cur_post_migrate_head;
     align_stack_cur_post_migrate_tail(p) = lmt_alignment_state.cur_post_migrate_tail;
-    align_stack_cur_pre_migrate_head(p) = lmt_alignment_state.cur_pre_migrate_head;
-    align_stack_cur_pre_migrate_tail(p) = lmt_alignment_state.cur_pre_migrate_tail;
-    align_stack_options(p) = lmt_alignment_state.options;
-    align_stack_attr_list(p) = lmt_alignment_state.attr_list;
-    align_stack_callback(p) = lmt_alignment_state.callback;
-    align_stack_min_height(p) = lmt_alignment_state.min_height;
-    align_stack_min_depth(p) = lmt_alignment_state.min_depth;
-    align_stack_row_number(p) = lmt_alignment_state.row_number;
-    align_stack_column_number(p) = lmt_alignment_state.column_number;
-    align_stack_last_row_number(p) = lmt_alignment_state.last_row_number;
-    align_stack_last_column_number(p) = lmt_alignment_state.last_column_number;
-    align_stack_tabskip_amount(p) = lmt_alignment_state.tabskip_amount;
+    align_stack_cur_pre_migrate_head (p) = lmt_alignment_state.cur_pre_migrate_head;
+    align_stack_cur_pre_migrate_tail (p) = lmt_alignment_state.cur_pre_migrate_tail;
+    align_stack_options              (p) = lmt_alignment_state.options;
+    align_stack_attr_list            (p) = lmt_alignment_state.attr_list;
+    align_stack_callback             (p) = lmt_alignment_state.callback;
+    align_stack_min_height           (p) = lmt_alignment_state.min_height;
+    align_stack_min_depth            (p) = lmt_alignment_state.min_depth;
+    align_stack_row_number           (p) = lmt_alignment_state.row_number;
+    align_stack_column_number        (p) = lmt_alignment_state.column_number;
+    align_stack_last_row_number      (p) = lmt_alignment_state.last_row_number;
+    align_stack_last_column_number   (p) = lmt_alignment_state.last_column_number;
+    align_stack_tabskip_amount       (p) = lmt_alignment_state.tabskip_amount;
     /* */
-    align_stack_row_attrlist(p) = lmt_alignment_state.row_state.attrlist;
-    align_stack_row_orientation(p) = lmt_alignment_state.row_state.orientation;
-    align_stack_row_yoffset(p) = lmt_alignment_state.row_state.xoffset;
-    align_stack_row_xoffset(p) = lmt_alignment_state.row_state.yoffset;
-    align_stack_row_ymove(p) = lmt_alignment_state.row_state.xmove;
-    align_stack_row_xmove(p) = lmt_alignment_state.row_state.ymove;
-    align_stack_row_shift(p) = lmt_alignment_state.row_state.shift;
-    align_stack_row_source(p) = lmt_alignment_state.row_state.source;
-    align_stack_row_target(p) = lmt_alignment_state.row_state.target;
-    align_stack_row_anchor(p) = lmt_alignment_state.row_state.anchor;
+    align_stack_row_attrlist         (p) = lmt_alignment_state.row_state.attrlist;
+    align_stack_row_orientation      (p) = lmt_alignment_state.row_state.orientation;
+    align_stack_row_yoffset          (p) = lmt_alignment_state.row_state.xoffset;
+    align_stack_row_xoffset          (p) = lmt_alignment_state.row_state.yoffset;
+    align_stack_row_ymove            (p) = lmt_alignment_state.row_state.xmove;
+    align_stack_row_xmove            (p) = lmt_alignment_state.row_state.ymove;
+    align_stack_row_shift            (p) = lmt_alignment_state.row_state.shift;
+    align_stack_row_source           (p) = lmt_alignment_state.row_state.source;
+    align_stack_row_target           (p) = lmt_alignment_state.row_state.target;
+    align_stack_row_anchor           (p) = lmt_alignment_state.row_state.anchor;
+    /* */
+    align_stack_cell_source          (p) = lmt_alignment_state.cell_source;
+    align_stack_row_state_set        (p) = lmt_alignment_state.row_state_set;
     /* */
     lmt_alignment_state.align_ptr = p;
-    lmt_alignment_state.cur_post_adjust_head = tex_new_temp_node();
-    lmt_alignment_state.cur_pre_adjust_head = tex_new_temp_node();
+    lmt_alignment_state.cur_post_adjust_head  = tex_new_temp_node();
+    lmt_alignment_state.cur_pre_adjust_head   = tex_new_temp_node();
     lmt_alignment_state.cur_post_migrate_head = tex_new_temp_node();
-    lmt_alignment_state.cur_pre_migrate_head = tex_new_temp_node();
+    lmt_alignment_state.cur_pre_migrate_head  = tex_new_temp_node();
     /* */
-    lmt_alignment_state.cell_source = 0;
-    lmt_alignment_state.wrap_source = 0;
- // lmt_alignment_state.options = 0;
-    lmt_alignment_state.row_number = 0;
-    lmt_alignment_state.column_number = 0;
-    lmt_alignment_state.last_row_number = 0;
+    lmt_alignment_state.cell_source        = 0;
+    lmt_alignment_state.wrap_source        = 0;
+ // lmt_alignment_state.options            = 0;
+    lmt_alignment_state.row_number         = 0;
+    lmt_alignment_state.column_number      = 0;
+    lmt_alignment_state.last_row_number    = 0;
     lmt_alignment_state.last_column_number = 0;
-    lmt_alignment_state.tabskip_amount = 0;
+    lmt_alignment_state.tabskip_amount     = 0;
+    lmt_alignment_state.min_height         = 0;
+    lmt_alignment_state.min_depth          = 0;
     /* todo: put in align_stack, also wipe attr if needed */
     tex_aux_wipe_row_state();
 }
@@ -588,43 +593,46 @@ static void tex_aux_pop_alignment(void)
     tex_flush_node(lmt_alignment_state.cur_pre_adjust_head);
     tex_flush_node(lmt_alignment_state.cur_post_migrate_head);
     tex_flush_node(lmt_alignment_state.cur_pre_migrate_head);
-    lmt_alignment_state.align_ptr = align_stack_align_ptr(p);
-    lmt_alignment_state.cur_align = align_stack_cur_align(p);
+    lmt_alignment_state.align_ptr             = align_stack_align_ptr(p);
+    lmt_alignment_state.cur_align             = align_stack_cur_align(p);
     preamble = align_stack_preamble(p); /* node_next(align_head) */
-    lmt_alignment_state.cur_span = align_stack_cur_span(p);
-    lmt_alignment_state.cur_loop = align_stack_cur_loop(p);
-    lmt_input_state.align_state = align_stack_align_state(p);
-    lmt_alignment_state.wrap_source = align_stack_wrap_source(p);
-    lmt_alignment_state.no_align_level  = align_stack_no_align_level(p);
-    lmt_alignment_state.cur_post_adjust_head = align_stack_cur_post_adjust_head(p);
-    lmt_alignment_state.cur_post_adjust_tail = align_stack_cur_post_adjust_tail(p);
-    lmt_alignment_state.cur_pre_adjust_head = align_stack_cur_pre_adjust_head(p);
-    lmt_alignment_state.cur_pre_adjust_tail = align_stack_cur_pre_adjust_tail(p);
+    lmt_alignment_state.cur_span              = align_stack_cur_span(p);
+    lmt_alignment_state.cur_loop              = align_stack_cur_loop(p);
+    lmt_input_state.align_state               = align_stack_align_state(p);
+    lmt_alignment_state.wrap_source           = align_stack_wrap_source(p);
+    lmt_alignment_state.no_align_level        = align_stack_no_align_level(p);
+    lmt_alignment_state.cur_post_adjust_head  = align_stack_cur_post_adjust_head(p);
+    lmt_alignment_state.cur_post_adjust_tail  = align_stack_cur_post_adjust_tail(p);
+    lmt_alignment_state.cur_pre_adjust_head   = align_stack_cur_pre_adjust_head(p);
+    lmt_alignment_state.cur_pre_adjust_tail   = align_stack_cur_pre_adjust_tail(p);
     lmt_alignment_state.cur_post_migrate_head = align_stack_cur_post_migrate_head(p);
     lmt_alignment_state.cur_post_migrate_tail = align_stack_cur_post_migrate_tail(p);
-    lmt_alignment_state.cur_pre_migrate_head = align_stack_cur_pre_migrate_head(p);
-    lmt_alignment_state.cur_pre_migrate_tail = align_stack_cur_pre_migrate_tail(p);
-    lmt_alignment_state.options = align_stack_options(p);
-    lmt_alignment_state.attr_list = align_stack_attr_list(p);
-    lmt_alignment_state.callback = align_stack_callback(p);
-    lmt_alignment_state.min_height = align_stack_min_height(p);
-    lmt_alignment_state.min_depth = align_stack_min_depth(p);
-    lmt_alignment_state.row_number = align_stack_row_number(p);
-    lmt_alignment_state.column_number = align_stack_column_number(p);
-    lmt_alignment_state.last_row_number = align_stack_last_row_number(p);
-    lmt_alignment_state.last_column_number = align_stack_last_column_number(p);
-    lmt_alignment_state.tabskip_amount = align_stack_tabskip_amount(p);
+    lmt_alignment_state.cur_pre_migrate_head  = align_stack_cur_pre_migrate_head(p);
+    lmt_alignment_state.cur_pre_migrate_tail  = align_stack_cur_pre_migrate_tail(p);
+    lmt_alignment_state.options               = align_stack_options(p);
+    lmt_alignment_state.attr_list             = align_stack_attr_list(p);
+    lmt_alignment_state.callback              = align_stack_callback(p);
+    lmt_alignment_state.min_height            = align_stack_min_height(p);
+    lmt_alignment_state.min_depth             = align_stack_min_depth(p);
+    lmt_alignment_state.row_number            = align_stack_row_number(p);
+    lmt_alignment_state.column_number         = align_stack_column_number(p);
+    lmt_alignment_state.last_row_number       = align_stack_last_row_number(p);
+    lmt_alignment_state.last_column_number    = align_stack_last_column_number(p);
+    lmt_alignment_state.tabskip_amount        = align_stack_tabskip_amount(p);
     /* */
-    lmt_alignment_state.row_state.attrlist = align_stack_row_attrlist(p);    
+    lmt_alignment_state.row_state.attrlist    = align_stack_row_attrlist(p);
     lmt_alignment_state.row_state.orientation = align_stack_row_orientation(p);
-    lmt_alignment_state.row_state.xoffset = align_stack_row_yoffset(p);  
-    lmt_alignment_state.row_state.yoffset = align_stack_row_xoffset(p);     
-    lmt_alignment_state.row_state.xmove = align_stack_row_ymove(p);  
-    lmt_alignment_state.row_state.ymove = align_stack_row_xmove(p);     
-    lmt_alignment_state.row_state.shift = align_stack_row_shift(p);       
-    lmt_alignment_state.row_state.source = align_stack_row_source(p);      
-    lmt_alignment_state.row_state.target = align_stack_row_target(p);      
-    lmt_alignment_state.row_state.anchor = align_stack_row_anchor(p);      
+    lmt_alignment_state.row_state.xoffset     = align_stack_row_yoffset(p);
+    lmt_alignment_state.row_state.yoffset     = align_stack_row_xoffset(p);
+    lmt_alignment_state.row_state.xmove       = align_stack_row_ymove(p);
+    lmt_alignment_state.row_state.ymove       = align_stack_row_xmove(p);
+    lmt_alignment_state.row_state.shift       = align_stack_row_shift(p);
+    lmt_alignment_state.row_state.source      = align_stack_row_source(p);
+    lmt_alignment_state.row_state.target      = align_stack_row_target(p);
+    lmt_alignment_state.row_state.anchor      = align_stack_row_anchor(p);
+    /* */
+    lmt_alignment_state.cell_source           = align_stack_cell_source(p);
+    lmt_alignment_state.row_state_set         = align_stack_row_state_set(p);
     /* */
     tex_flush_node(p);
 }
@@ -754,31 +762,31 @@ static void tex_aux_scan_align_spec(quarterword c)
     bool brace = false;
     while (1) {
         cur_val = 0; /* why */
-        switch (tex_scan_character("acdgmnprtsACDGMNPRTS", 1, 1, 1)) {
+        switch (tex_scan_character("acdgmnprts", 1, 1, 1)) {
             case 0:
                 goto DONE;
-            case 'a': case 'A':
+            case 'a':
                 if (tex_scan_mandate_keyword("attr", 1)) {
                     attrlist = tex_scan_attribute(attrlist);
                 }
                 break;
-            case 'c': case 'C':
+            case 'c':
                 /* We permits multiple callbacks so we |or| them. */
                 if (tex_scan_mandate_keyword("callback", 1)) {
                     options |= align_option_callback;
-                    if (tex_scan_character("sS", 0, 0, 0)) {
+                    if (tex_scan_character("s", 0, 0, 0)) {
                         callback |= tex_scan_integer(0, NULL, NULL);
                     } else { 
                         callback = tex_scan_integer(0, NULL, NULL);
                     }
                 }
                 break;
-            case 'd': case 'D':
+            case 'd':
                 if (tex_scan_mandate_keyword("discard", 1)) {
                     options |= align_option_discard;
                 }
                 break;
-            case 'g': case 'G':
+            case 'g':
                 if (tex_scan_mandate_keyword("gluemode", 1)) {
                     /*tex
                         It is cheaper to use options than yet an extra variable that has to be
@@ -799,15 +807,15 @@ static void tex_aux_scan_align_spec(quarterword c)
                     }
                 }
                 break;
-            case 'm': case 'M':
+            case 'm':
                 if (tex_scan_mandate_keyword("min", 1)) {
-                    switch (tex_scan_character("dhDH", 0, 0, 0)) {
-                        case 'd': case 'D':
+                    switch (tex_scan_character("dh", 0, 0, 0)) {
+                        case 'd':
                             if (tex_scan_mandate_keyword("mindepth", 4)) {
                                 lmt_alignment_state.min_depth = tex_scan_dimension(0, 0, 0, 0, NULL, NULL);
                             }
                             break;
-                        case 'h': case 'H':
+                        case 'h':
                             if (tex_scan_mandate_keyword("minheight", 4)) {
                                 lmt_alignment_state.min_height = tex_scan_dimension(0, 0, 0, 0, NULL, NULL);
                             }
@@ -818,20 +826,20 @@ static void tex_aux_scan_align_spec(quarterword c)
                     }
                 }
                 break;
-            case 'n': case 'N':
-                if (tex_scan_character("oO", 0, 0, 0)) {
-                    switch (tex_scan_character("flsFLS", 0, 0, 0)) {
-                        case 's': case 'S':
+            case 'n':
+                if (tex_scan_character("o", 0, 0, 0)) {
+                    switch (tex_scan_character("fls", 0, 0, 0)) {
+                        case 's':
                             if (tex_scan_mandate_keyword("noskips", 3)) {
                                 options |= align_option_noskips;
                             }
                             break;
-                        case 'l': case 'L':
+                        case 'l':
                             if (tex_scan_mandate_keyword("nolastskip", 3)) {
                                 options |= align_option_nolastskip;
                             }
                             break;
-                        case 'f': case 'F':
+                        case 'f':
                             if (tex_scan_mandate_keyword("nofirstskip", 3)) {
                                 options |= align_option_nofirstskip;
                             }
@@ -845,7 +853,7 @@ static void tex_aux_scan_align_spec(quarterword c)
                     tex_aux_show_keyword_error("noskips|nofirstskip|nolastskip");
                     goto DONE;
                 }
-            case 'p': case 'P':
+            case 'p':
                 if (tex_scan_mandate_keyword("prune", 1)) {
                     if (options & align_option_prune) {
                         options |= align_option_prune_twice;
@@ -854,27 +862,27 @@ static void tex_aux_scan_align_spec(quarterword c)
                     }
                 }
                 break;
-            case 'r': case 'R':
+            case 'r':
                 if (tex_scan_mandate_keyword("reverse", 1)) {
                     options |= align_option_reverse;
                 }
                 break;
-            case 't': case 'T':
+            case 't':
                 if (tex_scan_mandate_keyword("to", 1)) {
                     mode = packing_exactly;
                     options |= align_option_exactly;
                     amount = tex_scan_dimension(0, 0, 0, 0, NULL, NULL);
                 }
                 break;
-            case 's': case 'S':
-                if (tex_scan_character("pP", 0, 0, 0)) {
-                    switch (tex_scan_character("lrLR", 0, 0, 0)) {
-                        case 'l': case 'L':
+            case 's':
+                if (tex_scan_character("p", 0, 0, 0)) {
+                    switch (tex_scan_character("lr", 0, 0, 0)) {
+                        case 'l':
                             if (tex_scan_mandate_keyword("split", 3)) {
                                 options |= align_option_split;
                             }
                             break;
-                        case 'r': case 'R':
+                        case 'r':
                             if (tex_scan_mandate_keyword("spread", 3)) {
                                 mode = packing_additional;
                                 options &= (~ align_option_exactly);
@@ -957,24 +965,24 @@ static void tex_aux_run_no_align(void)
     while (1) {
         int add = 0;
       AGAIN:
-        switch (tex_scan_character("atrsoxyATRSOXY", 1, 1, 1)) {
+        switch (tex_scan_character("atrsoxy", 1, 1, 1)) {
             case 0:
                 goto DONE;
-            case 't': case 'T':
+            case 't':
                 if (tex_scan_mandate_keyword("target", 1)) {
                     lmt_alignment_state.row_state.target = tex_scan_integer(1, NULL, NULL);
                     done = 1;
                 }
                 break;
-            case 'a': case 'A':
-                switch (tex_scan_character("ntdNTD", 0, 0, 0)) {
-                    case 'd': case 'D':
+            case 'a':
+                switch (tex_scan_character("ntd", 0, 0, 0)) {
+                    case 'd':
                         if (tex_scan_mandate_keyword("add", 2)) {
                             add = 1;
                             goto AGAIN;
                         }
                         break;
-                    case 't': case 'T':
+                    case 't':
                         if (tex_scan_mandate_keyword("attr", 2)) {
                             halfword i = tex_scan_attribute_register_number();
                             halfword v = tex_scan_integer(1, NULL, NULL);
@@ -990,10 +998,10 @@ static void tex_aux_run_no_align(void)
                             }
                         }
                         break;
-                    case 'n': case 'N':
+                    case 'n':
                         if (tex_scan_mandate_keyword("anchor", 2)) {
-                            switch (tex_scan_character("sS", 0, 0, 0)) {
-                                case 's': case 'S':
+                            switch (tex_scan_character("s", 0, 0, 0)) {
+                                case 's':
                                     lmt_alignment_state.row_state.anchor = tex_scan_anchors(0);
                                     break;
                                 default:
@@ -1008,22 +1016,30 @@ static void tex_aux_run_no_align(void)
                         goto DONE;
                 }
                 break;
-            case 'r': case 'R':
+            case 'r':
                 if (tex_scan_mandate_keyword("reset", 1)) {
+                    if (lmt_alignment_state.row_state.attrlist) {
+                        /*tex
+                            The copied list has no reference until a row consumes it. This
+                            basically wipes it when it's the only one. This could be a helper.
+                        */
+                        add_attribute_reference(lmt_alignment_state.row_state.attrlist);
+                        delete_attribute_reference(lmt_alignment_state.row_state.attrlist);
+                    }
                     tex_aux_wipe_row_state();
                     done = 0;
                 }
                 break;
-            case 's': case 'S':
-                switch (tex_scan_character("hoHO", 0, 0, 0)) {
-                    case 'h': case 'H':
+            case 's':
+                switch (tex_scan_character("ho", 0, 0, 0)) {
+                    case 'h':
                         if (tex_scan_mandate_keyword("shift", 2)) {
                             lmt_alignment_state.row_state.shift = (add ? lmt_alignment_state.row_state.shift : 0) 
                                 + tex_scan_dimension(0, 0, 0, 0, NULL, NULL);
                             done = 1;
                         }
                         break;
-                    case 'o': case 'O':
+                    case 'o':
                         if (tex_scan_mandate_keyword("source", 2)) {
                             lmt_alignment_state.row_state.source = tex_scan_integer(1, NULL, NULL);
                             done = 1;
@@ -1034,21 +1050,21 @@ static void tex_aux_run_no_align(void)
                         goto DONE;
                 }
                 break;
-            case 'o': case 'O':
+            case 'o':
                 if (tex_scan_mandate_keyword("orientation", 1)) {
                     lmt_alignment_state.row_state.orientation = tex_scan_orientation(0);
                     done = 1;
                 }
                 break;
-            case 'x': case 'X':
-                switch (tex_scan_character("omOM", 0, 0, 0)) {
-                    case 'o': case 'O' :
+            case 'x':
+                switch (tex_scan_character("om", 0, 0, 0)) {
+                    case 'o':
                         if (tex_scan_mandate_keyword("xoffset", 2)) {
                             lmt_alignment_state.row_state.xoffset = (add ? lmt_alignment_state.row_state.xoffset : 0) + tex_scan_dimension(0, 0, 0, 0, NULL, NULL);
                             done = 1;
                         }
                         break;
-                    case 'm': case 'M' :
+                    case 'm':
                         if (tex_scan_mandate_keyword("xmove", 2)) {
                             lmt_alignment_state.row_state.xmove = (add ? lmt_alignment_state.row_state.xmove : 0) + tex_scan_dimension(0, 0, 0, 0, NULL, NULL);
                             done = 1;
@@ -1059,15 +1075,15 @@ static void tex_aux_run_no_align(void)
                         goto DONE;
                 }
                 break;
-            case 'y': case 'Y':
-                switch (tex_scan_character("omOM", 0, 0, 0)) {
-                    case 'o': case 'O' :
+            case 'y':
+                switch (tex_scan_character("om", 0, 0, 0)) {
+                    case 'o':
                         if (tex_scan_mandate_keyword("yoffset", 2)) {
                             lmt_alignment_state.row_state.yoffset = (add ? lmt_alignment_state.row_state.yoffset : 0) + tex_scan_dimension(0, 0, 0, 0, NULL, NULL);
                             done = 1;
                         }
                         break;
-                    case 'm': case 'M' :
+                    case 'm':
                         if (tex_scan_mandate_keyword("ymove", 2)) {
                             lmt_alignment_state.row_state.ymove = (add ? lmt_alignment_state.row_state.ymove : 0) + tex_scan_dimension(0, 0, 0, 0, NULL, NULL);
                             done = 1;
@@ -1191,7 +1207,7 @@ void tex_run_alignment_initialize(void)
     if (cur_list.mode == mmode && ((cur_list.tail != cur_list.head) || cur_list.incomplete_noad)) {
         tex_handle_error(
             normal_error_type,
-            "Improper \\halign inside math mode",
+            "Improper \\halign inside math mode%h",
             "Displays can use special alignments (like \\eqalignno) only if nothing but the\n"
             "alignment itself is in math mode. So I've deleted the formulas that preceded this\n"
             "alignment."
@@ -1263,7 +1279,7 @@ void tex_run_alignment_initialize(void)
                         tex_back_input(cur_tok);
                         tex_handle_error(
                             normal_error_type,
-                            "Missing # inserted in alignment preamble",
+                            "Missing # inserted in alignment preamble%h",
                             "There should be exactly one # between &'s, when an \\halign or \\valign is being\n"
                             "set up. In this case you had none, so I've put one in; maybe that will work."
                         );
@@ -1290,7 +1306,7 @@ void tex_run_alignment_initialize(void)
                 } else if ((cur_cmd == alignment_cmd && cur_chr == align_content_code) || cur_cmd == parameter_cmd) {
                     tex_handle_error(
                         normal_error_type,
-                        "Only one # is allowed per tab",
+                        "Only one # is allowed per tab%h",
                         "There should be exactly one # between &'s, when an \\halign or \\valign is being\n"
                         "set up. In this case you had more than one, so I'm ignoring all but the first."
                     );
@@ -1333,7 +1349,7 @@ void tex_finish_alignment_group(void)
     cur_tok = deep_frozen_cr_token;
     tex_handle_error(
         insert_error_type,
-        "Missing \\cr inserted",
+        "Missing \\cr inserted%h",
         "I'm guessing that you meant to end an alignment here."
     );
 }
@@ -1651,9 +1667,9 @@ static int tex_aux_finish_column(void)
                         halfword glue = tex_new_glue_node(lmt_alignment_state.cur_loop, tab_skip_glue);
                         if ((lmt_alignment_state.options & align_option_noskips) && tex_glue_is_zero(glue)) {
                             node_subtype(glue) = ignored_glue;
-                            lmt_alignment_state.tabskip_amount = glue_amount(glue);
-                        } else {
                             lmt_alignment_state.tabskip_amount = 0;
+                        } else {
+                            lmt_alignment_state.tabskip_amount = glue_amount(glue);
                         }
                         tex_couple_nodes(record, glue);
                     }
@@ -1662,7 +1678,7 @@ static int tex_aux_finish_column(void)
                     align_record_chr(lmt_alignment_state.cur_align) = chr;
                     tex_handle_error(
                         alignment_tab_error_type,
-                        "Extra alignment tab has been changed to \\cr",
+                        "Extra alignment tab has been changed to \\cr%h",
                         "You have given more \\span or & marks than there were in the preamble to the\n"
                         "\\halign or \\valign now in progress. So I'll assume that you meant to type \\cr\n"
                         "instead."
@@ -1751,7 +1767,7 @@ static int tex_aux_finish_column(void)
                 /*tex Copy the tabskip glue between columns. */
                 if (node_subtype(node_next(lmt_alignment_state.cur_align)) != ignored_glue) {
                     halfword glue = tex_new_glue_node(node_next(lmt_alignment_state.cur_align), tab_skip_glue);
-                    tex_attach_attribute_list_attribute(cell, lmt_alignment_state.attr_list);
+                    tex_attach_attribute_list_attribute(glue, lmt_alignment_state.attr_list);
                     tex_tail_append(glue);
                     lmt_alignment_state.tabskip_amount = glue_amount(glue);
                 } else {
@@ -2250,7 +2266,9 @@ static void tex_aux_fix_topline(alignment_split_state *state, halfword curptr)
                             if (line) {
                                 switch (node_type(line)) {
                                     case hlist_node:
+                                        box_list(list) = null;
                                         tex_flush_node_list(clist);
+                                        tex_flush_node(list);
                                         box_list(current) = line;
                                         tex_aux_split_snap(state, current, box_height(line), box_depth(line), 1);
                                         break;
@@ -2288,7 +2306,7 @@ static halfword tex_aux_get_rowline(alignment_split_state *state, halfword curpt
     halfword head = null;
     halfword tail = null;
     tex_attach_attribute_list_attribute(dummy, node_attr(curptr));
- // tex_copy_node_properties(dummy,curptr); /* as we can have set it in a callback */
+    tex_copy_node_properties(dummy, curptr);
     box_width(dummy) = box_width(curptr);
     tex_set_box_option(dummy, box_option_align_split);
     /* run over the row's list */
@@ -2301,6 +2319,7 @@ static halfword tex_aux_get_rowline(alignment_split_state *state, halfword curpt
                     halfword list = box_list(current);
                     temp = tex_new_node(hlist_node, align_cell_list);
                     tex_attach_attribute_list_attribute(temp, node_attr(current));
+                    tex_copy_node_properties(temp, current);
                     box_width(temp) = box_width(current);
                     tex_set_box_option(temp, box_option_align_split);
                     if (list && node_type(list) == vlist_node && (box_options(list) & box_option_align_split)) {
@@ -2320,6 +2339,8 @@ static halfword tex_aux_get_rowline(alignment_split_state *state, halfword curpt
                 break;
             case glue_node:
                 temp = tex_new_glue_node(current, node_subtype(current));
+                tex_attach_attribute_list_attribute(temp, node_attr(current));
+                tex_copy_node_properties(temp, current);
                 break;
         }
         /* append the cell */
@@ -2449,6 +2470,7 @@ static void tex_aux_split_align(void)
         }
         rowptr = nxtptr;
     }
+    cur_list.tail = tex_tail_of_node_list(cur_list.head);
 }
 
 /*tex Here this splitting code ends. */
@@ -2908,10 +2930,12 @@ static void tex_aux_finish_align(void)
         }
     }
     if ((lmt_alignment_state.options & align_option_split) && (lmt_alignment_state.min_height || lmt_alignment_state.min_depth)) {
+        /*tex The next one also identifies and sets |cur_list.tail|. */
         tex_aux_split_align();
-// if (node_type(cur_list.tail) == hlist_node) {
-//     cur_list.prev_depth = box_depth(cur_list.tail);
-// }
+        /*tex Can this now be done realiable? */
+     // if (node_type(cur_list.tail) == hlist_node) {
+     //     cur_list.prev_depth = box_depth(cur_list.tail);
+     // }
     }
     if (callback) {
         lmt_alignment_callback(cur_list.head, wrapup_pass_alignment_context, lmt_alignment_state.callback, lmt_alignment_state.attr_list, preamble);
@@ -3046,7 +3070,7 @@ void tex_run_alignment_error(void)
         } else { 
             tex_handle_error(
                 normal_error_type,
-                "Misplaced \\noalign",
+                "Misplaced \\noalign%h",
                 "I expect to see \\noalign only after the \\cr of an alignment. Proceed, and I'll\n"
                 "ignore this case."
             );
@@ -3060,14 +3084,14 @@ void tex_run_alignment_error(void)
         */
         switch (cmd) {
             case alignment_tab_cmd:
-                tex_handle_error(normal_error_type, "Misplaced %C", cmd, chr,
+                tex_handle_error(normal_error_type, "Misplaced %C%h", cmd, chr,
                     "I can't figure out why you would want to use a tab mark here. If some right brace\n"
                     "up above has ended a previous alignment prematurely, you're probably due for more\n"
                     "error messages."
                 );
                 break;
             default:
-                tex_handle_error(normal_error_type, "Misplaced %C", cmd, chr,
+                tex_handle_error(normal_error_type, "Misplaced %C%h", cmd, chr,
                     "I can't figure out why you would want to use a tab mark or \\cr or \\span just\n"
                     "now. If something like a right brace up above has ended a previous alignment\n"
                     "prematurely, you're probably due for more error messages."
@@ -3084,7 +3108,7 @@ void tex_run_alignment_error(void)
             cur_tok = left_brace_token + '{';
             tex_handle_error(
                 insert_error_type,
-                "Missing { inserted",
+                "Missing { inserted%h",
                 helpinfo
             );
         } else {
@@ -3094,7 +3118,7 @@ void tex_run_alignment_error(void)
                 case alignment_cmd:
                     tex_handle_error(
                         insert_error_type,
-                        "Missing } inserted, unexpected ",
+                        "Missing } inserted, unexpected %C%h",
                         cmd, chr,
                         helpinfo
                     );
@@ -3102,7 +3126,7 @@ void tex_run_alignment_error(void)
                 case alignment_tab_cmd:
                     tex_handle_error(
                         insert_error_type,
-                        "Missing } inserted, unexpected tab character (normally &)",
+                        "Missing } inserted, unexpected tab character (normally &)%h",
                         helpinfo
                     );
                     break;
