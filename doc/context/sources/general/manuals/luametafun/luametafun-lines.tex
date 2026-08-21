@@ -6,6 +6,8 @@
 
 \startchapter[title={Lines}]
 
+\startsection[title=Properties]
+
 We assume that when you arrived here you already know how to deal with drawing
 lines including the way they get connected. When you draw a line some properties
 are controlled by variables which forces you to save existing values when you
@@ -25,6 +27,157 @@ draw (0,-3) -- (20,-3) -- (0,-4) withlinejoin squared withcolor "darkblue" ;
 These \type {with} features are a \LUAMETATEX\ extension:
 
 \startlinecorrection \scale[width=1tw]{\getbuffer} \stoplinecorrection
+
+\startbuffer
+\startMPcode
+def Test (expr p) =
+    draw p
+        withpen pencircle scaled 1mm
+        withmiterlimit 0mm
+        withlinejoin   mitered
+        withcolor     "darkgreen" ;
+    draw p
+        withpen pencircle scaled .75mm
+        withmiterlimit 1.5mm
+        withlinejoin   mitered
+        withcolor      "darkred" ;
+    draw p
+        withpen pencircle scaled .25mm
+        withmiterlimit 0mm
+        withlinejoin   mitered
+        withcolor      "white" ;
+enddef ;
+Test (fulltriangle scaled 1cm) ;
+Test (fulltriangle xscaled 4cm yscaled 1cm xshifted 2cm) ;
+\stopMPcode
+\stopbuffer
+
+\typebuffer[option=TEX]
+
+The advantage of having these properties on the picture instead of using the
+parameters is that one doesn't have to restore values. Using this on non circular
+pens is kind of unpredictable.
+
+\startlinecorrection \scale[width=.5tw]{\getbuffer} \stoplinecorrection
+
+There are also properties that are \quote {virtual}, like \type {withmesh}.
+Currently they are only carrying a value to the backend so we leave these
+experimental features out of the discussion here.
+
+When \type {withnestedprescript} and \type {withnestedpostscript} are applied to
+pictures they will also be applied to embedded pictures. Although this mechanism
+is robust, its application in \LUAMETAFUN\ is somewhat experimental and meant for
+special cases. Actually, even the regular pre- and postscript properties are
+seldom for users to apply, they are part of the extension interfaces and their
+values are handled in the backend, which is very macro package specific. For
+instance, the engine has no concept of transparency but the backend has and these
+scripts let us carry around information that the backend will pick up.
+
+You can if needed query the state of properties, using the \type {*part}
+primitives inside a \type {within}. So, even if it has only meaning for the
+backend, you can ask for \typ {stackingpart}, \type {prescriptpart} and \type
+{postscriptpart}.
+
+\stopsection
+
+\startsection[title=Pruning]
+
+When you construct paths piecewise, the result can have redundant points.
+Actually, when you use the multiple \type {&} operators, the path will be made
+from segments, and in the path we can have points marked as begin and end points.
+The \typ {prunesingularities} command will get rid of duplicates and points that
+have no meaning, something we needed when we wrote the l-systems feature (the
+usual \LUA-\METAPOST\ mix). Pruning is controlled by an options parameter, a
+bit set:
+
+\starttabulate[|rT||]
+\NC  1 \EQ collapse regular regular \NC \NR
+\NC  2 \EQ collapse begin regular   \NC \NR
+\NC  4 \EQ collapse regular end     \NC \NR
+\NC  8 \EQ collapse begin end       \NC \NR
+\NC 16 \EQ wipe single              \NC \NR
+\NC 32 \EQ connect segments         \NC \NR
+\stoptabulate
+
+We leave it to your imagination what it really does. After all this is typically
+something that when you need it, you likely play with it and otherwise you skip
+this section.
+
+\startbuffer
+\startMPcode
+    numeric poptions[] ;
+
+    poptions[1] := 1 ;
+    poptions[2] := 1 + 2 ;
+    poptions[3] := 1 + 2 + 4 ;
+    poptions[4] := 1 + 2 + 4 + 8 ;
+    poptions[5] := 1 + 2 + 4 + 8 + 16 ;
+    poptions[6] := 1 + 2 + 4 + 8 + 16 + 32 ;
+
+    def PruneDemo (expr p) =
+        path q ; q := prunesingularities p ;
+        draw image ( drawpathonly p ; ) shifted (0,0) ;
+        draw image ( drawpathonly q ; ) shifted (0,-bbheight(p)-20) ;
+        show(p);
+        show(q);
+    enddef ;
+
+    pruneoptions := poptions[1] ;
+    pruneoptions := poptions[2] ;
+    pruneoptions := poptions[6] ;
+
+  % PruneDemo( (200,10) -- (200,10) -- (200,10) -- (200,10) ) ;
+  % PruneDemo( (200,10) -- (200,10) -- (200,10) -- (200,40) ) ;
+  % PruneDemo( (200,40) -- (200,10) -- (200,10) -- (200,10) ) ;
+  % PruneDemo(
+  %     (200,10) -- (200,10) &&
+  %     (200,10) -- (200,10) -- (200,10) -- (200,10) &&
+  %     (200,10) -- (200,10)
+  % ) ;
+
+    PruneDemo(
+        (  0, 0) -- (100, 0)                         &&
+        (200,10) -- (200,10) -- (200,10) -- (200,10) &&
+        (100, 0) -- (300,20)
+    ) ;
+\stopMPcode
+\stopbuffer
+
+\typebuffer[option=TEX]
+
+As said, it is typically something to play with so you can use the above as
+a template for that.
+
+\startlinecorrection \scale[width=.5tw]{\getbuffer} \stoplinecorrection
+
+This might give more efficient result files when you have paths with thousands of
+points. That said, when you create graphic made from points, you might end up
+with loops doing lots of \ \type {drawdot}'s but there you can save time and
+space with just drawing a path.
+
+
+
+\startbuffer
+\startMPcode
+    drawdot
+        (for i = 1 upto 5 : (fullcircle xshifted (i*2)) && endfor nocycle)
+        ysized 15mm
+        withpen pencircle scaled 2mm
+        withcolor "darkred" ;
+    draw boundingbox currentpicture ;
+\stopMPcode
+\stopbuffer
+
+\typebuffer[option=TEX]
+
+\testpage[3]
+
+Or rendered:
+
+% \startlinecorrection[blank] \getbuffer \stoplinecorrection
+\starttextdisplay \getbuffer \stoptextdisplay
+
+\stopsection
 
 \stopchapter
 

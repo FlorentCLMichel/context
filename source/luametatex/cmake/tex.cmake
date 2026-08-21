@@ -31,8 +31,7 @@ set(tex_sources
     source/lua/lmtfontlib.c
     source/lua/lmtstatuslib.c
 
-  # source/lua/lmthelperlib.c
-    ${tex_sources_helpers}
+    source/lua/lmthelperlib.c
 
     source/luaoptional/lmtoptional.c
 

@@ -1148,9 +1148,7 @@ static const luaL_Reg lmt_libs_tex_function_list[] = {
     { "tex",      luaopen_tex      },
     { "token",    luaopen_token    },
     { "node",     luaopen_node     },
-# if defined(LUAMETATEX_USE_HELPERS)
     { "helper",   luaopen_helper   },
-# endif 
     { "callback", luaopen_callback },
     { "font",     luaopen_font     },
     { "language", luaopen_language },

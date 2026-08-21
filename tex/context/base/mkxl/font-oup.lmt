@@ -978,6 +978,7 @@ local function unifyglyphs(fontdata,usenames)
         end
         resources.colorpaintlist = remapped
     end
+    --
     local bitmapshapes = resources.bitmapshapes
     if bitmapshapes then
         local remapped = { }
@@ -997,6 +998,7 @@ local function unifyglyphs(fontdata,usenames)
         end
         resources.bitmapshapes = remapped
     end
+    --
     local attachments = resources.attachments
     if attachments then
         local remapped = { }

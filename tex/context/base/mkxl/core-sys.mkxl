@@ -333,10 +333,12 @@
   %\usehighlightlanguage\c!language
    \usehighlightstyleandcolor\c!style\c!color
  % \highlightparameter\c!command
-   \dotaghighlight}
+   \dotaghighlight
+   \ignorespaces}
 
 \permanent\protected\def\stophighlight
-  {\dostoptagged
+  {\removeunwantedspaces
+   \dostoptagged
    \endgroup}
 
 \aliased\let\directhighlight\typo_highlights_indeed

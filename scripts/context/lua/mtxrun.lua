@@ -5148,7 +5148,7 @@ do -- create closure to overcome 200 locals limit
 
 package.loaded["l-dir"] = package.loaded["l-dir"] or true
 
--- original size: 19861, stripped down to: 11664
+-- original size: 19939, stripped down to: 11691
 
 if not modules then modules={} end modules ['l-dir']={
  version=1.001,
@@ -5589,6 +5589,7 @@ do
  elseif onwindows then
   local xcurrentdir=dir.current
   function dir.expandname(str) 
+   str=gsub(str,"\\","/") 
    local first,nothing,last=match(str,"^(//)(//*)(.*)$")
    if first then
     first=xcurrentdir().."/" 
@@ -21163,7 +21164,7 @@ do -- create closure to overcome 200 locals limit
 
 package.loaded["data-ini"] = package.loaded["data-ini"] or true
 
--- original size: 10798, stripped down to: 7139
+-- original size: 10636, stripped down to: 7049
 
 if not modules then modules={} end modules ['data-ini']={
  version=1.001,
@@ -21178,7 +21179,7 @@ local filedirname,filebasename,filejoin,replacesuffix=file.dirname,file.basename
 local ostype,osname,osuname,ossetenv,osgetenv=os.type,os.name,os.uname,os.setenv,os.getenv
 local sortedpairs=table.sortedpairs
 local isfile,currentdir=lfs.isfile,lfs.currentdir
-local expandlink,expandname=dir.expandlink,dir.expandname
+local expandlink=dir.expandlink
 local P,S,R,C,Cs,Cc,lpegmatch=lpeg.P,lpeg.S,lpeg.R,lpeg.C,lpeg.Cs,lpeg.Cc,lpeg.match
 local trace_locating=false  trackers.register("resolvers.locating",function(v) trace_locating=v end)
 local trace_expansions=false  trackers.register("resolvers.expansions",function(v) trace_expansions=v end)
@@ -21233,7 +21234,6 @@ do
  ownbin=file.collapsepath(ownbin)   
  ownpath=file.collapsepath(ownpath)
  ownpath=expandlink(ownpath,trace_locating and report_initialization)
- ownpath=expandname(ownpath) 
  if not ownpath or ownpath=="" or ownpath=="unset" then
   ownpath=args[-1] or arg[-1]
   ownpath=ownpath and filedirname(gsub(ownpath,"\\","/"))
@@ -21255,7 +21255,6 @@ do
      local b=filejoin(p,binary)
      if isfile(b) then
       ownpath=expandlink(p,trace_locating and report_initialization)
-      ownpath=expandname(ownpath)
       break
      end
     end
@@ -26934,8 +26933,8 @@ end -- of closure
 
 -- used libraries    : l-bit32.lua l-lua.lua l-macro.lua l-sandbox.lua l-package.lua l-lpeg.lua l-function.lua l-string.lua l-table.lua l-io.lua l-number.lua l-set.lua l-os.lua l-file.lua l-gzip.lua l-md5.lua l-sha.lua l-url.lua l-dir.lua l-boolean.lua l-unicode.lua l-math.lua util-str.lua util-tab.lua util-fil.lua util-sac.lua util-sto.lua util-prs.lua util-fmt.lua util-soc-imp-reset.lua util-soc-imp-socket.lua util-soc-imp-copas.lua util-soc-imp-ltn12.lua util-soc-imp-mime.lua util-soc-imp-url.lua util-soc-imp-headers.lua util-soc-imp-tp.lua util-soc-imp-http.lua util-soc-imp-ftp.lua util-soc-imp-smtp.lua trac-set.lua trac-log.lua trac-inf.lua trac-pro.lua util-lua.lua util-deb.lua util-tpl.lua util-sbx.lua util-mrg.lua util-env.lua luat-env.lua util-zip.lua util-sig.lua lxml-tab.lua lxml-lpt.lua lxml-mis.lua lxml-aux.lua lxml-xml.lua trac-xml.lua data-ini.lua data-exp.lua data-env.lua data-tmp.lua data-met.lua data-res.lua data-pre.lua data-inp.lua data-out.lua data-fil.lua data-con.lua data-use.lua data-zip.lua data-tre.lua data-sch.lua data-lua.lua data-aux.lua data-tmf.lua data-lst.lua libs-ini.lua luat-sta.lua luat-fmt.lua util-jsn.lua
 -- skipped libraries : -
--- original bytes    : 1079547
--- stripped bytes    : 430788
+-- original bytes    : 1079463
+-- stripped bytes    : 430767
 
 -- end library merge
 

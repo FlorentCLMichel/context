@@ -338,10 +338,10 @@ stages[2] = function(specification,stage)
                 report("line %i, width %p, left %p, right %p, used %p",linenumber,w,l,r,w-l-r)
             end
 
-            if not maxleft or m > maxleft then
+            if not maxleft or l > maxleft then
                 maxleft = l
             end
-            if not maxright or m > maxright then
+            if not maxright or r > maxright then
                 maxright = r
             end
             if not firstleft then

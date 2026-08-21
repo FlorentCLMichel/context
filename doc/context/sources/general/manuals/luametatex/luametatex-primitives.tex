@@ -15552,15 +15552,20 @@ This internal number starts out with the year that the job started.
     end
 \stopluacode
 
-\startmode[atpragma]
-    \startluacode
-        context.page()
-        document.CheckCompleteness()
-    \stopluacode
+\doif {\inputfilename} {luametatex-primitives.tex} {
 
-%     Run \type {s-system-syntax.mkxl} for a complete overview of the \LUAMETATEX\
-%     primitives.
-\stopmode
+    \startmode[atpragma]
+        \startluacode
+            context.page()
+            document.CheckCompleteness()
+        \stopluacode
+
+        Run \type {s-system-syntax.mkxl} for a complete overview of the \LUAMETATEX\
+        primitives.
+
+    \stopmode
+
+}
 
 \popoverloadmode
 

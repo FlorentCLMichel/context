@@ -144,6 +144,9 @@ local gposhandlers      = { }
 readers.gsubhandlers    = gsubhandlers
 readers.gposhandlers    = gposhandlers
 
+local attachments       = false
+local bitmapdata        = false
+
 local helpers           = readers.helpers
 local gotodatatable     = helpers.gotodatatable
 local setvariabledata   = helpers.setvariabledata
@@ -195,9 +198,9 @@ local function setmetrics(data,where,tag,d)
 end
 
 local function setgasp(data,index,d)
-    local gasp = data.gasp
+    local gasp   = data.gasp
     local ranges = gasp and gasp.ranges
-    local range = ranges and ranges[index]
+    local range  = ranges and ranges[index]
     if range then
         range.maxPPEM = (range.maxPPEM or 0) + d
     end
@@ -2786,80 +2789,83 @@ function readers.gdef(f,fontdata,specification)
         -- AttachList and LigCaretList are not needed by shaping, but dropping
         -- them makes the GDEF table impossible to round-trip and loses data
         -- needed by editors and by clients that use glyph attachment points.
-        local getdelta  = fontdata.temporary and fontdata.temporary.getdelta
-        local getdevice = setdevicecallback(fontdata,specification)
-        if attachmentoffset ~= 0 then
-            local attachoffset = tableoffset + attachmentoffset
-            setposition(f,attachoffset)
-            local coverageoffset = readushort(f)
-            local nofglyphs      = readushort(f)
-            local offsets        = readcardinaltable(f,nofglyphs,ushort)
-            local coverage       = readcoverage(f,attachoffset + coverageoffset,true)
-            local attachments    = { }
-            for i=1,nofglyphs do
-                local glyph = coverage[i]
-                local offset = offsets[i]
-                if glyph and offset and offset ~= 0 then
-                    setposition(f,attachoffset + offset)
-                    local nofpoints = readushort(f)
-                    local points = { }
-                    for j=1,nofpoints do
-                        points[j] = readushort(f)
+
+        if attachments then
+            local getdelta  = fontdata.temporary and fontdata.temporary.getdelta
+            local getdevice = setdevicecallback(fontdata,specification)
+            if attachmentoffset ~= 0 then
+                local attachoffset = tableoffset + attachmentoffset
+                setposition(f,attachoffset)
+                local coverageoffset = readushort(f)
+                local nofglyphs      = readushort(f)
+                local offsets        = readcardinaltable(f,nofglyphs,ushort)
+                local coverage       = readcoverage(f,attachoffset + coverageoffset,true)
+                local attachments    = { }
+                for i=1,nofglyphs do
+                    local glyph  = coverage[i]
+                    local offset = offsets[i]
+                    if glyph and offset and offset ~= 0 then
+                        setposition(f,attachoffset + offset)
+                        local nofpoints = readushort(f)
+                        local points    = { }
+                        for j=1,nofpoints do
+                            points[j] = readushort(f)
+                        end
+                        attachments[glyph] = points
                     end
-                    attachments[glyph] = points
                 end
+                fontdata.attachments = attachments
             end
-            fontdata.attachments = attachments
-        end
-        if ligaturecarets ~= 0 then
-            local caretlistoffset = tableoffset + ligaturecarets
-            setposition(f,caretlistoffset)
-            local coverageoffset = readushort(f)
-            local nofglyphs      = readushort(f)
-            local offsets        = readcardinaltable(f,nofglyphs,ushort)
-            local coverage       = readcoverage(f,caretlistoffset + coverageoffset,true)
-            local carets         = { }
-            for i=1,nofglyphs do
-                local glyph = coverage[i]
-                local offset = offsets[i]
-                if glyph and offset and offset ~= 0 then
-                    local ligatureoffset = caretlistoffset + offset
-                    setposition(f,ligatureoffset)
-                    local nofcarets = readushort(f)
-                    local caretoffsets = readcardinaltable(f,nofcarets,ushort)
-                    local values = { }
-                    for j=1,nofcarets do
-                        local caretvalueoffset = caretoffsets[j]
-                        if caretvalueoffset and caretvalueoffset ~= 0 then
-                            local valueoffset = ligatureoffset + caretvalueoffset
-                            setposition(f,valueoffset)
-                            local format = readushort(f)
-                            if format == 1 then
-                                values[j] = { format = format, coordinate = readshort(f) }
-                            elseif format == 2 then
-                                values[j] = { format = format, point = readushort(f) }
-                            elseif format == 3 then
-                                local coordinate = readshort(f)
-                                local deviceoffset = readushort(f)
-                                local delta = 0
-                                local variation
-                                if deviceoffset ~= 0 then
-                                    delta = readdevicevalue(f,valueoffset + deviceoffset,getdelta,getdevice)
-                                    variation = not getdelta and readvariation(f,valueoffset + deviceoffset) or nil
+            if ligaturecarets ~= 0 then
+                local caretlistoffset = tableoffset + ligaturecarets
+                setposition(f,caretlistoffset)
+                local coverageoffset = readushort(f)
+                local nofglyphs      = readushort(f)
+                local offsets        = readcardinaltable(f,nofglyphs,ushort)
+                local coverage       = readcoverage(f,caretlistoffset + coverageoffset,true)
+                local carets         = { }
+                for i=1,nofglyphs do
+                    local glyph = coverage[i]
+                    local offset = offsets[i]
+                    if glyph and offset and offset ~= 0 then
+                        local ligatureoffset = caretlistoffset + offset
+                        setposition(f,ligatureoffset)
+                        local nofcarets = readushort(f)
+                        local caretoffsets = readcardinaltable(f,nofcarets,ushort)
+                        local values = { }
+                        for j=1,nofcarets do
+                            local caretvalueoffset = caretoffsets[j]
+                            if caretvalueoffset and caretvalueoffset ~= 0 then
+                                local valueoffset = ligatureoffset + caretvalueoffset
+                                setposition(f,valueoffset)
+                                local format = readushort(f)
+                                if format == 1 then
+                                    values[j] = { format = format, coordinate = readshort(f) }
+                                elseif format == 2 then
+                                    values[j] = { format = format, point = readushort(f) }
+                                elseif format == 3 then
+                                    local coordinate = readshort(f)
+                                    local deviceoffset = readushort(f)
+                                    local delta = 0
+                                    local variation
+                                    if deviceoffset ~= 0 then
+                                        delta = readdevicevalue(f,valueoffset + deviceoffset,getdelta,getdevice)
+                                        variation = not getdelta and readvariation(f,valueoffset + deviceoffset) or nil
+                                    end
+                                    values[j] = {
+                                        format     = format,
+                                        coordinate = coordinate + delta,
+                                        device     = deviceoffset ~= 0 and valueoffset + deviceoffset or nil,
+                                        variation  = variation,
+                                    }
                                 end
-                                values[j] = {
-                                    format     = format,
-                                    coordinate = coordinate + delta,
-                                    device     = deviceoffset ~= 0 and valueoffset + deviceoffset or nil,
-                                    variation  = variation,
-                                }
                             end
                         end
+                        carets[glyph] = values
                     end
-                    carets[glyph] = values
                 end
+                fontdata.ligaturecarets = carets
             end
-            fontdata.ligaturecarets = carets
         end
 
         local factors = specification.factors
@@ -4930,39 +4936,39 @@ do
         end
     end
 
-    function readers.eblc(f,fontdata,specification)
-        readbitmapfont(f,fontdata,specification,"eblc","ebdt")
-        if fontdata.tables.ebsc and not fontdata.bitmapscales then
-            readers.ebsc(f,fontdata,specification)
-        end
-    end
-
-    function readers.ebdt(f,fontdata,specification)
-        if not fontdata.bitmapshapes then
-            readbitmapfont(f,fontdata,specification,"eblc","ebdt")
-        end
-    end
-
-    function readers.ebsc(f,fontdata,specification)
-        if fontdata.bitmapscales then
-            return
-        end
-        local tableoffset = gotodatatable(f,fontdata,"ebsc",specification.glyphs)
-        if tableoffset then
-            local version  = readulong(f)
-            local nofsizes = readulong(f)
-            local sizes    = { }
-            for i=1,nofsizes do
-                sizes[i] = {
-                    ppemx           = readbyte(f),
-                    ppemy           = readbyte(f),
-                    substitutePpemx = readbyte(f),
-                    substitutePpemy = readbyte(f),
-                }
-            end
-            fontdata.bitmapscales = { version = version, sizes = sizes }
-        end
-    end
+ -- function readers.eblc(f,fontdata,specification)
+ --     readbitmapfont(f,fontdata,specification,"eblc","ebdt")
+ --     if fontdata.tables.ebsc and not fontdata.bitmapscales then
+ --         readers.ebsc(f,fontdata,specification)
+ --     end
+ -- end
+ --
+ -- function readers.ebdt(f,fontdata,specification)
+ --     if not fontdata.bitmapshapes then
+ --         readbitmapfont(f,fontdata,specification,"eblc","ebdt")
+ --     end
+ -- end
+ --
+ -- function readers.ebsc(f,fontdata,specification)
+ --     if fontdata.bitmapscales then
+ --         return
+ --     end
+ --     local tableoffset = gotodatatable(f,fontdata,"ebsc",specification.glyphs)
+ --     if tableoffset then
+ --         local version  = readulong(f)
+ --         local nofsizes = readulong(f)
+ --         local sizes    = { }
+ --         for i=1,nofsizes do
+ --             sizes[i] = {
+ --                 ppemx           = readbyte(f),
+ --                 ppemy           = readbyte(f),
+ --                 substitutePpemx = readbyte(f),
+ --                 substitutePpemy = readbyte(f),
+ --             }
+ --         end
+ --         fontdata.bitmapscales = { version = version, sizes = sizes }
+ --     end
+ -- end
 
 end
 

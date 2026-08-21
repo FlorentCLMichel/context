@@ -114,7 +114,7 @@ function afm.load(filename)
                 data.pfbtime = pfbtime
                 report_afm("saving %a in cache",name)
              -- data.resources.unicodes = nil -- consistent with otf but here we save not much
-                data = containers.write(afm.cache, name, data)
+                data = containers.write(afm.cache,name,data)
                 data = containers.read(afm.cache,name)
             end
         end

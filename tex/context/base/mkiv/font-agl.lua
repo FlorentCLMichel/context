@@ -23,7 +23,7 @@ fonts.encodings.agl = agl
 
 table.setmetatableindex(agl,nil) -- prevent recursive lookups otherwise when autoloaded
 
-local unicodes = {
+local adobeunicodes = {
     A                                       = 0x00041,
     AE                                      = 0x000C6,
     AEacute                                 = 0x001FC,
@@ -4781,8 +4781,11 @@ if unicodes then
 
 elseif characters then
 
-    unicodes = allocate { }
-    ctxcodes = allocate { }
+    unicodes = adobeunicodes or { }
+    ctxcodes = { }
+
+    mark(unicodes)
+    mark(ctxcodes)
 
     for u, c in next, characters.data do
         local n = c.contextname

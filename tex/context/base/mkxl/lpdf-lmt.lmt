@@ -221,7 +221,7 @@ local function reset_variables(specification)
     usedfonts      = setmetatableindex(usefont)
     usedxforms     = { }
     usedximages    = { }
- -- usedxgroups    = { }
+    usedxgroups    = { } -- uncommented per 2026-08-21
     boundingbox    = specification.boundingbox
 end
 
@@ -1158,12 +1158,17 @@ do
                         local t = matrices[nofmatrices]
                      -- local r_x, s_x, s_y, r_y, te, tf = t[1], t[2], t[3], t[4], t[5], t[6]
                         local r_x, s_x, s_y, r_y = t[1], t[2], t[3], t[4]
-                        rx = rx * r_x + sx * s_y
-                        sx = rx * s_x + sx * r_y
-                        sy = sy * r_x + ry * s_y
-                        ry = sy * s_x + ry * r_y
-                        tx = tx * r_x + ty * s_y
-                        ty = tx * s_x + ty * r_y
+                        --
+                        -- A parallel assignment retains the originals because 
+                        -- we need those in all six new values! 
+                        --
+                        rx, sx, sy, ry, tx, ty =
+                            rx * r_x + sx * s_y,
+                            rx * s_x + sx * r_y,
+                            sy * r_x + ry * s_y,
+                            sy * s_x + ry * r_y,
+                            tx * r_x + ty * s_y,
+                            tx * s_x + ty * r_y
                     end
                     nofmatrices = nofmatrices + 1
                     matrices[nofmatrices] = { rx, sx, sy, ry, tx, ty, pos_h, pos_v }
@@ -1379,7 +1384,6 @@ do
 
     function codeinjections.saveboxresource(box,attributes,resources,immediate,kind,margin,onum)
         n = n + 1
-        local immediate = true
         local margin    = margin or 0 -- or dimension
         local objnum    = onum or pdfreserveobject()
         local list      = tonut(type(box) == "number" and tex.takebox(box) or box)
@@ -1406,9 +1410,8 @@ do
             objnum     = objnum,
         }
         local r = boxresources[objnum]
-        if r then
-            flushlist(l.list)
-            l.list = nil -- added
+        if r and r.list then
+            flushlist(r.list)
         end
         boxresources[objnum] = l
         if immediate then
@@ -1545,7 +1548,7 @@ do
                     serialize = false
                 }, -- what if empty
             }
-            local objnum = pdfflushstreamobject(content,wrapper,false) -- why not compressed ?
+            local objnum = pdfflushstreamobject(content,wrapper)
             groups = groups + 1
             usedxgroups[groups] = objnum
             local kind = detail and detail.type == "luminosity"
@@ -3298,7 +3301,11 @@ pdfimmediateobject = function(a,b,c,d)
     if kind == "stream" then
         flushstreamobj(data,objnum,attr,compresslevel,nolength) -- nil == auto
     elseif objectstream and objcompression ~= false then
-        addtocache(objnum,data)
+        if data == "" then
+            flushnormalobj(data,objnum)
+        else
+            addtocache(objnum,data)
+        end
     else
         flushnormalobj(data,objnum)
     end
@@ -3341,6 +3348,7 @@ local openfile, closefile  do
     local inmemory = false
     local close    = false
     local update   = false
+    local getsize  = false
     local usedname = false
     local usedsize = false
 
@@ -3380,6 +3388,9 @@ local openfile, closefile  do
             update = function(f,s)
                 f[1] = s
             end
+            getsize = function()
+                return usedsize
+            end
          -- local n = 0
          -- f = {
          --     write = function(self,s)
@@ -3401,17 +3412,20 @@ local openfile, closefile  do
             end
          -- f:setvbuf("full",64*1024)
             local m = getmetatable(f)
-            flush = m.write or m.__index.write
-            close = m.close or m.__index.close
+            flush  = m.write or m.__index.write
+            close  = m.close or m.__index.close
             update = function(f,s)
                 f:seek("set",0)
                 f:write(s)
+            end
+            getsize = function(f)
+                return f:seek("end")
             end
         end
         local version = f_pdf_tag(majorversion,minorversion)
         flush(f,version)
         flush(f,banner)
-        offset = offset + #version + #banner
+        offset   = offset + #version + #banner
         usedname = filename
     end
 
@@ -3727,7 +3741,7 @@ local openfile, closefile  do
                 end
             end
             update(f,f_pdf_tag(majorversion,minorversion)) -- check this
-            usedsize = f:seek("end")
+            usedsize = getsize(f)
             close(f)
             io.flush()
             if lpdf.finalizesignature then lpdf.finalizesignature(usedname,usedsize) end
@@ -3781,65 +3795,68 @@ do
 
     local function embedimage(specification)
         if specification then
-            lastindex = lastindex + 1
-            specification.index = lastindex
-            local xobject = pdfdictionary { }
-            if not specification.notype then
-                xobject.Type     = pdf_xobject
-                xobject.Subtype  = pdf_form
-                xobject.FormType = 1
-            end
-            local bbox = specification.bbox
-            if bbox and not specification.nobbox then
-                xobject.BBox = pdfarray {
-                    bbox[1] * bpfactor,
-                    bbox[2] * bpfactor,
-                    bbox[3] * bpfactor,
-                    bbox[4] * bpfactor,
-                }
-            end
-            xobject = xobject + specification.attr
-            if bbox and not specification.width then
-                specification.width = bbox[3]
-            end
-            if bbox and not specification.height then
-                specification.height = bbox[4]
-            end
-            local dict = xobject()
-            --
-            nofobjects     = nofobjects + 1
-            local objnum   = nofobjects
-            local nolength = specification.nolength
-            local stream   = specification.stream or specification.string
-            --
-            -- We cannot set type in native img so we need this hack or
-            -- otherwise we need to patch too much. Better that i write
-            -- a wrapper then. Anyway, it has to be done better: a key that
-            -- tells either or not to scale by xsize/ysize when flushing.
-            --
-            if not specification.type then
-                local kind = specification.kind
-                if kind then
-                    -- take that one
-                elseif attr and find(attr,"BBox") then
-                    kind = img_stream
-                else
-                    -- hack: a bitmap
-                    kind = img_none
+            local stream = specification.stream or specification.string
+            if stream then
+                lastindex = lastindex + 1
+                specification.index = lastindex
+                local xobject = pdfdictionary { }
+                if not specification.notype then
+                    xobject.Type     = pdf_xobject
+                    xobject.Subtype  = pdf_form
+                    xobject.FormType = 1
                 end
-                specification.type = kind
-                specification.kind = kind
+                local bbox = specification.bbox
+                if bbox and not specification.nobbox then
+                    xobject.BBox = pdfarray {
+                        bbox[1] * bpfactor,
+                        bbox[2] * bpfactor,
+                        bbox[3] * bpfactor,
+                        bbox[4] * bpfactor,
+                    }
+                end
+                local attr = specification.attr -- also checked later
+                xobject = xobject + attr
+                if bbox and not specification.width then
+                    specification.width = bbox[3]
+                end
+                if bbox and not specification.height then
+                    specification.height = bbox[4]
+                end
+                local dict = xobject()
+                --
+                nofobjects     = nofobjects + 1
+                local objnum   = nofobjects
+                local nolength = specification.nolength
+                --
+                -- We cannot set type in native img so we need this hack or
+                -- otherwise we need to patch too much. Better that i write
+                -- a wrapper then. Anyway, it has to be done better: a key that
+                -- tells either or not to scale by xsize/ysize when flushing.
+                --
+                if not specification.type then
+                    local kind = specification.kind
+                    if kind then
+                        -- take that one
+                    elseif attr and find(attr,"BBox") then
+                        kind = img_stream
+                    else
+                        -- hack: a bitmap
+                        kind = img_none
+                    end
+                    specification.type = kind
+                    specification.kind = kind
+                end
+                flushstreamobj(stream,objnum,dict,compresslevel,nolength)
+                specification.objnum      = objnum
+                specification.rotation    = specification.rotation or 0
+                specification.orientation = specification.orientation or 0
+                specification.transform   = specification.transform or 0
+                specification.stream      = nil
+                specification.attr        = nil
+                specification.type        = specification.kind or specification.type or img_none
+                indices[lastindex]        = specification -- better create a real specification
+                return specification
             end
-            flushstreamobj(stream,objnum,dict,compresslevel,nolength)
-            specification.objnum      = objnum
-            specification.rotation    = specification.rotation or 0
-            specification.orientation = specification.orientation or 0
-            specification.transform   = specification.transform or 0
-            specification.stream      = nil
-            specification.attr        = nil
-            specification.type        = specification.kind or specification.type or img_none
-            indices[lastindex]        = specification -- better create a real specification
-            return specification
         end
     end
 

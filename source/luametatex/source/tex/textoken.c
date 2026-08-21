@@ -707,7 +707,7 @@ void tex_show_token_list(halfword p, int asis, int single)
                         tex_print_format("[font->%s]", font_original(chr));
                         break;
                     case end_paragraph_cmd:
-                        tex_print_format("%epar");
+                        tex_print_format("%epar "); /* watch the space */
                         break;
                     default:
                         tex_print_str(tex_aux_special_cmd_string(cmd, chr, error_string_bad(43)));
@@ -805,7 +805,7 @@ void tex_show_token_list_context(halfword p, halfword q)
                         tex_print_format("[font->%s]", font_original(chr));
                         break;
                     case end_paragraph_cmd:
-                        tex_print_format("%epar");
+                        tex_print_format("%epar "); /* watch the space */
                         break;
                     default:
                         tex_print_str(tex_aux_special_cmd_string(cmd, chr, error_string_bad(53)));
@@ -3711,12 +3711,12 @@ char *tex_tokenlist_to_tstring(int pp, int inhibit_par, int *siz, int skippreamb
         /*tex We need to go beyond the reference. */
         int p = token_link(pp);
         if (p) {
-            int e = escape_char_par;  /*tex The serialization of the escape, normally a backlash. */
-            int n = 0;                /*tex The character after |#|, so |#0| upto |#9| */
-            int min = 0;
-            int max = lmt_token_memory_state.tokens_data.top;
-            int skip = 0;
-            int tail = p;
+            int e     = escape_char_par;  /*tex The serialization of the escape, normally a backlash. */
+            int n     = 0;                /*tex The character after |#|, so |#0| upto |#9| */
+            int min   = 0;
+            int max   = lmt_token_memory_state.tokens_data.top;
+            int skip  = 0;
+            int tail  = p;
             int count = 0;
             if (lmt_token_state.bufmax > default_buffer_size) {
                 /* Let's start fresh and small. */
@@ -3819,7 +3819,7 @@ char *tex_tokenlist_to_tstring(int pp, int inhibit_par, int *siz, int skippreamb
                                 break;
                             case end_paragraph_cmd:
                                 if (! inhibit_par && (auto_paragraph_mode(auto_paragraph_text))) {
-                                    tex_aux_append_esc_to_buffer("par");
+                                    tex_aux_append_esc_to_buffer(nospace ? "par" : "par ");
                                 }
                                 break;
                             case deep_frozen_keep_constant_cmd:

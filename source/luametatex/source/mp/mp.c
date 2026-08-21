@@ -5901,6 +5901,21 @@ static mp_knot mp_copy_knot(MP mp, mp_knot source)
     return k;
 }
 
+static void mp_append_knot_to_cycle(mp_knot *head, mp_knot k)
+{
+    if (*head == NULL) {
+        mp_prev_knot(k) = k;
+        mp_next_knot(k) = k;
+        *head = k;
+    } else {
+        mp_knot tail = mp_prev_knot(*head);
+        mp_prev_knot(k) = tail;
+        mp_next_knot(k) = *head;
+        mp_next_knot(tail) = k;
+        mp_prev_knot(*head) = k;
+    }
+}
+
 /*tex
     The |copy_path| routine makes a clone of a given path.
 */
@@ -5911,17 +5926,14 @@ static mp_knot mp_copy_path(MP mp, mp_knot p)
         return NULL;
     } else {
         mp_knot q = mp_copy_knot(mp, p);
-        mp_knot qq = q;
+        mp_prev_knot(q) = q;
+        mp_next_knot(q) = q;
         mp_knot pp = mp_next_knot(p);
         while (pp != p) {
             mp_knot k = mp_copy_knot(mp, pp);
-            mp_next_knot(qq) = k;
-            mp_prev_knot(k) = qq;
-            qq = mp_next_knot(qq);
+            mp_append_knot_to_cycle(&q, k);
             pp = mp_next_knot(pp);
         }
-        mp_next_knot(qq) = q;
-        mp_prev_knot(q) = qq;
         return q;
     }
 }
@@ -5929,9 +5941,8 @@ static mp_knot mp_copy_path(MP mp, mp_knot p)
 /*tex
 
 Similarly, there's a way to copy the {\em reverse} of a path. This procedure returns a pointer to
-the first node of the copy, if the path is a cycle, but to the final node of a non-cyclic copy. The
-global variable |path_tail| will point to the final node of the original path; this trick makes it
-easier to implement |doublepath|. All node types are assumed to be |endpoint| or |explicit| only.
+the first node of the copy, if the path is a cycle, but to the final node of a non-cyclic copy. All
+node types are assumed to be |endpoint| or |explicit| only.
 
 */
 
@@ -5954,7 +5965,6 @@ static mp_knot mp_htap_ypoc(MP mp, mp_knot p)
         if (mp_next_knot(pp) == p) {
             mp_prev_knot(qq) = q;
             mp_next_knot(q) = qq;
-            mp->path_tail = pp;
             return q;
         } else {
             mp_knot rr = mp_new_knot(mp);
@@ -7482,13 +7492,13 @@ static int path_needs_fixing(mp_knot source)
 {
     mp_knot sourcehead = source;
     do {
-        source = source->next;
-    } while (source && source != sourcehead);
-    if (! source) {
-        return 1;
-    } else {
-        return 0;
-    }
+        mp_knot next = mp_next_knot(source);
+        if (next == NULL || mp_prev_knot(next) != source) {
+            return 1;
+        }
+        source = next;
+    } while (source != sourcehead);
+    return 0;
 }
 
 int mp_solve_path(MP mp, mp_knot first)
@@ -8651,15 +8661,6 @@ degenerate ellipse. We need only initialize the |left_x|, |left_y|, |right_x|, a
 
 static mp_knot mp_make_pen(MP mp, mp_knot h, int need_hull)
 {
-    mp_knot q = h;
-    /*tex
-        This can go ... we are already double linked.
-    */
-    do {
-        mp_knot p = q;
-        q = mp_next_knot(q);
-        mp_prev_knot(q) = p;
-    } while (q != h);
     if (need_hull) {
         h = mp_convex_hull(mp, h);
         /*tex
@@ -9199,14 +9200,14 @@ static void mp_find_offset(MP mp, mp_number *x_orig, mp_number *y_orig, mp_knot 
         mp_new_number(arg2);
         q = h;
         do {
-            p = q;
             q = mp_next_knot(q);
+            p = mp_prev_knot(q);
             mp_set_number_from_subtraction(arg1, q->x_coord, p->x_coord);
             mp_set_number_from_subtraction(arg2, q->y_coord, p->y_coord);
         } while (mp_ab_vs_cd(arg1, *y_orig, arg2, *x_orig) < 0);
         do {
-            p = q;
             q = mp_next_knot(q);
+            p = mp_prev_knot(q);
             mp_set_number_from_subtraction(arg1, q->x_coord, p->x_coord);
             mp_set_number_from_subtraction(arg2, q->y_coord, p->y_coord);
         } while (mp_ab_vs_cd(arg1, *y_orig, arg2, *x_orig) > 0);
@@ -10598,6 +10599,7 @@ the squared-off ends of a non-cyclic path~|p| that is to be stroked with the pen
 static void mp_box_ends(MP mp, mp_knot p, mp_knot pp, mp_edge_header_node h)
 {
     if (mp_right_type(p) != mp_endpoint_knot) {
+        mp_knot head = p;
         mp_number dx, dy;            /*tex a unit vector in the direction out of the path at~|p| */
         mp_number d;                 /*tex a factor for adjusting the length of |(dx,dy)| */
         mp_number z;                 /*tex a coordinate being tested against the bounding box */
@@ -10697,10 +10699,8 @@ static void mp_box_ends(MP mp, mp_knot p, mp_knot pp, mp_edge_header_node h)
                 /*tex
                     Advance |p| to the end of the path and make |q| the previous knot.
                 */
-                do {
-                    q = p;
-                    p = mp_next_knot(p);
-                } while (mp_right_type(p) != mp_endpoint_knot);
+                p = mp_prev_knot(head);
+                q = mp_prev_knot(p);
             }
         }
       DONE:
@@ -11531,8 +11531,9 @@ static mp_knot mp_split_cubic_knot(MP mp, mp_knot p, mp_number *t) /* can be les
 static void mp_remove_cubic(MP mp, mp_knot p)
 {
     mp_knot q = mp_next_knot(p); /* the node that disappears */
-    mp_prev_knot(q) = mp_next_knot(p);
-    mp_next_knot(p) = mp_next_knot(q);
+    mp_knot next = mp_next_knot(q);
+    mp_next_knot(p) = next;
+    mp_prev_knot(next) = p;
     mp_number_clone(p->right_x, q->right_x);
     mp_number_clone(p->right_y, q->right_y);
     /* was: mp_memory_free(q); */
@@ -11926,8 +11927,9 @@ static mp_knot mp_make_envelope(MP mp, mp_knot c, mp_knot h, int linejoin, int l
         If endpoint, double the path |c|, and set |spec_p1| and |spec_p2|.
     */
     if (mp_left_type(c) == mp_endpoint_knot) {
+        mp_knot path_tail = mp_prev_knot(c);
         mp->spec_p1 = mp_htap_ypoc(mp, c);
-        mp->spec_p2 = mp->path_tail;
+        mp->spec_p2 = path_tail;
         mp_originator(mp->spec_p1) = mp_program_code;
         mp_knotstate(mp->spec_p1) = mp_regular_knot;
         mp_prev_knot(mp->spec_p1) = mp_next_knot(mp->spec_p2);
@@ -13003,12 +13005,13 @@ static int mp_cubic_intersection(MP mp, mp_knot p, mp_knot pp, int run, int cubi
     return 0;
 }
 
-static mp_knot mp_path_intersection_add(MP mp, mp_knot list, mp_knot *last, mp_number *t, mp_number *tt)
+static mp_knot mp_path_intersection_add(MP mp, mp_knot list, mp_number *t, mp_number *tt)
 {
+    mp_knot last = list ? mp_prev_knot(list) : NULL;
     int a = (int) mp_number_to_scaled(*t) >> mp_intersection_run_shift;
     int aa = (int) mp_number_to_scaled(*tt) >> mp_intersection_run_shift;
-    int b =  (list ? (int) mp_number_to_scaled((*last)->x_coord) : -1) >> mp_intersection_run_shift ;
-    int bb = (list ? (int) mp_number_to_scaled((*last)->y_coord) : -1) >> mp_intersection_run_shift ;
+    int b =  (list ? (int) mp_number_to_scaled(last->x_coord) : -1) >> mp_intersection_run_shift ;
+    int bb = (list ? (int) mp_number_to_scaled(last->y_coord) : -1) >> mp_intersection_run_shift ;
     if (a == b && aa == bb) {
         /* ignore */
     } else {
@@ -13018,22 +13021,12 @@ static mp_knot mp_path_intersection_add(MP mp, mp_knot list, mp_knot *last, mp_n
         mp_right_type(k) = mp_explicit_knot;
         mp_number_clone(k->x_coord, *t);
         mp_number_clone(k->y_coord, *tt);
-        if (list) {
-            mp_prev_knot(k) = *last;
-            mp_next_knot(*last) = k;
-            mp_prev_knot(list) = k;
-            mp_next_knot(k) = list;
-        } else {
-            list = k;
-            mp_prev_knot(k) = k;
-            mp_next_knot(k) = k;
-        }
-        *last = k;
+        mp_append_knot_to_cycle(&list, k);
     }
     return list;
 }
 
-static mp_knot mp_path_intersection(MP mp, mp_knot h, mp_knot hh, int path, mp_knot *last)
+static mp_knot mp_path_intersection(MP mp, mp_knot h, mp_knot hh, int path)
 {
     mp_number n, nn; /*tex Integer parts of intersection times, minus |unity|. */
     int done = 0;
@@ -13047,9 +13040,6 @@ static mp_knot mp_path_intersection(MP mp, mp_knot h, mp_knot hh, int path, mp_k
         precision = 4;
     }
     precision = 1 << precision;
-    if (last) {
-        *last = NULL;
-    }
     /*tex
         Change one-point paths into dead cycles.
     */
@@ -13096,7 +13086,7 @@ static mp_knot mp_path_intersection(MP mp, mp_knot h, mp_knot hh, int path, mp_k
                             mp_number_add(mp->cur_tt, nn);
                             done = 1;
                             if (path) {
-                                list = mp_path_intersection_add(mp, list, last, &(mp->cur_t), &(mp->cur_tt));
+                                list = mp_path_intersection_add(mp, list, &(mp->cur_t), &(mp->cur_tt));
                                 if (t == mp_number_to_scaled(mp->cur_t) && tt == mp_number_to_scaled(mp->cur_tt)) {
                                     if (retrials == 8) { /* is 8 okay? */
                                         break;
@@ -13146,7 +13136,7 @@ static mp_knot mp_path_intersection(MP mp, mp_knot h, mp_knot hh, int path, mp_k
     } while (mp->tol_step <= 3);
   DONE:
     if (path && l && ll && mp_number_equal(l->x_coord, ll->x_coord) && mp_number_equal(l->y_coord, ll->y_coord)) {
-        list = mp_path_intersection_add(mp, list, last, &n, &nn);
+        list = mp_path_intersection_add(mp, list, &n, &nn);
     }
     if (! done) {
         mp_number_negated_clone(mp->cur_t, mp_unity_t);
@@ -13155,12 +13145,7 @@ static mp_knot mp_path_intersection(MP mp, mp_knot h, mp_knot hh, int path, mp_k
             mp_knot k = mp_new_knot(mp);
             mp_number_clone(k->x_coord, mp->cur_t);
             mp_number_clone(k->y_coord, mp->cur_tt);
-            mp_prev_knot(k) = k;
-            mp_next_knot(k) = k;
-            list = k;
-            if (last) {
-                *last = k;
-            }
+            mp_append_knot_to_cycle(&list, k);
         }
     }
     mp_free_number(n);
@@ -21660,11 +21645,19 @@ static inline int mp_same_point(MP mp, mp_knot left, mp_knot right)
 static void mp_set_up_prune_singularities_r_r(MP mp, mp_knot first)
 {
     mp_knot current = first;
-    mp_knot previous = NULL;
     int state = mp_begin_knot;
     while (1) {
         mp_knot next = mp_next_knot(current);
-        if (previous && state == mp_regular_knot && next != first && current->state == mp_regular_knot && mp_same_point(mp, previous, current)) {
+        if (current != first && state == mp_regular_knot && next != first && current->state == mp_regular_knot) {
+            mp_knot previous = mp_prev_knot(current);
+            if (! mp_same_point(mp, previous, current)) {
+                state = current->state;
+                current = next;
+                if (current == first) {
+                    break;
+                }
+                continue;
+            }
             mp_knot wiped = current;
             mp_next_knot(previous) = next;
             mp_prev_knot(next) = previous;
@@ -21672,12 +21665,13 @@ static void mp_set_up_prune_singularities_r_r(MP mp, mp_knot first)
             mp_number_clone(previous->right_y, current->right_y);
             current = next;
             mp_free_knot(mp, wiped);
-            goto PICKUP;
+            if (current == first) {
+                break;
+            }
+            continue;
         }
         state = current->state;
-        previous = current;
         current = next;
-      PICKUP:
         if (current == first) {
             break;
         }
@@ -21686,11 +21680,11 @@ static void mp_set_up_prune_singularities_r_r(MP mp, mp_knot first)
 
 static void mp_set_up_prune_singularities_b_r(MP mp, mp_knot first)
 {
-    mp_knot previous = first;
     mp_knot current = mp_next_knot(first);
     int state = mp_begin_knot;
     while (current != first) {
         mp_knot next = mp_next_knot(current);
+        mp_knot previous = mp_prev_knot(current);
         if (state == mp_begin_knot && next != first && current->state == mp_regular_knot && mp_same_point(mp, previous, current)) {
             mp_knot wiped = current;
             mp_next_knot(previous) = next;
@@ -21700,26 +21694,29 @@ static void mp_set_up_prune_singularities_b_r(MP mp, mp_knot first)
             current = next;
             state = mp_regular_knot;
             mp_free_knot(mp, wiped);
-            goto PICKUP;
+            continue;
         }
         state = current->state;
-        previous = current;
         current = next;
-      PICKUP:
-        if (current == first) {
-            break;
-        }
     }
 }
 
 static void mp_set_up_prune_singularities_r_e(MP mp, mp_knot first) /* todo : last is also end */
 {
      mp_knot current = first;
-     mp_knot previous = NULL;
      int state = mp_begin_knot;
-     while (current != first) {
+     while (1) {
         mp_knot next = mp_next_knot(current);
-         if (previous && state == mp_regular_knot && (current->state == mp_end_knot || next == first ) && mp_same_point(mp, previous, current)) {
+         if (current != first && state == mp_regular_knot && (current->state == mp_end_knot || next == first)) {
+             mp_knot previous = mp_prev_knot(current);
+             if (! mp_same_point(mp, previous, current)) {
+                 state = current->state;
+                 current = next;
+                 if (current == first) {
+                     break;
+                 }
+                 continue;
+             }
              mp_knot wiped = previous;
              mp_knot prev = mp_prev_knot(previous);
              mp_number_clone(current->left_x, previous->left_x);
@@ -21729,7 +21726,6 @@ static void mp_set_up_prune_singularities_r_e(MP mp, mp_knot first) /* todo : la
              mp_free_knot(mp, wiped);
          }
          state = current->state;
-         previous = current;
          current = next;
          if (current == first) {
              break;
@@ -21739,11 +21735,11 @@ static void mp_set_up_prune_singularities_r_e(MP mp, mp_knot first) /* todo : la
 
 static void mp_set_up_prune_singularities_b_e(MP mp, mp_knot first)
 {
-    mp_knot previous = first;
     mp_knot current = mp_next_knot(first);
     int state = mp_begin_knot;
     while (current != first) {
         mp_knot next = mp_next_knot(current);
+        mp_knot previous = mp_prev_knot(current);
         if (state == mp_begin_knot && (current->state == mp_end_knot || next == first) && mp_same_point(mp, previous, current)) {
             mp_knot wiped = current;
             mp_next_knot(previous) = next;
@@ -21756,24 +21752,19 @@ static void mp_set_up_prune_singularities_b_e(MP mp, mp_knot first)
             current = next;
             state = mp_single_knot;
             mp_free_knot(mp, wiped);
-            goto PICKUP;
+            continue;
         }
         state = current->state;
-        previous = current;
         current = next;
-      PICKUP:
-        if (current == first) {
-            break;
-        }
     }
 }
 
 static void mp_set_up_prune_singularities_w_s(MP mp, mp_knot first)
 {
-    mp_knot previous = first;
     mp_knot current = mp_next_knot(first);
     while (current != first) {
         mp_knot next = mp_next_knot(current);
+        mp_knot previous = mp_prev_knot(current);
         if (current->state == mp_single_knot) {
             mp_knot wiped = current;
             mp_next_knot(previous) = next;
@@ -21784,25 +21775,17 @@ static void mp_set_up_prune_singularities_w_s(MP mp, mp_knot first)
             mp_number_clone(next->left_y, next->y_coord);
             mp_free_knot(mp, wiped);
             current = next;
-            goto PICKUP;
-        } else {
-            previous = current;
-            current = next;
-        }
-      PICKUP:
-        if (current == first) {
-            break;
         }
     }
 }
 
 static void mp_set_up_prune_singularities_c_s(MP mp, mp_knot first)
 {
-    mp_knot previous = first;
     mp_knot current = mp_next_knot(first);
     int state = mp_begin_knot;
     while (current != first) {
         mp_knot next = mp_next_knot(current);
+        mp_knot previous = mp_prev_knot(current);
         if (state == mp_end_knot && current->state == mp_begin_knot && mp_same_point(mp, previous, current)) {
             mp_knot wiped = current;
             mp_next_knot(previous) = next;
@@ -21813,15 +21796,10 @@ static void mp_set_up_prune_singularities_c_s(MP mp, mp_knot first)
             current = next;
             state = mp_regular_knot;
             mp_free_knot(mp, wiped);
-            goto PICKUP;
+            continue;
         }
         state = current->state;
-        previous = current;
         current = next;
-      PICKUP:
-        if (current == first) {
-            break;
-        }
     }
 }
 
@@ -23904,16 +23882,9 @@ static void mp_set_up_boundingpath(MP mp, mp_node p, int c)
             polygonal one. The approximation of 8 knots should be good enough.
         */
         if (mp_pen_is_elliptical(mp_get_value_knot(p))) {
-            mp_knot kp, kq;
             pen = mp_copy_pen(mp, mp_get_value_knot(p));
             mp_make_path(mp, pen);
-            kq = pen;
-            do {
-                kp = kq;
-                kq = mp_next_knot(kq);
-                mp_prev_knot(kq) = kp;
-            } while (kq != pen);
-            mp_close_path_cycle(mp, kp, pen);
+            mp_close_path_cycle(mp, mp_prev_knot(pen), pen);
         }
         if (mp_number_greater(internal_value(mp_linejoin_internal), mp_unity_t)) {
             linejoin = mp_beveled_linejoin_code;
@@ -24723,13 +24694,12 @@ static void mp_set_up_intertimes(MP mp, mp_node p, int c)
             // mp_pair_value(mp, &arg1, &arg2);
             // mp_free_number(arg1);
             // mp_free_number(arg2);
-            mp_path_intersection(mp, mp_get_value_knot(p), cur_exp_knot, 0, NULL);
+            mp_path_intersection(mp, mp_get_value_knot(p), cur_exp_knot, 0);
             mp_pair_value(mp, &mp->cur_t, &mp->cur_tt);
         } else {
-            mp_knot last = NULL;
-            mp_knot list = mp_path_intersection(mp, mp_get_value_knot(p), cur_exp_knot, 1, &last);
+            mp_knot list = mp_path_intersection(mp, mp_get_value_knot(p), cur_exp_knot, 1);
             mp_left_type(list) = mp_endpoint_knot;
-            mp_right_type(last) = mp_endpoint_knot;
+            mp_right_type(mp_prev_knot(list)) = mp_endpoint_knot;
             cur_exp_type = mp_path_type;
             mp_set_cur_exp_knot(mp, list);
         }
@@ -24788,7 +24758,6 @@ static void mp_set_up_arc_point_list(MP mp, mp_node p, int c)
         mp_value new_expr;
         mp_knot cur = cur_exp_knot;
         mp_number len, aln, seg, tot, tim, stp, acc, tmp, idx, cnt;
-        mp_knot last = NULL;
         mp_knot list = NULL;
         int iscycle = mp_left_type(cur_exp_knot) == mp_explicit_knot;
         mp_new_number(len);
@@ -24811,7 +24780,6 @@ static void mp_set_up_arc_point_list(MP mp, mp_node p, int c)
         list = mp_complex_knot(mp, cur_exp_knot);
         mp_prev_knot(list) = list;
         mp_next_knot(list) = list;
-        last = list;
         /* second and following points */
         mp_number_clone(tot, stp);
         /* checking the index is more robust than checking on accumulated length */
@@ -24852,11 +24820,7 @@ static void mp_set_up_arc_point_list(MP mp, mp_node p, int c)
                 }
                 OVERSHOOT:
                 kk = mp_complex_knot(mp, k);
-                mp_prev_knot(list) = kk;
-                mp_next_knot(kk) = list;
-                mp_prev_knot(kk) = last;
-                mp_next_knot(last) = kk;
-                last = kk;
+                mp_append_knot_to_cycle(&list, kk);
                 if (toss) {
                     mp_free_knot(mp, k);
                 }
@@ -24879,10 +24843,10 @@ static void mp_set_up_arc_point_list(MP mp, mp_node p, int c)
         if (list) {
             if (iscycle) {
                 mp_left_type(list) = mp_explicit_knot;
-                mp_right_type(last) = mp_explicit_knot;
+                mp_right_type(mp_prev_knot(list)) = mp_explicit_knot;
             } else {
                 mp_left_type(list) = mp_endpoint_knot;
-                mp_right_type(last) = mp_endpoint_knot;
+                mp_right_type(mp_prev_knot(list)) = mp_endpoint_knot;
             }
             cur_exp_type = mp_path_type;
             mp_set_cur_exp_knot(mp, list);
@@ -27704,7 +27668,6 @@ static void mp_bytemap_path(MP mp, mp_node p, int c) /* no need */
             {
                 int index = (int) mp_round_unscaled(cur_exp_value_number);
                 mp_knot head = NULL;
-                mp_knot tail = NULL;
                 if (mp_bytemap_valid_data(mp, index)) {
                     int nx = mp->bytemaps[index].nx;
                     int ny = mp->bytemaps[index].ny;
@@ -27750,14 +27713,7 @@ static void mp_bytemap_path(MP mp, mp_node p, int c) /* no need */
                                             /* here posit */
                                             if (*p >= value && *p <= range) {
                                                 mp_knot k = mp_simple_int_knot(mp, x, bm_current_y(ny,y));
-                                                if (head) {
-                                                    mp_prev_knot(k) = tail;
-                                                    mp_next_knot(tail) = k;
-                                                    tail = k;
-                                                } else {
-                                                    head = k;
-                                                    tail = k;
-                                                }
+                                                mp_append_knot_to_cycle(&head, k);
                                             }
                                             ++p;
                                         }
@@ -27771,14 +27727,7 @@ static void mp_bytemap_path(MP mp, mp_node p, int c) /* no need */
                                             /* here posit */
                                             if (*p++ == value) {
                                                 mp_knot k = mp_simple_int_knot(mp, x, yy);
-                                                if (head) {
-                                                    mp_prev_knot(k) = tail;
-                                                    mp_next_knot(tail) = k;
-                                                    tail = k;
-                                                } else {
-                                                    head = k;
-                                                    tail = k;
-                                                }
+                                                mp_append_knot_to_cycle(&head, k);
                                             }
                                         }
                                     }
@@ -27820,14 +27769,7 @@ static void mp_bytemap_path(MP mp, mp_node p, int c) /* no need */
                                             bytes += 3;
                                             if (red == r && green == g && blue == b) {
                                                 mp_knot k = mp_simple_int_knot(mp, x, yy);
-                                                if (head) {
-                                                    mp_prev_knot(k) = tail;
-                                                    mp_next_knot(tail) = k;
-                                                    tail = k;
-                                                } else {
-                                                    head = k;
-                                                    tail = k;
-                                                }
+                                                mp_append_knot_to_cycle(&head, k);
                                             }
                                         }
                                     }
@@ -27836,9 +27778,7 @@ static void mp_bytemap_path(MP mp, mp_node p, int c) /* no need */
                             break;
                     }
                 }
-                if (tail) {
-                    mp_prev_knot(head) = tail;
-                    mp_next_knot(tail) = head;
+                if (head) {
                     mp_set_cur_exp_knot(mp, head);
                     cur_exp_type = mp_path_type;
                 } else {
@@ -30056,17 +29996,18 @@ static mp_knot_object_node mp_export_path(MP mp, mp_knot p)
         return NULL;
     } else {
         mp_knot_object_node q = mp_export_knot(mp, p);
-        mp_knot_object_node qq = q;
+        mp_prev_knot(q) = q;
+        mp_next_knot(q) = q;
         mp_knot pp = mp_next_knot(p);
         while (pp != p) {
             mp_knot_object_node k = mp_export_knot(mp, pp);
-            mp_prev_knot(k) = qq;
-            mp_next_knot(qq) = k;
-            qq = k;
+            mp_knot_object_node tail = mp_prev_knot(q);
+            mp_prev_knot(k) = tail;
+            mp_next_knot(k) = q;
+            mp_next_knot(tail) = k;
+            mp_prev_knot(q) = k;
             pp = mp_next_knot(pp);
         }
-        mp_prev_knot(q) = qq;
-        mp_next_knot(qq) = q;
         return q;
     }
 }
@@ -31685,11 +31626,7 @@ static int mp_scan_path(MP mp)
         case mp_path_type:
             {
                 path_p = cur_exp_knot;
-                path_q = path_p;
-                /*tex Goto the end of a the path. */
-                while (mp_next_knot(path_q) != path_p) {
-                    path_q = mp_next_knot(path_q);
-                }
+                path_q = mp_prev_knot(path_p);
                 /*tex Open up a cycle. */
                 if (mp_left_type(path_p) != mp_endpoint_knot) {
                     mp_knot r = mp_copy_knot(mp, path_p);
@@ -32024,10 +31961,7 @@ static int mp_scan_path(MP mp)
             qq = pp;
         } else {
             pp = cur_exp_knot;
-            qq = pp;
-            while (mp_next_knot(qq) != pp) {
-                qq = mp_next_knot(qq);
-            }
+            qq = mp_prev_knot(pp);
             if (mp_left_type(pp) != mp_endpoint_knot) {
                 /*tex Open up a cycle. */
                 mp_knot r = mp_copy_knot(mp, pp);
@@ -32154,8 +32088,13 @@ static int mp_scan_path(MP mp)
                         mp_set_number_to_unity(pp->right_curl);
                     }
                     mp_right_type(path_q) = mp_right_type(pp);
-                    mp_prev_knot(pp) = mp_next_knot(path_q);
-                    mp_next_knot(path_q) = mp_next_knot(pp);
+                    mp_knot next = mp_next_knot(pp);
+                    if (next != pp) {
+                        mp_next_knot(path_q) = next;
+                        mp_prev_knot(next) = path_q;
+                        mp_next_knot(qq) = path_p;
+                        mp_prev_knot(path_p) = qq;
+                    }
                     mp_number_clone(path_q->right_x, pp->right_x);
                     mp_number_clone(path_q->right_y, pp->right_y);
                     mp_memory_free(pp);

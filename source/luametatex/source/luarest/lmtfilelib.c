@@ -911,13 +911,13 @@ static int filelib_attributes(lua_State *L)
     return 1; \
 } while(1)
 
-static int filelib_isdir          (lua_State *L) { is_whatever(L, F_OK,(S_ISDIR(info.st_mode))); }
-static int filelib_isreadabledir  (lua_State *L) { is_whatever(L, R_OK,(S_ISDIR(info.st_mode))); }
-static int filelib_iswriteabledir (lua_State *L) { is_whatever(L, W_OK,(S_ISDIR(info.st_mode))); }
+static int filelib_isdir          (lua_State *L) { is_whatever(L, F_OK, (S_ISDIR(info.st_mode))); }
+static int filelib_isreadabledir  (lua_State *L) { is_whatever(L, R_OK, (S_ISDIR(info.st_mode))); }
+static int filelib_iswriteabledir (lua_State *L) { is_whatever(L, W_OK, (S_ISDIR(info.st_mode))); }
 
-static int filelib_isfile         (lua_State *L) { is_whatever(L, F_OK,(S_ISREG(info.st_mode) || S_ISLNK(info.st_mode))); }
-static int filelib_isreadablefile (lua_State *L) { is_whatever(L, R_OK,(S_ISREG(info.st_mode) || S_ISLNK(info.st_mode))); }
-static int filelib_iswriteablefile(lua_State *L) { is_whatever(L, W_OK,(S_ISREG(info.st_mode) || S_ISLNK(info.st_mode))); }
+static int filelib_isfile         (lua_State *L) { is_whatever(L, F_OK, (S_ISREG(info.st_mode) || S_ISLNK(info.st_mode))); }
+static int filelib_isreadablefile (lua_State *L) { is_whatever(L, R_OK, (S_ISREG(info.st_mode) || S_ISLNK(info.st_mode))); }
+static int filelib_iswriteablefile(lua_State *L) { is_whatever(L, W_OK, (S_ISREG(info.st_mode) || S_ISLNK(info.st_mode))); }
 
 static int filelib_setexecutable(lua_State *L)
 {

@@ -763,6 +763,14 @@ function scripts.context.run(ctxdata,filename)
             end
             --
             local runpath = a_runpath or analysis.runpath
+            --
+            -- This is for Hans: we run on a different path when writing manuals
+            -- so that we don't mess up existing tuc/pdf files.
+            --
+            if runpath and find(runpath,"texruns:") and resolvers.getenv('TEXRUNS') == "" then
+                runpath = ""
+            end
+            --
             if type(runpath) == "string" and runpath ~= "" then
                 runpath = resolvers.resolve(runpath)
                 local currentdir = dir.current()

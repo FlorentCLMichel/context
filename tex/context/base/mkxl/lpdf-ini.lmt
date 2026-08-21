@@ -60,7 +60,7 @@ if not modules then modules = { } end modules ['lpdf-ini'] = {
 -- readers from now on? I really never longed for a summary.
 
 local setmetatable, getmetatable, type, next, tostring, tonumber, rawset = setmetatable, getmetatable, type, next, tostring, tonumber, rawset
-local concat = table.concat
+local concat, setmetatableindex = table.concat, table.setmetatableindex
 local char, byte, format, sub, tohex = string.char, string.byte, string.format, string.sub, string.tohex
 local utfchar, utfbyte, utfvalues = utf.char, utf.byte, utf.values
 local sind, cosd, max, min = math.sind, math.cosd, math.max, math.min
@@ -94,7 +94,7 @@ lpdf       = lpdf or { }
 local lpdf = lpdf
 lpdf.flags = lpdf.flags or { } -- will be filled later
 
-table.setmetatableindex(lpdf, function(t,k)
+setmetatableindex(lpdf, function(t,k)
     report_blocked("function %a is not accessible",k)
     os.exit()
 end)
@@ -300,7 +300,7 @@ local tosixteen, fromsixteen, topdfdoc, frompdfdoc, toeight, fromeight
 
 do
 
-    local cache = table.setmetatableindex(function(t,k) -- can be made weak
+    local cache = setmetatableindex(function(t,k) -- can be made weak
         local v = utfbyte(k)
         if v < 0x10000 then
             v = format("%04x",v)
@@ -558,8 +558,20 @@ local pdfescaped do
     local p_escaped_1 = Cs(Cc("/") * replacer^0)
     local p_escaped_2 = Cs(          replacer^0)
 
+    local c_escaped_1 = setmetatableindex(function(t,k)
+        local v = lpegmatch(p_escaped_1,k) or k
+        t[k] = v
+        return v
+    end)
+
+    local c_escaped_2 = setmetatableindex(function(t,k)
+        local v = lpegmatch(p_escaped_2,k) or k
+        t[k] = v
+        return v
+    end)
+
     pdfescaped = function(str,slash)
-        return lpegmatch(slash and p_escaped_1 or p_escaped_2,str) or str
+        return slash and c_escaped_1[str] or c_escaped_2[str]
     end
 
     lpdf.escaped = pdfescaped
@@ -821,15 +833,12 @@ do
         local s = t[1]
         if #s == 0 then
             return "()"
-        elseif find(s,"[\x00-\x1F\x27-\x28\x80-\xBF]") then
-            -- nop: control codes         : 0x00 .. 0x1F
-            -- yes: before left parent    : we don't like escaping
-            -- nop: left and right parent : 0x27 .. 0x28
-            -- yes: after right parent    : we don't like escaping
-            -- nop: after tilde           : 0x80 .. 0xBF
+        elseif find(s,"[\x00-\x1F\x80-\xBF]") then
+            -- control codes              : 0x00 .. 0x1F
+            -- utf continuation bytes    : 0x80 .. 0xBF
             return tosixteen(s)
         else
-            return "(" .. s .. ")"
+            return toeight(s)
         end
     end
 
@@ -837,11 +846,13 @@ do
         local s = t[1]
         if #s == 0 then
             return "()"
+        elseif find(s,"[\x00-\x1F]") then
+            return tosixteen(s)
         elseif find(s,"[\x80-\xBF]") then
          -- return "(\xEF\xBB\xBF" .. s .. ")"
-            return "(\239\187\191" .. s .. ")"
+            return toeight("\239\187\191" .. s)
         else
-            return "(" .. s .. ")"
+            return toeight(s)
         end
     end
 
@@ -925,7 +936,7 @@ do
 
     local escaped = lpdf.escaped
 
-    local cache = table.setmetatableindex(function(t,k)
+    local cache = setmetatableindex(function(t,k)
         local v = setmetatable({ escaped(k,true) }, mt_c)
         t[k] = v
         return v

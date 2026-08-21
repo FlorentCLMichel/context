@@ -1,0 +1,913 @@
+% language=us runpath=texruns:manuals/luametafun
+
+% \enablemode[check]
+
+\environment luametafun-style
+
+\startcomponent luametafun-extensions
+
+\startluacode
+    local t, n, f = { }, 0, string.find
+    for k, v in table.sortedhash(mp) do
+        if not f(k,"_") then
+            n = n + 1 ; t[n] = k
+        end
+    end
+    table.sort(t)
+\stopluacode
+
+\startchapter[title={Extensions}]
+
+\startsection[title=Introduction]
+
+{\em This is an uncorrected preliminary chapter.}
+
+The \TEX\ and \METAPOST\ macro languages each have their characteristics and as a
+result the \LUA\ interfaces in both these subsystems are different. There are
+however some similarities in fetching from, scanning, and pushing back into these
+subsystems and by using wrappers the nasty details get hidden from users.
+Wrapping also permits these interfaces to evolve to a stable state.
+
+In due time much will be documented but currently a lot is also a bit
+experimental because that is the way I can converge to what works best. You can
+assume that the solutions in the \type {mlib-*.lmt} files in some form stay
+(unless it looks too weird). Just stick to the abstractions and you will be fine.
+
+The functionality described here is available in \LMTX.  Although some prototypes
+can be found in \MKIV\ you should not expect the same behavior there.
+
+\stopsection
+
+\startsection[title=The \LUA\ interface (strings)]
+
+\startsubsection[title=Strings]
+
+At some point the \type {runscript} primitive was added to \MPLIB. Because
+officially the library is not bound to \LUA\ this neutral name was chosen. In
+\LUAMETATEX\ we have a follow up on that library and although it's still neutral
+we just assume that \LUA\ is used. The \METAFUN\ follow up is therefore called
+\LUAMETAFUN, and it used the new interfaces to implement efficient going back and
+forth between \TEX, \METAPOST\ and \LUA.
+
+The \type {runscript} macro is used like this:
+
+\startbuffer
+\startMPcode
+draw
+    textext("This will print \quotation{Hi} in the console!")
+    xsized TextWidth
+    withcolor "darkblue" ;
+runscript("print('Hi')");
+\stopMPcode
+\stopbuffer
+
+\typebuffer[option=TEX] \startlinecorrection \getbuffer \stoplinecorrection
+
+The \type {runscript} primitive triggers a callback that gets the string passed.
+This callback then does some magic, normally compiling that string into byte code
+and execute it. The compiled function can return a string that is then fed back
+into the \METAPOST\ \type {scantokens} primitive command. So, that return value
+has to be valid \METAPOST !
+
+\startbuffer
+\startMPcode
+string s ;
+s := runscript("mp.quoted('This will return a string!')") ;
+draw textext(s)
+    xsized TextWidth
+    withcolor "darkgreen" ;
+\stopMPcode
+\stopbuffer
+
+\typebuffer[option=TEX] \startlinecorrection \getbuffer \stoplinecorrection
+
+The \type {mp.quoted} call is one of the build into \CONTEXT\ ways to pipe back
+something to \METAPOST. We will cover this later. If you don't want to use that
+feature, the call would have looked like this:
+
+\startbuffer
+\startMPcode
+string s ;
+s := runscript("return " &
+    "'" & ditto &
+    "Ditto is a string that contains a double qoute!"
+    & ditto & "'"
+) ;
+draw textext(s)
+    xsized TextWidth
+    withcolor "darkred" ;
+\stopMPcode
+\stopbuffer
+
+\typebuffer[option=TEX] \startlinecorrection \getbuffer \stoplinecorrection
+
+The \type {ditto} with ampersands trickery constructs a string with embedded
+quotes which is needed because you want to pass back a string and \METAPOST\ only
+considers something a string when it sees double quotes.
+
+A more hidden feature is that we can actually fence a string by two characters
+that are unlikely to occur in text: \ASCII\ slot 2 (STX) and 3 (ETX). This is
+used in the communication between \TEX, \LUA\ and \METAPOST\ and avoids quote
+related issues.
+
+\startbuffer
+\startMPcode
+string STX ; STX = char 2 ;
+string ETX ; ETX = char 3 ;
+
+draw textext(STX & "deep down supported fencing" & ETX)
+    xsized .5TextWidth
+    withcolor "darkblue";
+\stopMPcode
+\stopbuffer
+
+\typebuffer[option=TEX]
+
+But it is unlikely that you will use this in a regular \LUAMETAFUN\ run:
+
+\startlinecorrection
+\getbuffer
+\stoplinecorrection
+
+In traditional \METAPOST\ handing typeset text is a bit strange. There is no
+rendering built-in so it uses a trick. Text is marked as follows:
+
+\starttyping[option=MP]
+draw btex test etex ;
+\stoptyping
+
+The content between the two fencing commands is written to a file and a
+configured \TEX\ run happens. The resulting \DVI\ file is then converted into a
+picture. In \MKII\ we replaced (complemented) that with \type {textext} and a
+second pass approach which is more efficient and flexible. Some \METAPOST\
+packages emulate formatting for labels and axis text but it's a hack. In \LUATEX\
+and even more in \LUAMETATEX\ we made all this a bit more convenient but where
+\LUATEX\ still had some basic font support, the fact that we now have \OPENTYPE\
+made all that go away in \LUAMETATEX.
+
+For historical reasons we still do support \type {btex} and the variable \type
+{texscriptmode} parameter controls how spaces and newlines get honored. The
+default value is~1.
+
+\starttabulate[|lT|p|]
+\NC 0 \NC no newlines \NC \NR
+\NC 1 \NC newlines in \type {verbatimtex} \NC \NR
+\NC 2 \NC newlines in \type {verbatimtex} and \type {etex} \NC \NR
+\NC 3 \NC no leading and trailing strip in \type {verbatimtex} \NC \NR
+\NC 4 \NC no leading and trailing strip in \type {verbatimtex} and \type {btex} \NC \NR
+\stoptabulate
+
+That way the \LUA\ handler can do what it likes. An \type {etex} has to be
+followed by a space or \type {;} or be at the end of a line and preceded by a
+space or at the beginning of a line. Because in \CONTEXT\ we use strings with
+\type{textext} we also can have issues with newlines.
+
+\startbuffer
+\startMPcode
+draw textext('Some words followed by an "empty" line
+
+{\darkgreen plus some more words!}')
+    xsized TextWidth
+    withcolor "darkred";
+\stopMPcode
+\stopbuffer
+
+\typebuffer[option=TEX]
+
+There are two features shown here: the fact that we can have empty lines in
+string, and the (already mentioned) use of single quotes. The later features is
+controlled by \typ {singlequotemode} which is set to~1 by \CONTEXT.
+
+\startlinecorrection
+\getbuffer
+\stoplinecorrection
+
+The best advice we can give is to stick to \type {textext} and if you have a lot
+of content, just use regular \CONTEXT\ buffers that you set outside the code
+snippet. As an implementation note we mention \type {maketext} that takes a
+string which actually is an in intercept similar to \type {btex} and triggers the
+a callback. You will get a message that you can best use \type {textext}.
+
+\stopsubsection
+
+\startsubsection[title=Numerics]
+
+Instead of a string you can also pass a numeric:
+
+\startbuffer
+\startMPcode
+runscript 10000;
+\stopMPcode
+\stopbuffer
+
+\typebuffer[option=TEX]
+
+This time, on the console you will see something:
+
+\starttyping
+metapost > lua > 1: bad index: 10000
+metapost > lua > 1: no result, invalid code: 10000
+\stoptyping
+
+This I because at the \LUA\ end this number should result in some action, in the
+case of \CONTEXT\ calling a registered function. Because the given number is
+unknown nothing is done. These messages come from \CONTEXT, and \METAPOST\ will
+keep silent because we don't pass anything back.
+
+This numeric interface only makes sense when the callback handles it and the way
+\CONTEXT\ does that is probably unique to that macro package. You can of course
+create \METAPOST\ instances yourself (in \LUA) and handle callbacks your own way:
+you get a string, do this, you get a number, do that.
+
+\stopsubsection
+
+\startsubsection[title=Helpers]
+
+In order to help users passing data to the \LUA\ end there are some helper macros
+defined using the \type {lua} macro with suffixes:
+
+\starttyping
+draw lua.mp.foo(0,2,(3,4)) ;
+fill lua.MP.foo(0,2,(3,4)) ;
+\stoptyping
+
+The lowercase \type {mp} namespace is for \CONTEXT\ itself so if you use that for
+your own extensions, there is no guarantee against future clashes. The uppercase
+\type {MP} namespace is for users. In any case you need to be aware of expansion,
+so \type {foo} should not expand to something weird (variable names and \type
+{vardef} macro names are okay).
+
+At the \LUA\ end these are mapped onto functions, like:
+
+\starttyping
+function mp.foo(n,m,p)
+    -- do something
+end
+function MP.foo(n,m,p)
+    -- do something
+end
+\stoptyping
+
+\stopsubsection
+
+\stopsection
+
+\startsection[title=Printing back]
+
+In the previous chapter we saw \type {mp.quoted} being used to print back a
+string to \METAPOST\ for processing by \type {scantokens}. Not all function in
+the \type {mp} namespace are meant for usage, so best stick to what is described
+here.
+
+The most generic print is \type {mp.print} that takes multiple arguments. A
+numeric value is flushed as serialized number and a string is passed along (so no
+quotes are added). A boolean becomes \type {true} or \type {false}. A table with
+six elements is seen as a transform and otherwise passed as pair, color or cmyk
+color definition. The \type {print} command takes multiple arguments and the
+results are concatenated into one string with other prints so far.
+
+Because this mechanism is already available in \MKIV\ we remain compatible which
+means that the print functions are available in the \type {mp} namespace but also
+in the \type {mp.aux} namespace. In the meantime we moved to the \type {print}
+namespace. The main print command does a guess about what it is fed and will
+inject that as string. Thereby the next are all valid:
+
+\starttyping
+fill fullcircle scaled runscript("mp.print      ('3cm')") withcolor "darkred" ;
+fill fullcircle scaled runscript("mp.print.print('2cm')") withcolor "darkgreen" ;
+fill fullcircle scaled runscript("mp.aux.print  ('1cm')") withcolor "darkblue" ;
+\stoptyping
+
+\startmode[check]
+\blank \start \tt \ctxlua{context(table.concat(table.sortedkeys(mp.print)," "))} \stop \blank
+\stopmode
+
+\starttabulate[|T|T|p|]
+\NC string          \NC string           \NC passed as it is but with percent, double quote and newline escaped  \NC \NR
+\NC boolean         \NC boolean          \NC the true or false primitives \NC \NR
+\NC integer         \NC number           \NC an integer \NC \NR
+\NC number          \NC number           \NC a float \NC \NR
+\NC numeric         \NC number           \NC a float (same as previous) \NC \NR
+\NC points          \NC number           \NC a scaled numeric with \type {pt} unit \NC \NR
+\NC pair            \NC numbers or table \NC a pair (x,y) or (x,x) \NC \NR
+\NC pairpoints      \NC numbers or table \NC idem but with scaled numbers and a \type {pt} unit \NC \NR
+\NC triplet         \NC numbers or table \NC a rgb triplet (r,g,b) \NC \NR
+\NC tripletpoints   \NC numbers or table \NC idem but with scaled numbers and a \type {pt} unit \NC \NR
+\NC quadruple       \NC numbers or table \NC a cmyk quadruple (c,m,y,k) \NC \NR
+\NC quadruplepoints \NC numbers or table \NC idem but with scaled numbers and a \type {pt} unit \NC \NR
+\NC color           \NC numbers or table \NC a numeric, triplet or quadruple \NC \NR
+\NC transform       \NC numbers or table \NC a six element transform \NC \NR
+\NC print           \NC whatever         \NC the normal semi|-|intelligent printer \NC \NR
+\NC fprint          \NC format, whatever \NC the normal semi|-|intelligent printer using a format \NC \NR
+\NC vprint          \NC variable         \NC the normal semi|-|intelligent printer with escaped percents, quotes and newlines \NC \NR
+\NC quoted          \NC string           \NC a valid string surrounded by quotes with an optional first format specifier \NC \NR
+\stoptabulate
+
+A more complex printer is \type {path} that takes upto three arguments. The first
+argument is a table. Entries have two or six elements where the last two are
+control points. The second argument indicates the connector: \type {true} and
+\type {nil} indicate \type {..} while \type {false} will use \type {--}. When the
+last argument is true we have a closed path. Alternatively the table can have a
+boolean \type {cycle} field. So these are all valid:
+
+\starttyping
+local t1 = { {0,0}, {1,0}, {1,1}, {0,1} }
+local t2 = { {0,0}, {1,0}, {1,1}, {0,1}, cycle = true }
+
+mp.print.path(t1)
+mp.print.path(t1,nil,true)
+mp.print.path(t1,true,true)
+mp.print.path(t1,false)
+mp.print.path(t1,false,true)
+mp.print.path(ts,false)
+mp.print.path(t1,"...",true)
+mp.print.path(t1,"..",true)
+mp.print.path(t2,"..")
+\stoptyping
+
+As with the already mentioned simple printers there is a variant that scales:
+\type {pathpoints} (an alternative is of course to scale the whole path by \type
+{pt}).
+
+% mp.draw(t,is_list) -- used d D   -- tables with pairs or quadruples (for bars)
+% mp.fill(t,is_list) -- used f F C -- tables with pairs or quadruples (for bars)
+
+The result of what goes into the print functions is collected and flushed to
+\METAPOST\ at the end of a call. You can directly push something in the buffer
+with \type {mp.direct} and condense the (so far) buffered content with \type
+{mp.flush}. Normally you will not need such low level handling.
+
+\stopsection
+
+\startsection[title=Direct values]
+
+The print functions accumulate and flush at the end. Alternatively you can return
+a value. In that case the type determines what gets done:
+
+\starttabulate[|T||]
+\NC number  \NC native quantity \NC \NR
+\NC boolean \NC native quantity ({\em I need to check this!}) \NC \NR
+\NC string  \NC feeds into \type {scantokens} \NC \NR
+\NC table   \NC feeds concatenated into \type {scantokens} \NC \NR
+\stoptabulate
+
+Instead of return you can also call an injector. The repertoire is similar to the
+printers: \type {boolean}, \type{cmykcolor}, \type{color}, \type{integer},
+\type{number}, \type{numeric}, \type{pair}, \type{path}, \type{quadruplet},
+\type{string}, \type{trans­form}, \type{triplet} and \type{whatever} (kind of
+automatic):
+
+\starttyping
+function MP.MyFunction()
+    mp.inject.string("This is just a string.")
+end
+\stoptyping
+
+The \type {whd}, \type {xy} and \type {pt} injectors inject triplets, pairs and
+numeric scaled from \TEX\ scaled points to base points.
+
+\stopsection
+
+\startsection[title=Registering]
+
+Quite some of the build in functionality uses a slightly different approach. It
+roughly works as follows:
+
+\starttyping
+% reserve an index and set its value:
+
+newscriptindex user_me_foo ; user_me_foo := scriptindex "user_me_foo" ;
+
+% wrap the call into a macro:
+
+def me_foo = runscript user_me_foo enddef ;
+\stoptyping
+
+A macro can of course be more complex, for instance take arguments and push those
+into the script call:
+
+\starttyping
+def me_foo(expr a, b) = runscript user_me_foo a b enddef ;
+\stoptyping
+
+But before this is done at the \METAPOST\ end, you need to define the \LUA\ function:
+
+\starttyping
+local function user_me_foo()
+    -- do something useful
+end
+
+metapost.registerscript("user_me_foo",user_me_foo)
+\stoptyping
+
+In this case you use the print and inject functions, of course only when you want
+to push back some result.
+
+Alternatively you can do:
+
+\starttyping
+metapost.registerdirect("user_me_foo",user_me_foo)
+metapost.registertokens("user_me_foo",user_me_foo)
+\stoptyping
+
+A direct script will treat return values as native, so string and tables are like
+quoted string and interpreted objects (boolean, numeric, tables). The tokens
+variant will feed the strings and concatenated tables into scantokens.
+
+The script index can be fetched at the \LUA\ end with:
+
+\starttyping
+local index = metapost.scriptindex(name)
+\stoptyping
+
+%  mp.autoinject
+
+\startmode[check]
+\blank \start \tt \ctxlua{context(table.concat(table.sortedkeys(mp.inject)," "))} \stop \blank
+\stopmode
+
+\stopsection
+
+\startsection[title=Codes and such]
+
+Using the to be discussed scanners assumes that you know some of the internals
+(or at least concepts) of \METAPOST. Taco has written some excellent tutorials
+on the way \METAPOST\ handles input. Here we just mention what you can run into.
+
+Each primitive, macro or variable falls into a category. The primitives are
+grouped in a way that permits handling them as category and the following table
+shows the grouping. Internally the subcategories are called modes. You should
+treat these numbers as abstractions because they can change over time, depending
+on how the library evolves. Modes can normally be ignored.
+
+\startluacode
+metapost.simple("prestine")
+
+local codes      = metapost.codes
+local types      = metapost.types
+local parameters = metapost.knownparameters
+local procodes   = mplib.propertycodes
+
+local t = metapost.gethashentries("prestine",true) -- prestine:1
+if t then
+    table.sort(t,function(a,b) return a[3] < b[3] end)
+    context.starttabulate { "|r|r|||" }
+        context.BC() context("code")
+        context.BC() context("mode")
+        context.BC() context("name")
+        context.BC() context("code category")
+        context.NC()
+        context.NR()
+        for i=1,#t do
+            local ti       = t[i]
+            local property = procodes[ti[2]]
+            if property == "primitive" then
+                local code = ti[1]
+                local name = ti[3]
+                local mode = ti[4]
+                context.NC() context(code)
+                context.NC() context(mode)
+                context.NC() context.verbatim(name)
+                context.NC() context(codes[code])
+                context.NC() context.NR()
+            end
+        end
+    context.stoptabulate()
+end
+\stopluacode
+
+Variables are of a certain type. Possible variable types are available in \type
+{metapost.types} via numeric and verbose keys:
+\startluacode
+    context("%i: %s",0,metapost.types[0])
+    for i=1,#metapost.types do
+        context(", %i: %s",i,metapost.types[i])
+    end
+\stopluacode .
+
+The possible command codes (as seen in the primitive table) are available in
+\type {metapost.codes} via numeric and verbose keys:
+\startluacode
+    context("%i: %s",0,metapost.codes[0])
+    for i=1,#metapost.codes do
+        context(", %i: %s",i,metapost.codes[i])
+    end
+\stopluacode .
+
+When you scan for input not all of these make sense, often you will stick to dealing
+with symbols like brackets, braces, equal signs and variables or expressions.
+
+\stopsection
+
+\startsection[title=Scanners]
+
+The most low level scanners are \type {token} and \type {symbol}. Although we have
+them in the \type {mp.scan} namespace they are just library calls. You use them like:
+
+\starttyping
+if scan.symbol(true) == "[" then -- "]"
+    scan.symbol()
+else
+    ...
+end
+\stoptyping
+
+Here we check if the upcoming token is a specific symbol. The \type {true} will
+push back the token. A second boolean argument will enforce expansion.
+
+Scanning can be hairy because the engine is set up in a way that mix lookahead,
+expand, resolve and processing. So, you can run into a numeric constant, but also
+in a not yet resolved quantity (take \type {=} versus \type {:=}). When writing
+more complex scanners it helps to print codes and types.
+
+The \type {scan.token} function returns a command, mode and expression type but
+in practice you only have to consider the first value. Other scanners are \type
+{boolean}, \type {cmykcolor}, \type {color}, \type {expression}, \type {integer},
+\type {next}, \type {number}, \type {numeric}, \type {pair}, \type {path}, \type
+{pen}, \type {prop­erty}, \type {string}, \type {transform}, plus some
+implemented around these. Keep in mind that scanners are bound to an instance so
+the functions in the \type {scan} namespace are actually wrappers around the
+library calls.
+
+Because some tokens trigger further scanning (e.g. expressions) we also have two
+dedicated sub tables with scanners: \type {tokenscanners} and \type
+{typescanners} where, when indexed with a token (command) or type you get the
+appropriate scanner to get a real result. When you look at what is built into
+\CONTEXT\ you will notice that we often look ahead and then trigger the
+appropriate scanner. This approach permits to come up with syntaxes that are
+different than what \METAPOST\ normally does, so for instance brackets and braces
+can be used to fence parameters and collections, while lists of comma separated
+numbers can be grabbed that are not part of pairs, triplets, quadruples etc.
+
+\startmode[check]
+\blank \start \tt \ctxlua{context(table.concat(table.sortedkeys(mp.scan)," "))} \stop \blank
+\stopmode
+
+\startmode[check]
+\blank \start \tt \ctxlua{context(table.concat(table.sortedkeys(mp.scan.typescanners)," "))} \stop \blank
+\stopmode
+
+\startmode[check]
+\blank \start \tt \ctxlua{context(table.concat(table.sortedkeys(mp.scan.tokenscanners)," "))} \stop \blank
+\stopmode
+
+\stopsection
+
+\startsection[title=Special helpers]
+
+\startsubsection[title=Hashes]
+
+This is typically one of the examples that popped up when Alan Braslau and I were
+exploring the new possibilities. Due to the way \METAPOST\ implements hashes
+using \LUA\ might turn out to be more efficient. Here are some examples:
+
+\startbuffer
+\startMPcode
+%     newhash("foo") ;
+    tohash("foo","bar","gnu") ;
+    tohash("foo","rab","ung") ;
+    fill fullcircle scaled 1cm withcolor "lightgray" ;
+    draw textext(fromhash("foo","bar")) ;
+    draw textext(fromhash("foo","rab")) rotated 90 ;
+    disposehash("foo") ;
+\stopMPcode
+\stopbuffer
+
+\typebuffer[option=TEX] \startlinecorrection \getbuffer \stoplinecorrection
+
+In this example we allocate a hash and afterwards get rid of it. When you don't
+allocate one it will be automatically allocated. Hashes are persistent, so if you
+want to be sure you start fresh you'd better create one explicitly. And if you
+use a large one, you'd better clean up afterwards. \footnote {In \MKXL\ the
+\type {newhash} macro is no longer needed to get a unique index.}
+
+\startbuffer
+\startMPcode
+    resethash("foo")
+    tohash("foo",1,"gnu") ;
+    tohash("foo",2,"ung") ;
+    fill fullcircle scaled 1cm withcolor "lightgray" ;
+    for i=1 upto 3 :
+        if inhash("foo",i) :
+            draw textext(fromhash("foo",i))
+                rotated ((i-1) * 90) ;
+        fi ;
+    endfor ;
+\stopMPcode
+\stopbuffer
+
+\typebuffer[option=TEX] \startlinecorrection \getbuffer \stoplinecorrection
+
+Here we check if something is present in a hash. This example also demonstrates
+that we can use numbers as key. And yes, you can also use boolean keys:
+
+\startbuffer
+\startMPcode
+    resethash("foo")
+    tohash("foo",false,"gnu") ;
+    tohash("foo",true,"ung") ;
+    fill fullcircle scaled 1cm withcolor "lightgray" ;
+    draw textext(fromhash("foo",false)) ;
+    draw textext(fromhash("foo",true)) rotated 90 ;
+\stopMPcode
+\stopbuffer
+
+\typebuffer[option=TEX] \startlinecorrection \getbuffer \stoplinecorrection
+
+Looking at the implementation of these macros (at the \METAPOST\ end) and functions
+(at the \LUA\ end) will give you an idea how all these interfaces work together.
+
+\stopsubsection
+
+\startsubsection[title=Modes]
+
+You can query the modes set at the \TEX\ end. You can also check the systemmode.
+
+\startbuffer
+\enablemode[weird]
+\startMPcode
+    fill fullsquare xyscaled (TextWidth,5mm)
+        withcolor if texmode("weird") : "darkblue" else : "darkgreen" fi ;
+\stopMPcode
+\disablemode[weird]
+\startMPcode
+    fill fullsquare xyscaled (TextWidth,5mm)
+        withcolor if texmode("weird") : "darkblue" else : "darkgreen" fi ;
+\stopMPcode
+\stopbuffer
+
+\typebuffer[option=TEX] \startlinecorrection \getbuffer \stoplinecorrection
+
+\stopsubsection
+
+\startsubsection[title=Positions]
+
+Keeping track of positions is a core feature and accessible in \METAPOST too. Here is
+a somewhat weird example. Positions are always relative to a region, normally the page,
+but here we provide one via \type {\framed}.
+
+\startbuffer
+\framed [region=MyRegion,offset=overlay,width=1tw] \bgroup \hpos {here} \bgroup
+    \startMPcode
+        fill fullcircle scaled 10mm
+            withcolor "darkblue" ;
+        draw positionxy("here")
+            shifted - positionxy("MyRegion")
+            withpen pencircle scaled 2mm
+            withcolor "darkred" ;
+        draw positionxy("here")
+            shifted - positionxy("MyRegion")
+            shifted (wdpart positionwhd("MyRegion"),0)
+            withpen pencircle scaled 5mm
+            withcolor "darkgreen" ;
+        % otherwise we oscillate
+        setbounds currentpicture to
+            fullcircle scaled 10mm ;
+    \stopMPcode
+\egroup \egroup
+\stopbuffer
+
+\typebuffer[option=TEX]
+
+\startlinecorrection
+    \getbuffer
+\stoplinecorrection
+
+\starttabulate[|T||]
+\NC positionanchor     \NC string     \NC \NR
+\NC positionbox        \NC path using connector \type {--} \NC \NR
+\NC positioncolumn     \NC numeric    \NC \NR
+\NC positioncurve      \NC path using connector \type {..} \NC \NR
+\NC positiondepth      \NC numeric    \NC \NR
+\NC positionhangafter  \NC numeric    \NC \NR
+\NC positionhangindent \NC numeric    \NC \NR
+\NC positionheight     \NC numeric    \NC \NR
+\NC positionhsize      \NC numeric    \NC \NR
+\NC positionleftskip   \NC numeric    \NC \NR
+\NC positionllx        \NC numeric    \NC \NR
+\NC positionlly        \NC numeric    \NC \NR
+\NC positionlowerleft  \NC pair       \NC \NR
+\NC positionlowerright \NC pair       \NC \NR
+\NC positionpage       \NC numeric    \NC \NR
+\NC positionparagraph  \NC numeric    \NC \NR
+\NC positionparindent  \NC numeric    \NC \NR
+\NC positionpath       \NC path using connector \type {--} \NC \NR
+\NC positionpx         \NC numeric    \NC \NR
+\NC positionpxy        \NC pair       \NC \NR
+\NC positionpy         \NC numeric    \NC \NR
+\NC positionregion     \NC string     \NC \NR
+\NC positionrightskip  \NC numeric    \NC \NR
+\NC positionupperleft  \NC pair       \NC \NR
+\NC positionupperright \NC pair       \NC \NR
+\NC positionurx        \NC numeric    \NC \NR
+\NC positionury        \NC numeric    \NC \NR
+\NC positionwhd        \NC (wd,ht,dp) \NC \NR
+\NC positionwidth      \NC numeric    \NC \NR
+\stoptabulate
+
+\stopsubsection
+
+Positioning can be tricky. You really need to make sure that the bounding box of the
+result is right because when it changes, positions also change you get cyclic runs
+and quite possible graphics that get larger and larger.
+
+\startsubsection[title=\TEX\ quantities]
+
+You can set and get some of \TEX's internal quantities:
+
+\startbuffer
+\scratchdimen=100pt \scratchcounter=250 \scratchtoks={okay} \def\Good{good}
+\startMPcode
+draw textext(getdimen("scratchdimen"))   shifted (0cm,0) withcolor "darkblue"  ;
+draw textext(getcount("scratchcounter")) shifted (3cm,0) withcolor "darkred"   ;
+draw textext(gettoks ("scratchtoks"))    shifted (6cm,0) withcolor "darkgreen" ;
+draw textext(getmacro("Good"))           shifted (9cm,0) withcolor "darkyellow" ;
+\stopMPcode
+\stopbuffer
+
+\typebuffer[option=TEX] \startlinecorrection \getbuffer \stoplinecorrection
+
+Valid getters are \type {getmacro}, \type {getdimen}, \type {getcount} and \type
+{gettoks} and their counterparts are \type {set...} and \type {setglobal...}.
+Instead of names you can use numbers for registers, but don't mess up the system
+ones:
+
+\startbuffer
+\startMPcode
+setdimen(2,2*100pt) setcount(2,2*250) settoks(2,"OKAY") setmacro("Good","GOOD")
+draw textext(getdimen(2))      shifted (0cm,0) withcolor "darkblue"  ;
+draw textext(getcount(2))      shifted (3cm,0) withcolor "darkred"   ;
+draw textext(gettoks (2))      shifted (6cm,0) withcolor "darkgreen" ;
+draw textext(getmacro("Good")) shifted (9cm,0) withcolor "darkyellow" ;
+\stopMPcode
+\stopbuffer
+
+\typebuffer[option=TEX] \startlinecorrection \getbuffer \stoplinecorrection
+
+\stopsubsection
+
+\startsubsection[title=\UTF8]
+
+Because we use an \UTF8\ engine we also have \METAPOST\ accepting that encoding. The
+normal string primitives are unchanged and operate on (\ASCII) bytes but we have
+some additional helpers (and more might show up if needed). Here is an example:
+
+\startbuffer
+\startMPcode
+string s ; s := "ÀÁÂÃÄÅàáâãäå" ;
+draw textext(s)             shifted ( 0cm,0) withcolor "darkyellow" ;
+draw textext(utfnum("Â"))   shifted ( 3cm,0) withcolor "darkmagenta" ;
+draw textext(utflen(s))     shifted ( 6cm,0) withcolor "darkcyan" ;
+draw textext(utfsub(s,3,4)) shifted ( 9cm,0) withcolor "darkblue" ;
+draw textext(utfsub(s,6))   shifted (12cm,0) withcolor "darkred" ;
+\stopMPcode
+\stopbuffer
+
+\typebuffer[option=TEX] \startlinecorrection \getbuffer \stoplinecorrection
+
+\stopsubsection
+
+\startsubsection[title=Checkers]
+
+There are a couple of checkers, mostly used in modules. Here's are a few that
+Alan needs for the node module:
+
+\startbuffer
+\startMPcode
+    draw image (
+        draw textext(if isarray p[1][2] : "Y__" else : "N__" fi) ;
+        draw textext(if isarray p[1]    : "_Y_" else : "_N_" fi) ;
+        draw textext(if isarray p       : "__Y" else : "__N" fi) ;
+    ) xsized 3cm withcolor "darkred" ;
+\stopMPcode
+\stopbuffer
+
+\typebuffer[option=TEX] \startlinecorrection \tttf \getbuffer \stoplinecorrection
+
+\startbuffer
+\startMPcode
+    draw image (
+        draw textext(prefix p[1][2]) shifted (10,0) withcolor "darkred" ;
+        draw textext(prefix p[1]   ) shifted (20,0) withcolor "darkgreen" ;
+        draw textext(prefix p      ) shifted (30,0) withcolor "darkblue" ;
+    ) ysized 12mm ;
+\stopMPcode
+\stopbuffer
+
+\typebuffer[option=TEX] \startlinecorrection \tttf \getbuffer \stoplinecorrection
+
+\startbuffer
+\startMPcode
+    draw image (
+        draw textext(dimension p[1][2]) shifted (10,0) withcolor "darkred" ;
+        draw textext(dimension p[1]   ) shifted (20,0) withcolor "darkgreen" ;
+        draw textext(dimension p      ) shifted (30,0) withcolor "darkblue" ;
+    ) ysized 12mm ;
+\stopMPcode
+\stopbuffer
+
+\typebuffer[option=TEX] \startlinecorrection \tttf \getbuffer \stoplinecorrection
+
+\startbuffer
+\startMPcode
+    picture p ; p := textext("some text") ;
+    path    q ; q := fullcircle scaled 3cm ;
+    draw textext(tostring(isobject(p)))                withcolor "darkgreen" ;
+    draw textext(tostring(isobject(q))) shifted (50,0) withcolor "darkblue" ;
+\stopMPcode
+\stopbuffer
+
+\typebuffer[option=TEX] \startlinecorrection \tttf \getbuffer \stoplinecorrection
+
+\stopsubsection
+
+\startsubsection[title=Key|-|value interfaces]
+
+{\em There are plenty of examples in the \type {mp-lmtx.mpxl} file and more will
+be added. Just make sure you create your own unique namespace and don't use the
+ones that \CONTEXT\ uses (like \type {lmt_}).}
+
+\stopsubsection
+
+\stopsection
+
+\startsection[title=Calculus]
+
+There are built in functions like \type {sin} and \type {cos} but the repertoire
+is limited. In \LUAMETAFUN\ we provide (with help of \LUA) all functions that the
+\CCODE\ ecosystem provides. On top of that there are macros that calculate
+properties that come in handy when we project, for instance type {dotprod} and
+\type {crossprod}. In order to be a bit more performing we have a few built-ins:
+\type {knownnormalize}, \type {knownnorm} \type {knowncrossprod}, \type
+{knowndiv} \type {knowndotprod} and \type {knownmod}. The reason for prefixing
+them with \type {known} is that we don't want to overload the traditional already
+present ones. Usage of these is discussed in the more specialized manuals that
+cover three dimensional rendering. If you are fluid in math, you don't need
+much explanation.
+
+\stopsection
+
+\startsection[title=Protection]
+
+In order to prevent unwanted overloading of functionality the \METAPOST\ engine
+has a lightweight protection mechanism. This uses the \type {setproperty}
+command. This is a rather \CONTEXT\ specific approach similar to the one we have
+at the \TEX\ end.
+
+\starttyping[option=MP]
+def primitive = setproperty  1 : enddef ; % not to be used
+def permanent = setproperty  2 : enddef ;
+def immutable = setproperty  3 : enddef ;
+def frozen    = setproperty  4 : enddef ; % not yet used
+def mutable   = setproperty -3 : enddef ; % not yet used
+def primitive = setproperty  1 : enddef ; % not to be used
+def permanent = setproperty  2 : enddef ;
+def immutable = setproperty  3 : enddef ;
+def frozen    = setproperty  4 : enddef ; % not yet used
+def mutable   = setproperty -3 : enddef ; % not yet used
+\stoptyping
+
+The comments indicate that not all is active but that might change. For the
+moment we just stick to warnings. When a property is set and a redefinition takes
+place a callback is triggered so that the macro package can decide what to do.
+
+The various callbacks are not discusses in the \LUAMETAFUN\ manual as they are
+part of the interface that a macro package has to provide. They are functions
+defined and assigned when an instance is created. It should also be noted that
+some primitives like \type {shipout} and \type {dump} have a different meaning
+because we operate in library mode.
+
+\stopsection
+
+%  mp.report      : todo
+%  mp.cleaned     : todo
+%  mp.expandtex   : todo
+%  mp.size        : todo
+
+%  mp.texstr      : yes or no
+%  mp.texvar      : yes or no
+
+%  mp.set         : <empty>
+%  mp.get         : .hashentry
+%  mp.skip        : .token
+
+%  mp.flatten     : used in cnt
+%  mp.solve       : not useful
+
+%  mp.dataset     : todo
+%  mp.datasets    : todo
+%  mp.n           : todo
+
+%  mp.format      : todo, graph related
+%  mp.formatted   : todo, graph related
+%  mp.graphformat : todo, graph related
+
+\stopchapter
+
+\stopcomponent
+
+% Musical timestamp: yet another post by Albion/Joe Parrish: one of my new
+% favourites (able musicians, tasteful arrangements, well timed, very clean
+% recordings, and also very english, historically driven and among the best
+% sounding (also distorted) guitars and basses. It's good to see new quality
+% bands showing up.

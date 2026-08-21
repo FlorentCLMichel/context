@@ -174,11 +174,6 @@ endif()
 # the user. Keep in mind that we might have set a different bytecode (luac) version during the
 # alpha/beta stages of a Lua development version.
 
-if (EXISTS "${CMAKE_SOURCE_DIR}/source/lua/lmthelperlib.c")
-    set(luametatex_use_helpers 1)
-    add_definitions(-DLUAMETATEX_USE_HELPERS=1)
-endif()
-
 # set(LMT_PERMIT_LUA_LIBRARIES 1)
 
 if (DEFINED LMT_PERMIT_LUA_LIBRARIES)
@@ -330,6 +325,12 @@ if (MSVC)
 
         if (MINGW)
             add_link_options("-Wl,--stack,2621440")
+        elseif (CMAKE_HOST_SOLARIS)
+            if (CMAKE_LINKER MATCHES "gld")
+                add_link_options("-Wl,-z,stack-size=2621440")
+            else()
+                add_link_options("-Wl,-z,stacksize=2621440")
+            endif()
         else()
             add_link_options("-Wl,-z,stack-size=2621440")
         endif()

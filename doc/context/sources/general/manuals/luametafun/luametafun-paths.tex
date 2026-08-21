@@ -2,10 +2,6 @@
 
 % \enablemode[check]
 
-% corners == boundingbox
-% check all delta*
-% check all path*
-
 \environment luametafun-style
 
 \startcomponent luametafun-paths
@@ -745,7 +741,7 @@ path where the pen gets lifted between the subpaths. This is what the \type {&&}
 does. The \type {nocycle} is there to intercept the last \quote {connector} (which
 of course could also have been a \type {--} or \type {..}. So we end up with an
 open path, which why in case of a fill we need to close it by \type {cycle}.
-In the next example we show all the accessors:
+In the next example we show some accessors:
 
 \startbuffer
 \startMPcode[instance=scaledfun]
@@ -828,7 +824,10 @@ setbounds currentpicture to p enlarged 5 ;
 \typebuffer[b][option=TEX]
 
 Again, these are mostly meant for extensive path manipulations. There are also
-\typ {delta*} variants. Anyway, these two examples give us:
+\typ {delta*} variants (see syntax diagrams) that let you access properties
+relative to the current point. The reason why we can support that is that in
+\LUAMETATEX\ the \METAPOST\ library the linked list that makes up a path also has
+backward links. Anyway, these two examples give us:
 
 \startlinecorrection
     \startcombination[distance=1cm,align=middle]
@@ -836,6 +835,9 @@ Again, these are mostly meant for extensive path manipulations. There are also
         {\getbuffer[b]} {}
     \stopcombination
 \stoplinecorrection
+
+The various \LUAMETAFUN\ sources contain path manipulators that use these
+accessors so that we can achieve a relatively high performance.
 
 \stopsection
 
@@ -1455,6 +1457,142 @@ fonts are involved. The first and third parameter are scales, the second and
 third slant and/or rotate, while the last two move.
 
 \startlinecorrection \getbuffer \stoplinecorrection
+
+\stopsection
+
+\startsection[title={Properties}]
+
+In various places in the manual we see properties being applied to paths, for
+instance \type {withcolor} and \type {withpen}. Pictures also have properties,
+like \type {withprescript} and \type {withstacking}. Some properties (like pens)
+are applied immediately because they affect dimensions, while others (the
+scripts) are there for the backend. A curious one is \type {withnothing}: it is
+there to stop unwanted expansion following a preceding property. Here is an
+application in the macros:
+
+\starttyping[option=MP]
+def mfun_withshadestep (text t) =
+    withprescript "sh_step=" & decimal mfun_shade_step
+    t
+    withnothing % otherwise we scan ahead and can unwantingly bump the step
+enddef ;
+\stoptyping
+
+There are probably more places where it can/will show up. When \METAPOST\ scans
+for something (often an expression) it will consume (and if needed expand) an
+upcoming token that is not relevant will be pushed back, but as expansion means
+some premature action, then we're toast.
+
+A picture of path has dimensions. You can get these with \type {llcorner} and its
+three companions and a boundingbox path is calculated from these four. The \type
+{corners} primitive is more efficient than calculating four times what the bounds
+are. Filtering a point from the four point path is cheap.
+
+\startbuffer
+\startMPcode
+    fill fullcircle xscaled 4cm yscaled 2cm
+        withcolor "lightgray" ;
+    path p ; p := corners currentpicture ;
+    draw
+        corners currentpicture
+        withpen pencircle scaled 1mm
+        withcolor "darkgray" ;
+    setbounds currentpicture to p ; % guess why
+    draw
+        point 0 of p
+        withpen pencircle scaled 4mm
+        withcolor "darkred" ;
+    draw
+        origin
+        withpen pencircle scaled 2mm
+        withcolor "darkred" ;
+    setbounds currentpicture to p ; % guess why
+    draw textext.rt("\tttf xrange : " & ddecimal xrange p) shifted (3cm, StrutHeight) ;
+    draw textext.rt("\tttf yrange : " & ddecimal yrange p) shifted (3cm,-StrutDepth) ;
+\stopMPcode
+\stopbuffer
+
+\typebuffer[option=TEX]
+
+This example also demonstrates the \type {xrange} and \type {yrange} primitives.
+As mentioned, these primitives are there because in some extreme applications we
+want to avoid redundant calculations.
+
+\startlinecorrection
+\getbuffer
+\stoplinecorrection
+
+\stopsection
+
+\startsection[title=Length]
+
+If you need the length of a path segment one way to do that is to create a
+subpath and calculate its length. But that is quite inefficient if the path is
+long, which is why we have a primitive operation for it:
+
+\startbuffer
+\startMPcode
+path p ; p := fullcircle scaled 4cm ;
+draw    p withpen pencircle scaled 1mm withcolor "middlegray" ;
+drawdot p withpen pencircle scaled 2mm withcolor "darkred" ;
+for i=1 upto 5 :
+    draw
+        textext.rt(
+            "\tttf " & ddecimal (1,i) & " : " &
+            decimal (subarclength (1,i) of p)
+        )
+        shifted (3cm,15mm -i*5mm);
+endfor ;
+\stopMPcode
+\stopbuffer
+
+\typebuffer[option=TEX]
+
+Here we show a few such length calculations:
+
+\starttextdisplay \getbuffer \stoptextdisplay
+
+\stopsection
+
+\startsection[title=Intersections]
+
+In addition to other intersection commands (see \METAFUN\ manual) we have
+collectors. This can save time when many points are involved. Here we have just
+two:
+
+\startbuffer
+\startMPcode
+path p ; p := fullcircle scaled 4cm ;
+path q ; q := p xshifted 2cm ;
+
+draw p
+    withpen pencircle scaled 1mm
+    withcolor "darkblue" ;
+draw q
+    withpen pencircle scaled 1mm
+    withcolor "darkgreen" ;
+
+path s ; s := p intersectiontimeslist q ;
+
+for i within s :
+    draw point (xpart pathpoint) of p
+        withpen pencircle scaled 5mm
+        withcolor "darkred" ;
+    draw point (ypart pathpoint) of q
+        withpen pencircle scaled 2mm
+        withcolor "white" ;
+endfor ;
+\stopMPcode
+\stopbuffer
+
+\typebuffer[option=TEX]
+
+Here we draw then points twice using both components so that we can double check
+if we're fine:
+
+\blank[samepage]
+
+\starttextdisplay \getbuffer \stoptextdisplay
 
 \stopsection
 

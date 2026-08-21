@@ -406,10 +406,10 @@ processnested = function(current,what,n)
         noad = getmiddle(current)          if noad then process(noad,what,n,current) end -- list
         noad = getbottom(current)          if noad then process(noad,what,n,current) end -- list
     elseif id == math_choice then
-        noad = getchoice(start,1)          if noad then process(noad,what,n,current) end -- list
-        noad = getchoice(start,2)          if noad then process(noad,what,n,current) end -- list
-        noad = getchoice(start,3)          if noad then process(noad,what,n,current) end -- list
-        noad = getchoice(start,4)          if noad then process(noad,what,n,current) end -- list
+        noad = getchoice(current,1)        if noad then process(noad,what,n,current) end -- list
+        noad = getchoice(current,2)        if noad then process(noad,what,n,current) end -- list
+        noad = getchoice(current,3)        if noad then process(noad,what,n,current) end -- list
+        noad = getchoice(current,4)        if noad then process(noad,what,n,current) end -- list
     end
 end
 
@@ -458,10 +458,10 @@ processstep = function(current,process,n,id)
         noad = getmiddle(current)          if noad then process(noad,n,current) end -- list
         noad = getbottom(current)          if noad then process(noad,n,current) end -- list
     elseif id == math_choice then
-        noad = getchoice(start,1)          if noad then process(noad,n,current) end -- list
-        noad = getchoice(start,2)          if noad then process(noad,n,current) end -- list
-        noad = getchoice(start,3)          if noad then process(noad,n,current) end -- list
-        noad = getchoice(start,4)          if noad then process(noad,n,current) end -- list
+        noad = getchoice(current,1)        if noad then process(noad,n,current) end -- list
+        noad = getchoice(current,2)        if noad then process(noad,n,current) end -- list
+        noad = getchoice(current,3)        if noad then process(noad,n,current) end -- list
+        noad = getchoice(current,4)        if noad then process(noad,n,current) end -- list
     end
 end
 
@@ -1070,7 +1070,7 @@ do
         local o_next = getnext(open)
         makelist(middle,open,f_o,o_next,last,nil)
         -- open is now a list
-        setlink(open,l_next) -- o_next 
+        setlink(open,l_next) -- o_next
         return open
     end
 

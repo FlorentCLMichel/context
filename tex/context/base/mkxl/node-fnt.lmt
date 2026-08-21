@@ -691,14 +691,19 @@ end
 
      -- starttiming(nodes)
 
+ if not experiment then
+
         usedfonts    = { }
+        lastfont     = nil
+        lastproc     = nil
+
+end
+
         dynamicfonts = { }
         prevfont     = nil -- local
         prevdynamic  = 0   -- local
         variants     = nil -- local
         redundant    = nil -- local
-        lastfont     = nil
-        lastproc     = nil
      -- nonedone     = nil
      -- basedone     = nil
 
@@ -741,7 +746,7 @@ end
             elseif fontmode == "node" then
                 if dynamic ~= prevdynamic then
                     prevdynamic = dynamic
-                    variants    = fontvariants[font]
+                 -- variants    = fontvariants[font]
                  -- setnode(font,dynamic)
                     setnode()
                 end

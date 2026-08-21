@@ -13,6 +13,16 @@ this to the engine is that we expect these to be used in situations where storin
 states efficiently makes sense. The results can of course be bitmaps but also
 become a path.
 
+\starthighlight[notabene]
+    Support for bytemaps is related to for instance three dimensional rendering
+    that itself relates to z-buffering. Some functionality is related to that and
+    in practice a lot of messing with bytemaps happens at the \LUA\ end. In such
+    cases \METAPOST\ is just the abstract carrier of bytemap data. But it can be
+    fun to play with it in \METAPOST, especially when they are not that large.
+    Anyways, this means that this chapter will not cover all features but the
+    syntax overview will mention the lot.
+\stophighlight
+
 In the following example we create three bytemaps: one with a single row of
 bytes, one with ten rows and columns black and white, and a same size bytemap
 with three color components.

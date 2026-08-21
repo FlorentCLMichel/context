@@ -367,6 +367,10 @@ local nuts = {
     updatemarks             = direct.updatemarks,
     updatefirstmarks        = direct.updatefirstmarks,
     updatefirstandbotmark   = direct.updatefirstandbotmark,
+
+    isnextcharsetcheck      = direct.isnextcharsetcheck,
+    isprevcharsetcheck      = direct.isprevcharsetcheck,
+    ischardiscsetcheck      = direct.ischardiscsetcheck,
 }
 
 nodes.nuts     = nuts

@@ -188,7 +188,8 @@ end
                     { glyph = p_right, ["start"] = 0.6*rwidth },
                 }
             else
-                local width = main.parameters.quad/2 or 4*65536 -- 3
+                local quad  = main.parameters.quad -- unlikely to be nil
+                local width = quad and quad/2 or 4*65536 -- 3
                 if not characters[p_rule] then
                     if unicode == normal then
                         p_rule = addprivate(main,f_rule,{
@@ -1233,9 +1234,10 @@ function vfmath.define(specification,virtual,goodies)
                                 end
                             end
                             for unicode, index in sortedhash(extension) do
-                                local fci = characters[unicode]
+                                local uni = backmap and backmap[index] or index
+                                local fci = characters[uni]
                                 if fci then
-                                    fci.next = extras[backmap[index] or index]
+                                    fci.next = extras[uni]
                                 end
                             end
                             local extension = mathencodings["large-to-small-private"]

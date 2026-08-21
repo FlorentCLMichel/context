@@ -1091,7 +1091,7 @@ local tx_reset, tx_process  do
     function metapost.maketext(s,mode)
         if not reported then
             reported = true
-            report_metapost("use 'textext(.....)' instead of 'btex ..... etex'")
+            report_metapost("use 'textext(...)' instead of 'btex ... etex' and 'maketext'")
         end
         if mode and mode == 1 then
             if trace_btexetex then

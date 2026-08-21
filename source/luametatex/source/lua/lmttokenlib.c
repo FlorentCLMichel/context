@@ -471,16 +471,17 @@ static inline int lmt_token_from_lua(lua_State *L)
 
 void lmt_token_list_to_lua(lua_State *L, halfword p)
 {
-    int i = 1;
-    int v = p;
+    int i   = 1;
+    int v   = p;
     int max = lmt_token_memory_state.tokens_data.top; /*tex It doesn't change here. */
-    while (v && v < max) {
+    /* was < max */
+    while (v && v <= max) {
         i++;
         v = token_link(v);
     }
     lua_createtable(L, i, 0);
     i = 1;
-    while (p && p < max) {
+    while (p && p <= max) {
         int cmd, chr, cs;
         if (token_info(p) >= cs_token_flag) {
             cs = token_info(p) - cs_token_flag;
@@ -539,13 +540,22 @@ halfword lmt_token_list_from_lua(lua_State *L, int slot)
                 const char *s = lua_tolstring(L, slot, &j);
                 for (size_t i = 0; i < j; i++) {
                     int tok;
-                    if (s[i] == ascii_space) {
-                        tok = token_val(spacer_cmd, s[i]);
-                    } else {
-                        int kl;
-                        int k = (int) aux_str2uni_len((const unsigned char *) (s + i), &kl);
-                        i = i + kl - 1;
-                        tok = token_val(other_char_cmd, k);
+                    switch (s[i]) {
+                        case ascii_lf:
+                        case ascii_cr:
+                        case ascii_space:
+                            {
+                                tok = token_val(spacer_cmd, ascii_space);
+                                break;
+                            }
+                        default:
+                            {
+                                int kl;
+                                int k = (int) aux_str2uni_len((const unsigned char *) (s + i), &kl);
+                                i = i + kl - 1;
+                                tok = token_val(other_char_cmd, k);
+                                break;
+                            }
                     }
                     p = tex_store_new_token(p, tok);
                 }
@@ -1971,23 +1981,23 @@ static int tokenlib_gobble_until(lua_State *L) /* not ok because we can have dif
     int r = token_info(right->token);
     int cmd, chr, lcmd, lchr, rcmd, rchr;
     if (l >= cs_token_flag) {
-        lcmd = eq_type(l - cs_token_flag);
+        lcmd = eq_type (l - cs_token_flag);
         lchr = eq_value(l - cs_token_flag);
     } else {
         lcmd = token_cmd(l);
         lchr = token_chr(l);
     }
     if (r >= cs_token_flag) {
-        rcmd = eq_type(r - cs_token_flag);
+        rcmd = eq_type (r - cs_token_flag);
         rchr = eq_value(r - cs_token_flag);
     } else {
-        rcmd = token_cmd(l);
-        rchr = token_chr(l);
+        rcmd = token_cmd(r);
+        rchr = token_chr(r);
     }
     while (1) {
         tex_get_token();
         if (cur_tok >= cs_token_flag) {
-            cmd = eq_type(cur_cs);
+            cmd = eq_type (cur_cs);
             chr = eq_value(cur_cs);
         } else {
             cmd = cur_cmd;
@@ -3095,7 +3105,7 @@ static inline int tokenlib_getflags(lua_State *L)
 {
     lua_token *n = tokenlib_aux_check_istoken(L, 1);
     halfword tok = token_info(n->token);
-    lua_pushboolean(L, tok >= cs_token_flag ? eq_flag(tok - cs_token_flag) : 0);
+    lua_pushinteger(L, tok >= cs_token_flag ? eq_flag(tok - cs_token_flag) : 0);
     return 1;
 }
 
@@ -3199,10 +3209,10 @@ static int tokenlib_getfield(lua_State *L)
 
 static int tokenlib_getfields(lua_State *L)
 {
-    halfword cmd = null;
-    halfword chr = null;
-    int flags = 0;
-    int onlyflags = lua_toboolean(L, 2);
+    halfword cmd       = null;
+    halfword chr       = null;
+    int      flags     = 0;
+    int      onlyflags = lua_toboolean(L, 2);
     switch (lua_type(L, 1)) {
         case LUA_TSTRING:
             {
@@ -3211,10 +3221,10 @@ static int tokenlib_getfields(lua_State *L)
                 if (l > 0) {
                     halfword cs;
                     lua_createtable(L, 0, onlyflags ? 0 : 5);
-                    cs = tex_string_locate_only(str, l);
-                    cmd = eq_type(cs);
-                    chr = eq_value(cs);
-                    flags = eq_flag(cs);
+                    cs    = tex_string_locate_only(str, l);
+                    cmd   = eq_type (cs);
+                    chr   = eq_value(cs);
+                    flags = eq_flag (cs);
                     if (! onlyflags) {
                         lua_push_key(csname);
                         lua_pushstring(L, str);
@@ -3227,13 +3237,13 @@ static int tokenlib_getfields(lua_State *L)
             }
         case LUA_TUSERDATA:
             {
-                lua_token *n = tokenlib_aux_check_istoken(L, 1);
-                halfword tok = token_info(n->token);
+                lua_token *n   = tokenlib_aux_check_istoken(L, 1);
+                halfword   tok = token_info(n->token);
                 lua_createtable(L, 0, onlyflags ? 0 : 5);
                 if (tok >= cs_token_flag) {
-                    int t = tok - cs_token_flag;
-                    int allocated = 0;
-                    unsigned char* str = tokenlib_aux_get_cs_text(t, &allocated);
+                    int            t         = tok - cs_token_flag;
+                    int            allocated = 0;
+                    unsigned char *str       = tokenlib_aux_get_cs_text(t, &allocated);
                     if (str) {
                         if (! onlyflags) {
                             lua_push_key(csname);
@@ -3251,8 +3261,9 @@ static int tokenlib_getfields(lua_State *L)
                             lmt_memory_free(str);
                         }
                     }
-                    cmd = eq_type(t);
-                    chr = eq_value(t);
+                    cmd   = eq_type (t);
+                    chr   = eq_value(t);
+                    flags = eq_flag (t);
                 } else {
                     cmd = token_cmd(tok);
                     chr = token_chr(tok);

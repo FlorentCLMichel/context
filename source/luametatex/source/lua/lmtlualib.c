@@ -783,39 +783,103 @@ static int lualib_get_numeric_keys(lua_State *L)
 static int lualib_get_all_keys(lua_State *L)
 {
     int index = 0;
-    lua_createtable(L, 0, 0);
     if (lua_type(L, 1) == LUA_TTABLE) {
+        /* Of course we don't know the hash count. */
+        size_t len = lua_rawlen(L, 1);
+        lua_createtable(L, (int) len, 0);
         lua_pushnil(L);
         while (lua_next(L, 1)) {
             lua_pushvalue(L, -2);
             lua_rawseti(L, -4, ++index);
             lua_pop(L, 1);
         }
+    } else {
+        lua_createtable(L, 0, 0);
     }
     lua_pushinteger(L, index);
     return 2;
 }
 
-static int lualib_compare_keys(lua_State *L)
-{
-    /* luaL_tolstring pushes on the stack but no need to clean up here */
-    int ta = lua_type(L, 1);
-    int tb = lua_type(L, 2);
-    int result = 0;
-    if (ta == LUA_TNUMBER && tb == LUA_TNUMBER) {
-        result = lua_tonumber(L, 1) < lua_tonumber(L, 2);
-    } else {
-        const char *a = (ta == LUA_TSTRING) ? lua_tostring(L, 1) : luaL_tolstring(L, 1, NULL);
-        const char *b = (tb == LUA_TSTRING) ? lua_tostring(L, 2) : luaL_tolstring(L, 2, NULL);
-        result = (a && b) ? strcmp(a, b) < 0 : 0;
+
+# if 0
+
+    static int lualib_compare_keys(lua_State *L)
+    {
+        /* luaL_tolstring pushes on the stack but no need to clean up here. */
+        int ta = lua_type(L, 1);
+        int tb = lua_type(L, 2);
+        int result = 0;
+        if (ta == LUA_TNUMBER && tb == LUA_TNUMBER) {
+            result = lua_tonumber(L, 1) < lua_tonumber(L, 2);
+        } else {
+            const char *a = (ta == LUA_TSTRING) ? lua_tostring(L, 1) : luaL_tolstring(L, 1, NULL);
+            const char *b = (tb == LUA_TSTRING) ? lua_tostring(L, 2) : luaL_tolstring(L, 2, NULL);
+            result = (a && b) ? strcmp(a, b) < 0 : 0;
+        }
+        lua_pushboolean(L, result);
+        return 1;
     }
-    lua_pushboolean(L, result);
-    return 1;
-}
+
+# else
+
+    static int lualib_compare_keys(lua_State *L)
+    {
+        int ta = lua_type(L, 1);
+        int tb = lua_type(L, 2);
+        if (ta == tb) {
+            /* Our use case is mostly integers and strings. */
+            switch (ta) {
+                case LUA_TNUMBER:
+                    if (lua_isinteger(L, 1) && lua_isinteger(L, 2)) {
+                        lua_pushboolean(L, lua_tointeger(L, 1) < lua_tointeger(L, 2));
+                    } else {
+                        lua_pushboolean(L, lua_tonumber(L, 1) < lua_tonumber(L, 2));
+                    }
+                    return 1;
+                case LUA_TSTRING:
+                    {
+                        size_t len_a, len_b;
+                        const char *a = lua_tolstring(L, 1, &len_a);
+                        const char *b = lua_tolstring(L, 2, &len_b);
+                        size_t min_len = (len_a < len_b) ? len_a : len_b;
+                        int res = memcmp(a, b, min_len);
+                        lua_pushboolean(L, res ? (res < 0) : (len_a < len_b));
+                        return 1;
+                    }
+                case LUA_TBOOLEAN:
+                    lua_pushboolean(L, lua_toboolean(L, 1) < lua_toboolean(L, 2));
+                    return 1;
+                default:
+                    break;
+            }
+        }
+        /*
+            Last resort. We can have tables as keys. For instance in packed data
+            structures.
+        */
+        if (ta == tb) {
+            /*
+                When there is no metamethod __lt we also get false. But this
+                fails on our packing code, so a no go:
+            */
+         // if (lua_compare(L, 1, 2, LUA_OPLT)) {
+         //     lua_pushboolean(L, 1);
+         // } else {
+                /* This is now the best we can do, no tostring neede. */
+                lua_pushboolean(L, lua_topointer(L, 1) < lua_topointer(L, 2));
+         //   }
+        } else {
+            /* When all fails, this is what we've left: compare types. */
+            lua_pushboolean(L, ta < tb);
+        }
+        return 1;
+    }
+
+# endif
 
 /*tex
 
-    The next one is more or less |lmt_token_call| btu it might evolve, just some playground for
+    The next one is more or less |lmt_token_call| but it might evolve, just some playground for
     small sandboxed instances that we plug in. We only need to define functions in such an
     instance. It is just an experiment to see if a math only instance suffers less from garbage
     collection. Some simple experiments demonstrate that we run 10% faster even when we pass back
@@ -824,8 +888,8 @@ static int lualib_compare_keys(lua_State *L)
 */
 
 typedef struct LoadS { // name
-    const char   *s;
-    size_t  size;
+    const char *s;
+    size_t      size;
 } LoadS;
 
 static int lualib_aux_stringcall(lua_State *L, lua_State *M)

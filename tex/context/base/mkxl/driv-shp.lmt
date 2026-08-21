@@ -1014,8 +1014,8 @@ local hlist_out, vlist_out  do
                                             cur_h = cur_h + width
                                         end
                                     else
-                                        local lq = gluewidth / width
-                                        local lr = gluewidth % width
+                                        local lq = gluewidth // width
+                                        local lr = gluewidth %  width
                                         if subtype == cleaders_code then
                                             cur_h = cur_h + lr / 2
                                         else
@@ -1038,6 +1038,7 @@ local hlist_out, vlist_out  do
                                         end
                                         v = v + raise
                                         h = h - left
+                                        local boxdir = getdirection(leader) or pos_r
                                         local basepoint_h = 0
                                         if boxdir ~= pos_r then
                                             basepoint_h = boxwidth
@@ -1058,7 +1059,7 @@ local hlist_out, vlist_out  do
                                             cur_h = cur_h + width + lx
                                         end
                                     else
-                                        local shift  = isglyph and 0 or getshift(leader)
+                                        local shift  = id == glyph_code and 0 or getshift(leader)
                                         local boxdir = getdirection(leader) or lefttoright_code
                                         pushleaderlevel()
                                         while cur_h + width <= edge do
@@ -1483,7 +1484,7 @@ local hlist_out, vlist_out  do
                                         cur_v = cur_v + total
                                     end
                                 else
-                                    local lq = glueheight / total
+                                    local lq = glueheight // total
                                     local lr = glueheight % total
                                     if subtype == cleaders_code then
                                         cur_v = cur_v + lr / 2
@@ -1595,8 +1596,8 @@ local hlist_out, vlist_out  do
                             shift = shift + width
                         end
                         if target then
-                            local a = anchors[target]
-                            if a then
+                            targetdata = anchors[target]
+                            if targetdata then
                                 if pos_r == righttoleft_code then
                                     pos_h = targetdata[1] - shift
                                 else
@@ -1775,7 +1776,8 @@ function drivers.converters.lmtx(driver,box,smode,objnum,specification)
     local total = height + depth
 
     if height > maxdimen or depth > maxdimen or width > maxdimen or total > maxdimen then
-        goto DONE
+        shippingmode = "none"
+        return
     end
 
     if shippingmode == "page" then
@@ -1839,8 +1841,6 @@ function drivers.converters.lmtx(driver,box,smode,objnum,specification)
     else
         hlist_out(box,getlist(box))
     end
-
-    ::DONE::
 
     finalize(driver,details)
 

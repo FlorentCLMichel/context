@@ -583,6 +583,7 @@ do
         -- can get a weird duplicated own path
 
         function dir.expandname(str) -- will be merged with cleanpath and collapsepath\
+            str = gsub(str,"\\","/") -- weird, why is this now needed in mkiv
             local first, nothing, last = match(str,"^(//)(//*)(.*)$")
             if first then
                 first = xcurrentdir() .. "/" -- xcurrentdir sanitizes

@@ -504,6 +504,51 @@ function lua.newindex ( <t:integer> size, <t:whatever> default )
 end
 \stoptyping
 
+These helpers are just handy for larger helpers written in \LUA\ in \CONTEXT.
+They loop over a given table and return keys, indices or everything. When we have
+a hash, the list is unordered!
+
+\starttyping[option=LUA]
+function lua.getstringkeys ( <t:table> t )
+    return <t:table>
+end
+
+function lua.getnumerickeys ( <t:table> t )
+    return <t:table>
+end
+
+function lua.getallkeys ( <t:table> t )
+    return <t:table>
+end
+\stoptyping
+
+The next one is really \CONTEXT\ specific. I returns a table with keys and
+an integer indicating the nature.
+
+\startcolumns[n=4]
+\starttabulate[|T|l|]
+\NC 0 \NC unknown \NC \NR
+\NC 1 \NC string  \NC \NR
+\NC 2 \NC number  \NC \NR
+\NC 3 \NC mixed   \NC \NR
+\stoptabulate
+\stopcolumns
+
+\starttyping[option=LUA]
+function lua.getcheckedkeys ( <t:table> t )
+    return <t:table>, t:integer>
+end
+\stoptyping
+
+Based on the second return value one can decide what sorter is most
+efficient for the task. The most permissive one is:
+
+\starttyping[option=LUA]
+function lua.comparekeys ( a, b )
+    return <t:boolean> -- a < b
+end
+\stoptyping
+
 \stopsubsection
 
 \startsubsection[title=Nibbles]
@@ -512,30 +557,45 @@ Nibbles are half bytes so they run from \type {0x0} upto \type {0xF}. When we
 needed this for math state fields, the helpers made it here.
 
 \starttyping[option=LUA]
-function lua.setnibble ( <t:integer> original, <t:integer> position, <t:integer> value )
+function lua.setnibble (
+    <t:integer> original,
+    <t:integer> position,
+    <t:integer> value
+)
     return <t:integer>
 end
 \stoptyping
 
 \starttyping[option=LUA]
-function lua.getnibble ( <t:integer> original, <t:integer> position )
+function lua.getnibble (
+    <t:integer> original,
+    <t:integer> position
+)
     return <t:integer>
 end
 \stoptyping
 
 \starttyping[option=LUA]
-function lua.addnibble ( <t:integer> original, <t:integer> position, <t:integer> value )
+function lua.addnibble (
+    <t:integer> original,
+    <t:integer> position,
+    <t:integer> value
+)
     return <t:integer>
 end
 \stoptyping
 
 \starttyping[option=LUA]
-function lua.subnibble ( <t:integer> original, <t:integer> position, <t:integer> value )
+function lua.subnibble (
+    <t:integer> original,
+    <t:integer> position,
+    <t:integer> value
+)
     return <t:integer>
 end
 \stoptyping
 
-Here a a few examples (positions go from right to left and start at one):
+Here are a few examples (positions go from right to left and start at one):
 
 \protected\def\Test#1#2{\NC #2 \NC \cldcontext{"0x\letterpercent#1X",#2} \NC \NR}
 
@@ -579,6 +639,33 @@ end
 \stoptyping
 
 \stopsubsection
+
+% \startsubsection[title=Instances]
+%
+% In various \LUAMETAFUN\ features we let \LUA\ do some calculations, in particular
+% math related ones, for instance when render functions or surfaces. As experiment
+% we therefore have an extra instance. When we started the \LUATEX\ the engine
+% could allocate various instances but the overhead in piping back to \TEX\ and the
+% fact that data often has to be shares, made is drop that feature.
+%
+% The main reason for an extra instance is that we have cheaper garbage collection
+% and isolation. Results can be piped back to the main instance, and one could
+% preload functions but a more extensive setup would also add some overhead, which
+% then makes little sense. Therefore, only the sandbox argument remains.
+%
+% \startbuffer
+% \startluacode
+%     lua.usestringcall(true)
+%
+%     local l = lua.luastringcall
+%     local m = lua.mpsstringcall
+%
+% \stopluacode
+% \stopbuffer
+%
+% \typebuffer[option=TEX]
+%
+% \stopsubsection
 
 \stopsection
 

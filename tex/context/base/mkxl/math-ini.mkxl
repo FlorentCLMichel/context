@@ -1699,7 +1699,7 @@
 
 %setupmathematics            [\c!setups=math:spacing:default]
 
-\definemathematics[i:default][\c!setups=math:spacing:equal]
+\definemathematics[i:default][\c!setups=math:spacing:default]
 \definemathematics[i:half]   [\c!setups=math:spacing:half]
 \definemathematics[i:tight]  [\c!setups=math:spacing:tight]
 \definemathematics[i:fixed]  [\c!setups=math:spacing:fixed]
@@ -3216,8 +3216,8 @@
 % \to \everysetupmathematics
 \to \everyswitchmathematics
 
-\permanent\protected\def\enablemathpunctuation {\csname\??mathautopunctuation\v!no \endcsname}
-\permanent\protected\def\disablemathpunctuation{\csname\??mathautopunctuation\v!yes\endcsname}
+\permanent\protected\def\enablemathpunctuation {\csname\??mathautopunctuation\v!yes\endcsname}
+\permanent\protected\def\disablemathpunctuation{\csname\??mathautopunctuation\v!no \endcsname}
 
 \setupmathematics
   [\c!autopunctuation=\v!no] % no | yes | all | comma | yes,semicolon | all,semicolon
@@ -3901,6 +3901,7 @@
 
 \permanent\def\currentverbosemathstyle
   {\ifmathstyle \s!display
+   \or          \s!display,\s!cramped,
    \or          \s!text
    \or          \s!text,\s!cramped
    \or          \s!script

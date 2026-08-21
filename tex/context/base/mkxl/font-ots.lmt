@@ -298,6 +298,10 @@ local setfontcheck       = nuts.setfontcheck
 local getfontcheck       = nuts.getfontcheck
 local newfontcheck       = nuts.newfontcheck
 
+local isnextcharsetcheck = nuts.isnextcharsetcheck
+local isprevcharsetcheck = nuts.isprevcharsetcheck
+local ischardiscsetcheck = nuts.ischardiscsetcheck
+
 local currentcheck       = newfontcheck()
 
 local spaces             = false
@@ -3070,14 +3074,14 @@ end
 
 -- todo: pass all these 'locals' in a table
 
-local sequencelists = setmetatableindex(function(t,font)
-    local sequences = fontdata[font].resources.sequences
-    if not sequences or not next(sequences) then
-        sequences = false
-    end
-    t[font] = sequences
-    return sequences
-end)
+-- local sequencelists = setmetatableindex(function(t,font)
+--     local sequences = fontdata[font].resources.sequences
+--     if not sequences or not next(sequences) then
+--         sequences = false
+--     end
+--     t[font] = sequences
+--     return sequences
+-- end)
 
 -- fonts.hashes.sequences = sequencelists
 
@@ -3873,6 +3877,8 @@ otf.helpers.pardirstate = pardirstate
 
 do
 
+local nn = 0
+
     local testdics = false
 
     -- using a merged combined hash as first test saves some 30% on ebgaramond and
@@ -3897,7 +3903,7 @@ do
         end
     }
 
-    local ischardisc          = node.direct.ischardisc
+ -- local ischardisc          = node.direct.ischardisc
     local markglyphprocessing = node.direct.markglyphprocessing
     local quickanddirty       = false
 
@@ -3907,7 +3913,7 @@ do
 
     function otf.featuresprocessor(head,font,dynamic,direction)
 
-        local sequences = sequencelists[font] -- temp hack
+     -- local sequences = sequencelists[font] -- temp hack
 
         nesting = nesting + 1
         if nesting == 1 then
@@ -3953,9 +3959,10 @@ do
         end
 
         local datasets  = otfdataset(tfmdata,font,dynamic)
-        local dirstack  = { nil } -- could move outside function but we can have local runs
+     -- local dirstack  = { nil } -- could move outside function but we can have local runs
+        local dirstack
         sweephead       = { }
-     -- sweephead  = { a = 1, b = 1 } sweephead.a = nil sweephead.b = nil
+     -- sweephead       = { a = 1, b = 1 } sweephead.a = nil sweephead.b = nil
 
         -- Keeping track of the headnode is needed for devanagari. (I generalized it a bit
         -- so that multiple cases are also covered.) We could prepend a temp node.
@@ -4004,11 +4011,11 @@ do
                 local rlmode = 0 -- how important is this .. do we need to check for dir?
                 local merged = steps.merged
                 while start do
-                    local prv, char, id = isprevchar(start,font,dynamic,state)
+                 -- local prv, char, id = isprevchar(start,font,dynamic,state)
+                    local prv, char, id = isprevcharsetcheck(start,currentcheck,font,dynamic,state)
                     if char then
                         local m = merged[char]
-                     -- currentscale, currentxscale, currentyscale = getscales(start) -- before if test
-                        setfontcheck(currentcheck,start)
+                     -- setfontcheck(currentcheck,start)
                         if m then
                             for i=m[1],m[2] do
                                 local step = steps[i]
@@ -4034,7 +4041,7 @@ do
                     end
                 end
             else
-                local d      = false
+             -- local d      = false
                 local start  = head
                 local rlmode = initialrl
                 if nofsteps == 1 then -- happens often
@@ -4042,13 +4049,13 @@ do
                     local lookupcache = step.coverage
                     while start do
                         -- state: isol etc, feature specific
-                        local nxt, char, id = isnextchar(start,font,dynamic,state) -- we can move the data/state checks here
+                     -- local nxt, char, id = isnextchar(start,font,dynamic,state)
+                        local nxt, char, id = isnextcharsetcheck(start,currentcheck,font,dynamic,state)
                         if char then
                             -- no skiphash check here
                             local lookupmatch = lookupcache[char]
-                         -- currentscale, currentxscale, currentyscale = getscales(start) -- before if test
-                            setfontcheck(currentcheck,start)
-                            d = true
+                         -- setfontcheck(currentcheck,start)
+                         -- d = true
                             if lookupmatch then
                                 local ok, df
                                 head, start, ok, df = handler(head,start,dataset,sequence,lookupmatch,rlmode,skiphash,step)
@@ -4064,25 +4071,27 @@ do
                             -- a different font|state or glue (happens often)
                             start = nxt
                         elseif id == disc_code then
--- if not quickanddirty or ischardisc(start) then
-if ischardisc(start) then
-                            if not d then
-                                setfontcheck(currentcheck,start)
-                                d = true
-                            end
-                            if gpossing then
-                                start = kernrun(start,k_run_single,             lookupcache,step,dataset,sequence,rlmode,skiphash,handler)
-                            elseif forcetestrun then
-                                start = testrun(start,t_run_single,c_run_single,lookupcache,step,dataset,sequence,rlmode,skiphash,handler)
+                         -- if not quickanddirty or ischardisc(start) then
+                         -- if ischardisc(start) then
+                            if ischardiscsetcheck(start,currentcheck) then
+                             -- if not d then
+                             --     setfontcheck(currentcheck,start)
+                             --     d = true
+                             -- end
+                                if gpossing then
+                                    start = kernrun(start,k_run_single,             lookupcache,step,dataset,sequence,rlmode,skiphash,handler)
+                                elseif forcetestrun then
+                                    start = testrun(start,t_run_single,c_run_single,lookupcache,step,dataset,sequence,rlmode,skiphash,handler)
+                                else
+                                    start = comprun(start,c_run_single,             lookupcache,step,dataset,sequence,rlmode,skiphash,handler)
+                                end
                             else
-                                start = comprun(start,c_run_single,             lookupcache,step,dataset,sequence,rlmode,skiphash,handler)
+                                start = nxt
                             end
-else
-    start = nxt
-end
                         elseif id == math_code then
                             start = getnext(endofmath(start))
                         elseif id == dir_code then
+                            if not dirstack then dirstack = { nil, nil } end
                             topstack, rlmode = txtdirstate(start,dirstack,topstack,rlparmode)
                             start = nxt
                      -- elseif id == par_code and startofpar(start) then
@@ -4096,12 +4105,12 @@ end
                     local merged = steps.merged
                     while start do
                         -- state: isol etc, feature specific
-                        local nxt, char, id = isnextchar(start,font,dynamic,state)
+                     -- local nxt, char, id = isnextchar(start,font,dynamic,state)
+                        local nxt, char, id = isnextcharsetcheck(start,currentcheck,font,dynamic,state)
                         if char then
                             -- no skiphash check here
                             local m = merged[char]
-                         -- currentscale, currentxscale, currentyscale = getscales(start) -- before if test
-                            setfontcheck(currentcheck,start)
+                         -- setfontcheck(currentcheck,start)
                             if m then
                                 local ok, df
                                 for i=m[1],m[2] do
@@ -4134,25 +4143,27 @@ end
                             -- a different font|state or glue (happens often)
                             start = nxt
                         elseif id == disc_code then
--- if not quickanddirty or ischardisc(start) then
-if ischardisc(start) then
-                            if not d then
-                                setfontcheck(currentcheck,start)
-                                d = true
-                            end
-                            if gpossing then
-                                start = kernrun(start,k_run_multiple,               steps,nofsteps,dataset,sequence,rlmode,skiphash,handler)
-                            elseif forcetestrun then
-                                start = testrun(start,t_run_multiple,c_run_multiple,steps,nofsteps,dataset,sequence,rlmode,skiphash,handler)
+                         -- if not quickanddirty or ischardisc(start) then
+                         -- if ischardisc(start) then
+                            if ischardiscsetcheck(start,currentcheck) then
+                             -- if not d then
+                             --     setfontcheck(currentcheck,start)
+                             --     d = true
+                             -- end
+                                if gpossing then
+                                    start = kernrun(start,k_run_multiple,               steps,nofsteps,dataset,sequence,rlmode,skiphash,handler)
+                                elseif forcetestrun then
+                                    start = testrun(start,t_run_multiple,c_run_multiple,steps,nofsteps,dataset,sequence,rlmode,skiphash,handler)
+                                else
+                                    start = comprun(start,c_run_multiple,               steps,nofsteps,dataset,sequence,rlmode,skiphash,handler)
+                                end
                             else
-                                start = comprun(start,c_run_multiple,               steps,nofsteps,dataset,sequence,rlmode,skiphash,handler)
+                                start = nxt
                             end
-else
-    start = nxt
-end
                         elseif id == math_code then
                             start = getnext(endofmath(start))
                         elseif id == dir_code then
+                            if not dirstack then dirstack = { nil, nil } end
                             topstack, rlmode = txtdirstate(start,dirstack,topstack,rlparmode)
                             start = nxt
                      -- elseif id == par_code and startofpar(start) then
@@ -4229,7 +4240,8 @@ end
         local nofsteps  = sequence.nofsteps
 
         local done      = false
-        local dirstack  = { nil } -- could move outside function but we can have local runs (maybe a few more nils)
+     -- local dirstack  = { nil } -- could move outside function but we can have local runs (maybe a few more nils)
+        local dirstack
         local start     = head
         local initialrl = (direction == righttoleft_code) and -1 or 0
         local rlmode    = initialrl
@@ -4241,8 +4253,8 @@ end
         local position  = 0
 
         while start do
-         -- local nxt, char, id = isnextchar(start,currentfont,currentdynamic)
-            local nxt, char, id = isnextchar(start,font,dynamic)
+         -- local nxt, char, id = isnextchar(start,font,dynamic)
+            local nxt, char, id = isnextcharsetcheck(start,currentcheck,font,dynamic,0)
             if char then
                 position = position + 1
                 local m = merged[char]
@@ -4252,8 +4264,7 @@ end
                         local step = steps[i]
                         local lookupcache = step.coverage
                         local lookupmatch = lookupcache[char]
-                     -- currentscale, currentxscale, currentyscale = getscales(start) -- before if test
-                        setfontcheck(currentcheck,start)
+                     -- setfontcheck(currentcheck,start)
                         if lookupmatch then
                             local ok
                             head, start, ok = handler(head,start,dataset,sequence,lookupmatch,rlmode,skiphash,step)
@@ -4282,6 +4293,7 @@ end
             elseif id == math_code then
                 start = getnext(endofmath(start))
             elseif id == dir_code then
+                if not dirstack then dirstack = { nil, nil } end
                 topstack, rlmode = txtdirstate(start,dirstack,topstack,rlparmode)
                 start = nxt
          -- elseif id == par_code and startofpar(start) then

@@ -258,22 +258,28 @@ static int helperlib_snapindeed(lua_State *L)
 
 /* The table is at index 2! */
 
-static halfword helperlib_aux_mathprocessed(lua_State *L, 
-    halfword id, halfword start, halfword n, halfword parent, 
-    int *done, halfword *newstart, halfword *newinitial
+static halfword helperlib_aux_mathprocessed(
+    lua_State *L,
+    halfword   id,
+    halfword   start,
+    halfword   n,
+    halfword   parent,
+    int       *done,
+    halfword  *newstart,
+    halfword  *newinitial
 )
 {
     lua_rawgeti(L, 2, id);
     if (lua_type(L, -1) == LUA_TFUNCTION) { 
         int top = lua_gettop(L);
         lua_pushinteger(L, start);
-        lua_pushvalue(L, -1);
+        lua_pushvalue(L, 2);
         lua_pushinteger(L, n);
         lua_pushinteger(L, parent);
         lua_call(L, 4, 3);
-        *done = lua_toboolean(L, -1);
+        *done = lua_toboolean(L, -3);
         *newstart = lmt_opthalfword(L, -2, 0);
-        *newinitial = lmt_opthalfword(L, -2, 0);
+        *newinitial = lmt_opthalfword(L, -1, 0);
         lua_settop(L, top - 1);
         return 1;
     } else {

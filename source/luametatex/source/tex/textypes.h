@@ -379,6 +379,8 @@ extern halfword tex_badness(
 # define max_classification_code 0xFFFF
 
 # define ascii_space  32
+# define ascii_cr     13
+# define ascii_lf     10
 # define ascii_max   127
 
 # define default_space_factor 1000
