@@ -180,6 +180,8 @@ typedef struct node_memory_state_info {
     int          lua_properties_level;
     halfword     attribute_cache;
     halfword     max_used_attribute;
+    halfword     min_set_attribute;
+    halfword     max_set_attribute;
 # if track_attributes
     int          max_tracked_attribute;
 # endif 
@@ -467,7 +469,7 @@ extern void     tex_undump_specification_data (dumpstream f);
 
 # define attribute_list_node_size 2
 # define attribute_list_count(a)  memone(a,1)
-# define attribute_list_unset(a)  memtwo(a,1)
+# define attribute_list_unset(a)  memtwo(a,1) /* we could set a bit for the first 32 */
 # define attribute_list_reset(a)  lvalue(a,1)
 
 # define attribute_node_size      2
@@ -2008,6 +2010,7 @@ static inline int tex_same_mathspec(halfword a, halfword b)
 # define specification_anything_2(a) memtwo(a,3)
 
 /*tex
+
     We now define some math related nodes (and noads) and start with style and choice nodes. Style
     nodes can be smaller, the information is encoded in |subtype|, but choice nodes are on-the-spot
     converted to style nodes with slack. The advantage is that we don't run into issues when a choice
@@ -3331,6 +3334,7 @@ extern void     tex_flush_node               (halfword n);
 extern halfword tex_copy_node_list           (halfword n, halfword e);
 extern halfword tex_copy_node                (halfword n);
 extern halfword tex_copy_node_only           (halfword n);
+extern halfword tex_copy_node_just           (halfword n);
 extern halfword tex_copy_specification_node  (halfword n);
 extern void     tex_flush_specification_node (halfword n);
 /*     halfword tex_fix_node_list            (halfword n); */

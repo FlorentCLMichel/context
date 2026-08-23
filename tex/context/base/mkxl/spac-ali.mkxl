@@ -970,7 +970,6 @@
 \defcsname\??aligncommand\v!slanted        \endcsname{\c_spac_align_state_horizontal\plusten
                                                       \c_spac_align_state_broad     \plustwo  }
 
-
 \defcsname\??aligncommand\v!table          \endcsname{\c_spac_align_state_vertical  \plusthree
                                                       \c_spac_align_state_broad     \plusone
                                                       \c_spac_align_state_horizontal\plustwo  }
@@ -1202,10 +1201,7 @@
    %\numexpr\plustenthousand+\plusseventyfivehundred\relax
     \numexpr\plustenthousand+\plustenthousand       \relax
 
-\installaligncommand
-  {\v!granular}
-  {\granularfitnessclasses
-   \granularadjacentdemerits}
+\installaligncommand {\v!granular} {\granularfitnessclasses\granularadjacentdemerits}
 
 % end of definitions
 

@@ -419,7 +419,7 @@ The meaning can be fetched as string or table:
 
 \starttyping[option=LUA]
 function token.getmeaning (
-    <t:string>  csname,
+    <t:string> csname
 )
     return <t:string>
 end
@@ -434,11 +434,50 @@ function token.getmeaning (
 end
 \stoptyping
 
+A special setter is the following. You can use \type {tex.getmarknames()} to
+see what components numbers are possible:
+
+\starttyping[option=LUA]
+function token.setmacrofrommark (
+    <t:string>  name,
+    <t:integer> mark,
+    <t:integer> component,
+    <t:string>  flags -- optional, multiple
+)
+    -- no return value
+end
+\stoptyping
+
+A fast wiper is:
+
+\starttyping[option=LUA]
+function token.setmacrotonothing (
+    <t:string> name
+)
+    -- no return value
+end
+\stoptyping
+
 The name says it:
 
 \starttyping[option=LUA]
-function token.undefinemacro ( <t:string> csname)
+function token.undefinemacro ( <t:string> csname )
     -- no return values
+end
+\stoptyping
+
+The \TEX\ engine has this concept of active characters. In \LUATEX\ and
+\LUAMETATEX\ these are not stored like in traditional \TEX\ because we need to
+cover the whole \UNICODE\ range. They are stored in the hash with a name that
+starts with the three bytes \type {0xEF}, \type {0xBF} and \type {0xBF} followed
+by the \UTF8 string value. If you ever encounter such a string you can check it
+with:
+
+\starttyping[option=LUA]
+function token.isactivestring ( <t:string> csname )
+    return
+        <t:boolean>,
+        <t:integer>  -- when true
 end
 \stoptyping
 
@@ -484,10 +523,9 @@ function token.setlua (
 end
 \stoptyping
 
-%   function token.setinteger   -- can go ... also in texlib
-%   function token.getinteger   -- can go ... also in texlib
-%   function token.setdimension -- can go ... also in texlib
-%   function token.getdimension -- can go ... also in texlib
+The \typ {token.setinteger}, \typ {token.getinteger}, \typ {token.setdimension}
+and \typ {token.getdimension} helpers are redundant and have better counterparts
+in \type {texlib}.
 
 \stopsubsection
 
@@ -1095,6 +1133,14 @@ function token.grab ( <t:token> left, <t:token> right )
 end
 \stoptyping
 
+This variant might be more efficient in some cases:
+
+\starttyping[option=LUA]
+function token.grabstring ( <t:token> left, <t:token> right )
+    return <t:string>
+end
+\stoptyping
+
 \stopsubsection
 
 \startsubsection[title={Macros}]
@@ -1262,7 +1308,23 @@ This is a curious one: it returns the number of steps that a hash lookup took:
 
 \starttyping[option=LUA]
 function token.locatemacro ( <t:string> name )
-    return <t:integer> - steps
+    return <t:integer> -- steps
+end
+\stoptyping
+
+Details about how many tokens are involved can be gotten with this one, and the
+number of arguments depends on it being a macro or token list.
+
+\starttyping[option=LUA]
+function token.getlength ( <t:string> name )
+    return
+        <t:integer> -- length of token list
+end
+
+function token.getlength ( <t:string> macro )
+    return
+        <t:integer>, -- length of preamble
+        <t:integer>  -- length of body
 end
 \stoptyping
 
@@ -1309,6 +1371,22 @@ context.stoptabulate()
 
 \stopsubsection
 
+\startsubsection[title={special purpose}]
+
+In order to protect the macro package from undesired overloads by third party
+code we have:
+
+\starttyping[option=LUA]
+function token.inhibit ( <t:string> name ) end
+function token.inhibit ( <t:integer> cmd, <t:integer> chr ) end
+function token.inhibit ( <t:table> names ) end
+\stoptyping
+
+This will freeze macros and quantities when possible in at format generation
+time.
+
+\stopsubsection
+
 \stopsection
 
 \stopdocument
@@ -1351,7 +1429,7 @@ context.stoptabulate()
 % \starttyping
 % \directlua {
 %     function mymacro()
-%         local d = token.scandimen()
+%         local d = token.scandimension()
 %         ...
 %     end
 % }

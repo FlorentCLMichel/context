@@ -27,26 +27,26 @@
 
 static int nanojpeglib_decode(lua_State *L)
 {
-    size_t size; 
+    size_t      size = 0;
     const char *jpeg = lua_tolstring(L, 1, &size);
-    int done = 0;
+    int         done = 0;
     if (jpeg) { 
         njInit();
         if (njDecode(jpeg, (int) size) == NJ_OK) {
-            int width = njGetWidth();
-            int height = njGetHeight();
-            int depth = njIsColor() ? 3 : 1;
-            unsigned char * bytes = njGetImage();
-            int nofbytes = njGetImageSize();
+            int             width    = njGetWidth();
+            int             height   = njGetHeight();
+            int             depth    = njIsColor() ? 3 : 1;
+            unsigned char * bytes    = njGetImage();
+            int             nofbytes = njGetImageSize();
             if (width * height * depth == nofbytes) {
                 lua_pushinteger(L, width);
                 lua_pushinteger(L, height);
                 lua_pushinteger(L, depth);
-                /* If we push an external string here ... */
+                /*tex If we push an external string here ... */
                 lua_pushlstring(L, (char *) bytes, nofbytes);
                 done = 4;
+                /*tex ... we need to patch the next one. */
             }
-            /* ... we need to patch the next one. No need now. */
             njDone();
         }
 	}

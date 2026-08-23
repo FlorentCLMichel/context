@@ -342,15 +342,22 @@ context(lua.getstacktop(unpack(token.getprimitives())))
 
 \typebuffer
 
-But even this one os okay: \inlinebuffer, because some thousand plus entries is not
+But even this one is okay: \inlinebuffer, because some thousand plus entries is not
 bothering the engine. Of course it makes little sense because now one has to loop
 over the arguments.
 
-% \starttyping[option=LUA]
-% function lua.getdebuginfo ( )
-%     -- return todo
-% end
-% \stoptyping
+This helper is for the profiler. These debug features (when enabled at all) are
+somewhat obscure and after writing the profiler I quickly forgot the details.
+When you're curious you can look at the \CONTEXT\ source files.
+
+\starttyping[option=LUA]
+function lua.getdebuginfo ( )
+    return
+        <t:string>, -- name
+        <t:string>, -- file
+        <t:integer> -- line
+end
+\stoptyping
 
 The engines exit code can be set with:
 

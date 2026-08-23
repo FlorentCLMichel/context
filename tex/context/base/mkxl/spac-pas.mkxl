@@ -348,4 +348,46 @@
 \permanent\protected\def\optional#1#2%
   {\optionalboundary#1\wordboundary#2\wordboundary\optionalboundary\zerocount}
 
+% TODO:
+%
+% \setupalign[flushleft,squeeze,lessorphans:4,strictwidows,strictclubs,raggedpasses]
+
+\setnewconstant\c_parpass_ragged\parpassidentifier{ragged}
+
+\installaligncommand{raggedpasses} {\linebreakpasses\plusone\raggedparpasses}
+
+\specificationdef\raggedparpasses
+    \parpasses 4 options \constantspecificationoptioncode
+       identifier           \c_parpass_ragged
+       % 1
+       tolerance            100
+       adjustspacing          0
+       emergencyfactor        0
+       hyphenation            0
+    next
+       % 2
+       raggedness           100
+       tolerance            400
+       adjustspacing          3
+       adjustspacingshrink    0
+       adjustspacingstretch  20
+    next
+       % 3
+       raggedness           100 % try 92
+       tolerance            800
+       adjustspacing          3
+       adjustspacingshrink    0
+       adjustspacingstretch  20
+       hyphenation            1
+       extrahyphenpenalty   250
+    next
+       % 4
+       raggedness           50
+       tolerance           1600
+       extrahyphenpenalty   500
+       adjustspacingstretch  20
+     % emergencystretch      .5\bodyfontsize
+       emergencyfactor      500
+    \relax
+
 \protect

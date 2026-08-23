@@ -21774,8 +21774,8 @@ static void mp_set_up_prune_singularities_w_s(MP mp, mp_knot first)
             mp_number_clone(next->left_x, next->x_coord);
             mp_number_clone(next->left_y, next->y_coord);
             mp_free_knot(mp, wiped);
-            current = next;
         }
+        current = next;
     }
 }
 

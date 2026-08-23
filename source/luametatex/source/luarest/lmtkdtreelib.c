@@ -78,7 +78,11 @@ static int kdtreelib_tostring(lua_State *L)
 {
     kdtree t = kdtreelib_aux_check_is_valid(L, 1);
     if (t) {
-        lua_pushfstring(L, "<kdtree %p : %d %d>", t, t->dimension, t->size);
+        if (t->mode == kd_weighted_mode) {
+            lua_pushfstring(L, "<kdtree %p : %d %d : weighted>", t, t->dimension, t->size);
+        } else {
+            lua_pushfstring(L, "<kdtree %p : %d %d>", t, t->dimension, t->size);
+        }
         return 1;
     } else {
         return 0;
@@ -126,7 +130,6 @@ static int kdtreelib_insert(lua_State *L)
                 .index = ++t->size,
                 .axis  = 0,
             };
-            t->size++;
             t->root3d = kd3_insert(t->root, &p);
         }
         lua_pushinteger(L, t->size);

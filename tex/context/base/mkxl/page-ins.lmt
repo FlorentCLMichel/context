@@ -117,7 +117,9 @@ implement {
     name      = "setinsertmigration",
     arguments = "string",
     actions   = function(state)
-        nodes.migrations.setinserts(state == v_auto)
+        if nodes.migrations then
+            nodes.migrations.setinserts(state == v_auto)
+        end
     end
 }
 

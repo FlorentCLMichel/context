@@ -36,7 +36,7 @@
 
 \unprotect
 
-\registerctxluafile{node-mig}{autosuffix}
+%registerctxluafile{node-mig}{autosuffix}
 
 \aliased\let\automigrateinserts\donothing
 \aliased\let\automigratemarks  \donothing

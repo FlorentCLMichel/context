@@ -28105,15 +28105,20 @@ if e_argument("script") or e_argument("scripts") then
 
     -- run a script by loading it (using libs), pass args
 
-    if e_argument("nofiledatabase") then
-        -- handy for mtx-update
+    if filename == "" then
+        application.report("no filename given")
+        ok = false
     else
-        runners.loadbase()
-    end
-    if is_mkii_stub then
-        ok = runners.execute_script(filename,false,true)
-    else
-        ok = runners.execute_ctx_script(filename)
+        if e_argument("nofiledatabase") then
+            -- handy for mtx-update
+        else
+            runners.loadbase()
+        end
+        if is_mkii_stub then
+            ok = runners.execute_script(filename,false,true)
+        else
+            ok = runners.execute_ctx_script(filename)
+        end
     end
 
 elseif e_argument("evaluate") then

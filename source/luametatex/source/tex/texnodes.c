@@ -6,6 +6,8 @@
 
 /*tex TODO: update field specifications for added node entries */
 
+/* see: #define attribute_sparse_range 0 */
+
 /*tex
 
     This module started out using DEBUG to trigger checking invalid node usage, something that is
@@ -72,6 +74,8 @@ node_memory_state_info lmt_node_memory_state = {
     .lua_properties_level       = 0,
     .attribute_cache            = 0,
     .max_used_attribute         = 1,
+    .min_set_attribute          = 0,
+    .max_set_attribute          = 0,
 # if track_attributes
     .max_tracked_attribute      = 0,
 # endif
@@ -1404,6 +1408,11 @@ halfword tex_copy_node_only(halfword p)
     return r;
 }
 
+halfword tex_copy_node_just(halfword p)
+{
+    return tex_get_node(get_node_size(node_type(p)));
+}
+
 /*tex
     We really need to use macros here as we need the temporary variable because varmem can be
     reallocated! We cross our fingers that the compiler doesn't optimize that one away. (The test
@@ -2356,6 +2365,16 @@ halfword tex_list_node_mem_usage(void)
     (actually for each node type I guess).
 */
 
+/*
+
+    750 page luametatex manual: 80.476 cache list updates, 7.603.806 checks avoided
+
+    todo: define context attributes in more statistical way
+
+*/
+
+# define attribute_sparse_range 0
+
 extern void tex_change_attribute_register(halfword a, halfword eqindex, halfword value)
 {
     /*tex
@@ -2369,6 +2388,14 @@ extern void tex_change_attribute_register(halfword a, halfword eqindex, halfword
         tex_aux_update_attribute_tracking(index);
 # endif
     }
+# if (attribute_sparse_range == 1)
+    if (index < lmt_node_memory_state.min_set_attribute) {
+        lmt_node_memory_state.min_set_attribute = index;
+    }
+    if (index > lmt_node_memory_state.max_set_attribute) {
+        lmt_node_memory_state.max_set_attribute = index;
+    }
+# endif
     /* actually global should also kick in when we're not global yet */
  // if ((eq_value(eqindex) != value) || (eq_level(eqindex) != level_one && is_global(a))) {
     if (eq_value(eqindex) != value) {
@@ -2437,7 +2464,8 @@ halfword tex_copy_attribute_list(halfword a_old)
         halfword p_new = a_new;
         p_old = node_next(p_old);
         while (p_old) {
-            halfword a = tex_copy_node(p_old);
+         // halfword a = tex_copy_node(p_old);
+            halfword a = tex_aux_copy_attribute_node(p_old);
 # if track_attributes
             ++lmt_node_memory_state.attributes[attribute_index(p_old)];
 # endif
@@ -2490,6 +2518,8 @@ halfword tex_copy_attribute_list_set(halfword a_old, int index, int value)
     return a_new;
 }
 
+# if (attribute_sparse_range == 0)
+
 static void tex_aux_update_attribute_cache(void)
 {
     halfword p = tex_aux_new_attribute_list_node();
@@ -2509,6 +2539,50 @@ static void tex_aux_update_attribute_cache(void)
         add_attribute_reference(current_attribute_state);
     }
 }
+
+# else
+
+static void tex_aux_update_attribute_cache(void)
+{
+    halfword p   = tex_aux_new_attribute_list_node();
+    int      max = 0;
+    int      min = -1;
+    set_current_attribute_state(p);
+    //
+ // for (int i = 0; i <= lmt_node_memory_state.max_used_attribute; i++) {
+ //     int v = attribute_register(i);
+ //     if (v > unused_attribute_value) {
+ //         if (i < lmt_node_memory_state.min_set_attribute) {
+ //             printf("missing min %d %d\n",i,lmt_node_memory_state.min_set_attribute);
+ //         } else if (i > lmt_node_memory_state.max_set_attribute) {
+ //             printf("missing max %d %d\n",i,lmt_node_memory_state.max_set_attribute);
+ //         }
+ //     }
+ // }
+    //
+    for (int i = lmt_node_memory_state.min_set_attribute; i <= lmt_node_memory_state.max_set_attribute; i++) {
+        int v = attribute_register(i);
+        if (v > unused_attribute_value) {
+            halfword r = tex_aux_new_attribute_node(i, v);
+            node_next(p) = r;
+            p = r;
+            if (min < 0) {
+                min = i;
+            }
+            max = i;
+        }
+    }
+    lmt_node_memory_state.min_set_attribute = min;
+    lmt_node_memory_state.max_set_attribute = max;
+    if (! node_next(current_attribute_state)) {
+        tex_free_node(current_attribute_state, attribute_node_size);
+        set_current_attribute_state(null);
+    } else {
+        add_attribute_reference(current_attribute_state);
+    }
+}
+
+# endif
 
 void tex_attach_current_attribute_list(halfword target)
 {

@@ -24,7 +24,7 @@
     also need to provide libraries at the contextgarden.
 
     The basics of an interface as used in this module (running over specs) is given in the \LUA\
-    manual\ and we also use it for callbacks in \LUATEX\ and therefore \LUAMETATEX. There we use
+    manual and we also use it for callbacks in \LUATEX\ and therefore \LUAMETATEX. There we use
     varargs but here specification if converted into a recipe that libffi will bind to a function.
     Some code below looks like the code in alien (after all I took a good look at it). The ffi
     part is filtered from the ffi.h.in file. The interfaces are sort of what we do with other

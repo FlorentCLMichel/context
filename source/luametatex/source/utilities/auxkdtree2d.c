@@ -220,10 +220,10 @@ static kd2_node kd2_nearestindex_entry(kd2_node root, kd2_point p, unsigned dept
     if (root) {
         kd2_node first  = NULL;
         kd2_node second = NULL;
-        double  dx     = p->x - root->point.x;
-        double  dy     = p->y - root->point.y;
-        double  d      = dx * dx + dy * dy;
-        double  delta  = root->point.axis == 1 ? dx : dy;
+        double  dx      = p->x - root->point.x;
+        double  dy      = p->y - root->point.y;
+        double  d       = dx * dx + dy * dy;
+        double  delta   = root->point.axis == 1 ? dx : dy;
         if (d < *distance) {
             *distance = d;
             nearest = root;

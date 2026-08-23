@@ -260,6 +260,15 @@ function fio.readfixed4 ( <t:file> handle ) return <t:number>  end
 function fio.read2dot14 ( <t:file> handle ) return <t:number>  end
 \stoptyping
 
+We also have regular float and double readers:
+
+\starttyping[option=LUA]
+function fio.readfloat    ( <t:file> handle ) return <t:number>  end
+function fio.readfloatle  ( <t:file> handle ) return <t:number>  end
+function fio.readdouble   ( <t:file> handle ) return <t:number>  end
+function fio.readdoublele ( <t:file> handle ) return <t:number>  end
+\stoptyping
+
 Of these two the first reads a line and the second a string the \CCODE\ way, so
 ending with a newline and null character:
 
@@ -322,6 +331,11 @@ function fio.writecardinal1le ( <t:file> handle, <t:integer> value ) end
 function fio.writecardinal2le ( <t:file> handle, <t:integer> value ) end
 function fio.writecardinal3le ( <t:file> handle, <t:integer> value ) end
 function fio.writecardinal4le ( <t:file> handle, <t:integer> value ) end
+
+function fio.writefloat    ( <t:file> handle, <t:number> value ) end
+function fio.writefloatle  ( <t:file> handle, <t:number> value ) end
+function fio.writedouble   ( <t:file> handle, <t:number> value ) end
+function fio.writedoublele ( <t:file> handle, <t:number> value ) end
 \stoptyping
 
 \stopsubsection
@@ -360,6 +374,15 @@ Here are the (handy for fonts) float readers:
 function sio.readfixed2 ( <t:string> s, <t:integer> p ) return <t:number> end
 function sio.readfixed4 ( <t:string> s, <t:integer> p ) return <t:number> end
 function sio.read2dot14 ( <t:string> s, <t:integer> p ) return <t:number> end
+\stoptyping
+
+We also have regular float and double readers:
+
+\starttyping[option=LUA]
+function sio.readfloat    ( <t:file> handle ) return <t:number>  end
+function sio.readfloatle  ( <t:file> handle ) return <t:number>  end
+function sio.readdouble   ( <t:file> handle ) return <t:number>  end
+function sio.readdoublele ( <t:file> handle ) return <t:number>  end
 \stoptyping
 
 A \CCODE\ line (terminated by a newline) and string (terminated by null) are read
@@ -723,6 +746,30 @@ function string.utfcharactertable ( <t:string> s )
 end
 \stoptyping
 
+A table with \UNICODE\ slots can be converted to an \UTF\ string with:
+
+\starttyping[option=LUA]
+function string.utftabletostring (
+    <t:table>   t,
+    <t:integer> first, -- optional
+    <t:integer> last   -- optional
+)
+    return <t:string>
+end
+\stoptyping
+
+Strings can be split in many ways so in \CONTEXT\ we delegate that to \LUA,
+but we do provide:
+
+\starttyping[option=LUA]
+function string.splitintolines ( <t:string> str )
+    return <t:table>
+end
+\stoptyping
+
+This function handles linefeed (\ASCII~10), carriage return (\ASCII~13) and the
+sequence carriage return linefeed (\ASCII~13 followed by \ASCII~10).
+
 In \CONTEXT\ we mostly use \type {string.formatters} which is often more
 efficient then \type {string.format} and also has additional formatting options,
 one being for instance \type {N} which is like \type {f} but strips trailing zero
@@ -975,6 +1022,10 @@ These are just helpers that permit integration in the \CONTEXT\ graphic
 ecosystem (including \METAPOST):
 
 \starttyping[option=LUA]
+function pngdecode.togray ( <t:string data )
+    return <t:string>
+end
+
 function pngdecode.tocmyk ( <t:string data )
     return <t:string>
 end
@@ -1011,6 +1062,63 @@ function pngdecode.makemask (
     return <t:string>
 end
 \stoptyping
+
+A (large) bitmap can be reduced to half the resolution with the next helper.
+Arbitrary reduction makes little sense so that was discarded.
+
+\starttyping[option=LUA]
+function pngdecode.reduce (
+    <t:string> data,
+    <t:string> nx,
+    <t:string> ny,
+    <t:string> nz
+)
+    return <t:string>
+end
+\stoptyping
+
+These are used to convert \PNG\ streams into streams that are suitable for \PDF\
+inclusion or further manipulations. Keep in mind that \PDF\ (contrary to \JPEG\
+inclusion) doesn't really embed a \PNG, but sees it as a compression scheme, so
+masks and transparency are separated. In practice it also means that only zip
+compression makes sense (which is natural to \PDF) so in \CONTEXT\ we always go
+simple and compress like that. There is no benefit in the other filtering which
+is why we only have decoders.
+
+\starttyping[option=LUA]
+function pngdecode.frompalette (
+    <t:string> content,
+    <t:string> palette,
+    <t:string> bytes,
+    <t:string> paths,
+    <t:string> transparent
+)
+    return
+        <t:string>, -- expanded
+        <t:string>  -- mask (in case of transparent)
+end
+
+function pngdecode.palettemask (
+    <t:string> content,
+    <t:string> transparent,
+    <t:string> bytes,
+    <t:string> paths
+)
+    return <t:string>
+end
+
+function pngdecode.transparentmask (
+    <t:string> content,
+    <t:string> bytes,
+    <t:string> depth,
+    <t:string> transparent -- optional
+)
+    return <t:string>
+end
+\stoptyping
+
+The \type {pdgdecode.setexperiment} option (bit 1) uses so call external strings
+in \LUA\ which saves copies but is, as said, experimental.
 
 \stopsubsection
 
@@ -1227,6 +1335,9 @@ function potrace.totable  (
     return <t:table>
 end
 \stoptyping
+
+For \LUAMETAFUN\ we have added some additional in pure \LUA; those are not
+described here as they are not part of the engine.
 
 \stopsubsection
 
@@ -1685,6 +1796,378 @@ end
 \stoptyping
 
 \stopsubsection
+
+\stopsubsection
+
+\startsubsection[title=Bitset]
+
+This provides an efficient way to store a state and it's a by-product of
+the zbuffering feature. The library defaults to one-based sets but we can
+also be zero-based:
+
+\starttyping[option=LUA]
+function bitset.new (
+    <t:integer> n,
+    <t:boolean> dflt -- optional
+)
+    return <t:bitset>
+end
+
+function bitset.newonebased  (
+    <t:integer> n,
+    <t:boolean> dflt -- optional
+)
+    return <t:bitset>
+end
+
+function bitset.newzerobased (
+    <t:integer> n,
+    <t:boolean> dflt -- optional
+)
+    return <t:bitset>
+end
+\stoptyping
+
+These directly operate on a bitset:
+
+\starttyping[option=LUA]
+function bitset.set    ( <t:bitset> s ) end
+function bitset.get    ( <t:bitset> s ) end
+function bitset.assign ( <t:bitset> s, <t:boolean> value ) end
+function bitset.reset  ( <t:bitset> s ) end
+function bitset.wipe   ( <t:bitset> s ) end
+\stoptyping
+
+There are some serializers too:
+
+\starttyping[option=LUA]
+function bitset.asstring ( <t:bitset> s ) return <t:string> end
+function bitset.tostring ( <t:bitset> s ) return <t:string> end
+function bitset.totable  ( <t:bitset> s ) return <t:table>  end
+\stoptyping
+
+The nest repertoire does some juggling:
+
+\starttyping[option=LUA]
+function bitset.band ( <t:bitset> a, <t:bitset> b )
+function bitset.bor  ( <t:bitset> a, <t:bitset> b )
+function bitset.bxor ( <t:bitset> a, <t:bitset> b )
+function bitset.bnot ( <t:bitset> a, <t:bitset> b )
+function bitset.shl  ( <t:bitset> a, <t:bitset> b )
+function bitset.shr  ( <t:bitset> a, <t:bitset> b )
+function bitset.len  ( <t:bitset> s )
+\stoptyping
+
+These actions are also available as more direct operators so we can say \type {a
+& b}, \type {a | b}, \type {a ~ b}, \type {~b}, \type {b << k}, \type {b >> k}
+and even \type {#b}. The length operator is interesting because we can use of as
+weight in an ordered set of options, locations, complexity etc. We'll see where
+it gets applied in \CONTEXT.
+
+Traversing over a set can be done in three ways and we can best show these with
+examples:
+
+\startbuffer
+\startluacode
+
+local bs = bitset.new(4,true)
+
+context("astring : [%s]",bitset.asstring(bs))
+context.par()
+
+bitset.reset(bs,3)
+
+context("astring : [%s]",bitset.asstring(bs))
+context.par()
+
+context("all :")
+for n, b in bitset.traverse(bs) do
+    context(" [%i=%l]",n,b)
+end
+context.par()
+
+context("true :")
+for n, b in bitset.traverse(bs,true) do
+    context(" [%i]",n)
+end
+context.par()
+
+context("false :")
+for n, b in bitset.traverse(bs,false) do
+    context(" [%i]",n)
+end
+context.par()
+\stopluacode
+\stopbuffer
+
+\typebuffer[option=TEX]
+
+Here we have the default one-based sets, so we get:
+
+\startlines \tttf
+\getbuffer
+\stoplines
+
+\stopsection
+
+\startsubsection[title=Interval]
+
+This library is only present for testing the concept and relates to the
+(optional) interval number model in \METAPOST. We're not sure if this module
+makes sense.
+
+\stopsection
+
+\startsubsection[title=Z-buffers]
+
+We're still working on this one as it is part of the \LUAMETAFUN\ three
+dimensional rendering. The functions are very much geared to the wrappers and
+work with userdata objects: \type {zbuffer}, \type {points}, \type {meshes},
+\type {triangles}, etc. It's a mix and trade off between flexible \LUA\ and fast
+\CCODE.
+
+\stopsection
+
+\startsubsection[title=QR-codes]
+
+We can generate various (bar) codes with \type {zint} either using the command
+line program or using the optional library. However, this is a bit tricky
+dependency because one need a version that matches our usage and interfaces.
+
+In practice only a few codes matter in the perspective of typesetting. In
+\CONTEXT\ we have various modules and one generates the most common EAN like
+codes, but because QR codes are more complex we delegate that to a wrapper around
+the small and effective \type {qrcodegen} library. The \LUA\ interface is just
+one function with only the first argument being mandate:
+
+\starttyping[option=LUA]
+function generate (
+    <t:string>   data,
+    <t:integer>  yesbyte,
+    <t:integer>  nopbyte,
+    <t:newlines> boolean,
+)
+    return
+        <t:string>  result,
+        <t:integer> size
+end
+\stoptyping
+
+In \CONTEXT\ we feed that into the \LUAMETAFUN\ bytemap handler which adds some
+more options, like different shapes instead of (efficient) scaled square pixels.
+
+\stopsection
+
+\startsubsection[title=JPEG]
+
+We can handle \PNG\ files with a mix of \LUA\ and \CCODE\ helpers which gives us
+flexibility, performance and no need for a large library with platform specific
+code paths and other complications. This also makes sense because in \PDF\
+lossless bitmap graphics can be stored in what is called \PNG\ encoding.
+
+However, \JPEG\ is a bit more complex. On the one hand we can directly embed the
+blob, so again we use \LUA. The reason why we have provide an interface to the
+\type {nanojpeg} library is that it permits us to load a (not too complex) \JPEG\
+encoded image and use the various bytemap functionality to manipulate it in a
+\METAPOST\ setting. Of course we then eventually end up with embedding a lossless
+result (\PNG\ encoded).
+
+\starttyping[option=LUA]
+function nanojpeg.decode ( <t:string> jpegdata )
+    return
+        <t:integer>, -- width
+        <t:integer>, -- height
+        <t:integer>, -- colordepth
+        <t:string>   -- bytes
+end
+\stoptyping
+
+\stopsection
+
+\startsection[title=KD trees]
+
+This library is part of the z-buffering and voronoi support in \LUAMETAFUN\ and
+might find more usage in future version of \CONTEXT. Here is the repertoire of
+functions. Keep in mind that this is a very specific kind of storage, quite often
+\LUA\ tables and hashes are more efficient.
+
+\starttyping[option=LUA]
+function kdtree.new ( )
+    return <t:kdtree>
+end
+
+function kdtree.newweighted (
+    <t:table> data
+)
+    return <t:kdtree>
+end
+
+function kdtree.reset (
+    <t:kdtree> tree
+)
+end
+
+function kdtree.insert (
+    <t:kdtree> tree,
+    <t:number> x,
+    <t:number> y,
+    <t:number> z
+)
+end
+
+function kdtree.delete (
+    <t:kdtree> tree,
+    <t:number> x,
+    <t:number> y,
+    <t:number> z
+)
+end
+
+function kdtree.found (
+    <t:kdtree> tree,
+    <t:number> x,
+    <t:number> y,
+    <t:number> z
+)
+    return
+        <t:number>, -- x
+        <t:number>, -- y
+        <t:number>  -- z
+end
+
+function kdtree.nearest (
+    <t:kdtree> tree,
+    <t:number> x,
+    <t:number> y,
+    <t:number> z
+)
+    return
+        <t:number>, -- x
+        <t:number>, -- y
+        <t:number>  -- z
+end
+
+function kdtree.nearestindex (
+    <t:kdtree> tree,
+    <t:number> x,
+    <t:number> y,
+    <t:number> z
+)
+    return
+        <t:integer>, -- index
+        <t:number>,  -- x
+        <t:number>,  -- y
+        <t:number>   -- z
+end
+
+function kdtree.traverse (
+    <t:kdtree> tree
+)
+    return
+        <t:integer> index,
+        <t:number>  x,
+        <t:number>  y,
+        <t:number>  z
+end
+
+function kdtree.totable (
+    <t:kdtree> tree
+)
+    return <t:table> -- of { x, y, z }
+end
+\stoptyping
+
+Here are some examples of using these:
+
+\startbuffer
+\startluacode
+local k = kdtree.new()
+
+kdtree.insert(k,10,40) kdtree.insert(k,20,60)
+kdtree.insert(k,30,20) kdtree.insert(k,31,10)
+
+context("found=%s",tostring(kdtree.found(k,20,40))) context.par()
+context("found=%s",tostring(kdtree.found(k,20,60))) context.par()
+context("found=%s",tostring(kdtree.found(k,21,10))) context.par()
+
+context("index=%i x=%N y=%N z=%N", kdtree.nearest(k,21,30))
+context.par()
+
+for index, x, y, z in kdtree.traverse(k) do
+    context("index=%i x=%N y=%N z=%N",index,x,y,z)
+    context.par()
+end
+
+local w = kdtree.newweighted {
+    { 10, 40 },
+    { 20, 60 },
+    { 30, 20 },
+    { 31, 10 },
+}
+
+context("index=%i x=%N y=%N z=%N", kdtree.nearestindex(w,21,30))
+context.par()
+\stopluacode
+\stopbuffer
+
+\typebuffer[option=TEX]
+
+\startlines \tttf
+\getbuffer
+\stoplines
+
+\stopsection
+
+\startsubsection[title=Effects]
+
+This is a relatively large library with various (noise) helpers that are used in
+\LUAMETAFUN\ interfaces: Brownian, Perlin, simplex, octave, and Worley
+operations. Some fallback on existing (published) reference implementations.
+
+\stopsection
+
+\startsubsection[title=Bytemaps]
+
+This is a relatively large library with various helpers that are used in
+\LUAMETAFUN\ interfaces, think byte, gray, \RGB\ allocation and access, clipping,
+filtering, slicing, overlays, reduction, and conversion.
+
+\stopsection
+
+\startsubsection[title=Serial]
+
+This module was introduced when we presented the \CONTEXT\ clock a circular
+device that shows progress and status of a run. The interface is minimal:
+
+\starttyping[option=LUA]
+function serial.open ( <t:string> portname, <t:integer> baudrate )
+    return <t:userdata> -- connection
+end
+
+function serial.close ( <t:userdata> connection )
+    -- no return value
+end
+
+function serial.send ( <t:userdata> connection, <t:string> data )
+    return <t:boolean> -- success
+end
+\stoptyping
+
+These come together in the next helper, which of course is rather inefficient
+because it opens and closes the post every time:
+
+\starttyping[option=LUA]
+function serial.write (
+    <t:string>  channel,
+    <t:integer> baudrate,
+    <t:string> data
+)
+    return <t:boolean> -- success
+end
+\stoptyping
+
+Examples can be found in the \CONTEXT\ distribution. The signaling device is
+described in a manual and article.
 
 \stopsection
 
@@ -2484,8 +2967,11 @@ end
 
 \startsubsection[title=Foreign]
 
-{\em Todo: something about how the foreign interface can be used (inspired by
-alien). Also see \typ {libs-imp-foreign.mkxl}.}
+I added this because we wanted to have something \type {ffi} as in \LUATEX, and
+it runs on top of a runtime loaded \type {libffi}. The code is inspired by \quote
+{alien}. Some examples are given in \typ {libs-imp-foreign.mkxl}. and when there
+is demand we might document it in more detail here. Till then it is considered
+experimental.
 
 \stopsubsection
 

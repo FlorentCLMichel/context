@@ -119,7 +119,6 @@ extern int  luaopen_zbuffer     (lua_State *L);
 extern int  luaextend_io        (lua_State *L);
 extern int  luaextend_os        (lua_State *L);
 extern int  luaextend_string    (lua_State *L);
-extern int  luaextend_table     (lua_State *L);
 extern int  luaextend_xcomplex  (lua_State *L);
 
 /*tex

@@ -2309,9 +2309,10 @@ The public selectors are:
 
 \getbuffer[engine:syntax:selectorvalues]
 
-Internal we have a string selector, \LUA\ buffer selector, and a so called pseudo
-selector that is used when we want to show the context of an error and that keeps
-track of the position. These are not opened up.
+This list can be fetched with \type {texio.getselectorvalues()}. Internaly we
+have a string selector, \LUA\ buffer selector, and a so called pseudo selector
+that is used when we want to show the context of an error and that keeps track of
+the position. These are not opened up.
 
 We start with \type {texio.write}. Without the \type {target} argument, it writes
 all given strings to the same location(s) that \TEX\ writes messages to at that
@@ -2374,11 +2375,9 @@ function texio.closeinput ( )
 end
 \stoptyping
 
-% These are temporary helpers, for testing only:
-%
-% getinputindex
-% getsourcefilename
-% forceendoffile
+There are some temporary helpers, present for testing only: \typ {getinputindex},
+\typ {getsourcefilename} and \typ {forceendoffile}. In case you noticed them,
+pretend you didn't.
 
 \stopsection
 

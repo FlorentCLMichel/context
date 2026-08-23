@@ -11,6 +11,9 @@
 %C therefore copyrighted by \PRAGMA. See mreadme.pdf for
 %C details.
 
+%D Todo: compile with tracker and predefine attributes in order of most
+%D used.
+
 \writestatus{loading}{ConTeXt Attribute Macros / Initialization}
 
 \unprotect

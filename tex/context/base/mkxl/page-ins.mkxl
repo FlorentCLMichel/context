@@ -38,23 +38,23 @@
 
 \newconstant\insertionmigrationmode
 
-\def\page_inserts_check_anchoring
-  {\edef\p_anchoring{\namedinsertionparameter\empty\c!anchoring}%
-   \insertionmigrationmode\ifx\p_anchoring\v!auto\plusone\else\zerocount\fi
-   \clf_setinsertmigration{\p_anchoring}}
-
-\appendtoks
-    \ifempty\currentinsertionparent
-        \page_inserts_check_anchoring
-    \fi
-\to \everysetupinsertion
-
-\setupinsertion
-  [\c!anchoring=\v!auto]
-
-\appendtoks
-    \page_inserts_check_anchoring
-\to \everystarttext % or \everyjob
+% \def\page_inserts_check_anchoring
+%   {\edef\p_anchoring{\namedinsertionparameter\empty\c!anchoring}%
+%    \insertionmigrationmode\ifx\p_anchoring\v!auto\plusone\else\zerocount\fi
+%    \clf_setinsertmigration{\p_anchoring}}
+%
+% \appendtoks
+%     \ifempty\currentinsertionparent
+%         \page_inserts_check_anchoring
+%     \fi
+% \to \everysetupinsertion
+%
+% \setupinsertion
+%   [\c!anchoring=\v!auto]
+%
+% \appendtoks
+%     \page_inserts_check_anchoring
+% \to \everystarttext % or \everyjob
 
 \newinteger\currentinsertionnumber % This is a count and not a macro !
 

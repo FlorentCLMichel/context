@@ -29,6 +29,7 @@ cd "$ROOT_DIR"
 EXTRA_CMAKE_ARGS=""
 PROFILE=0
 DEBUG=0
+NOOPTIMIZE=0
 PLATFORM_REQUEST="native"
 SHOW_HELP=0
 
@@ -39,6 +40,9 @@ for ARGUMENT in "$@"; do
             ;;
         profile|--profile)
             PROFILE=1
+            ;;
+        nolto|--nolto|nooptimize|--nooptimize)
+            NOOPTIMIZE=1
             ;;
         musl|--musl)
             PLATFORM_REQUEST="musl"
@@ -95,6 +99,7 @@ if [ "$SHOW_HELP" -eq 1 ]; then
     echo ""
     echo "--debug       build without optimization"
     echo "--profile     build, train, and use profile-guided optimization"
+    echo "--nooptimize  don't apply link-time-optimization (faster compile/test cycle)"
     echo "--musl        build a Linux binary using musl-gcc"
     echo ""
     echo "default platform: native"
@@ -104,6 +109,18 @@ fi
 
 if [ "$DEBUG" -eq 1 ]; then
     EXTRA_CMAKE_ARGS="-DLMT_DEBUG=ON"
+else
+    EXTRA_CMAKE_ARGS="-DLMT_DEBUG=OFF"
+fi
+
+if [ "$NOOPTIMIZE" -eq 1 ]; then
+    EXTRA_CMAKE_ARGS="-DLMT_NOOPTIMIZE=ON"
+else
+    EXTRA_CMAKE_ARGS="-DLMT_NOOPTIMIZE=OFF"
+fi
+
+if [ "$PROFILE" -eq 0 ]; then
+    EXTRA_CMAKE_ARGS="$EXTRA_CMAKE_ARGS -DLMT_PROFILE=OFF"
 fi
 
 # Check if ninja or ninja-build exists on the system:

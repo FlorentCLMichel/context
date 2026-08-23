@@ -1799,13 +1799,20 @@
 
 % we need a proper state: normal, postponing, flushing
 
+% \permanent\protected\def\postponenotes % will be locally overloaded
+%   {\ifcase\insertionmigrationmode
+%      \ifconditional\postponingnotes\else
+%        \global\postponingnotes\conditionaltrue
+%        \enforced\glet\flushnotes\doflushnotes
+%        \clf_postponenotes
+%      \fi
+%    \fi}
+
 \permanent\protected\def\postponenotes % will be locally overloaded
-  {\ifcase\insertionmigrationmode
-     \ifconditional\postponingnotes\else
-       \global\postponingnotes\conditionaltrue
-       \enforced\glet\flushnotes\doflushnotes
-       \clf_postponenotes
-     \fi
+  {\ifconditional\postponingnotes\else
+     \global\postponingnotes\conditionaltrue
+     \enforced\glet\flushnotes\doflushnotes
+     \clf_postponenotes
    \fi}
 
 \permanent\lettonothing\flushnotes

@@ -741,11 +741,10 @@ static int pdfelib_pagestotable(lua_State *L)
     pdfe_document *p = pdfelib_aux_check_isdocument(L, 1, to_table_error);
     if (p) {
         ppdoc *d = p->document;
-        int i = 1;
-        int j = 0;
+        int    i = 0;
         lua_createtable(L, (int) ppdoc_page_count(d), 0);
         /* pages[1..n] */
-        for (ppref *r = ppdoc_first_page(d); r; r = ppdoc_next_page(d), ++i) {
+        for (ppref *r = ppdoc_first_page(d); r; r = ppdoc_next_page(d)) {
             lua_createtable(L, 3, 0);
             if (ppref_obj(r)) {
                 pdfelib_aux_pushdictionary(L, ppref_obj(r)->dict);
@@ -758,7 +757,7 @@ static int pdfelib_pagestotable(lua_State *L)
                 /* table reference */
                 lua_rawseti(L, -2, 3);
                 /* table */
-                lua_rawseti(L, -2, ++j);
+                lua_rawseti(L, -2, ++i);
                 /* pages[i] = { dictionary, size, objnum } */
             }
         }

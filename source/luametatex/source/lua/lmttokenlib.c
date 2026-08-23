@@ -2020,12 +2020,12 @@ static int tokenlib_gobble_until(lua_State *L) /* not ok because we can have dif
 
 static int tokenlib_grab_until(lua_State *L)
 {
-    lua_token *left = tokenlib_aux_check_istoken(L, 1);
+    lua_token *left  = tokenlib_aux_check_istoken(L, 1);
     lua_token *right = tokenlib_aux_check_istoken(L, 2);
-    int l = token_info(left->token);
-    int r = token_info(right->token);
-    int lstr = 0;
-    int rstr = 0;
+    int        l     = token_info(left->token);
+    int        r     = token_info(right->token);
+    int        lstr  = 0;
+    int        rstr  = 0;
     if (l >= cs_token_flag) {
         lstr = cs_text(l - cs_token_flag);
     }
@@ -2034,12 +2034,12 @@ static int tokenlib_grab_until(lua_State *L)
     }
     if (lstr && rstr) {
         saved_tex_scanner texstate = tokenlib_aux_save_tex_scanner();
-        halfword defref = lmt_input_state.def_ref;
-        halfword result = get_reference_token();
-        halfword p = result;
-        int level = 1;
-        int nospace = lua_toboolean(L, 3);
-        int strip = lmt_optinteger(L, 4, -1);
+        halfword defref  = lmt_input_state.def_ref;
+        halfword result  = get_reference_token();
+        halfword p       = result;
+        int      level   = 1;
+        int      nospace = lua_toboolean(L, 3);
+        int      strip   = lmt_optinteger(L, 4, -1);
         while (1) {
             tex_get_token();
             if (cur_tok >= cs_token_flag) {
@@ -2090,12 +2090,12 @@ static const char *token_cmd_to_string[15] = {
 
 static int tokenlib_grab_string_until(lua_State *L)
 {
-    lua_token *left = tokenlib_aux_check_istoken(L, 1);
+    lua_token *left  = tokenlib_aux_check_istoken(L, 1);
     lua_token *right = tokenlib_aux_check_istoken(L, 2);
-    int l = token_info(left->token);
-    int r = token_info(right->token);
-    int lstr = 0;
-    int rstr = 0;
+    int        l     = token_info(left->token);
+    int        r     = token_info(right->token);
+    int        lstr  = 0;
+    int        rstr  = 0;
     if (l >= cs_token_flag) {
         lstr = cs_text(l - cs_token_flag);
     }
@@ -2104,8 +2104,8 @@ static int tokenlib_grab_string_until(lua_State *L)
     }
     if (lstr && rstr) {
         saved_tex_scanner texstate = tokenlib_aux_save_tex_scanner();
-        halfword defref = lmt_input_state.def_ref;
-        int level = 1;
+        halfword    defref = lmt_input_state.def_ref;
+        int         level  = 1;
         luaL_Buffer b;
         luaL_buffinit(L, &b);
         while (1) {
@@ -2605,7 +2605,6 @@ static int tokenlib_isdefined(lua_State *L)
     to intercept them. Other examples are some internal dimensions that we definitely don't want 
     to check in callbacks and such. Of course the likelyhood that users will actually create
     tokens themselves is low. 
-
 */
 
 static void tokenlib_aux_inhibit(lua_State *L, int index, int permanent)
@@ -2990,7 +2989,7 @@ static int tokenlib_isactivestring(lua_State *L)
 {
     size_t l = 0;
     const unsigned char *s = (const unsigned char *) lua_tolstring(L, 1, &l);
-    int isactive = is_active_string(s,l);
+    int isactive = is_active_string(s, l);
     lua_pushboolean(L, isactive);
     if (isactive) { 
         lua_pushinteger(L, aux_str2uni(s + 3));

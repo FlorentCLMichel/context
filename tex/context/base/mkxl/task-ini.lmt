@@ -168,7 +168,7 @@ appendaction("vboxbuilders", "normalizers", "typesetters.synchronize.handler",  
 
 appendaction("mvlbuilders",  "normalizers", "nodes.handlers.backgroundspage",                   nil, "nut",    "disabled"  )
 appendaction("mvlbuilders",  "normalizers", "typesetters.margins.globalhandler",                nil, "nut",    "disabled"  )
-appendaction("mvlbuilders",  "normalizers", "nodes.handlers.migrate",                           nil, "nut",    "disabled"  )
+------------("mvlbuilders",  "normalizers", "nodes.handlers.migrate",                           nil, "nut",    "disabled"  )
 appendaction("mvlbuilders",  "normalizers", "builders.vspacing.pagehandler",                    nil, "nut",    "enabled"   )
 appendaction("mvlbuilders",  "normalizers", "builders.profiling.pagehandler",                   nil, "nut",    "disabled"  )
 appendaction("mvlbuilders",  "normalizers", "builders.profiling.pagelinehandler",               nil, "nut",    "disabled"  )

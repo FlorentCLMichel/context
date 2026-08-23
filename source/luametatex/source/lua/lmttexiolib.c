@@ -334,7 +334,7 @@ static int texiolib_forceendoffile(lua_State *L)
 static const struct luaL_Reg texiolib_function_list[] = {
     { "write",             texiolib_write             },
     { "writenl",           texiolib_write_nl          },
-    { "write_nl",          texiolib_write_nl          }, /* depricated */
+    { "write_nl",          texiolib_write_nl          }, /*tex undocumented, depricated */
     { "writeselector",     texiolib_write_selector    },
     { "writeselectornl",   texiolib_write_selector_nl },
     { "writeselectorlf",   texiolib_write_selector_lf },
@@ -350,7 +350,7 @@ static const struct luaL_Reg texiolib_function_list[] = {
 static const struct luaL_Reg texiolib_function_list_only[] = {
     { "write",           texiolib_write             },
     { "writenl",         texiolib_write_nl          },
-    { "write_nl",        texiolib_write_nl          }, /* depricated */
+    { "write_nl",        texiolib_write_nl          }, /*tex undocumented, depricated */
     { "writeselector",   texiolib_write_selector    },
     { "writeselectornl", texiolib_write_selector_nl },
     { "writeselectorlf", texiolib_write_selector_lf },

@@ -489,7 +489,7 @@ static int pnglib_expand(lua_State *L)
 static int pnglib_palettemask(lua_State *L)
 {
     size_t csize, tsize;
-    const char *content = luaL_checklstring(L, 1, &csize);
+    const char *content     = luaL_checklstring(L, 1, &csize);
     const char *transparent = lua_gettop(L) > 3 ? luaL_checklstring(L, 4, &tsize) : NULL;
     if (csize > 0 && tsize > 0 && tsize <= 256) {
         int bytes = lmt_tointeger(L, 2);
@@ -534,9 +534,9 @@ static int pnglib_transparentmask(lua_State *L)
         if (depth == 1 || depth == 2 || depth == 4 || depth == 8 || depth == 16) {
             const char *transparent = lua_gettop(L) > 3 ? luaL_checklstring(L, 4, &tsize) : NULL;
             if (transparent) {
-                int bytes = lmt_tointeger(L, 2);
-                char *mask = NULL;
-                int size = 8;
+                int    bytes = lmt_tointeger(L, 2);
+                char  *mask  = NULL;
+                int    size  = 8;
                 size_t msize = 0;
                 switch (bytes) {
                     case 1:
@@ -549,14 +549,16 @@ static int pnglib_transparentmask(lua_State *L)
                                         unsigned char t = transparent[1] & 0x01;
                                         for (size_t i = 0; i < csize; i += 1) {
                                             unsigned char c = (unsigned char) content[i];
-                                            mask[msize++] = (unsigned char) ( (t == ((c >> 7) & 0x01) ? 0x00 : 0x80)
-                                                                            + (t == ((c >> 6) & 0x01) ? 0x00 : 0x40)
-                                                                            + (t == ((c >> 5) & 0x01) ? 0x00 : 0x20)
-                                                                            + (t == ((c >> 4) & 0x01) ? 0x00 : 0x10)
-                                                                            + (t == ((c >> 3) & 0x01) ? 0x00 : 0x08)
-                                                                            + (t == ((c >> 2) & 0x01) ? 0x00 : 0x04)
-                                                                            + (t == ((c >> 1) & 0x01) ? 0x00 : 0x02)
-                                                                            + (t == ( c       & 0x01) ? 0x00 : 0x01) );
+                                            mask[msize++] = (unsigned char) (
+                                                (t == ((c >> 7) & 0x01) ? 0x00 : 0x80)
+                                              + (t == ((c >> 6) & 0x01) ? 0x00 : 0x40)
+                                              + (t == ((c >> 5) & 0x01) ? 0x00 : 0x20)
+                                              + (t == ((c >> 4) & 0x01) ? 0x00 : 0x10)
+                                              + (t == ((c >> 3) & 0x01) ? 0x00 : 0x08)
+                                              + (t == ((c >> 2) & 0x01) ? 0x00 : 0x04)
+                                              + (t == ((c >> 1) & 0x01) ? 0x00 : 0x02)
+                                              + (t == ( c       & 0x01) ? 0x00 : 0x01)
+                                            );
                                         }
                                     }
                                     break;
@@ -567,10 +569,12 @@ static int pnglib_transparentmask(lua_State *L)
                                         unsigned char t = transparent[1] & 0x07;
                                         for (size_t i = 0; i < csize; i += 1) {
                                             unsigned char c = (unsigned char) content[i];
-                                            mask[msize++] = (unsigned char) ( (t == ((c >> 6) & 0x07) ? 0x00 : 0xC0)
-                                                                            + (t == ((c >> 4) & 0x07) ? 0x00 : 0x30)
-                                                                            + (t == ((c >> 2) & 0x07) ? 0x00 : 0x0C)
-                                                                            + (t == ( c       & 0x07) ? 0x00 : 0x03) );
+                                            mask[msize++] = (unsigned char) (
+                                                (t == ((c >> 6) & 0x07) ? 0x00 : 0xC0)
+                                              + (t == ((c >> 4) & 0x07) ? 0x00 : 0x30)
+                                              + (t == ((c >> 2) & 0x07) ? 0x00 : 0x0C)
+                                              + (t == ( c       & 0x07) ? 0x00 : 0x03)
+                                            );
                                         }
                                     }
                                     break;
@@ -581,8 +585,10 @@ static int pnglib_transparentmask(lua_State *L)
                                         unsigned char t = transparent[1] & 0x0F;
                                         for (size_t i = 0; i < csize; i += 1) {
                                             unsigned char c = (unsigned char) content[i];
-                                            mask[msize++] = (unsigned char) ( (t == ((c >> 4) & 0x0F) ? 0x00 : 0xF0)
-                                                                            + (t == ( c       & 0x0F) ? 0x00 : 0x0F) );
+                                            mask[msize++] = (unsigned char) (
+                                                (t == ((c >> 4) & 0x0F) ? 0x00 : 0xF0)
+                                              + (t == ( c       & 0x0F) ? 0x00 : 0x0F)
+                                            );
                                         }
                                     }
                                     break;

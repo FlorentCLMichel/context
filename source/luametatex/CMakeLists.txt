@@ -44,7 +44,8 @@ set(LMT_HB_TOO   1) # Maybe handy for Idris' font development (old converted ffi
 
 # Options:
 
-option(LMT_DEBUG "Build with debug symbols and no optimizations" OFF)
+option(LMT_DEBUG      "Build with debug symbols and no optimizations" OFF)
+option(LMT_NOOPTIMIZE "Build without link time optimization" OFF)
 
 # Profile-guided optimization is a two-stage build.  The build script uses
 # GENERATE for the training binary and USE for the final binary.
@@ -135,7 +136,9 @@ if (NOT LMT_DEBUG)
     # we gain 2-4 percent, so not that much. However, as we moved to more inline function in favor
     # of macros, link time optimizations makes sense!
 
-    set(LMT_OPTIMIZE 1)
+    if (NOT LMT_NOOPTIMIZE)
+        set(LMT_OPTIMIZE 1)
+    endif()
 
     # This makes the binary some 135K smaller so it might become the default at some point which is
     # nice (the smaller as runner the better). After all, we don't load external (Lua) libraries
