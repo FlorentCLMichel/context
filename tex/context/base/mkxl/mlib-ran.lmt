@@ -9,6 +9,7 @@ if not modules then modules = { } end modules ['mlib-ran'] = {
 local next = next
 local ceil, floor, random, sqrt, cos, sin, pi, min, max = math.ceil, math.floor, math.random, math.sqrt, math.cos, math.sin, math.pi, math.min, math.max
 local remove = table.remove
+local clock = os.gettimeofday
 
 -- Below is a bit of rainy saturday afternoon hobyism, while listening to Judith
 -- Owens redisCOVERed (came there via Leland Sklar who I have on a few live blurays;
@@ -33,7 +34,7 @@ local remove = table.remove
 -- modern date variant as part of stippling.
 
 local function poisson(width, height, mindist, newpointscount, initialx, initialy)
-    local starttime       = os.clock()
+    local starttime       = clock()
     local cellsize        = mindist / sqrt(2)
     local nofwidth        = ceil(width // cellsize)
     local nofheight       = ceil(height // cellsize)
@@ -106,7 +107,7 @@ local function poisson(width, height, mindist, newpointscount, initialx, initial
         count  = nofsamplepoints,
      -- points = samplepoints,
         grid   = grid,
-        time   = os.clock() - starttime,
+        time   = clock() - starttime,
     }
 end
 

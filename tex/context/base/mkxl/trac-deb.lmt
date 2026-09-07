@@ -199,7 +199,6 @@ function tracers.printerror(specification)
         local offset       = specification.offset or erroroffset
         local endoffile    = specification.endoffile
         local report       = errorreporter(luaerrorline)
--- lastcontext = gsub(lastcontext,"\r","\n")
         if errortype == errorvalues.warning then
             report("warning error: %s",lasttexerror or "-")
             busy = false;
@@ -273,7 +272,7 @@ function tracers.printerror(specification)
                 -- If we get rubish a NULL is forgotten in engine error trigger!
                 report_nl()
                 report_str(help)
-                report_nl()
+                report_str("\n")
                 report_nl()
             end
             if erroraction then
@@ -282,6 +281,7 @@ function tracers.printerror(specification)
             luatex.abort()
         end
         busy = false
+        report_nl()
     end
 end
 

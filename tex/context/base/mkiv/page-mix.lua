@@ -304,7 +304,7 @@ local function preparesplit(specification) -- a rather large function
     end
     if trace_state then
         report_state("cycle %s, maxheight %p, preheight %p, target %p, overflow %a, extra %p",
-            cycle, maxheight, preheight , target, overflow, extra)
+            cycle, maxheight, preheight, target, overflow, extra)
     end
     local results = { }
     for i=1,nofcolumns do
@@ -474,11 +474,18 @@ local function preparesplit(specification) -- a rather large function
         local curcol  = column
         if delta > threshold then
             result.delta = delta
-            okay, skipped = gotonext()
-            if okay then
-                state = "next"
-            else
+            if overflow and preheight > 0 and column == 1 and line == 1 then
+                -- We could be stuck at the end of a (partial) page with very
+                -- little effective room left, so we need to intercept this.
+                rest  = current
                 state = "quit"
+            else
+                okay, skipped = gotonext()
+                if okay then
+                    state = "next"
+                else
+                    state = "quit"
+                end
             end
         end
         if trace_details then

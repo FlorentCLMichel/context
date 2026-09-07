@@ -180,21 +180,21 @@
 \def\page_split_float_check_caption#1% depends on page-flt .. pretty messy
   {\edef\extrasplitfloatlines{\extrasplitfloatlines}%
    \ifx\extrasplitfloatlines\v!auto
-      \bgroup
-      \forcelocalfloats
-      \setuplocalfloats[\c!before=,\c!after=,\c!inbetween=]%
-      % This controls samepage resetting too but it also messes up the numbering
-      % so I need another fix.
-%       \settrialtypesetting
-      \splitfloatcommand{\hbox to #1{\strut}}% dummy line
-%       \resettrialtypesetting
-      \setbox\scratchbox\vbox{\flushlocalfloats}% \vpack ?
-      \getnoflines{\ht\scratchbox}%
-      \resetlocalfloats
-      \advanceby\noflines\minusone % compensate dummy line
-      \expanded{\egroup\noexpand\edef\noexpand\extrasplitfloatlines{\the\noflines}}%
-      \global\usesamefloatnumber\conditionaltrue
-   \orelse\ifchknum\extrasplitfloatlines\else
+     \bgroup
+     \forcelocalfloats
+     \setuplocalfloats[\c!before=,\c!after=,\c!inbetween=]%
+     % This controls samepage resetting too but it also messes up the numbering
+     % so I need another fix.
+%      \settrialtypesetting
+     \splitfloatcommand{\hbox to #1{\strut}}% dummy line
+%      \resettrialtypesetting
+     \setbox\scratchbox\vbox{\flushlocalfloats}% \vpack ?
+     \getnoflines{\ht\scratchbox}%
+     \resetlocalfloats
+     \advanceby\noflines\minusone % compensate dummy line
+     \expanded{\egroup\noexpand\edef\noexpand\extrasplitfloatlines{\the\noflines}}%
+     \global\usesamefloatnumber\conditionaltrue
+   \orelse\ifchknum\extrasplitfloatlines\or\else
      \def\extrasplitfloatlines{1}
    \fi}
 

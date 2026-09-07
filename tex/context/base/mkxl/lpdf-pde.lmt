@@ -588,6 +588,14 @@ local loaded    = { }
 local nofloaded = 0
 
 function lpdf_epdf.load(filename,userpassword,ownerpassword,fromstring)
+    -- per 2026-08
+    local ef = file.expandname(filename)
+    local of = file.expandname(file.addsuffix(environment.outputfilename,"pdf"))
+    if ef == of then
+        report_epdf("potential inclusion mixup with target output %a",ef)
+     -- return nil
+    end
+    --
     local document = loaded[filename]
     if not document then
         statistics.starttiming(lpdf_epdf)
@@ -629,7 +637,7 @@ function lpdf_epdf.load(filename,userpassword,ownerpassword,fromstring)
                 if catalog then
                     catalog = some_dictionary(catalog,document)
                 else
-                    report_epdf("the document is damaged or empty")
+                    report_epdf("the document is damaged or empty, case %i", 1)
                     return
                 end
                 if info then
@@ -681,7 +689,7 @@ function lpdf_epdf.load(filename,userpassword,ownerpassword,fromstring)
             end
         else
             if not __data_ then
-                report_epdf("the document is damaged or empty")
+                report_epdf("the document is damaged or empty, case %i", 2)
             end
             document = false
         end

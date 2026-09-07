@@ -15,38 +15,45 @@
 
 \unprotect
 
-% Spacing is kind of complicated and eventually we might move so more to the engine:
-%
-% [global spacebefore]     % force flexible
-%
-% [before][rule 1][after]  % force fixed
-% [local spacebefore 1]    % force fixed
-% [notes 1.1]
-% [local spaceinbetween 1] % force fixed
-% [notes 1.2]
-%
-% [global spaceinbetween]  % force fixed
-%
-% [before][rule 2][after]  % force fixed
-% [local spacebefore 2]    % force fixed
-% [notes 2.1]
-% [local spaceinbetween 2] % force fixed
-% [notes 2.2]
-%
-% [global spaceinbetween]  % force fixed
-%
-% [before][rule 2][after]  % force fixed
-% [local spacebefore 3]    % force fixed
-% [notes 3.1]
-% [local spaceinbetween 3] % force fixed
-% [notes 3.2]
+%D The documentation in this file is partially outdates because in \LMTX\
+%D we have more advance engine suport, so some hacks are gone.
+%D
+%D Spacing of inserts is discussed in alow level manual.
+%D
+%D \starttyping
+%D [global spacebefore]     % force flexible
+%D
+%D [before][rule 1][after]  % force fixed
+%D [local spacebefore 1]    % force fixed
+%D [notes 1.1]
+%D [local spaceinbetween 1] % force fixed
+%D [notes 1.2]
+%D
+%D [global spaceinbetween]  % force fixed
+%D
+%D [before][rule 2][after]  % force fixed
+%D [local spacebefore 2]    % force fixed
+%D [notes 2.1]
+%D [local spaceinbetween 2] % force fixed
+%D [notes 2.2]
+%D
+%D [global spaceinbetween]  % force fixed
+%D
+%D [before][rule 2][after]  % force fixed
+%D [local spacebefore 3]    % force fixed
+%D [notes 3.1]
+%D [local spaceinbetween 3] % force fixed
+%D [notes 3.2]
+%D \stoptyping
+
+%D We need to define these first
 
 \newgluespec \s_strc_notes_global_before
 \newgluespec \s_strc_notes_global_inbetween
 \newgluespec \s_strc_notes_local_before
 \newgluespec \s_strc_notes_local_inbetween
 
-% These are accessed in:
+%D because they are accessed in:
 
 \registerctxluafile{strc-not}{autosuffix}
 
@@ -454,12 +461,6 @@
    \resetnoteparameter\c!spaceinbetween
 \to \everydefinenote
 
-% What keyword to use for this: max ? \insertmaxplaced\namedinsertionnumber{footnote} 4
-
-%D Insertions are part of notes.c!delay
-
-%D Insertions are part of notes.
-
 % \installcorenamespace{noteinsertion}
 
 \permanent\def\currentnoteinsertion      {\noteparameter\s!insert}
@@ -498,8 +499,6 @@
     \synchronizenotationcounters
 \to \everydefinenotation
 
-% so far
-
 %letcsname\??constructionstarthandler  \v!notation\expandafter\endcsname\csname\??constructionstarthandler  \v!enumeration\endcsname
 \letcsname\??constructionstarthandler  \v!notation\expandafter\endcsname\csname\??constructionstarthandler  \v!construction\endcsname % no par mess
 \letcsname\??constructionstophandler   \v!notation\expandafter\endcsname\csname\??constructionstophandler   \v!enumeration \endcsname
@@ -522,7 +521,7 @@
 
 \protected\defcsname\??constructionnotehandler\v!notation:\v!note\endcsname % in the running text
   {\ifnotesenabled
-     % do be done elsewhere
+     % to be done elsewhere
      %
      %let\currentnote\currentconstructionmain
      \let\currentnote\currentconstruction % else wrong inheritance
@@ -834,55 +833,54 @@
      \nobreak
    \fi}
 
-% this needs a further cleanup ... soon as it's a slow mechanism
-%
 % -- set breakpoint in descriptions
 % -- reset after trialtypesetting
 % -- that way we can trick the symbol space
-
-% removed:
-%
-% \pushsomestates
-%
-% core-ins -> obsolete
-%
-% saveinsertiondata
-% restoreinsertiondata
-% saveinsertionbox
-% eraseinsertionbackup
-% restoreinsertionbackup
-
-% \def\savenotedata      {} % \writestatus{todo}{save    note data}}
-% \def\restorenotedata   {} % \writestatus{todo}{restore note data}}
-% \def\savenotecontent   {} % \writestatus{todo}{save    note content}}
-% \def\restorenotecontent{} % \writestatus{todo}{restore note content}}
-% \def\erasenotebackup   {} % \writestatus{todo}{erase   note backup}}
-
-% page-set:
-
-% \def\enablenotes    {\writestatus{todo}{enable  notes}}
-% \def\disablenotes   {\writestatus{todo}{disable notes}}
-% \def\savenotes      {\writestatus{todo}{save    notes}}
-% \def\flushsavednotes{\writestatus{todo}{flush   notes}}
 
 % experiment: (compare scope=text and scope=page)
 %
 % \definenote[mynote][way=bytext,location=text,width=\leftmarginwidth,scope=page,rule=,before=,after=,factor=0]
 % \setuptexttexts[margin][\vbox to \textheight{\placenotes[mynote]\vfill}][]
 
-%D Footnotes are can be characterized by three components:
+%D Notes use notions so we set up number conversion like this:
 %D
-%D \startitemize[packed]
-%D \item a small number \footnote {a footnote number} or symbol {\setupfootnotes
-%D   [conversion=set 2]\footnote {a footnote}}
-%D \item and a similar mark at the bottom of the page
-%D \item followed by some additional text
-%D \stopitemize
+%D \starttyping
+%D \setupindenting
+%D   [yes,small]
 %D
+%D \defineconversion
+%D   [mymix]
+%D   [a,b,c]
+%D
+%D \definenotation
+%D   [symfootnote]
+%D   [footnote]
+%D   [counter=]
+%D
+%D \setupnotation
+%D   [footnote]
+%D   [align={hz,hanging},
+%D    indenting={yes,small,next}]
+%D
+%D \setupnotation
+%D   [symfootnote]
+%D   [align={hz,hanging},
+%D    indenting={yes,small,next},
+%D    numberconversion=mymix]
+%D
+%D \startdocument
+%D     This is the first sentence with a footnote.\footnote{This is the first footnote and its mark is "1".}
+%D     This is the second sentence with a footnote.\symfootnote{This is the second footnote and its mark is "a". }
+%D     This is the third sentence with a footnote.\footnote{This is the third footnote and its mark is "2". }
+%D     This is the second sentence with a footnote.\symfootnote{This is the fourth footnote and its mark is "b". }
+%D \stopdocument
+%D \stoptyping
+
 %D Because footnotes are declared at the location of their reference they can be
 %D seen as a special kind of floating bodies. Their placement is postponed but has
 %D to be taken into account in the pagebreak calculations. This kind of calculations
-%D are forced by using \type{\insert}s and dealing with all cases is not trivial.
+%D are forced by using \type{\insert}s and dealing with all cases is not trivial. In
+%D \LMTX\ we're better off because there inserts migrate to the outer level.
 
 %D \macros
 %D   {notesenabled}

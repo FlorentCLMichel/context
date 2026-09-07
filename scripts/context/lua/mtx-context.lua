@@ -1812,11 +1812,6 @@ end
 
 do
 
-    local popen   = io.popen
-    local close   = io.close
-    ----- read    = io.read
-    local gobble  = io.gobble or function(f) f:read("l") end
-    ----- clock   = os.clock
     local ticks   = lua.getpreciseticks
     local seconds = lua.getpreciseseconds
 
@@ -1841,7 +1836,13 @@ do
         local whattodo = "filename"
         local terminal = environment.argument("terminal")
         local parallel = environment.argument("parallel")
-        local runners  = tonumber(parallel) or 8
+        local runners  = tonumber(parallel)
+
+        if runners then
+            parallel = true
+        else
+            runners = environment.argument("runners") or 8
+        end
 
         if type(parallel) == "string" then
             local specification = table.load(parallel)
@@ -1931,6 +1932,7 @@ do
         elseif total > 0 then
             local allresults = { }
             local start      = starttiming("parallel")
+            local alltimes   = 0
             local counts     = 0
             local totals     = 0
             local problem    = false
@@ -1950,130 +1952,292 @@ do
             end
             --
             local arguments = environment.reconstructcommandline(passthese)
+            --
+            local processlib = process
+            --
+            if environment.argument("popen") then
+                processlib = false
+            end
+            --
+            local function checkproblem(process,pi)
+                if squid and not problem and pi.result == "error"  then
+                    problem = true
+                    squid.stepper("error") -- ,i,steps[i],true)
+                    for i=1,runners do
+                        if process[i] then
+                            squid.stepper("step",i,0,true)
+                        end
+                    end
+                end
+            end
+            --
+            local ansi = terminal == "ansi"
+                and os.enableansi and os.enableansi()
+                and { [0] =
+                    "[0;37mmtx-process % 3i[0;1m",
+                    "[0;31mmtx-process % 3i[0;1m",
+                    "[0;32mmtx-process % 3i[0;1m",
+                    "[0;33mmtx-process % 3i[0;1m",
+                    "[0;34mmtx-process % 3i[0;1m",
+                    "[0;35mmtx-process % 3i[0;1m",
+                    "[0;36mmtx-process % 3i[0;1m",
+                }
+            --
             for set=1,#lists do
                 local files   = lists[set]
                 local process = { }
                 local results = { }
+                local lookup  = { }
+                local writers = false
                 local count   = 0
                 local total   = #files
---                 local steps   = { }
+
                 totals = totals + total
                 allresults[set] = results
---                 for i=1,runners do
---                     steps[i] = 0
---                 end
-                while true do
-                    local done = false
+
+                if terminal then
+                    writers = { }
                     for i=1,runners do
-                        local pi = process[i]
-                        if pi then
-                            local s
-                            if terminal then
-                                s = pi.handle:read("l")
-                                if s then
-                                    done = true
-                                    report("%02i : %s",i,s)
-                                    goto done
-                                end
+                        local f = ansi and ansi[i % #ansi] or "mtx-process % 3i"
+                        writers[i] = logs.reporter(formatters[f](i))
+                    end
+                end
+
+                if processlib then
+
+                    local open  = processlib.open
+                    local close = processlib.close
+                    local poll  = processlib.poll
+                    local read  = processlib.read
+
+                    local function populated()
+                        local active = { }
+                        for i=1,runners do
+                            local pi = process[i]
+                            if pi then
+                                local handle = pi.handle
+                                active[#active+1] = handle
+                                lookup[handle]    = pi
                             else
-                                s = gobble(pi.handle)
-                                if s then
-                                    done = true
-                                    goto done
-                                end
-                            end
-                            if not s then
-                                local r, detail, n = close(pi.handle)
-                                stoptiming(pi.timer)
-                                pi.result = (not r or n > 0) and "error" or "done"
-                                pi.time   = elapsedtime(pi.timer)
-                                pi.handle = nil
-                                pi.timer  = nil
-                                if terminal then
-                                    report()
-                                end
-                                report("process %02i, index %02i, %s %a, status %a, runtime %0.3f",i,pi.count,whattodo,pi.filename,pi.result,pi.time)
-                                if terminal then
-                                    report()
-                                end
-                                process[i] = false
-                                results[pi.count] = pi
-                                if squid and not problem and pi.result == "error"  then
-                                    problem = true
-                                    squid.stepper("error") -- ,i,steps[i],true)
-                                    for i=1,runners do
-                                        if process[i] then
-                                         -- squid.stepper("busy",i,steps[i],true)
-                                         -- squid.stepper("step",i,steps[i],true)
-                                            squid.stepper("step",i,0,true)
-                                        end
+                                count = count + 1
+                                if count > total then
+                                    -- we're done
+                                else
+                                    counts = counts + 1
+                                    local timer    = "parallel:" .. set .. ":" .. i
+                                    local filename = files[count]
+                                    local dirname  = file.dirname(filename)
+                                    local basename = file.basename(filename)
+                                    if dirname ~= "." and dirname ~= "./" then
+                                        dir.push(dirname)
+                                    end
+                                    local command  = whattodo == "command" and f_command(basename,arguments) or f_runner(arguments,basename)
+                                    resettiming(timer)
+                                    starttiming(timer)
+                                    if squid then
+                                        squid.stepper("step",i,0,problem)
+                                    end
+                                    local handle = open(command,not terminal)
+                                    if dirname ~= "." then
+                                        dir.pop()
+                                    end
+                                    local status  = nil
+                                    if handle then
+                                        status = {
+                                            handle   = handle,
+                                            result   = "start",
+                                            filename = filename,
+                                            count    = count,
+                                            time     = 0,
+                                            timer    = timer,
+                                            index    = i,
+                                            buffer   = false,
+                                        }
+                                        active[#active + 1] = handle
+                                        lookup[handle]      = status
+                                        process[i]          = status
+                                    else
+                                        status = {
+                                            result   = "error",
+                                            count    = count,
+                                            filename = filename,
+                                            time     = 0,
+                                        }
+                                        problem = true
+                                        stoptiming(timer)
+                                    end
+                                    results[count] = status
+                                    if terminal then
+                                        report()
+                                    end
+                                    report("process %02i, index %02i, %s %a, status %a",i,status.count,whattodo,status.filename,status.result)
+                                    if terminal then
+                                        report()
                                     end
                                 end
                             end
                         end
-                        count  = count + 1
-                        counts = counts + 1
-                        if count > total then
-                            -- we're done
+                        return active
+                    end
+-- local changed = true
+-- local active  = false
+                    while true do
+                        local active = populated()
+-- active = changed and populated() or active
+                        if #active > 0 then
+-- changed = false
+                            local ready = poll(active,1000)
+                            for i=1,#ready do
+                                local index  = ready[i]
+                                local handle = active[index]
+                                local pi     = lookup[handle]
+                                if pi then
+                                    local state = read(handle, terminal and writers[index])
+                                    if state == true then
+-- changed = true
+                                        local exit = close(handle)
+                                        stoptiming(pi.timer)
+                                        local time = elapsedtime(pi.timer)
+                                        pi.result  = (not exit or exit > 0) and "error" or "done"
+                                        pi.time    = time
+                                        pi.handle  = nil
+                                        pi.timer   = nil
+                                        alltimes   = alltimes + time
+                                        if terminal then
+                                            report()
+                                        end
+                                        report("process %02i, index %02i, %s %a, status %a, runtime %0.3f",i,pi.count,whattodo,pi.filename,pi.result,time)
+                                        if terminal then
+                                            report()
+                                        end
+                                        process[pi.index] = false
+                                        lookup[handle] = nil
+                                        results[pi.count] = pi
+                                        checkproblem(process,pi)
+                                    end
+                                end
+                            end
                         else
-                            local timer    = "parallel:" .. set .. ":" .. i
-                            local filename = files[count]
-                            local dirname  = file.dirname(filename)
-                            local basename = file.basename(filename)
-                            if dirname ~= "." and dirname ~= "./" then
-                                dir.push(dirname)
-                            end
-                            local command  = whattodo == "command" and f_command(basename,arguments) or f_runner(arguments,basename)
-                            resettiming(timer)
-                            starttiming(timer)
-                            if squid then
-                                squid.stepper("step",i,0,problem)
-                            end
-                            local result  = popen(command)
-                            if dirname ~= "." then
-                                dir.pop()
-                            end
-                            local status  = nil
-                            if result then
-                                process[i] = {
-                                    handle   = result,
-                                    result   = "start",
-                                    filename = filename,
-                                    count    = count,
-                                    time     = 0,
-                                    timer    = timer,
-                                }
-                                status = process[i]
-                            else
-                                status = {
-                                    result   = "error",
-                                    count    = count,
-                                    filename = filename,
-                                    time     = 0,
-                                }
-                                problem = true
-                                stoptiming(timer)
-                            end
-                            results[count] = status
-                            if terminal then
-                                report()
-                            end
-                            report("process %02i, index %02i, %s %a, status %a",i,status.count,whattodo,status.filename,status.result)
-                            if terminal then
-                                report()
-                            end
-                            done = true
+                            break
                         end
-                      ::done::
                     end
-                    if not done then
-                        break
+
+                else
+
+                    local popen  = io.popen
+                    local close  = io.close
+                    local gobble = io.gobble or function(f) f:read("l") end
+
+                    while true do
+                        local done = false
+                        for i=1,runners do
+                            local pi = process[i]
+                            if pi then
+                                local s
+                                if terminal then
+                                    s = pi.handle:read("l")
+                                    if s then
+                                        done = true
+                                        writers[i](s)
+                                        goto done
+                                    end
+                                else
+                                    s = gobble(pi.handle)
+                                    if s then
+                                        done = true
+                                        goto done
+                                    end
+                                end
+                                if not s then
+                                    local r, detail, n = close(pi.handle)
+                                    stoptiming(pi.timer)
+                                    local time = elapsedtime(pi.timer)
+                                    pi.result  = (not r or n > 0) and "error" or "done"
+                                    pi.time    = time
+                                    pi.handle  = nil
+                                    pi.timer   = nil
+                                    alltimes   = alltimes + time
+                                    if terminal then
+                                        report()
+                                    end
+                                    report("process %02i, index %02i, %s %a, status %a, runtime %0.3f",i,pi.count,whattodo,pi.filename,pi.result,time)
+                                    if terminal then
+                                        report()
+                                    end
+                                    process[i] = false
+                                    results[pi.count] = pi
+                                    checkproblem(process,pi)
+                                end
+                            end
+                            count  = count + 1
+                            counts = counts + 1
+                            if count > total then
+                                -- we're done
+                            else
+                                local timer    = "parallel:" .. set .. ":" .. i
+                                local filename = files[count]
+                                local dirname  = file.dirname(filename)
+                                local basename = file.basename(filename)
+                                if dirname ~= "." and dirname ~= "./" then
+                                    dir.push(dirname)
+                                end
+                                local command  = whattodo == "command" and f_command(basename,arguments) or f_runner(arguments,basename)
+                                resettiming(timer)
+                                starttiming(timer)
+                                if squid then
+                                    squid.stepper("step",i,0,problem)
+                                end
+                                local result  = popen(command)
+                                if dirname ~= "." then
+                                    dir.pop()
+                                end
+                                local status  = nil
+                                if result then
+                                    process[i] = {
+                                        handle   = result,
+                                        result   = "start",
+                                        filename = filename,
+                                        count    = count,
+                                        time     = 0,
+                                        timer    = timer,
+                                    }
+                                    status = process[i]
+                                else
+                                    status = {
+                                        result   = "error",
+                                        count    = count,
+                                        filename = filename,
+                                        time     = 0,
+                                    }
+                                    problem = true
+                                    stoptiming(timer)
+                                end
+                                results[count] = status
+                                if terminal then
+                                    report()
+                                end
+                                report("process %02i, index %02i, %s %a, status %a",i,status.count,whattodo,status.filename,status.result)
+                                if terminal then
+                                    report()
+                                end
+                                done = true
+                            end
+                          ::done::
+                        end
+                        if not done then
+                            break
+                        end
                     end
+
                 end
+
             end
+
             stoptiming("parallel")
+            local runtime = elapsedtime("parallel")
             report()
-            report("files: %i, runtime: %s",totals,elapsedtime("parallel"))
+            report("files: %i, method %a, runtime: %s",
+                totals,processlib and "process" or "popen",runtime)
             report()
             local errors = { }
             for set=1,#allresults do
@@ -2095,6 +2259,8 @@ do
             if squid then
                 squid.stepper((problem or #errors > 0) and "error" or "finished")
             end
+            report()
+            report("total process time: %0.3f",alltimes)
             if #errors > 0 then
                 report()
                 report("errors in:")

@@ -49,7 +49,7 @@
 %D {YYYY.MM.DD HH:MM} format.
 
 \edef\contextformat {\jobname}
-\edef\contextversion{2026.08.23 19:06}
+\edef\contextversion{2026.09.07 21:49}
 
 %D Kind of special:
 
@@ -601,14 +601,6 @@
 \loadmarkfile{cont-run} % the main runner (used in cont-yes.mkiv)
 
 \setupcurrentlanguage[\defaultlanguagetag]
-
-\prependtoks
-    \ctxlua{statistics.starttiming(statistics)}%
-\to \everyjob
-
-\appendtoks
-    \ctxlua{statistics.stoptiming(statistics)}%
-\to \everyjob
 
 % \appendtoks
 %     \ctxlua{job.prepare()}%

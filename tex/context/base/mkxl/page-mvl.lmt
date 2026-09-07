@@ -357,12 +357,13 @@ local function updatespreads(dataset)
     dataset.spreads = spreads
     local gap       = 2 * texgetdimen(d_backspace)
     for l=1,nofleft do
-        local s = spreads[l]
-        local n = #s
-        local o = s[n] + gap
+        local s  = spreads[l]
+        local n  = #s
+        local o  = s[n] + gap
+        local sr = spreads[nofleft+1]
         for r=1,nofright do
             n = n + 1
-            s[n] = s[r] + o
+            s[n] = sr[r] + o
         end
     end
 end
@@ -995,8 +996,7 @@ do
             end
         end,
         btlr = function(c,r,nr,nofcolumns,nofrows,cells,width,spans)
-         -- for j=nofrows-nr+1,1,-1 do
-            for j=nofrows-nr+1-r+1,1,-1 do
+            for j=nofrows-nr+1,r,-1 do
                 for i=c,nofcolumns do
                     if not cells[i][j] then
                         local c, r, cc = here(i,j,nr,nofcolumns,nofrows,cells,width,spans)
@@ -1009,8 +1009,7 @@ do
         end,
         lrbt = function(c,r,nr,nofcolumns,nofrows,cells,width,spans)
             for i=c,nofcolumns do
-             -- for j=nofrows-nr+1,1,-1 do
-                for j=nofrows-nr+1-r+1,1,-1 do
+                for j=nofrows-nr+1,r,-1 do
                     if not cells[i][j] then
                         local c, r, cc = here(i,j,nr,nofcolumns,nofrows,cells,width,spans)
                         if c then
@@ -1021,8 +1020,7 @@ do
             end
         end,
         btrl = function(c,r,nr,nofcolumns,nofrows,cells,width,spans)
-         -- for j=nofrows-nr+1,1,-1 do
-            for j=nofrows-nr+1-r+1,1,-1 do
+            for j=nofrows-nr+1,r,-1 do
                 for i=nofcolumns,c,-1 do
                     if not cells[i][j] then
                         local c, r, cc = here(i,j,nr,nofcolumns,nofrows,cells,width,spans)
@@ -1035,8 +1033,7 @@ do
         end,
         rlbt = function(c,r,nr,nofcolumns,nofrows,cells,width,spans)
             for i=nofcolumns,c,-1 do
-             -- for j=nofrows-nr+1,1,-1 do
-                for j=nofrows-nr+1-r+1,1,-1 do
+                for j=nofrows-nr+1,r,-1 do
                     if not cells[i][j] then
                         local c, r, cc = here(i,j,nr,nofcolumns,nofrows,cells,width,spans)
                         if c then
@@ -1650,11 +1647,10 @@ do
     function columnsets.definesub(t)
         local dataset = data[t.name]
         if dataset then
-            local lastmvl    = dataset.lastmvl or 1
-            local done       = false
             local mvls       = dataset.mvls
             local nofcolumns = dataset.nofleft + dataset.nofright
             local columns    = t.columns
+            local mvl        = dataset.lastmvl or 1
             if columns == "*" or columns == v_all then
                 columns = { }
                 for i=1,nofcolumns do
@@ -1666,16 +1662,39 @@ do
             for i=1,#columns do
                 local n = tonumber(columns[i]) or 1
                 columns[i] = n
-                -- nof columns etc are not setup yet
-                if not done then
-                    lastmvl = lastmvl + 1
-                    done    = true
+            end
+            if #columns > 0 then
+                local replaced = { }
+                local used     = { }
+                for i=1,#columns do
+                    replaced[columns[i]] = true
                 end
-                mvls[n] = lastmvl
+                for i=1,nofcolumns do
+                    if not replaced[i] then
+                        local n = rawget(mvls,i)
+                        if n then
+                            used[n] = true
+                        end
+                    end
+                end
+                mvl = 2
+                while used[mvl] do
+                    mvl = mvl + 1
+                end
+                for i=1,#columns do
+                    mvls[columns[i]] = mvl
+                end
             end
             dataset.mvlc[t.subname] = columns
+            local lastmvl = 1
+            for i=1,nofcolumns do
+                local n = rawget(mvls,i)
+                if n and n > lastmvl then
+                    lastmvl = n
+                end
+            end
             dataset.lastmvl = lastmvl
-            return lastmvl
+            return mvl
         else
             return 1
         end
@@ -2318,7 +2337,7 @@ do
             local list    = rawget(delayed,sheet)
             if list then
                 if trace_flush then
-                    report("presetting: delayed sheet %i, %i entries",n,#list)
+                    report("presetting: delayed sheet %i, %i entries",sheet or 0,#list)
                 end
                 for i=1,#list do
                     buffers.assign(s_page_mvl_temp,list[i])
@@ -2691,14 +2710,14 @@ do
         public    = true,
         actions   = function(name,index)
             local dataset = data[name]
-            local index   = 0
+            local found   = 0
             if dataset then
                 local shape = dataset.shape
                 if shape then
-                    index = (shape[index] or shape[#shape]).page
+                    found = (shape[index] or shape[#shape]).page
                 end
             end
-            return integer_value, index
+            return integer_value, found
         end
     }
 
@@ -2731,7 +2750,7 @@ do
             if dataset then
                 local shape = dataset.shape
                 if shape then
-                    worst = shape.worst
+                    worst = shape.worstcase
                 end
                 if worst == 0 then
                     worst = dataset.nofleft + dataset.nofright
@@ -3050,7 +3069,7 @@ do
                             result = trybreak_code
                             if trace then
                                 report(
-                                    "name %a, action %s, count %i, slot %i, spread %i, page %i, column %i, extra %p",
+                                    "name %a, action %s, count %i, slot %i, spread %i, page %i, column %i, shaped %l, extra %p",
                                     name, action, count, slot, spread, page, column, shaped, extra
                                 )
                             end

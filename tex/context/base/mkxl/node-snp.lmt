@@ -17,7 +17,7 @@ local status    = status
 
 local nodeusage = nodes.pool and nodes.pool.usage
 local nodestock = nodes.pool and nodes.pool.stock
-local clock     = os.gettimeofday or os.clock -- should go in environment
+local clock     = os.gettimeofday
 local lasttime  = clock()
 local samples   = { }
 

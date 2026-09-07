@@ -2212,27 +2212,34 @@ do
                 end
                 --
                 local function mpstopdf(mp,data)
-                    local width = data.width
-                    if decompress then
-                        mp = decompress(mp)
-                    end
-                    local pdf   = simplemprun(instance,mp,true)
-                    local width = width * factor
-                    if usecolor then
-                     -- return f_stream_c(width,pdf), width
-                        -- Zeros are fine but not for okular 2025, which does colors wrong anyway.
-                        local height = (data.height or 0) * factor
-                        local depth  = (data.depth  or 0) * factor
-                        return f_stream_cc(width,-10,-depth-10,width+10,height+10,pdf), width
-                    elseif fixdepth then
-                        -- The standard suggests that the offset is ignored but ...
-                        local depth  = data.depth  or 0
-                        local height = data.height or 0
-                        if depth ~= 0 or height ~= 0 then
-                            return f_stream_d(width,(-height-depth)*factor,pdf), width
+                    local kind =  type(mp)
+                    if kind == "string" then
+                        local width = data.width
+                        if decompress then
+                            mp = decompress(mp)
                         end
+                        local pdf   = simplemprun(instance,mp,true)
+                        local width = width * factor
+                        if usecolor then
+                         -- return f_stream_c(width,pdf), width
+                            -- Zeros are fine but not for okular 2025, which does colors wrong anyway.
+                            local height = (data.height or 0) * factor
+                            local depth  = (data.depth  or 0) * factor
+                            return f_stream_cc(width,-10,-depth-10,width+10,height+10,pdf), width
+                        elseif fixdepth then
+                            -- The standard suggests that the offset is ignored but ...
+                            local depth  = data.depth  or 0
+                            local height = data.height or 0
+                            if depth ~= 0 or height ~= 0 then
+                                return f_stream_d(width,(-height-depth)*factor,pdf), width
+                            end
+                        end
+                        return f_stream(width,pdf), width
+                 -- elseif kind == "table" and mp.objnum then
+                 --     -- likely a box has been added (foo||bar) ... what to do
+                 -- else
+                 --     -- bad
                     end
-                    return f_stream(width,pdf), width
                 end
                 --
                 local function resetmps()
@@ -2471,7 +2478,7 @@ do
             for index, data in sortedhash(indices) do
                 local name  = f_index(index)
                 local glyph = glyphs[include[index]]
-                if glyph then
+             -- if type(glyph) == "string" then
                     local stream, width = glyphtopdf(glyph,data)
                     if stream then
                         if type(glyph) == "table" then
@@ -2490,9 +2497,9 @@ do
                         charprocs[name]          = pdfreference(pdfflushstreamobject(stream))
                         widths[index-minindex+1] = width
                     end
-                else
-                    report_fonts("missing glyph %i in type3 font %a",index,basefontname)
-                end
+             -- else
+             --     report_fonts("bad or missing glyph %i in type3 font %a",index,basefontname)
+             -- end
             end
          -- if not fontbbox then
                 -- The specification permits zero values and these are actually also more

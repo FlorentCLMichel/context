@@ -10318,6 +10318,9 @@ return {
    ["pe"]="کمترین‌عرض",
    ["ro"]="latimeminima",
   },
+  ["minlines"]={
+   ["en"]="minlines",
+  },
   ["moffset"]={
    ["cs"]="moffset",
    ["de"]="moffset",

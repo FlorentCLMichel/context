@@ -288,7 +288,7 @@ local function showfeatures(tag,specification)
         report()
         indeed("instances : % t",instancenames)
     end
-    local features, tables = fonts.helpers.getfeatures(specification.filename,not getargument("nosave"))
+    local features, tables = fonts.helpers.getfeatures(specification.filename,not getargument("nosave")) -- nosave is obsolete
     if features then
         for what, v in table.sortedhash(features) do
             local data = features[what]
@@ -320,6 +320,26 @@ local function showfeatures(tag,specification)
         end
     else
         report("no features")
+    end
+    local variabledata = fonts.helpers.getvariabledata(specification.filename)
+    if variabledata then
+        local axis      = variabledata.axis
+        local instances = variabledata.instances
+        if axis and #axis > 0 then
+            report()
+            report("variable axis:")
+            report()
+            report("  name                 tag     minimum  maximum  default")
+            report()
+            for i=1,#axis do
+                local a = axis[i]
+                report("  %-20s %-6s %8s %8s %8s",a.name,a.tag,
+                    tostring(a.minimum),
+                    tostring(a.maximum),
+                    tostring(a.default)
+                ) -- a.flags
+            end
+        end
     end
     if tables then
         tables = table.tohash(tables)

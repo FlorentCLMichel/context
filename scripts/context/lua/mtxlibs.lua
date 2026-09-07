@@ -116,6 +116,8 @@ local ownlibs = {
     "trac-set.lua",
     "trac-log.lua",
  -- "trac-pro.lua",  -- not relevant outside context
+    "util-tim.lua",
+    'trac-tmr.lua',
     "trac-inf.lua",
 
     "util-mrg.lua",

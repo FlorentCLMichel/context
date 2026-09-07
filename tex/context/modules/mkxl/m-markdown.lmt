@@ -811,14 +811,14 @@ end
 --
 --     local function test(str)
 --         local n = 1 -- 000
---         local t = os.clock()
+--         local t = os.gettimeofday()
 --         local one = convert(str)
---      -- print("runtime",1,#str,#one,os.clock()-t)
+--      -- print("runtime",1,#str,#one,os.gettimeofday()-t)
 --         str = string.rep(str,n)
---         local t = os.clock()
+--         local t = os.gettimeofday()
 --         local two = convert(str)
 --         print(two)
---      -- print("runtime",n,#str,#two,os.clock()-t)
+--      -- print("runtime",n,#str,#two,os.gettimeofday()-t)
 --      -- print(format("==============\n%s\n==============",one))
 --     end
 --

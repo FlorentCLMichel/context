@@ -215,7 +215,7 @@ static int oslib_uname(lua_State *L)
 # ifdef _WIN32
 
     # ifndef ENABLE_VIRTUAL_TERMINAL_PROCESSING
-        # define ENABLE_VIRTUAL_TERMINAL_PROCESSING 0x04
+        # define ENABLE_VIRTUAL_TERMINAL_PROCESSING 0x0004
     # endif
 
     static int oslib_gettimeofday(lua_State *L)
@@ -234,23 +234,6 @@ static int oslib_uname(lua_State *L)
         return 1;
     }
 
-    static int oslib_enableansi(lua_State *L)
-    {
-        HANDLE handle = GetStdHandle(STD_OUTPUT_HANDLE);
-        DWORD mode = 0;
-        int done = 0;
-        if (GetConsoleMode(handle, &mode)) {
-            mode |= ENABLE_VIRTUAL_TERMINAL_PROCESSING;
-            if (SetConsoleMode(handle, mode)) {
-                done = 1;
-            } else {
-                /* bad */
-            }
-        }
-        lua_pushboolean(L, done);
-        return 1;
-    }
-
 # else
 
     static int oslib_gettimeofday(lua_State *L)
@@ -263,6 +246,35 @@ static int oslib_uname(lua_State *L)
         lua_pushnumber(L, v);
         return 1;
     }
+
+# endif
+
+# ifdef _WIN32
+
+    static int oslib_enableansi(lua_State *L)
+    {
+        int done = 0;
+        HANDLE out_handle = GetStdHandle(STD_OUTPUT_HANDLE);
+        HANDLE err_handle = GetStdHandle(STD_ERROR_HANDLE);
+        if (out_handle != INVALID_HANDLE_VALUE && out_handle != NULL) {
+            DWORD mode = 0;
+            if (GetConsoleMode(out_handle, &mode)) {
+                SetConsoleMode(out_handle, mode | ENABLE_VIRTUAL_TERMINAL_PROCESSING);
+                done = 1;
+            }
+        }
+        if (err_handle != INVALID_HANDLE_VALUE && err_handle != NULL) {
+            DWORD mode = 0;
+            if (GetConsoleMode(err_handle, &mode)) {
+                SetConsoleMode(err_handle, mode | ENABLE_VIRTUAL_TERMINAL_PROCESSING);
+                done = 1;
+            }
+        }
+        lua_pushboolean(L, done);
+        return 1;
+    }
+
+# else
 
     static int oslib_enableansi(lua_State *L)
     {

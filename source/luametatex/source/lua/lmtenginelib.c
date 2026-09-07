@@ -852,7 +852,7 @@ void tex_engine_check_configuration(void)
     tex_engine_run_config_function("init");
 }
 
-void lmt_make_table(
+void lmt_make_table( /* todo: move elsewhere */
     lua_State     *L,
     const char    *tab,
     const char    *mttab,
@@ -1126,6 +1126,8 @@ static const luaL_Reg lmt_libs_extra_function_list[] = {
     { "bytemap",   luaopen_bytemap   },
     { "kdtree",    luaopen_kdtree    },
     { "serial",    luaopen_serial    },
+    { "process",   luaopen_process   },
+    { "timer",     luaopen_timer     },
  // { "specific",  luaopen_specific  },
     { NULL,        NULL              },
 };

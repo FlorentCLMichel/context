@@ -355,6 +355,8 @@
      \pack_framed_stroked_box_normal
    \orelse\ifx\p_framed_frame\v!on
      \pack_framed_stroked_box_round
+   \orelse\ifx\p_framed_frame\v!closed
+     \pack_framed_stroked_box_round
    \fi}
 
 \def\pack_framed_stroked_box_round % todo: variant without keywords
@@ -1055,23 +1057,29 @@
    \cdef\currentframed{#1}%
    \pack_framed_initialize
    \setbox\b_framed_normal\hbox{#3}%
+   \setupcurrentframed[#2]%
    \iftrialtypesetting \else
      \edef\m_overlay_region{\framedparameter\c!region}%
      \ifempty\m_overlay_region\else
        \pack_framed_set_region
      \fi
    \fi
-   \setupcurrentframed[#2]%
    \d_framed_frameoffset  {\framedparameter\c!frameoffset}% also used in backgrounds
    \d_framed_framedashstep{\framedparameter\c!dashstep}%
-   \edef\p_framed_frame{\framedparameter\c!frame}%
+   \edef\p_framed_frame     {\framedparameter\c!frame}%
    \edef\p_framed_background{\framedparameter\c!background}%
    % not here, in calling macro: setups
    \pack_framed_remove_depth
    % beware, depth goes away when we have a frame, otherwise it's retained
-   \ifx\p_framed_frame\v!overlay \orelse \ifx\p_framed_frame\v!none \else
-     \ifchkdimexpr\framedparameter\c!rulethickness\else
+   \ifx\p_framed_frame\v!overlay
+%    \d_framed_linewidth\zeropoint
+   \orelse\ifx\p_framed_frame\v!none
+%    \d_framed_linewidth\zeropoint
+   \else
+     \ifchkdimexpr\framedparameter\c!rulethickness\or
        \d_framed_linewidth\lastchkdimension
+   % \else
+        % keep
      \fi
      \pack_framed_add_outline % real or invisible frame
    \fi
@@ -1107,11 +1115,18 @@
      \pack_framed_set_region
    \fi
    \d_framed_frameoffset{\framedparameter\c!frameoffset}% also used in backgrounds
+   \d_framed_framedashstep{\framedparameter\c!dashstep}%
    \edef\p_framed_frame{\framedparameter\c!frame}%
    \edef\p_framed_background{\framedparameter\c!background}%
-   \ifx\p_framed_frame\v!overlay \orelse \ifx\p_framed_frame\v!none \else
-     \ifchkdimexpr\framedparameter\c!rulethickness\else
+   \ifx\p_framed_frame\v!overlay
+%      \d_framed_linewidth\zeropoint
+   \orelse\ifx\p_framed_frame\v!none
+%      \d_framed_linewidth\zeropoint
+   \else
+     \ifchkdimexpr\framedparameter\c!rulethickness\or
        \d_framed_linewidth\lastchkdimension
+   % \else
+       % keep
      \fi
      \pack_framed_add_outline % real or invisible frame
    \fi
@@ -1252,21 +1267,23 @@
 
 \def\spac_framed_push_local_anchors
   {\ifx\p_framed_synchronize\v!yes
-     \c_pack_resync\conditionaltrue
+     \c_pack_resync  \conditionaltrue
      \c_pack_reanchor\conditionaltrue
      \pushlocalanchors
    % \aftergrouped{\aftergrouped{\poplocalanchors}}%
      \aftergroup\poplocalanchors
    \orelse\ifx\p_framed_synchronize\v!text
-     \c_pack_resync\conditionaltrue
+     \c_pack_resync  \conditionaltrue
+     \c_pack_reanchor\conditionalfalse % new
      \pushlocalanchors
      \aftergroup\poplocalanchors
    \orelse\ifx\p_framed_synchronize\v!background
+     \c_pack_resync  \conditionalfalse % new
      \c_pack_reanchor\conditionaltrue
      \pushlocalanchors
      \aftergroup\poplocalanchors
    \else
-     \c_pack_resync\conditionalfalse
+     \c_pack_resync  \conditionalfalse
      \c_pack_reanchor\conditionalfalse
    \fi}
 
@@ -1323,8 +1340,10 @@
      \c_framed_has_frame\conditionaltrue
    \fi
    \ifconditional\c_framed_has_frame
-     \ifchkdimexpr\framedparameter\c!rulethickness\else
+     \ifchkdimexpr\framedparameter\c!rulethickness\or
        \d_framed_linewidth\lastchkdimension
+   % \else
+       % keep
      \fi
    \else
      \d_framed_linewidth\zeropoint
@@ -1389,7 +1408,7 @@
    \ifcsname\??framedstrutalternative\p_strut\endcsname
      \lastnamedcs
    \else
-     \framed_offset_alternative_unknown
+     \framed_strut_alternative_unknown
    \fi
    % the next check could move to strutalternative
    \ifcase\c_framed_has_strut % none (not even noindent)
@@ -3189,14 +3208,25 @@
 
 %D Fast enough for most cases (we could do a massive \type {\ifhastok} instead):
 
+% \permanent\protected\def\doifelseframed#1%
+%          {\ifcstok{#1\c!frame      }\v!on\expandafter\firstoftwoarguments
+%    \orelse\ifcstok{#1\c!topframe   }\v!on\expandafter\firstoftwoarguments
+%    \orelse\ifcstok{#1\c!bottomframe}\v!on\expandafter\firstoftwoarguments
+%    \orelse\ifcstok{#1\c!leftframe  }\v!on\expandafter\firstoftwoarguments
+%    \orelse\ifcstok{#1\c!rightframe }\v!on\expandafter\firstoftwoarguments
+%    \orelse\ifempty{#1\c!background }\expandafter\secondoftwoarguments
+%      \else                          \expandafter\firstoftwoarguments\fi}
+%
+% we need to handler 'round' too:
+
 \permanent\protected\def\doifelseframed#1%
-         {\ifcstok{#1\c!frame      }\v!on\expandafter\firstoftwoarguments
-   \orelse\ifcstok{#1\c!topframe   }\v!on\expandafter\firstoftwoarguments
-   \orelse\ifcstok{#1\c!bottomframe}\v!on\expandafter\firstoftwoarguments
-   \orelse\ifcstok{#1\c!leftframe  }\v!on\expandafter\firstoftwoarguments
-   \orelse\ifcstok{#1\c!rightframe }\v!on\expandafter\firstoftwoarguments
-   \orelse\ifempty{#1\c!background }\expandafter\secondoftwoarguments
-     \else                          \expandafter\firstoftwoarguments\fi}
+    {\unless\ifcstok{#1\c!frame      }\v!off\expandafter\firstoftwoarguments
+   \orunless\ifcstok{#1\c!topframe   }\v!off\expandafter\firstoftwoarguments
+   \orunless\ifcstok{#1\c!bottomframe}\v!off\expandafter\firstoftwoarguments
+   \orunless\ifcstok{#1\c!leftframe  }\v!off\expandafter\firstoftwoarguments
+   \orunless\ifcstok{#1\c!rightframe }\v!off\expandafter\firstoftwoarguments
+     \orelse\ifempty{#1\c!background }\expandafter\secondoftwoarguments
+       \else                          \expandafter\firstoftwoarguments\fi}
 
 %D A bit out of place here:
 

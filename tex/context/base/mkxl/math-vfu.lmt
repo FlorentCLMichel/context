@@ -25,6 +25,7 @@ if not modules then modules = { } end modules ['math-vfu'] = {
 local type, next, tonumber = type, next, tonumber
 local max = math.max
 local fastcopy, sortedhash, tohash = table.copy, table.sortedhash, table.tohash
+local clock =  os.gettimeofday
 
 local fonts, mathematics = fonts, mathematics
 
@@ -935,7 +936,7 @@ function vfmath.define(specification,virtual,goodies)
     local fontlist = { }
     local names    = { }
     local main     = nil
-    local start    = (trace_virtual or trace_timings) and os.clock()
+    local start    = (trace_virtual or trace_timings) and clock()
     local okset    = { }
     local n        = 0
     local f_extra  = formatters["virtual.extra.%05X"]
@@ -1332,7 +1333,7 @@ function vfmath.define(specification,virtual,goodies)
     main.nomath        = false
     --
     if trace_virtual or trace_timings then
-        report_virtual("loading and virtualizing font %a at size %p took %0.3f seconds",name,size,os.clock()-start)
+        report_virtual("loading and virtualizing font %a at size %p took %0.3f seconds",name,size,clock()-start)
     end
     --
     return main

@@ -372,8 +372,7 @@ implement {
 implement {
     name    = "resettimer",
     actions = function()
-        statistics.resettiming("whatever")
-        statistics.starttiming("whatever")
+        statistics.starttiming("whatever",true)
     end
 }
 

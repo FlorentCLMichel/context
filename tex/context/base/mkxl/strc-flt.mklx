@@ -1536,8 +1536,8 @@
    \orelse\ifinset\v!margin\floatlocation % brr, really needed! see wm will be redone
      \hsize{\namedmarginblockparameter\empty\c!width}%
    \fi
-   \availablefloatwidth \ifchkdimexpr\floatparameter\c!availablewidth \lastchkdimension\else\hsize\fi
-   \availablefloatheight\ifchkdimexpr\floatparameter\c!availableheight\lastchkdimension\else\vsize\fi}
+   \availablefloatwidth \ifchkdimexpr\floatparameter\c!availablewidth \or\lastchkdimension\else\hsize\fi
+   \availablefloatheight\ifchkdimexpr\floatparameter\c!availableheight\or\lastchkdimension\else\vsize\fi}
 
 % maybe
 %

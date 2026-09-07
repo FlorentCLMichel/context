@@ -155,7 +155,7 @@ report path where format files end up
 .B --pattern=string
 filter variables
 .TP
-.B --all=string
+.B --all
 report all (when applicable)
 .TP
 .B --format=string

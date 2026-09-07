@@ -16,7 +16,7 @@ local type, tostring, tonumber = type, tostring, tonumber
 local sort, concat = table.sort, table.concat
 
 local find, format, sub, gsub = string.find, string.format, string.sub, string.gsub
-local osdate, ostime, osclock = os.date, os.time, os.clock
+local osdate, ostime, osclock = os.date, os.time, os.gettimeofday or os.clock
 local ioopen = io.open
 local loaddata, savedata = io.loaddata, io.savedata
 local filejoin, isdir, dirname, mkdirs = file.join, lfs.isdir, file.dirname, dir.mkdirs
@@ -652,7 +652,9 @@ if xzip then -- flate then do
                 for i=1,count do
                     local l = list[i]
                     local n = l.filename
-                    if not validate or validate(n) then
+                    if find(n,"/$") then
+                     -- mkdirs(dirname(n))
+                    elseif not validate or validate(n) then
                         local d = unzipfile(z,n) -- true for check
                         if d then
                             local p = filejoin(path,n)

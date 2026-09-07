@@ -367,8 +367,20 @@
 \mutable\let\totaltopinserted\!!zeropoint
 \mutable\let\totalbotinserted\!!zeropoint
 
+% \setupexternalfigures[location={local,global,default}]
+% \starttext
+%     \dorecurse{30}{single column line #1\par}
+%     \startplacefigure[title={}]%
+%         \externalfigure[cow][scale=700]%
+%     \stopplacefigure
+%     \startmixedcolumns[n=2,balance=yes]
+%         \dorecurse{30}{double column line #1\par}
+%     \stopmixedcolumns
+% \stoptext
+
 \protected\def\page_one_command_set_top_insertions
   {\bgroup
+   \hsize\makeupwidth % otherwise weird mixed alignment (see example above)
    % a bit strange place but okay
    \page_one_command_set_always_insertions_top
    \page_one_command_set_always_insertions_bottom
@@ -417,6 +429,7 @@
 
 \protected\def\page_one_command_set_bottom_insertions
   {\bgroup
+   \hsize\makeupwidth % otherwise weird mixed alignment
    \ifconditional\c_page_floats_some_waiting
      \noffloatinserts\zerocount
      \page_one_command_set_bottom_insertions_indeed

@@ -10,6 +10,7 @@ local concat, unpack = table.concat, table.unpack
 local insert, remove = table.insert, table.remove
 local format, gmatch, gsub, find, match, lower, strip = string.format, string.gmatch, string.gsub, string.find, string.match, string.lower, string.strip
 local type, next, tonumber, tostring = type, next, tonumber, tostring
+local clock = os.gettimeofday
 
 local trace_baseinit         = false  trackers.register("otf.baseinit",     function(v) trace_baseinit     = v end)
 local trace_singles          = false  trackers.register("otf.singles",      function(v) trace_singles      = v end)
@@ -443,7 +444,7 @@ end
 
 local function featuresinitializer(tfmdata,value)
     if true then -- value then
-        local starttime = trace_preparing and os.clock()
+        local starttime = trace_preparing and clock()
         local features  = tfmdata.shared.features
         local fullname  = tfmdata.properties.fullname
         if features and fullname then
@@ -509,7 +510,7 @@ local function featuresinitializer(tfmdata,value)
             registerbasehash(tfmdata)
         end
         if trace_preparing then
-            report_prepare("preparation time is %0.3f seconds for %a",os.clock()-starttime,fullname)
+            report_prepare("preparation time is %0.3f seconds for %a",clock()-starttime,fullname)
         end
     end
 end

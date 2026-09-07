@@ -6,6 +6,11 @@ if not modules then modules = { } end modules ['x-flow'] = {
     license   = "see context related readme files"
 }
 
+-- If this was written when we had \LMTX\ already more would happen in \LUA\ but as
+-- it is not the most used code we stick to this. At some point I will make a proper
+-- \LMTX\ variant, also bvecause we moght use some more clever \METAPOST: a rainy
+-- day project.
+
 -- when we can resolve mpcolor at the lua end we will
 -- use metapost.graphic(....) directly
 
@@ -406,12 +411,12 @@ implement {
             include  = name,
             x        = x,
             y        = y,
-         -- settings = settings,
+         -- settings = settings, -- todo: parse to hash but probably never used anyway
         }
     end
 }
 
-local function inject(includedata,data,hash)
+local function inject(includedata,data,hash,xo,yo)
     local subchart = charts[includedata.include]
     if not subchart then
         return
@@ -420,13 +425,13 @@ local function inject(includedata,data,hash)
     if not subdata then
         return
     end
-    local xoffset  = (includedata.x or 1) - 1
-    local yoffset  = (includedata.y or 1) - 1
+    local xoffset  = (includedata.x or 1) - 1 + (xo or 0)
+    local yoffset  = (includedata.y or 1) - 1 + (yo or 0)
     local settings = includedata.settings
     for i=1,#subdata do
         local si = subdata[i]
         if si.include then
-            inject(si,data,hash)
+            inject(si,data,hash,xoffset,yoffset)
         else
             local x = si.x + xoffset
             local y = si.y + yoffset
@@ -502,6 +507,8 @@ local function expanded(chart,chartsettings)
     setmetatableindex(chartsettings.split,defaults.split)
     setmetatableindex(chartsettings.chart,defaults.chart)
     --
+    -- see later when we relocate
+    --
     if chartsettings.chart.vcompact == v_yes then
         pack(expandeddata,"y")
     end
@@ -555,7 +562,7 @@ implement {
             -- ok
         elseif y == "+" then
             y = last_y + 1
-        elseif x == "-" then
+        elseif y == "-" then
             y = last_y - 1
         elseif find(y,"^[%+%-]") then
             y = last_y + (tonumber(y) or 0)
@@ -685,7 +692,6 @@ local function process_connections(g,chart,xoffset,yoffset)
     if not data then
         return
     end
-    local settings = chart.settings
     for i=1,#data do
         local cell = visible(chart,data[i])
         if cell then
@@ -700,7 +706,7 @@ local function process_connections(g,chart,xoffset,yoffset)
                     if otherx > 0 and othery > 0 and cellx > 0 and celly > 0 and location then
                         local what_cell, where_cell, what_other, where_other = lpegmatch(what,location)
                         if what_cell and where_cell and what_other and where_other then
-                            local linesettings = settings.line
+                            local linesettings = cell.settings.line -- metatabled
                             ctx_tographic(g,"flow_smooth := %s ;", linesettings.corner == v_round and "true" or "false")
                             ctx_tographic(g,"flow_dashline := %s ;", linesettings.dash == v_yes and "true" or "false")
                             ctx_tographic(g,"flow_arrowtip := %s ;", linesettings.arrow == v_yes and "true" or "false")
@@ -783,16 +789,17 @@ local function process_texts(g,chart,xoffset,yoffset)
             end
             local exits = cell.exits
             for i=1,#exits do
-                local exit     = exits[i]
-                local text     = exit.text
-                local location = exit.location or ""
-                local location = validlabellocations[location] or location
+                local exit = exits[i]
+                local text = exit.text
                 if text ~= "" then
-                    -- maybe make autoexit an option
-                    if location == "l" and x == chart.from_x + 1 or
-                       location == "r" and x == chart.to_x   - 1 or
-                       location == "t" and y == chart.to_y   - 1 or
-                       location == "b" and y == chart.from_y + 1 then
+                    local location = exit.location or ""
+                    local location = validlabellocations[location] or location
+                    print(x,chart.from_x,chart.to_x)
+                    -- maybe make autoexit an option (per 2026-08 no more +/- 1)
+                    if location == "l" and x == chart.from_x or
+                       location == "r" and x == chart.to_x   or
+                       location == "t" and y == chart.to_y   or
+                       location == "b" and y == chart.from_y then
                         charttexts[#charttexts+1] = text
                         ctx_tographic(g,'flow_chart_draw_exit(%s,%s,"%s",textext("%s")) ;',x,y,location,f_texttemplate_l(x,y,#charttexts,realx,realy))
                     end
@@ -909,12 +916,29 @@ local function getchart(settings,forced_x,forced_y,forced_nx,forced_ny)
     --
     local nx = maxx - minx + 1
     local ny = maxy - miny + 1
+    --
     -- relocate cells
+    --
+ -- for i=1,#data do
+ --     local cell = data[i]
+ --     cell.x = cell.realx - minx + 1
+ --     cell.y = cell.realy - miny + 1
+ -- end
+    --
+    -- the compact check is new per 2026-08 but yet untested
+    --
+    local hcompact = settings.chart.hcompact == v_yes
+    local vcompact = settings.chart.vcompact == v_yes
     for i=1,#data do
         local cell = data[i]
-        cell.x = cell.realx - minx + 1
-        cell.y = cell.realy - miny + 1
+        if not hcompact then
+            cell.x = cell.realx - minx + 1
+        end
+        if not vcompact then
+            cell.y = cell.realy - miny + 1
+        end
     end
+    --
     chart.from_x = 1
     chart.from_y = 1
     chart.to_x   = nx
@@ -1006,11 +1030,13 @@ local function makechart_indeed(chart)
     ctx_tographic(g,"flow_connection_arrow_size  := %p ;", radius)
     ctx_tographic(g,"flow_connection_dash_size   := %p ;", radius)
     --
-    local offset = chartsettings.offset -- todo: pass string
-    if offset == v_none or offset == v_overlay or offset == "" then
+    local offset = chartsettings.poffset -- string
+    if offset == v_none or offset == v_overlay then
         offset = -2.5 * radius -- or rulethickness?
     elseif offset == v_standard then
         offset = radius -- or rulethickness?
+    else
+        offset = chartsettings.offset -- dimension
     end
     ctx_tographic(g,"flow_chart_offset := %p ;",offset)
     ctx_tographic(g,"flow_chart_clip_offset := %p ;",clipoffset)
@@ -1138,6 +1164,7 @@ implement {
                     { "dx", "dimension" },
                     { "dy", "dimension" },
                     { "offset", "dimension" },
+                    { "poffset" }, -- hacky
                  -- { "bodyfont" },
                     { "dot" },
                     { "hcompact" },

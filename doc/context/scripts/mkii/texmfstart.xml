@@ -79,7 +79,7 @@
    </subcategory>
    <subcategory>
     <flag name="pattern" value="string"><short>filter variables</short></flag>
-    <flag name="all" value="string"><short>report all (when applicable)</short></flag>
+    <flag name="all"><short>report all (when applicable)</short></flag>
     <flag name="format" value="string"><short>filter by file format (when applicable)</short></flag>
    </subcategory>
    <subcategory>

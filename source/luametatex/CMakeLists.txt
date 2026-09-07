@@ -328,13 +328,11 @@ if (MSVC)
 
         if (MINGW)
             add_link_options("-Wl,--stack,2621440")
-        elseif (CMAKE_HOST_SOLARIS)
-            if (CMAKE_LINKER MATCHES "gld")
-                add_link_options("-Wl,-z,stack-size=2621440")
-            else()
-                add_link_options("-Wl,-z,stacksize=2621440")
-            endif()
+        elseif (SOLARIS OR CMAKE_SYSTEM_NAME MATCHES "SunOS" OR CMAKE_HOST_SOLARIS)
+            # Solaris / SunOS linker doesn't consistently support -z stack-size.
+            # Stack size management is handled via ulimit / setrlimit on SunOS.
         else()
+            # Linux, BSDs, and general ELF
             add_link_options("-Wl,-z,stack-size=2621440")
         endif()
 

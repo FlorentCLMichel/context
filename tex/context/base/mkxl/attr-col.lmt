@@ -622,13 +622,13 @@ colorintents.registered = allocate {
     knockout  = 2,
 }
 
-local inject_overprint = nodeinjections.injectoverprint
-local inject_knockout  = nodeinjections.injectknockout
+local inject_overprint = nodeinjections.overprint
+local inject_knockout  = nodeinjections.knockout
 
 updaters.register("backends.injections.latebindings",function()
     local nodeinjections = backends.nodeinjections
-    inject_overprint = nodeinjections.injectoverprint
-    inject_knockout  = nodeinjections.injectknockout
+    inject_overprint = nodeinjections.overprint
+    inject_knockout  = nodeinjections.knockout
 end)
 
 local data       = colorintents.data

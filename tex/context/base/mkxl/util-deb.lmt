@@ -21,7 +21,7 @@ utilities.debugger = debugger
 
 local report       = logs.reporter("debugger")
 
-local ticks        = os.gettimeofday or os.clock
+local ticks        = os.gettimeofday -- todo: use a more precise one
 local seconds      = function(n) return n or 0 end
 local overhead     = 0
 local dummycalls   = 10*1000

@@ -6,6 +6,8 @@ if not modules then modules = { } end modules ['data-aux'] = {
     license   = "see context related readme files"
 }
 
+-- We only use this for mtxrun.lua and since we have luametatex we always have a suffix.
+
 local find = string.find
 local type, next = type, next
 local addsuffix, removesuffix = file.addsuffix, file.removesuffix
@@ -51,6 +53,7 @@ function resolvers.updatescript(oldname,newname) -- oldname -> own.name, not per
                     report_scripts("invalid new script name")
                 end
             else
+                -- we're on a bin path
                 local newdata = loaddata(newscript)
                 if newdata then
                     if trace_locating then

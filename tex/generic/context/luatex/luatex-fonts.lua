@@ -25,7 +25,7 @@ if not modules then modules = { } end modules ['luatex-fonts'] = {
 -- set of derived files was maintained by a larger team lead by Philipp Gesang, but afaik
 -- maintainance moved to latex team and the wrapper code in the meantime likely differs quite
 -- a bit from what was started with. So, issues with luaotfload shoudl be reported to the latex
--- folk. If you suspect somethign wong in these files, it makes sense then to first check if
+-- folk. If you suspect something wong in these files, it makes sense then to first check if
 -- context has the same issue:
 --
 -- mtxrun --script context          contextfile  (mkxl aka lmtx)

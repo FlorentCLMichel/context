@@ -4,12 +4,310 @@ return {
     comment = "Goodies that complement latin modern.",
     author = "Mikael Sundqvist & Hans Hagen",
     copyright = "ConTeXt development team",
+ -- parameters = {
+ --     {
+ --         fonts  = {
+ --             "LMRoman10-Regular",
+ --             "LMRoman10-Bold",
+ --         },
+ --         data = {
+ --             xheight = 431,
+ --         },
+ --     },
+ -- },
+    --
+    -- generated from a check script 1027-09-07
+    --
+    parameters = {
+        ["LMMono10-Italic"]={
+         ["descender"]=-222,
+         ["italicangle"]=-0x1.c1288p+3,
+         ["xheight"]=431,
+        },
+        ["LMMono10-Regular"]={
+         ["descender"]=-222,
+        },
+        ["LMMono12-Regular"]={
+         ["descender"]=-222,
+        },
+        ["LMMono8-Regular"]={
+         ["descender"]=-222,
+        },
+        ["LMMono9-Regular"]={
+         ["descender"]=-222,
+        },
+        ["LMMonoCaps10-Oblique"]={
+         ["descender"]=-222,
+         ["italicangle"]=-0x1.2ecdap+3,
+        },
+        ["LMMonoCaps10-Regular"]={
+         ["descender"]=-222,
+        },
+        ["LMMonoLt10-Bold"]={
+         ["xheight"]=431,
+        },
+        ["LMMonoLt10-BoldOblique"]={
+         ["italicangle"]=-0x1.2ecdap+3,
+         ["xheight"]=431,
+        },
+        ["LMMonoLt10-Oblique"]={
+         ["italicangle"]=-0x1.2ecdap+3,
+         ["xheight"]=431,
+        },
+        ["LMMonoLt10-Regular"]={
+         ["xheight"]=431,
+        },
+        ["LMMonoLtCond10-Oblique"]={
+         ["italicangle"]=-0x1.2ecdap+3,
+         ["xheight"]=431,
+        },
+        ["LMMonoLtCond10-Regular"]={
+         ["xheight"]=431,
+        },
+        ["LMMonoProp10-Oblique"]={
+         ["descender"]=-222,
+         ["italicangle"]=-0x1.2ecdap+3,
+        },
+        ["LMMonoProp10-Regular"]={
+         ["descender"]=-222,
+        },
+        ["LMMonoPropLt10-Bold"]={
+         ["xheight"]=431,
+        },
+        ["LMMonoPropLt10-BoldOblique"]={
+         ["italicangle"]=-0x1.2ecdap+3,
+         ["xheight"]=431,
+        },
+        ["LMMonoPropLt10-Oblique"]={
+         ["italicangle"]=-0x1.2ecdap+3,
+         ["xheight"]=431,
+        },
+        ["LMMonoPropLt10-Regular"]={
+         ["xheight"]=431,
+        },
+        ["LMMonoSlant10-Regular"]={
+         ["descender"]=-222,
+         ["italicangle"]=-0x1.2ecdap+3,
+        },
+        ["LMRoman10-Bold"]={
+         ["descender"]=-194,
+         ["xheight"]=444,
+        },
+        ["LMRoman10-BoldItalic"]={
+         ["descender"]=-194,
+         ["italicangle"]=-0x1.c1288p+3,
+         ["xheight"]=444,
+        },
+        ["LMRoman10-Italic"]={
+         ["descender"]=-194,
+         ["italicangle"]=-0x1.c1288p+3,
+         ["xheight"]=431,
+        },
+        ["LMRoman10-Regular"]={
+         ["descender"]=-194,
+         ["xheight"]=431,
+        },
+        ["LMRoman12-Bold"]={
+         ["descender"]=-194,
+         ["xheight"]=444,
+        },
+        ["LMRoman12-Italic"]={
+         ["descender"]=-194,
+         ["italicangle"]=-0x1.c1288p+3,
+         ["xheight"]=431,
+        },
+        ["LMRoman12-Regular"]={
+         ["descender"]=-194,
+         ["xheight"]=431,
+        },
+        ["LMRoman17-Regular"]={
+         ["ascender"]=805,
+         ["xheight"]=431,
+        },
+        ["LMRoman5-Bold"]={
+         ["descender"]=-194,
+         ["xheight"]=444,
+        },
+        ["LMRoman5-Regular"]={
+         ["descender"]=-194,
+         ["xheight"]=431,
+        },
+        ["LMRoman6-Bold"]={
+         ["descender"]=-194,
+         ["xheight"]=444,
+        },
+        ["LMRoman6-Regular"]={
+         ["descender"]=-194,
+         ["xheight"]=431,
+        },
+        ["LMRoman7-Bold"]={
+         ["descender"]=-194,
+         ["xheight"]=444,
+        },
+        ["LMRoman7-Italic"]={
+         ["descender"]=-194,
+         ["italicangle"]=-0x1.c1288p+3,
+         ["xheight"]=431,
+        },
+        ["LMRoman7-Regular"]={
+         ["descender"]=-194,
+         ["xheight"]=431,
+        },
+        ["LMRoman8-Bold"]={
+         ["descender"]=-194,
+         ["xheight"]=444,
+        },
+        ["LMRoman8-Italic"]={
+         ["descender"]=-194,
+         ["italicangle"]=-0x1.c1288p+3,
+         ["xheight"]=431,
+        },
+        ["LMRoman8-Regular"]={
+         ["descender"]=-194,
+         ["xheight"]=431,
+        },
+        ["LMRoman9-Bold"]={
+         ["descender"]=-194,
+         ["xheight"]=444,
+        },
+        ["LMRoman9-Italic"]={
+         ["descender"]=-194,
+         ["italicangle"]=-0x1.c1288p+3,
+         ["xheight"]=431,
+        },
+        ["LMRoman9-Regular"]={
+         ["descender"]=-194,
+         ["xheight"]=431,
+        },
+        ["LMRomanCaps10-Oblique"]={
+         ["descender"]=-194,
+         ["italicangle"]=-0x1.2ecdap+3,
+        },
+        ["LMRomanCaps10-Regular"]={
+         ["descender"]=-194,
+        },
+        ["LMRomanDemi10-Oblique"]={
+         ["descender"]=-194,
+         ["italicangle"]=-0x1.2ecdap+3,
+         ["xheight"]=444,
+        },
+        ["LMRomanDemi10-Regular"]={
+         ["descender"]=-194,
+         ["xheight"]=444,
+        },
+        ["LMRomanDunh10-Oblique"]={
+         ["ascender"]=972,
+         ["ascent"]=1514,
+         ["italicangle"]=-0x1.2ecdap+3,
+         ["xheight"]=431,
+        },
+        ["LMRomanDunh10-Regular"]={
+         ["ascender"]=972,
+         ["ascent"]=1514,
+         ["xheight"]=431,
+        },
+        ["LMRomanSlant10-Bold"]={
+         ["descender"]=-194,
+         ["italicangle"]=-0x1.2ecdap+3,
+         ["xheight"]=444,
+        },
+        ["LMRomanSlant10-Regular"]={
+         ["descender"]=-194,
+         ["italicangle"]=-0x1.2ecdap+3,
+         ["xheight"]=431,
+        },
+        ["LMRomanSlant12-Regular"]={
+         ["descender"]=-194,
+         ["italicangle"]=-0x1.2ecdap+3,
+         ["xheight"]=431,
+        },
+        ["LMRomanSlant8-Regular"]={
+         ["descender"]=-194,
+         ["italicangle"]=-0x1.2ecdap+3,
+         ["xheight"]=431,
+        },
+        ["LMRomanSlant9-Regular"]={
+         ["descender"]=-194,
+         ["italicangle"]=-0x1.2ecdap+3,
+         ["xheight"]=431,
+        },
+        ["LMRomanUnsl10-Regular"]={
+         ["descender"]=-194,
+         ["xheight"]=431,
+        },
+        ["LMSans10-Bold"]={
+         ["descender"]=-194,
+         ["descent"]=297,
+        },
+        ["LMSans10-BoldOblique"]={
+         ["descender"]=-194,
+         ["descent"]=297,
+        },
+        ["LMSans10-Oblique"]={
+         ["descender"]=-194,
+         ["descent"]=309,
+        },
+        ["LMSans10-Regular"]={
+         ["descender"]=-194,
+         ["descent"]=309,
+        },
+        ["LMSans12-Oblique"]={
+         ["descender"]=-194,
+         ["descent"]=308,
+        },
+        ["LMSans12-Regular"]={
+         ["descender"]=-194,
+         ["descent"]=308,
+        },
+        ["LMSans17-Oblique"]={
+         ["ascender"]=805,
+         ["xheight"]=431,
+        },
+        ["LMSans17-Regular"]={
+         ["ascender"]=805,
+         ["xheight"]=431,
+        },
+        ["LMSans8-Oblique"]={
+         ["descender"]=-194,
+         ["descent"]=314,
+        },
+        ["LMSans8-Regular"]={
+         ["descender"]=-194,
+         ["descent"]=314,
+        },
+        ["LMSans9-Oblique"]={
+         ["descender"]=-194,
+         ["descent"]=313,
+        },
+        ["LMSans9-Regular"]={
+         ["descender"]=-194,
+         ["descent"]=313,
+        },
+        ["LMSansDemiCond10-Oblique"]={
+         ["ascender"]=833,
+        },
+        ["LMSansDemiCond10-Regular"]={
+         ["ascender"]=833,
+        },
+        ["LMSansQuot8-Bold"]={
+         ["ascender"]=861,
+        },
+        ["LMSansQuot8-BoldOblique"]={
+         ["ascender"]=861,
+        },
+        ["LMSansQuot8-Oblique"]={
+         ["ascender"]=861,
+        },
+        ["LMSansQuot8-Regular"]={
+         ["ascender"]=861,
+        },
+   },
     extensions = {
         {
             name   = "kern", -- adds to kerns
             type   = "kern",
             fonts  = {
-                -- "LMRoman-Regular",
+             -- "LMRoman-Regular",
                 "LMRoman10-Regular",
                 "LMRoman10-Bold",
             },
@@ -19,7 +317,7 @@ return {
                     ["}"]  = 50,
                     ["]"]  = 50,
                     ["|"]  = 100,
-                    ["\\"]  = 50,
+                    ["\\"] = 50,
                     ["?"]  = 50,
                     ["*"]  = 50,
                 },

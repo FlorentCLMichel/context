@@ -11,6 +11,7 @@ local formatters = string.formatters
 local concat, tohash, sortedhash, setmetatableindex, insert = table.concat, table.tohash, table.sortedhash, table.setmetatableindex, table.insert
 local xmlcollected, xmlparent, xmlfirst, xmlfilter = xml.collected, xml.parent, xml.first, xml.filter
 local P, S, Cs, lpegmatch = lpeg.P, lpeg.S, lpeg, lpeg.match
+local clock = os.gettimeofday
 
 local openstreetmap      = { }
 moduledata.openstreetmap = openstreetmap
@@ -612,7 +613,7 @@ local p_strip = lpeg.Cs( (
 
 function openstreetmap.convert(specification)
 
-    local starttime = os.clock()
+    local starttime = clock()
     local filename  = specification.filename
 
     if not io.exists(filename) then
@@ -965,7 +966,7 @@ function openstreetmap.convert(specification)
 
     result = concat(result)
 
-    report("%s characters metapost code, preprocessing time %0.3f seconds",#result,os.clock()-starttime)
+    report("%s characters metapost code, preprocessing time %0.3f seconds",#result,clock()-starttime)
 
     return result
 

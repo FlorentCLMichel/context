@@ -13,7 +13,7 @@ local next = next
 local utfchar = utf.char
 local format, match, gmatch, concat, rep = string.format, string.match, string.gmatch, table.concat, string.rep
 local lpegmatch = lpeg.match
-local clock = os.gettimeofday or os.clock -- should go in environment
+local clock = os.gettimeofday
 
 local report_nodes = logs.reporter("nodes","tracing")
 

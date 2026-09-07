@@ -323,8 +323,6 @@ end
 
 local attributes, directory = lfs.attributes, lfs.dir
 
-local weird          = P(".")^1 + lpeg.anywhere(S("~`!#$%^&*()={}[]:;\"\'||<>,?\n\r\t"))
-local lessweird      = P(".")^1 + lpeg.anywhere(S("~`#$%^&*:;\"\'||<>,?\n\r\t"))
 local timer          = { }
 local scanned        = { }
 local nofscans       = 0
@@ -334,22 +332,35 @@ local fullcache      = { }
 local nofsharedscans = 0
 local addcasecraptoo = true -- experiment to let case matter a  bit (still fuzzy)
 
+local lessweird = lfs.lessweird
+local moreweird = lfs.moreweird
+
+if not lessweird then
+    ----- less = P(".")^1 + lpeg.anywhere(S("~`#$%^&*:;\"\'||<>,?\n\r\t"))
+    ----- more = P(".")^1 + lpeg.anywhere(S("~`!#$%^&*()={}[]:;\"\'||<>,?\n\r\t"))
+    local less = P(".") + lpeg.anywhere(S("~`#$%^&*:;\"\'||<>,?\n\r\t"))
+    local more = P(".") + lpeg.anywhere(S("~`!#$%^&*()={}[]:;\"\'||<>,?\n\r\t"))
+    lessweird = function(str) return lpegmatch(less,str) end
+    moreweird = function(str) return lpegmatch(more,str) end
+    lfs.lessweird = lessweird
+    lfs.moreweird = moreweird
+end
+
 -- So, we assume either a lowercase name or a mixed case one but only one such case
 -- as having Foo fOo foo FoO FOo etc on the system is braindead in any sane project.
 
 -- A more direct scan (getting a files and dir table back) doesn't save time at all
 -- because these iterations are fast. The main advantage would be that we can scan
--- nested, but we need to split off paths then again.
+-- nested, but then we need to split off paths again.
 
-local function scan(files,remap,spec,path,n,m,r,onlyone,tolerant,reported)
+local function scan(files,remap,spec,path,n,m,r,onlyone,checker,reported)
     local full     = path == "" and spec or (spec .. path .. '/')
     local dirlist  = { }
     local nofdirs  = 0
-    local pattern  = tolerant and lessweird or weird
     local filelist = { }
     local noffiles = 0
     for name, mode in directory(full) do
-        if not lpegmatch(pattern,name) then
+        if not checker(name) then
             if not mode then
                 mode = attributes(full..name,"mode")
             end
@@ -422,7 +433,7 @@ local function scan(files,remap,spec,path,n,m,r,onlyone,tolerant,reported)
     if nofdirs > 0 then
         sort(dirlist)
         for i=1,nofdirs do
-            files, remap, n, m, r = scan(files,remap,spec,dirlist[i],n,m,r,onlyonce,tolerant,reported)
+            files, remap, n, m, r = scan(files,remap,spec,dirlist[i],n,m,r,onlyonce,checker,reported)
         end
     end
     scancache[sub(full,1,-2)] = files
@@ -446,9 +457,10 @@ local function scanfiles(path,branch,usecache,onlyonce,tolerant)
     if trace_locating then
         report_expansions("scanning path %a, branch %a",path,branch or path)
     end
+    local checker = tolerant and lessweird or moreweird
     local content
     if isdir(realpath) then
-        local files, remap, n, m, r = scan({ },{ },realpath .. '/',"",0,0,0,onlyonce,tolerant,{ })
+        local files, remap, n, m, r = scan({ },{ },realpath .. '/',"",0,0,0,onlyonce,checker,{ })
         content = {
             metadata = {
                 path        = path, -- can be selfautoparent:texmf-whatever

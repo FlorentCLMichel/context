@@ -24,183 +24,20 @@ statistics              = statistics or { }
 local statistics        = statistics
 
 statistics.enable       = true
+
 statistics.threshold    = 0.01
 
-local statusinfo, n, registered, timers = { }, 0, { }, { }
+local starttiming = statistics.starttiming
+local stoptiming  = statistics.stoptiming
+local elapsedtime = statistics.elapsedtime
 
-setmetatableindex(timers,function(t,k)
-    local v = { timing = 0, loadtime = 0, offset = 0 }
-    t[k] = v
-    return v
-end)
-
-local function hastiming(instance)
-    return instance and timers[instance]
-end
-
-local function resettiming(instance)
-    timers[instance or "notimer"] = { timing = 0, loadtime = 0, offset = 0 }
-end
-
-local ticks   = clock
-local seconds = function(n) return n or 0 end
-
-if os.type ~= "windows" then
-
-    -- doesn't work well yet on unix (system time vs process time so a mtxrun
-    -- timing with nested call gives the wrong result)
-
-elseif lua.getpreciseticks then
-
-    ticks   = lua.getpreciseticks
-    seconds = lua.getpreciseseconds
-
-elseif FFISUPPORTED then
-
-    -- Do we really care when not in luametatex? For now we do, so:
-
-    local okay, kernel = pcall(ffi.load,"kernel32")
-
-    if kernel then
-
-        local tonumber = ffi.number or tonumber
-
-        ffi.cdef[[
-            int QueryPerformanceFrequency(int64_t *lpFrequency);
-            int QueryPerformanceCounter(int64_t *lpPerformanceCount);
-        ]]
-
-        local target = ffi.new("__int64[1]")
-
-        ticks = function()
-            if kernel.QueryPerformanceCounter(target) == 1 then
-                return tonumber(target[0])
-            else
-                return 0
-            end
-        end
-
-        local target = ffi.new("__int64[1]")
-
-        seconds = function(ticks)
-            if kernel.QueryPerformanceFrequency(target) == 1 then
-                return ticks / tonumber(target[0])
-            else
-                return 0
-            end
-        end
-
-    end
-
-else
-
-    -- excessive timing costs some 1-2 percent runtime
-
-end
-
-
-local function starttiming(instance,reset)
-    local timer = timers[instance or "notimer"]
-    local it = timer.timing
-    if reset then
-        it = 0
-        timer.loadtime = 0
-    end
-    if it == 0 then
-        timer.starttime = ticks()
-        if not timer.loadtime then
-            timer.loadtime = 0
-        end
-    end
-    timer.timing = it + 1
-end
-
-local function stoptiming(instance)
-    local timer = timers[instance or "notimer"]
-    local it = timer.timing
-    if it > 1 then
-        timer.timing = it - 1
-    else
-        local starttime = timer.starttime
-        if starttime and starttime > 0 then
-            local stoptime  = ticks()
-            local loadtime  = stoptime - starttime
-            timer.stoptime  = stoptime
-            timer.loadtime  = timer.loadtime + loadtime
-            timer.timing    = 0
-            timer.starttime = 0
-        end
-    end
-end
-
-local function benchmarktimer(instance)
-    local timer = timers[instance or "notimer"]
-    local it = timer.timing
-    if it > 1 then
-        timer.timing = it - 1
-    else
-        local starttime = timer.starttime
-        if starttime and starttime > 0 then
-            timer.offset = ticks() - starttime
-        else
-            timer.offset = 0
-        end
-    end
-end
-
-local function elapsed(instance)
-    if type(instance) == "number" then
-        return instance
-    else
-        local timer = timers[instance or "notimer"]
-        return timer and seconds(timer.loadtime - 2*(timer.offset or 0)) or 0
-    end
-end
-
-local function currenttime(instance)
-    if type(instance) == "number" then
-        return instance
-    else
-        local timer = timers[instance or "notimer"]
-        local it = timer.timing
-        if it > 1 then
-            -- whatever
-        else
-            local starttime = timer.starttime
-            if starttime and starttime > 0 then
-                return seconds(timer.loadtime + ticks() - starttime -  2*(timer.offset or 0))
-            end
-        end
-        return 0
-    end
-end
-
-local function elapsedtime(instance)
-    return format("%0.3f",elapsed(instance))
-end
-
-local function elapsedindeed(instance)
-    return elapsed(instance) > statistics.threshold
-end
-
-local function elapsedseconds(instance,rest) -- returns nil if 0 seconds
-    if elapsedindeed(instance) then
-        return format("%0.3f seconds %s", elapsed(instance),rest or "")
-    end
-end
-
-statistics.hastiming      = hastiming
-statistics.resettiming    = resettiming
-statistics.starttiming    = starttiming
-statistics.stoptiming     = stoptiming
-statistics.currenttime    = currenttime
-statistics.elapsed        = elapsed
-statistics.elapsedtime    = elapsedtime
-statistics.elapsedindeed  = elapsedindeed
-statistics.elapsedseconds = elapsedseconds
-statistics.benchmarktimer = benchmarktimer
+starttiming(statistics)
 
 -- general function .. we might split this module
+
+local registered = { }
+local statusinfo = { }
+local n          = 0
 
 function statistics.register(tag,fnc)
     if statistics.enable and type(fnc) == "function" then
@@ -268,15 +105,12 @@ function statistics.memused() -- no math.round yet -)
     )
 end
 
-starttiming(statistics)
-
 function statistics.formatruntime(runtime) -- indirect so it can be overloaded and
     return format("%s seconds", runtime)   -- indeed that happens in cure-uti.lua
 end
 
 function statistics.runtime()
     stoptiming(statistics)
- -- stoptiming(statistics) -- somehow we can start the timer twice, but where
     local runtime = lua.getruntime and lua.getruntime() or elapsedtime(statistics)
     return statistics.formatruntime(runtime)
 end
@@ -318,4 +152,3 @@ function status.getreadstate()
         iocode     = status.inputid    or 0,
     }
 end
-

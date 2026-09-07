@@ -333,7 +333,7 @@ return {
                         ["0x221A.variants.7"]   = { left = 0.025 },
                         ["0x221A.variants.8"]   = { left = 0.025 },
                         ["0x221A.variants.9"]   = { left = 0.025 },
-                        ["0x221A.variants.10"]   = { left = 0.025 },
+                        ["0x221A.variants.10"]  = { left = 0.025 },
                         ["0x221A.parts.bottom"] = { left = 0.10 },
                     }
                 },
@@ -402,6 +402,8 @@ return {
                         [0x1D6C1] = { bottomright = -0.20, }, -- bold nabla
                         [0x1D6FB] = { bottomright = -0.25, }, -- italic nabla
                         [0x1D735] = { bottomright = -0.25, }, -- bold italic nabla
+                        --
+                        [0x0222B] = { bottomright = -0.30, }, -- integral
                         --
                         ["0x7D.parts.top"]      = { topright = -0.25                      }, -- right brace top
                         ["0x7D.parts.bottom"]   = {                   bottomright = -0.25 }, -- right brace bottom

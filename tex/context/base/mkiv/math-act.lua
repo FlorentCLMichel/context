@@ -334,7 +334,7 @@ do
 
     function mathtweaks.emulatelmtx(target,original,parameters)
         -- gaps are not known yet
-        if not italic then
+        if not italics then
             italics = { }
             local gaps = mathematics.gaps
             for name, data in next, characters.blocks do
@@ -370,9 +370,9 @@ do
         -- beware: here we also do the weird ones
         for u, c in next, targetcharacters do
             local uc = c.unicode or u
-            if integrals[uc] then
+             if integrals[uc] then
                 -- skip this one
-            else
+             else
                 local accent   = c.top_accent
                 local italic   = c.italic
                 local width    = c.width  or 0

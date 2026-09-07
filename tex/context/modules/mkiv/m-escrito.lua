@@ -80,6 +80,8 @@ local remove     = table.remove
 local concat     = table.concat
 local reverse    = table.reverse
 
+local clock      = os.gettimeofday or os.clock
+
 local abs        = math.abs
 local ceil       = math.ceil
 local floor      = math.floor
@@ -3547,7 +3549,7 @@ function operators.null()
 end
 
 function operators.usertime()
-    push_opstack { 'integer', 'unlimited', 'literal', floor(os.clock() * 1000) }
+    push_opstack { 'integer', 'unlimited', 'literal', floor(clock() * 1000) }
     return true
 end
 
@@ -7097,7 +7099,7 @@ do
 
     local function open(options)
         enabled = true
-        local starttime = os.clock()
+        local starttime = clock()
         local stoptime  = nil
         for i=1,#initializers do
             initializers[i]()
@@ -7129,7 +7131,7 @@ do
             boundingbox = boundingbox,
             close       = function()
                 close()
-                local runtime = os.clock() - starttime
+                local runtime = clock() - starttime
                 job.runtime = runtime
                 return runtime
             end,

@@ -44,11 +44,13 @@ local function setmetaglyphs(category,fontid,unicode,specification)
         -- fetch the stream but for now we do that later (i.e. we delay the
         -- serialization to pdf).
         local code = specification.code
-        if code then
+        if type(code) == "string" then
             setparameterset("mpsfont",specification)
          -- simplemetapost(instance,"begingroup;",true,true)
             simplemetapost("simplefun",code)
          -- simplemetapost(instance,"endgroup;",true,true)
+        elseif code then
+            logs.report("metaglyph", "bad character %U in font %i, no %s", unicode, fontid, "code")
         end
         -- We now know (hopefully) the dimensions of the image which is what
         -- we need to pass to the engine in order to let it do its work.
@@ -82,7 +84,7 @@ local function setmetaglyphs(category,fontid,unicode,specification)
             addcharacters(fontid, { characters = { [unicode] = newdata } })
             return fontid, unicode
         else
-            logs.report("metaglyph", "bad shape %U in font %i", unicode, fontid)
+            logs.report("metaglyph", "bad character %U in font %i, no %s", unicode, fontid, "shape")
         end
     end
 end

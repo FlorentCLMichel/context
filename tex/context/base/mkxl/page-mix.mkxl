@@ -93,6 +93,7 @@
    \c!alternative=\v!local,
    \c!maxheight=\textheight,
    \c!maxwidth=\makeupwidth,
+   \c!minlines=\zerocount, % 1 is more robust but we have to be compatible
    \c!grid=\v!tolerant,
    \c!internalgrid=\v!line,
    \c!step=.25\lineheight, % needs some experimenting
@@ -670,6 +671,9 @@
        \strut
        \vskip-\lineheight
       % no, bad spacing: \obeydepth % we could handle this in pre material
+       \ifcase\mixedcolumnsparameter\c!minlines\else
+         \testpagesync[\lastnamedcs]\relax
+       \fi
      \fi
    \fi}
 
@@ -699,15 +703,12 @@
    \usealignparameter\mixedcolumnsparameter
    \usesetupsparameter\mixedcolumnsparameter}
 
-% \defcsname\??mixedcolumnsstop\s!otr\endcsname
-%   {\par
-%    \ifcase\c_page_mix_otr_nesting\or
-%      \c_page_mix_routine\c_page_mix_routine_balance
-%      \page_otr_trigger_output_routine
-%    \fi}
-
 \defcsname\??mixedcolumnsstop\s!otr\endcsname
-  {\par
+  {% \par: not here, but with the next
+   \ifcase\c_page_mix_otr_nesting\or
+     \pagegoal\maxdimen
+   \fi
+   \par % here, otherwise bad size flush with single line left-overs
    \ifcase\c_page_mix_otr_nesting\or
      \ifcstok{\mixedcolumnsparameter\c!balance}\v!yes
        \c_page_mix_routine\c_page_mix_routine_balance

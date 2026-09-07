@@ -1427,7 +1427,7 @@
   {\edef\m_strc_itemgroups_destination{#destination}%
    \startitemgroupitem}
 
-\tolerant\protected\def\strc_itemgroups_start_symbol[#reference]#:#text
+\tolerant\protected\def\strc_itemgroups_start_symbol[#reference]#:#text%
   {\def\strc_itemgroups_extra_symbol{#text}%
    \c_strc_itemgroups_symbol\conditionaltrue
    \startitemgroupitem[#reference]%

@@ -129,7 +129,7 @@ function texconfig.init()
 
     local function init(start)
         local i = start
-        local t = os.clock()
+        local t = os.gettimeofday()
         while true do
          -- local b = callbytecode(i)
             local e, b = pcall(callbytecode,i)
@@ -144,7 +144,7 @@ function texconfig.init()
                 break
             end
         end
-        return i - start, os.clock() - t
+        return i - start, os.gettimeofday() - t
     end
 
     -- the stored tables and modules

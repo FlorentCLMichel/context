@@ -1,0 +1,4584 @@
+% language=en
+
+\usemodule[article-basic]
+\usemodule[abbreviations-mixed]
+\usemodule[scite]
+
+\setuplayout
+  [article]
+  [backspace={2*\measure{article:margin}},
+   topspace={1.5*\measure{article:margin}},
+   bottomspace={1.5*\measure{article:margin}}]
+
+\setupalign[mathbookpasses]
+
+\definedescription
+  [keyword]
+  [headcolor=darkred,
+   headstyle=,
+   before=,
+   after=,
+   alternative=serried,
+   width=fit]
+
+\startsetups mixedsetups
+  % \switchtobodyfont[9pt]
+    \setupwhitespace[none]
+\stopsetups
+
+\setupmixedcolumns
+  [n=2,
+%    splitmethod=none,
+%    grid=tolerant,
+   balance=yes,
+   setups=mixedsetups,
+   splitmethod=fixed,
+   grid=yes,
+   internalgrid=line]
+
+\setupcombination
+  [distance=2ts]
+
+\setupcaptions
+  [width=0.8tw]
+
+\setuphead
+  [section]
+  [page=yes]
+
+\setupinteraction
+  [state=start,
+   focus=standard,
+   color=,
+   contrastcolor=]
+
+\defineframed
+  [TightBox]
+  [offset=overlay]
+
+\setupregister
+  [n=3,
+   color=darkred]
+
+\setupregister
+  [index]
+  [pagestyle=]
+
+\defineregister
+  [keywordindex]
+
+\setupregister
+  [keywordindex]
+  [textstyle=\tt,
+   pagestyle=]
+
+\starttext
+
+% We want proper coloring so we wrap in a TEX page instead, scite side effect
+% would color "color" in the setup somewhat strange .. maybe a todo.
+
+\startbuffer[coverpage]
+\startMPcode
+StartPage ;
+
+picture q ; q := image (
+
+    lmt_scene_start [
+        width           = 18cm,
+        crop = true,
+        projection      = "perspective",
+        eye             = (2.7,-4.0,2.4),
+        light           = (0,0,-1),
+        intensity       = 1,
+    ] ;
+
+    lmt_scene_material [
+        name    = "sphere",
+        diffuse = (1,1,1),
+    ] ;
+
+    lmt_scene_parametric [
+        id       = "sphere",
+        x        = "sin(u)*cos(v)",
+        y        = "sin(u)*sin(v)",
+        z        = "cos(u)",
+        umin     = 0,
+        umax     = 2pi,
+        vmin     = 0,
+        vmax     = 2*pi,
+        nu       = 5,
+        nv       = 5,
+        material = "sphere",
+        normal   = "flat",
+    ] ;
+
+    lmt_scene_stop ;
+) ;
+
+q := q shifted - center q
+       shifted (0.5PaperWidth,0.5PaperHeight) ;
+
+draw q ;
+
+picture t[] ;
+t[0] := textext("\sansbold lmt_scene") ;
+t[1] := textext("\sansbold Hans Hagen & Mikael Sundqvist") ;
+
+t[0] := t[0] xsized .6 PaperWidth ;
+t[1] := t[1] xsized .6 PaperWidth ;
+
+t[0] := t[0]
+    shifted - ulcorner t[0]
+    shifted (1cm,-1cm)
+    shifted (0*PaperWidth,1*PaperHeight) ;
+
+t[1] := t[1]
+    shifted - lrcorner t[1]
+    shifted (-1cm,1cm)
+    shifted (1*PaperWidth,0*PaperHeight) ;
+
+draw t[0] withcolor red ;
+draw t[1] withcolor red ;
+
+StopPage ;
+\stopMPcode
+\stopbuffer
+
+\startTEXpage[pagestate=start,background=color,backgroundcolor=black]
+    \getbuffer[coverpage]
+\stopTEXpage
+
+\completecontent
+
+\startsection
+  [title=Introduction]
+
+\METAFUN\ and \METAPOST\ are mainly two-dimensional drawing tools, but many
+figures also need a three-dimensional view. The \type {lmt_scene} commands give
+you one place to define the geometry, camera, lighting, and annotations for that
+view. In this document we collected what is currently available. Since the project
+started out as an AI experiment, we also let Chat GPT (Luna) generate parts of the
+content of this manual.
+
+The interface is scene-based. With a scene you can:
+
+\startitemize
+  \startitem
+    choose the camera, light, colors, output size, and other shared settings;
+  \stopitem
+  \startitem
+    draw several kinds of geometry: surfaces given by a
+    function, \m {z = f(x,y)}, parametric surfaces given by \m{(x,y,z) = (f _ 1(u,v), f _
+    2(u,v), f _ 3(u,v))}, implicit plots described by \m {F(x,y,z) = 0}, parametric curves \m
+    {(x,y,z) = (f _ 1(t), f _ 2(t), f _ 3(t))}, finite plane patches
+    given by a center point, a normal direction, and two sizes, and imported
+    triangle meshes from external files.
+  \stopitem
+  \startitem
+    add reference geometry such as grids, axes, ticks, and annotations; and
+  \stopitem
+  \startitem
+    combine the objects with common camera and depth handling.
+  \stopitem
+
+\stopitemize
+
+A figure starts as a description of its objects, camera, materials, and output
+settings. Surfaces are sampled over chosen domains, while imported or generated
+geometry is added as meshes. All of these objects share one camera and one
+depth-aware renderer, so they appear in the same picture. After the scene is
+rendered, projection helpers can place ordinary \METAPOST\ labels and
+annotations.
+
+Lighting is simple: a directional light works with the material color, ambient
+level, highlight, and transparency. These few controls are enough to show the
+shape of an object without making the setup hard to follow. Stippling is a raster
+postprocessor and is covered near the end of the manual.
+
+The labels in the table of contents are hints about when to read a section: \emph
+{optional} sections can wait, \emph {advanced} sections assume the basic scene
+workflow, and \emph {experimental} sections describe interfaces that may change.
+None of them is needed for a first scene.
+
+\startsubsubject[title=Roadmap]
+
+This route gives a useful starting order:
+
+% normally \in but then we need \dontleavehmode ... added now
+% we could use \about here
+
+\startitemize
+  \startitem
+    \goto {Quick start} [quick-start] shows the smallest complete file and the
+    three-step scene lifecycle.
+  \stopitem
+  \startitem
+    \goto {Scene basics} [scenes] explains the shared camera, output, lighting,
+    and cropping settings; \goto {Defaults} [defaults] collects the principal
+    defaults in one place.
+  \stopitem
+  \startitem
+    \goto {Materials} [materials] explains how to control color, lighting,
+    transparency, and line-like helpers.
+  \stopitem
+  \startitem
+    \goto {Surface graphs} [surface-graphs] is the usual starting point when the
+    geometry is given by \m {z=f(x,y)}.
+  \stopitem
+  \startitem
+    Continue with \goto {parametric surfaces} [parametric-surfaces],
+    \goto {implicit surfaces} [implicit-surfaces],
+    \goto {curves} [parametric-curves],
+    and \goto {intersections} [intersections] as the geometry requires. The
+    \goto {Reference geometry} [reference-geometry] section covers
+    \goto {planes} [planes], \goto {segments} [segments], \goto {grids} [grids],
+    \goto {axes} [axes], and \goto {ticks} [ticks].
+  \stopitem
+  \startitem
+    \goto {Rendering pipeline} [rendering-pipeline] explains why mesh counts,
+    raster resolution, and supersampling affect different stages of a render.
+    The \goto {Putting it all together} [complete-scene] example then combines
+    the main scene features in one file.
+  \stopitem
+  \startitem
+    Leave \goto {caching} [scene-cache],
+    \goto {annotations} [annotation-helpers], \goto {stippling} [stippling],
+    \goto {special overlays} [special-overlays],
+    \goto {low-level \LUA\ helpers} [lua-helpers], and
+    \goto {mesh inspection} [mesh-inspection] until the basic scene workflow is
+    familiar. External and internal meshes are introduced in the object table
+    when those forms of geometry are needed.
+  \stopitem
+\stopitemize
+
+Command sections explain the purpose of an interface, show one or more runnable
+examples, and collect the supported keywords nearby.
+
+\stopsubsubject
+
+\startsubsubject[reference=quick-start,title=Quick start]
+
+To try a scene, save the complete file below as \type {hello3d.tex} and run
+\type {context hello3d.tex} in the same directory. You need a \CONTEXT\
+installation that includes the \LUAMETATEX\ scene commands. The \type {offset}
+leaves a little space around the rendered page. Later examples use buffers so
+that their source and result can be shown together.
+
+\startbuffer[first-picture]
+lmt_scene_start [
+  width  = 7cm,
+  height = 5cm,
+  crop   = true,
+] ;
+
+lmt_scene_surface [
+  code = "sin(x)*cos(y)",
+  xmin = -pi,
+  xmax =  pi,
+  ymin = -pi,
+  ymax =  pi,
+] ;
+
+lmt_scene_stop ;
+\stopbuffer
+
+\startbuffer[first-picture-file]
+\starttext
+
+\startMPpage[offset=1cm]
+lmt_scene_start [
+  width  = 7cm,
+  height = 5cm,
+  crop   = true,
+] ;
+
+lmt_scene_surface [
+  code = "sin(x)*cos(y)",
+  xmin = -pi,
+  xmax =  pi,
+  ymin = -pi,
+  ymax =  pi,
+] ;
+
+lmt_scene_stop ;
+\stopMPpage
+
+\stoptext
+\stopbuffer
+
+\typebuffer[first-picture-file][option=TEX]
+
+\startplacefloat
+  [figure]
+  [title={A first scene: the graph of \m {z=\sin(x)\cos(y)}.}]
+  \processMPbuffer[first-picture]
+\stopplacefloat
+
+This manual describes the scene module generated on 2026-05-01 or newer.
+Older installations may report unknown \type {lmt_scene_*} commands or
+keywords in the log; update \CONTEXT\ when that happens.
+
+The scene is built in three steps: start it, add one or more objects, and stop
+it. The \type {code} value is a quoted expression because it is evaluated while
+the surface is being generated. The names\index {expressions} \type {x}, \type
+{y}, and \type {z} refer to coordinates; the available operators, functions, and
+constants are collected in the \goto {Expression language} [expressions]
+subsection below.
+
+There are a few conventions worth remembering:
+
+\startitemize
+  \startitem
+    A triplet such as \type {(1,0,0)} is a 3D point or direction. Its meaning
+    depends on the keyword that receives it.
+  \stopitem
+  \startitem
+    Material and background colors are \RGB\ triplets with components between \type
+    {0} and \type {1}; for example, \type {(1,0,0)} is red. Line helpers use the
+    same color values through their \type {color} keyword; a \METAPOST\ color
+    name such as \type {red} is accepted there as well. Even better, use colors
+    that are shared with the \TEX\ end, like \type {"red"}.
+  \stopitem
+  \startitem
+    Give an object an \type {id} when another object or a query must refer to it.
+    An intersection can only refer to objects that have already been added.
+  \stopitem
+  \startitem
+    Start with the default camera and material. Add \type {eye}, \type {target},
+    and a named material only when the first picture needs adjustment.
+  \stopitem
+\stopitemize
+
+Keep the first example small. Once it works, change one setting at a time. Add a
+named material when the default appearance is not enough, adjust \type {eye} or
+\type {target} when the view is wrong, and increase the mesh counts or raster
+resolution only when the result needs more detail. The later sections build on
+this same workflow.
+
+\stopsubsubject
+
+\startsubsubject[title=Build on the first scene]
+
+Now give the surface a name and a material. The geometry stays the same; only the
+view and appearance change:
+
+\starttyping[option=MP]
+lmt_scene_start [
+  width  = 7cm,
+  height = 5cm,
+  crop   = true,
+  eye    = (3,-4,2.5),
+  target = (0,0,0),
+] ;
+
+lmt_scene_material [
+  name    = "wave",
+  diffuse = (.15,.55,.90),
+  ambient = .25,
+] ;
+
+lmt_scene_surface [
+  id       = "wave",
+  code     = "sin(x)*cos(y)",
+  xmin     = -pi,
+  xmax     =  pi,
+  ymin     = -pi,
+  ymax     =  pi,
+  material = "wave",
+] ;
+
+lmt_scene_stop ;
+\stoptyping
+
+The \goto {Materials} [materials] section explains the appearance settings. The
+surface sections show how to replace this graph with a parametric or implicit
+object. The sections on planes, intersections, and reference geometry then show
+how to turn the picture into an annotated figure.
+
+\stopsubsubject
+
+\startsubsubject[title=Common adjustments]
+
+When the picture needs tuning, change one group of settings at a time:
+
+\startitemize
+  \startitem
+    If the surface looks faceted or misses a small feature, increase the object
+    mesh counts such as \type {nx}, \type {ny}, \type {nu}, or \type {nv}.
+    For an implicit surface, increase all three of \type {nx}, \type {ny}, and
+    \type {nz}.
+  \stopitem
+  \startitem
+    \index {mesh counts}%
+    \index {raster resolution}%
+    \index {supersampling}%
+    If edges look jagged, increase \type {resolution} or try
+    \type {supersample = 2} or \type {4}. These settings affect the raster,
+    not the geometric mesh.
+  \stopitem
+  \startitem
+    If the object is seen from the wrong side, adjust \type {eye} and
+    \type {target}. Use \type {crop = false} while comparing camera settings.
+  \stopitem
+  \startitem
+    If the shape looks flat, try another \type {light} direction, adjust the
+    material's \type {ambient} value, or choose a smoother normal mode.
+  \stopitem
+  \startitem
+    If a plane should sit over the rest of the scene, give it a low
+    \type {opacity}; if a line should remain visible, use a material with
+    \type {ontop = true}.
+  \stopitem
+\stopitemize
+
+\stopsubsubject
+
+\startsubsubject[reference=expressions,title=Expression language]
+
+\index {expressions}%
+The quoted scene expressions (or course) use the \LUA\ expression language.
+Arithmetic uses \type {+}, \type {-}, \type {*}, \type {/}, the remainder
+operator, and \type {^} for powers; comparisons use \type {==}, \type {~=}, \type
+{<}, \type {<=}, \type {>}, and \type {>=}; and the logical operators are \type
+{and}, \type {or}, and \type {not}. The remainder operator is written as follows
+in the expression itself:
+
+\starttyping
+x % y
+\stoptyping
+
+Parentheses can be used wherever they make the order of evaluation clearer.
+
+Angles are in radians. The constant \type {pi} is available, so a full turn is
+normally written \type {2*pi}; there is no degree conversion in the scene
+expression syntax.
+
+The expression environment exposes \LUAMETATEX's extended math table as
+\type {math} and also makes its names available at the top level. Useful names
+include \type {sin}, \type {cos}, \type {tan}, \type {asin}, \type {acos},
+\type {atan}, \type {atan2}, \type {sinh}, \type {cosh}, \type {tanh},
+\type {exp}, \type {log}, \type {log10}, \type {sqrt}, \type {cbrt},
+\type {floor}, \type {ceil}, \type {round}, and \type {trunc}. For absolute
+values and extrema, use \type {abs}/\type {fabs}, \type {min}/\type {fmin},
+and \type {max}/\type {fmax}; the \type {f...} spellings are the portable
+names in the extended \type {xmath} table. Related helpers include
+\type {hypot}, \type {pow}, \type {deg}, \type {rad}, \type {dotproduct},
+\type {crossproduct}, and \type {normalize}.
+
+When you use functions, be aware that the default environment is \type {xmath}
+but we also register \type {MP} (the use namespace), \typ {documentdata}, \type
+{userdata}, \type {moduledata} and \type {globaldata}. By making \type {xmath}
+default performance remain good.
+
+The variables depend on the object command. Surface graph expressions use
+\type {x} and \type {y}; parametric-surface coordinates and tangent expressions
+use \type {u} and \type {v}; implicit expressions and derivatives use
+\type {x}, \type {y}, and \type {z}; and curve coordinates use \type {t}.
+The \LUA\ \type {pfunction} and \type {nfunction} forms receive \type {x},
+\type {y}, and \type {z} as function arguments. The \type {z} value of a graph
+is produced by its expression and is not an independent input variable.
+
+Expression loading and evaluation diagnostics are written to the job's \type
+{.log} file. A failed expression is reported with its expression name; inspect
+the log before changing the sampling grid or camera.
+
+\stopsubsubject
+
+\stopsection
+
+\startsection
+  [reference=scenes,title=Scene basics]
+
+A scene contains one 3D picture. It holds the objects and the shared settings
+that control them: output size, camera, lighting, background, and quality.
+Surfaces, curves, grids, axes, and other helpers can all share the same scene.
+
+Most scenes have this shape:
+
+\starttyping[option=MP]
+lmt_scene_start [ ... ] ; % open the scene
+  % here we add our 3D graphics
+lmt_scene_render ; % optional: render before annotations
+  % here we add extra material
+lmt_scene_stop ; % finish the scene
+\stoptyping
+
+\type {lmt_scene_start} opens a scene and records its shared settings. The object
+commands between start and stop add geometry. Most figures need only
+\type {lmt_scene_stop}. Use \type {lmt_scene_render} when later \METAPOST\ code
+needs the rendered size, projected positions, or visibility information before
+the scene is closed.
+\index {bytemap}%
+Stopping the scene places the finished bytemap in the
+current picture.
+
+Here is a small initialization:
+
+\starttyping[option=MP]
+lmt_scene_start [
+  width       = 5cm,
+  projection  = "perspective",
+  eye         = (3.0,-4.2,2.2),
+  target      = (0,0,0),
+  crop        = true,
+  light       = (-1,-1,-2),
+] ;
+\stoptyping
+
+This scene is five centimeters wide and uses perspective projection. The camera
+is at \type {(3.0,-4.2,2.2)}, and the light comes from \type {(-1,-1,-2)}. The
+other scene options fall into four groups: output size and quality, camera and
+view, lighting and background, and optional postprocessing.
+
+\index {cameras}%
+Camera and output settings control different things. The camera decides what is
+visible; the output settings decide how the picture is sampled and placed in the
+document. The \type {eye} is the camera position, and \type {target} is the point
+it looks at. The \type {up} direction rotates the view. In a perspective scene,
+\type {fov} controls its width: a smaller value shows less and a larger value
+shows more.
+
+\type {crop} controls the relationship between the camera frame and the
+objects. With \type {crop = true}, the result is fitted to the visible scene
+bounds. With \type {crop = false}, the camera frame stays fixed and objects
+outside it can be clipped. This makes it easier to compare settings such as
+\type {fov} and \type {target}.
+
+\index {raster resolution}%
+At first, \type {width} and \type {height} are enough. They set the displayed
+document dimensions. \type {resolution} converts one dimension to
+raster pixels, and the other raster dimension is derived from the scene bounds.
+Adding an object can therefore change the raster aspect ratio. If both document
+dimensions are given, they fix the displayed rectangle.
+
+\type {bytewidth} and \type {byteheight} choose the raster dimensions directly.
+Give both byte dimensions and omit \type {width} and \type {height} when the
+raster shape must stay fixed:
+
+\starttyping[option=MP]
+lmt_scene_start [
+  bytewidth  = 800,
+  byteheight = 500,
+  projection = "perspective",
+  eye        = (0,-8,3),
+  target     = (0,0,0),
+  fov        = 45,
+  crop       = false,
+] ;
+% add the scene objects here
+lmt_scene_stop ;
+\stoptyping
+
+This keeps the raster aspect ratio fixed. Use \type {width} or \type {height}
+when physical size is the main concern; use an explicit byte-size pair when the
+pixel dimensions must stay fixed.
+
+\startsubsubject[title=Choosing an object]
+
+Choose an object command from the way the geometry is described:
+
+\starttabulate[|l|i1p(6cm)|i1p(4.5cm)|]
+\NC \bf Object \NC \bf Use it when \NC \bf Command \NC \NR
+\NC Graph surface \NC the height is given by \m {z=f(x,y)} \NC \goto {\type {lmt_scene_surface}} [surface-graphs] \NC \NR
+\NC Parametric surface \NC the point \m {(x,y,z)} depends on \m {(u,v)} \NC \goto {\type {lmt_scene_parametric}} [parametric-surfaces] \NC \NR
+\NC Implicit surface \NC an equation \m {F(x,y,z)=c} describes the shape \NC \goto {\type {lmt_scene_implicit}} [implicit-surfaces] \NC \NR
+\NC Parametric curve \NC the point \m {(x,y,z)} depends on \m {t} \NC \goto {\type {lmt_scene_curve}} [parametric-curves] \NC \NR
+\NC Plane \NC a finite rectangular patch is enough \NC \goto {\type {lmt_scene_plane}} [planes] \NC \NR
+\NC External mesh \NC the triangles are read from an external file \NC \goto {\type {lmt_scene_external}} [external-meshes] \NC \NR
+\NC Internal mesh \NC the geometry is generated by a \LUA\ mesher \NC \goto {\type {lmt_scene_internal}} [internal-meshes] \NC \NR
+\stoptabulate
+
+The first four are the usual starting points. Use a plane when a finite patch is
+enough. Use an external or internal mesh when the geometry already exists in
+another form or must be generated by \LUA.
+
+\stopsubsubject
+
+\startsubsubject[reference=defaults,,title=Defaults]
+
+The following table collects the principal defaults in one place. A value marked
+\type {unset} is derived from the scene bounds or from another dimension. Object
+sampling defaults are included here because they determine geometric detail,
+whereas \type {resolution} and \type {supersample} determine raster detail.
+
+\starttabulate[|l|l|p(7cm)|]
+\NC \bf Group \NC \bf Setting \NC \bf Default and meaning \NC \NR
+\NC Scene \NC \type {width}, \type {height} \NC \type {unset}; the displayed size is derived unless a dimension is given. \NC \NR
+\NC Scene \NC \type {bytemap} \NC integer slot \type {1}; use another slot for a separate scene output, or set it to \type {false} to disable bitmap output. \NC \NR
+\NC Scene \NC \type {cache} \NC \type {false}; whole-scene rendered-bytemap caching is off. \NC \NR
+\NC Camera \NC \type {projection} \NC \type {"perspective"}. \NC \NR
+\NC Camera \NC \type {eye} \NC \type {(3,-4,2)}; \type {"auto"} fits a generated or imported scene. \NC \NR
+\NC Camera \NC \type {target} \NC \type {(0,0,0)}; \type {"auto"} aims at the fitted scene center. \NC \NR
+\NC Camera \NC \type {up}, \type {fov} \NC \type {(0,0,1)} and \type {45} degrees for perspective projection. \NC \NR
+\NC Camera \NC \type {crop} \NC automatic scene-bound fitting when not explicitly set. \NC \NR
+\NC Lighting \NC \type {light} \NC directional vector \type {(-1,-1,-1)}. \NC \NR
+\NC Lighting \NC \type {intensity} \NC \type {1}. \NC \NR
+\NC Lighting \NC \type {backgroundcolor} \NC white, \type {(1,1,1)}. \NC \NR
+\NC Material \NC \type {diffuse} \NC \type {(.70,.75,.95)}. \NC \NR
+\NC Material \NC \type {specular}, \type {shininess} \NC \type {(.50,.50,.50)} and \type {40}. \NC \NR
+\NC Material \NC \type {ambient}, \type {opacity} \NC \type {.18} and \type {1}. \NC \NR
+\NC Material \NC \type {twosided}, \type {ontop}, \type {dx}, \type {dy} \NC \type {false}, \type {false}, \type {0}, and \type {0}. \NC \NR
+\NC Raster \NC \type {resolution} \NC \type {300} raster pixels per inch when byte dimensions are not explicit. \NC \NR
+\NC Raster \NC \type {bytewidth}, \type {byteheight} \NC \type {unset}; derived from display dimensions and bounds. \NC \NR
+\NC Raster \NC \type {maxfragment} \NC \type {0}; use the normal single-depth storage. \NC \NR
+\NC Sampling \NC \type {supersample} \NC \type {1}; no temporary oversampling. \NC \NR
+\NC Sampling \NC surface \type {nx}, \type {ny} \NC \type {32}, \type {32} intervals. \NC \NR
+\NC Sampling \NC parametric \type {nu}, \type {nv} \NC \type {64}, \type {32} intervals. \NC \NR
+\NC Sampling \NC curve \type {nt} \NC \type {64} samples. \NC \NR
+\NC Sampling \NC implicit \type {nx}, \type {ny}, \type {nz} \NC required; there is no safe implicit-grid default. \NC \NR
+\stoptabulate
+
+\stopsubsubject
+
+\startsubsubject[title=Scene keywords]
+
+\startmixedcolumns
+
+\keywordindex {bytemap}
+\keyword {bytemap} selects the integer slot used for the rendered \METAPOST\
+bitmap. The default is \type {1}; choose another slot when multiple scenes are
+rendered in one picture and their bitmap outputs must remain distinct. Set
+\type {bytemap = false} to disable bitmap output; this cannot be combined with
+\type {cache = true}.
+
+\keywordindex {name}
+\keyword {name} gives a cached scene its name. Use a distinct name for each
+scene definition that should have its own cache entry.
+
+\keywordindex {cache}
+\keyword {cache} when true enables the whole-scene rendered-bytemap cache. The
+default is disabled; caching requires an enabled integer \type {bytemap}.
+
+\keywordindex {width/height}
+\keyword {width/height} sets the displayed width or height of the final result.
+These are document dimensions, not necessarily the number of pixels used while
+rendering. If only one is given, the other displayed dimension follows the
+raster aspect ratio; giving both fixes the displayed rectangle.
+
+\keywordindex {bytewidth}
+\keyword {bytewidth} sets the raster width before scaling to the displayed size.
+Use this together with \type {byteheight}, and without \type {width} or
+\type {height}, when the pixel size and raster aspect ratio should be chosen
+directly.
+
+\keywordindex {byteheight}
+\keyword {byteheight} sets the raster height before scaling to the displayed size.
+Use this together with \type {bytewidth}, and without \type {width} or
+\type {height}, when the pixel size and raster aspect ratio should be chosen
+directly.
+
+\keywordindex {supersample}
+\keyword {supersample} sets the internal oversampling factor. It can make edges
+smoother at the cost of a larger temporary raster. The maximum is \type {4}.
+
+\keywordindex {maxfragment}
+\keyword {maxfragment} limits the number of transparent depth fragments retained
+per raster pixel. A larger value can preserve more overlapping translucent
+surfaces, at the cost of more memory and compositing work. Values below one are
+clamped internally; leave the default unless deep transparency is being lost.
+
+\keywordindex {resolution}
+\keyword {resolution} sets the conversion from a requested display size to raster
+pixels when no explicit byte-size pair is given.
+
+\keywordindex {backgroundcolor}
+\keyword {backgroundcolor} sets the raster background color.
+
+\keywordindex {projection}
+\keyword {projection} selects the camera projection, normally \type {perspective}
+or \type {orthographic}. Perspective gives nearby parts more visual weight;
+orthographic keeps parallel directions parallel.
+
+\keywordindex {eye}
+\keyword {eye} sets the camera position, in the same coordinate system as the
+objects in the scene. The special value \type {"auto"} derives a useful position
+from the bounds of generated or imported geometry.
+
+\keywordindex {target}
+\keyword {target} sets the point toward which the camera looks. The special
+value \type {"auto"} uses the center of the scene bounds.
+
+\keywordindex {up}
+\keyword {up} sets the upward camera direction, and therefore controls how the
+view is rotated around the line from \type {eye} to \type {target}.
+
+\keywordindex {fov}
+\keyword {fov} sets the field of view for perspective projection. Smaller values
+act more like a long lens; larger values show more of the surroundings.
+
+\keywordindex {crop}
+\keyword {crop} fits the rendered bitmap to the projected scene bounds when true.
+When false, the camera frame is kept and the bitmap is not trimmed to the
+objects.
+
+\keywordindex {light}
+\keyword {light} sets the direction of the directional light source. It is a
+direction, not a point where a lamp is placed; \type {(0,0,-1)} means that light
+travels down from above. The vector is normalized internally, so its length does
+not change the result.
+
+\keywordindex {intensity}
+\keyword {intensity} sets the strength of the directional light source. The
+default is \type {1}; lower values make the directional contribution weaker,
+while the material's \type {ambient} value still provides a base level.
+
+\keywordindex {stipple}
+\keyword {stipple} enables the raster stipple postprocessor and passes it a
+settings table. Its controls are described in the Stippling section.
+
+\keywordindex {process}
+\keyword {process} selects a named \LUA\ raster-postprocessing hook. The hook is
+registered with \type {metapost.registermeshupper}; it runs on the rendered
+raster before the supersampled result is resolved. See Raster postprocessing
+hooks.
+
+\stopmixedcolumns
+
+\stopsubsubject
+
+\startsubsubject[title=Scene settings examples]
+
+Each example changes one scene setting. The geometry stays the same, so the
+visible difference comes from the scene setup. The examples use
+\type {crop = true} except the \type {fov} and \type {target} comparisons, which
+keep the camera frame fixed.
+
+\startbuffer[scene-reference]
+lmt_scene_start [
+  width = 6cm,
+  crop  = true,
+] ;
+
+lmt_scene_surface [
+  code = ".55*exp(-.07*(x*x+y*y))*(cos(2.2*x)+sin(2.0*y))",
+  xmin = -3,
+  xmax =  3,
+  ymin = -3,
+  ymax =  3,
+] ;
+
+lmt_scene_stop ;
+\stopbuffer
+
+\typebuffer[scene-reference][option=MP]
+
+\startbuffer[scene-widthresolution]
+lmt_scene_start [
+  width = 6cm,
+  crop  = true,
+  resolution = 30,
+] ;
+
+lmt_scene_surface [
+  code = ".55*exp(-.07*(x*x+y*y))*(cos(2.2*x)+sin(2.0*y))",
+  xmin = -3,
+  xmax =  3,
+  ymin = -3,
+  ymax =  3,
+] ;
+
+lmt_scene_stop ;
+\stopbuffer
+
+\typebuffer[scene-widthresolution][option=MP]
+
+\startplacefloat
+  [figure]
+  [title={Showing the influence of the \type {resolution} keyword.}]
+  \startcombination[nx=2,ny=1]
+    {\startframed[TightBox]\processMPbuffer[scene-reference]\stopframed}{Default resolution 300dpi}
+    {\startframed[TightBox]\processMPbuffer[scene-widthresolution]\stopframed}{\type {resolution = 30}}
+  \stopcombination
+\stopplacefloat
+
+\startbuffer[scene-widthnofov]
+lmt_scene_start [
+  width = 6cm,
+  crop  = false,
+] ;
+
+lmt_scene_surface [
+  code = ".55*exp(-.07*(x*x+y*y))*(cos(2.2*x)+sin(2.0*y))",
+  xmin = -3,
+  xmax =  3,
+  ymin = -3,
+  ymax =  3,
+] ;
+
+lmt_scene_stop ;
+\stopbuffer
+
+\startbuffer[scene-widthfov]
+lmt_scene_start [
+  width = 6cm,
+  fov   = 30,
+  crop  = false,
+] ;
+
+lmt_scene_surface [
+  code = ".55*exp(-.07*(x*x+y*y))*(cos(2.2*x)+sin(2.0*y))",
+  xmin = -3,
+  xmax =  3,
+  ymin = -3,
+  ymax =  3,
+] ;
+
+lmt_scene_stop ;
+\stopbuffer
+
+\startplacefloat
+  [figure]
+  [title={Setting the field of view. Its effect is easiest to see when
+   \type {crop = false}.}]
+  \startcombination[nx=2,ny=1]
+    {\startframed[TightBox]\processMPbuffer[scene-widthnofov]\stopframed}{Default \type {fov = 45}}
+    {\startframed[TightBox]\processMPbuffer[scene-widthfov]\stopframed}{\type {fov = 30}}
+  \stopcombination
+\stopplacefloat
+
+\startbuffer[scene-widtheye]
+lmt_scene_start [
+  width = 6cm,
+  eye   = (3,-4,4),
+  crop  = true,
+] ;
+
+lmt_scene_surface [
+  code = ".55*exp(-.07*(x*x+y*y))*(cos(2.2*x)+sin(2.0*y))",
+  xmin = -3,
+  xmax =  3,
+  ymin = -3,
+  ymax =  3,
+] ;
+
+lmt_scene_stop ;
+\stopbuffer
+
+\startplacefloat
+  [figure]
+  [title={Setting the position of the eye. Because the figure has a specified
+   width, changing the eye can change its height substantially.}]
+  \startcombination[nx=2,ny=1]
+    {\startframed[TightBox]\processMPbuffer[scene-reference]\stopframed}{Default \type {eye = (3,-4,2)}}
+    {\startframed[TightBox]\processMPbuffer[scene-widtheye]\stopframed}{\type {eye = (3,-4,4)}}
+  \stopcombination
+\stopplacefloat
+
+\startbuffer[scene-widthtarget]
+lmt_scene_start [
+  width  = 6cm,
+  target = (1,0,0),
+  crop   = false,
+] ;
+
+lmt_scene_surface [
+  code = ".55*exp(-.07*(x*x+y*y))*(cos(2.2*x)+sin(2.0*y))",
+  xmin = -3,
+  xmax =  3,
+  ymin = -3,
+  ymax =  3,
+] ;
+
+lmt_scene_stop ;
+\stopbuffer
+
+\startplacefloat
+  [figure]
+  [title={Setting the target point. Its effect is easiest to see when
+   \type {crop = false}.}]
+  \startcombination[nx=2,ny=1]
+    {\startframed[TightBox]\processMPbuffer[scene-widthnofov]\stopframed}{Default \type {target = (0,0,0)}}
+    {\startframed[TightBox]\processMPbuffer[scene-widthtarget]\stopframed}{\type {target = (1,0,0)}}
+  \stopcombination
+\stopplacefloat
+
+\startbuffer[scene-up-xaxis]
+lmt_scene_start [
+  width = 6cm,
+  up    = (1,0,0),
+  crop  = true,
+] ;
+
+lmt_scene_surface [
+  code = ".55*exp(-.07*(x*x+y*y))*(cos(2.2*x)+sin(2.0*y))",
+  xmin = -3,
+  xmax =  3,
+  ymin = -3,
+  ymax =  3,
+] ;
+
+lmt_scene_stop ;
+\stopbuffer
+
+\startplacefloat
+  [figure]
+  [title={Setting the \type {up} direction rolls the camera frame around the
+   eye--target axis.}]
+  \startcombination[nx=2,ny=1]
+    {\startframed[TightBox]\processMPbuffer[scene-reference]\stopframed}{Default \type {up = (0,0,1)}}
+    {\startframed[TightBox]\processMPbuffer[scene-up-xaxis]\stopframed}{\type {up = (1,0,0)}}
+  \stopcombination
+\stopplacefloat
+
+\startbuffer[scene-widthlowres]
+lmt_scene_start [
+  width      = 6cm,
+  resolution = 30,
+  crop       = true,
+] ;
+
+lmt_scene_surface [
+  code = ".55*exp(-.07*(x*x+y*y))*(cos(2.2*x)+sin(2.0*y))",
+  xmin = -3,
+  xmax =  3,
+  ymin = -3,
+  ymax =  3,
+] ;
+
+lmt_scene_stop ;
+\stopbuffer
+
+\startbuffer[scene-widthsupersample]
+lmt_scene_start [
+  width       = 6cm,
+  resolution  = 30,
+  crop        = true,
+  supersample = 4,
+] ;
+
+lmt_scene_surface [
+  code = ".55*exp(-.07*(x*x+y*y))*(cos(2.2*x)+sin(2.0*y))",
+  xmin = -3,
+  xmax =  3,
+  ymin = -3,
+  ymax =  3,
+] ;
+
+lmt_scene_stop ;
+\stopbuffer
+
+\startplacefloat
+  [figure]
+  [title={Supersampling produces antialiasing. In this example, we also use a low
+   resolution to make the difference clear.}]
+  \startcombination[nx=2,ny=1]
+    {\startframed[TightBox]\processMPbuffer[scene-widthlowres]\stopframed}{Default}
+    {\startframed[TightBox]\processMPbuffer[scene-widthsupersample]\stopframed}{\type {supersample = 4}}
+  \stopcombination
+\stopplacefloat
+
+\startbuffer[scene-widthlight]
+lmt_scene_start [
+  width = 6cm,
+  crop  = true,
+  light = (0,0,-1),
+] ;
+
+lmt_scene_surface [
+  code = ".55*exp(-.07*(x*x+y*y))*(cos(2.2*x)+sin(2.0*y))",
+  xmin = -3,
+  xmax =  3,
+  ymin = -3,
+  ymax =  3,
+] ;
+
+lmt_scene_stop ;
+\stopbuffer
+
+\startplacefloat
+  [figure]
+  [title={Changing the direction of the light. The vector is a direction, not a
+   position; \type {(0,0,-1)} points down from above.}]
+  \startcombination[nx=2,ny=1]
+    {\startframed[TightBox]\processMPbuffer[scene-reference]\stopframed}{Default \type {light = (-1,-1,-1)}}
+    {\startframed[TightBox]\processMPbuffer[scene-widthlight]\stopframed}{\type {light = (0,0,-1)}}
+  \stopcombination
+\stopplacefloat
+
+\startbuffer[scene-widthintensity]
+lmt_scene_start [
+  width     = 6cm,
+  crop      = true,
+  intensity = 0.5,
+] ;
+
+lmt_scene_surface [
+  code = ".55*exp(-.07*(x*x+y*y))*(cos(2.2*x)+sin(2.0*y))",
+  xmin = -3,
+  xmax =  3,
+  ymin = -3,
+  ymax =  3,
+] ;
+
+lmt_scene_stop ;
+\stopbuffer
+
+\startplacefloat
+  [figure]
+  [title={The \type {intensity} key sets the strength of the light.}]
+  \startcombination[nx=2,ny=1]
+    {\startframed[TightBox]\processMPbuffer[scene-reference]\stopframed}{Default \type {intensity = 1}}
+    {\startframed[TightBox]\processMPbuffer[scene-widthintensity]\stopframed}{\type {intensity = 0.5}}
+  \stopcombination
+\stopplacefloat
+
+\startbuffer[scene-widthorthographic]
+lmt_scene_start [
+  width      = 6cm,
+  crop       = true,
+  projection = "orthographic",
+] ;
+
+lmt_scene_surface [
+  code = ".55*exp(-.07*(x*x+y*y))*(cos(2.2*x)+sin(2.0*y))",
+  xmin = -3,
+  xmax =  3,
+  ymin = -3,
+  ymax =  3,
+] ;
+
+lmt_scene_stop ;
+\stopbuffer
+
+\startplacefloat
+  [figure]
+  [title={The \type {projection} keyword selects the projection type. The default
+   is \type {projection = "perspective"}.}]
+  \startcombination[nx=2,ny=1]
+    {\startframed[TightBox]\processMPbuffer[scene-reference]\stopframed}{\type {projection = "perspective"}}
+    {\startframed[TightBox]\processMPbuffer[scene-widthorthographic]\stopframed}{\type {projection = "orthographic"}}
+  \stopcombination
+\stopplacefloat
+
+\startbuffer[scene-widthbackground]
+lmt_scene_start [
+  width           = 6cm,
+  crop            = true,
+  backgroundcolor = (0.7,0.1,0.1),
+] ;
+
+lmt_scene_surface [
+  code = ".55*exp(-.07*(x*x+y*y))*(cos(2.2*x)+sin(2.0*y))",
+  xmin = -3,
+  xmax =  3,
+  ymin = -3,
+  ymax =  3,
+] ;
+
+lmt_scene_stop ;
+\stopbuffer
+
+\startplacefloat
+  [figure]
+  [title={Changing the background color with \type {backgroundcolor}.}]
+  \startcombination[nx=2,ny=1]
+    {\startframed[TightBox]\processMPbuffer[scene-reference]\stopframed}{Default, not set}
+    {\startframed[TightBox]\processMPbuffer[scene-widthbackground]\stopframed}{\type {backgroundcolor = (0.7,0.1,0.1)}}
+  \stopcombination
+\stopplacefloat
+
+\stopsubsubject
+
+\stopsection
+
+\startsection[reference=materials,title=Materials]
+
+A material describes how a rendered object looks when the scene light reaches
+it. It is separate from the geometry itself: a surface, mesh, curve, or generated
+object can keep the same shape while getting a different color, highlight,
+ambient level, or transparency. When no material is selected, the scene uses the
+default material. Named materials are useful when several objects should share
+the same look.
+
+We define a material with
+
+\starttyping[option=MP]
+lmt_scene_material [ ... ]
+\stoptyping
+
+A material might look like this:
+
+\starttyping[option=MP]
+lmt_scene_material [
+  name      = "softgreen",
+  diffuse   = (.1,.8,.1),
+  specular  = (.25,.25,.5),
+  shininess = 10,
+  ambient   = .28,
+  opacity   = 1,
+] ;
+\stoptyping
+
+The renderer uses Lambertian diffuse shading with a Blinn--Phong specular term.
+The diffuse part follows the cosine rule for a matte surface. The optional
+highlight uses the halfway direction between the light and the eye. For the
+historical background, see the original
+\goto {Phong paper} [url(https://doi.org/10.1145/360825.360839)] and
+\goto {Blinn's refinement} [url(https://doi.org/10.1145/563858.563896)]. This is
+an illustration model, not a physically based renderer: the light is
+directional, there is no distance falloff or cast shadow, and final colors are
+clipped to the displayable range.
+
+The public \type {light} vector gives the direction in which light travels, not
+the position of a lamp. Thus \type {(0,0,-1)} means that light comes from above
+and travels downwards. Its length does not matter. A surface is brightest when
+its normal points toward the light and darkest when it points away. The
+\type {ambient} value provides a floor, so the dark side need not be black. In
+rough terms, diffuse brightness is the ambient value plus an angle-dependent
+contribution, multiplied by \type {intensity} and limited to \type {0}--\type {1}.
+With \type {twosided = true}, the back side is lit as well.
+
+\index {opacity}%
+The \RGB\ \type {diffuse} triplet is the object's color. The renderer modulates it
+by the diffuse brightness and then adds the highlight from \type {specular}.
+Set \type {specular = (0,0,0)} for a matte object. Otherwise, \type {shininess}
+controls the size of the highlight: smaller values make it broad, while larger
+values make it small and sharp. The light \type {intensity} affects both the
+diffuse contribution and the highlight.
+
+Start by choosing \type {diffuse}, keep \type {ambient} near its default, and
+adjust \type {light} if the shape is hard to read. Add a modest \type {specular}
+value for a glossy surface and increase \type {shininess} if the highlight is
+too broad.
+
+\startbuffer[material-ambient]
+lmt_scene_start [
+  width = 6cm,
+  crop  = true,
+] ;
+
+lmt_scene_material [
+  name      = "ambienthill",
+  diffuse   = (.70,.75,.95),
+  specular  = (.50,.50,.50),
+  shininess = 40,
+  ambient   = .5,
+] ;
+
+lmt_scene_surface [
+  code     = ".55*exp(-.07*(x*x+y*y))*(cos(2.2*x)+sin(2.0*y))",
+  xmin     = -3,
+  xmax     =  3,
+  ymin     = -3,
+  ymax     =  3,
+  material = "ambienthill",
+] ;
+
+lmt_scene_stop ;
+\stopbuffer
+
+\startplacefloat
+  [figure]
+  [title={The material's \type {ambient} value lifts the dark side without changing
+   the direction of the light.}]
+  \startcombination[nx=2,ny=1]
+    {\startframed[TightBox]\processMPbuffer[scene-reference]\stopframed}{Default \type {ambient = .18}}
+    {\startframed[TightBox]\processMPbuffer[material-ambient]\stopframed}{\type {ambient = .5}}
+  \stopcombination
+\stopplacefloat
+
+\startbuffer[material-matte]
+lmt_scene_start [
+  width = 6cm,
+  crop  = true,
+] ;
+
+lmt_scene_material [
+  name      = "mattehill",
+  diffuse   = (.70,.75,.95),
+  specular  = (0,0,0),
+  shininess = 40,
+  ambient   = .18,
+] ;
+
+lmt_scene_surface [
+  code     = ".55*exp(-.07*(x*x+y*y))*(cos(2.2*x)+sin(2.0*y))",
+  xmin     = -3,
+  xmax     =  3,
+  ymin     = -3,
+  ymax     =  3,
+  material = "mattehill",
+] ;
+
+lmt_scene_stop ;
+\stopbuffer
+
+\startbuffer[material-glossy]
+lmt_scene_start [
+  width = 6cm,
+  crop  = true,
+] ;
+
+lmt_scene_material [
+  name      = "glossyhill",
+  diffuse   = (.70,.75,.95),
+  specular  = (.50,.50,.50),
+  shininess = 8,
+  ambient   = .18,
+] ;
+
+lmt_scene_surface [
+  code     = ".55*exp(-.07*(x*x+y*y))*(cos(2.2*x)+sin(2.0*y))",
+  xmin     = -3,
+  xmax     =  3,
+  ymin     = -3,
+  ymax     =  3,
+  material = "glossyhill",
+] ;
+
+lmt_scene_stop ;
+\stopbuffer
+
+\startplacefloat
+  [figure]
+  [title={A \type {specular} color adds a highlight; \type {shininess} controls its
+   size.}]
+  \startcombination[nx=2,ny=1]
+    {\startframed[TightBox]\processMPbuffer[material-matte]\stopframed}{matte}
+    {\startframed[TightBox]\processMPbuffer[material-glossy]\stopframed}{glossy, \type {shininess = 8}}
+  \stopcombination
+\stopplacefloat
+
+\index {line widths}%
+An object selects this material with \type {material = "softgreen"}. The remaining
+settings control reuse, lighting response, sidedness, transparency, and the
+raster size of point-like or line-like meshes.
+
+If no material is selected, the scene uses the opaque blue-gray default material
+listed in the \goto {Defaults} [defaults] table. Defining a named material is
+therefore only necessary when the default appearance is not what you want or
+when several objects should share another appearance.
+
+The material keywords are:
+
+\startmixedcolumns
+\keywordindex {name}
+\keyword {name} gives the material a name so that surfaces and other objects can
+refer to it with their \type {material} keyword.
+
+\keywordindex {diffuse}
+\keyword {diffuse} sets the main color that is affected by the directional light.
+Choose this color first.
+
+\keywordindex {specular}
+\keyword {specular} sets the color of the specular highlight, the small bright
+part that can appear where the light reflects toward the eye.
+
+\keywordindex {shininess}
+\keyword {shininess} sets the sharpness of the specular highlight; larger values
+give a tighter highlight.
+
+\keywordindex {ambient}
+\keyword {ambient} sets the base light level that remains visible even where the
+directional light contributes little or nothing. Higher values make shaded parts
+less dark.
+
+\keywordindex {twosided}
+\keyword {twosided} also illuminates the back side of an open surface. With
+\type {false}, a back-facing side receives only ambient light; with \type {true},
+its normal is flipped for the lighting calculation. This helps with thin sheets
+or open surfaces viewed from either side.
+
+\keywordindex {opacity}
+\keyword {opacity} sets the transparency of the material; \type {1} is fully
+opaque and \type {0} is fully transparent. Values in between are rendered in a
+separate transparent pass. A value around \type {.2} or \type {.3} is a useful
+starting point for a cutting plane.
+
+\keywordindex {ontop}
+\keyword {ontop} renders the material in the final on-top pass. It can be useful
+for helper geometry that should remain visible over the regular scene.
+
+\keywordindex {dx}
+\keyword {dx} sets the horizontal thickness of curve, intersection, and other
+line-like or point-like material in raster pixels. For ordinary triangle
+surfaces this is normally left at the default.
+
+\keywordindex {dy}
+\keyword {dy} sets the vertical thickness of curve, intersection, and other
+line-like or point-like material in raster pixels. For ordinary triangle
+surfaces this is normally left at the default.
+\stopmixedcolumns
+
+Opacity is easiest to judge against geometry behind the material. The two scenes
+below keep the hill, plane, camera, and lighting fixed and change only the plane's
+\type {opacity}.
+
+\startbuffer[material-opacity-opaque]
+lmt_scene_start [
+  width  = 6cm,
+  crop   = true,
+  eye    = (3,-4,2.6),
+  target = (0,0,.1),
+  light  = (-1,-1,-2),
+] ;
+
+lmt_scene_material [
+  name    = "opacityhill",
+  diffuse = (.25,.55,.85),
+  ambient = .25,
+] ;
+
+lmt_scene_material [
+  name     = "opaqueplane",
+  diffuse  = (.9,.25,.12),
+  opacity  = 1,
+  twosided = true,
+] ;
+
+lmt_scene_surface [
+  code     = ".6*exp(-.6*(x*x+y*y)) - .2",
+  xmin     = -1.8,
+  xmax     =  1.8,
+  ymin     = -1.8,
+  ymax     =  1.8,
+  material = "opacityhill",
+] ;
+
+lmt_scene_plane [
+  center   = (0,0,.15),
+  normal   = (0,0,1),
+  usize    = 3,
+  vsize    = 3,
+  material = "opaqueplane",
+] ;
+
+lmt_scene_stop ;
+\stopbuffer
+
+\startbuffer[material-opacity-transparent]
+lmt_scene_start [
+  width  = 6cm,
+  crop   = true,
+  eye    = (3,-4,2.6),
+  target = (0,0,.1),
+  light  = (-1,-1,-2),
+] ;
+
+lmt_scene_material [
+  name    = "opacityhill",
+  diffuse = (.25,.55,.85),
+  ambient = .25,
+] ;
+
+lmt_scene_material [
+  name     = "transparentplane",
+  diffuse  = (.9,.25,.12),
+  opacity  = .25,
+  twosided = true,
+] ;
+
+lmt_scene_surface [
+  code     = ".6*exp(-.6*(x*x+y*y)) - .2",
+  xmin     = -1.8,
+  xmax     =  1.8,
+  ymin     = -1.8,
+  ymax     =  1.8,
+  material = "opacityhill",
+] ;
+
+lmt_scene_plane [
+  center   = (0,0,.15),
+  normal   = (0,0,1),
+  usize    = 3,
+  vsize    = 3,
+  material = "transparentplane",
+] ;
+
+lmt_scene_stop ;
+\stopbuffer
+
+\startplacefloat
+  [figure]
+  [title={The same cutting plane at two opacity values.}]
+  \startcombination[nx=2,ny=1]
+    {\processMPbuffer[material-opacity-opaque]}{\type {opacity = 1}}
+    {\processMPbuffer[material-opacity-transparent]}{\type {opacity = .25}}
+  \stopcombination
+\stopplacefloat
+
+\startsubsubject[title=Two-sided materials]
+
+The effect of \type {twosided} is easiest to see on an open surface viewed from
+the back. The scene below shows two horizontal patches from underneath.
+The light is below them, so the patch with \type {twosided = false} receives no
+directional light, while the other patch is lit after its normal is flipped.
+
+\startbuffer[material-twosided]
+lmt_scene_start [
+  width  = 10cm,
+  crop   = true,
+  eye    = (4,-6,-4),
+  target = (0,0,0),
+  up     = (0,0,1),
+  light  = (0,0,1),
+] ;
+
+lmt_scene_material [
+  name     = "backface",
+  diffuse  = (.15,.45,.85),
+  specular = (0,0,0),
+  ambient  = 0,
+  twosided = false,
+] ;
+
+lmt_scene_material [
+  name     = "twoside",
+  diffuse  = (.15,.45,.85),
+  specular = (0,0,0),
+  ambient  = 0,
+  twosided = true,
+] ;
+
+lmt_scene_plane [
+  center   = (-1.5,0,0),
+  normal   = (0,0,1),
+  usize    = 2.4,
+  vsize    = 2.4,
+  material = "backface",
+] ;
+
+lmt_scene_plane [
+  center   = (1.5,0,0),
+  normal   = (0,0,1),
+  usize    = 2.4,
+  vsize    = 2.4,
+  material = "twoside",
+] ;
+
+lmt_scene_stop ;
+\stopbuffer
+
+\typebuffer[material-twosided][option=MP]
+
+\startplacefloat
+  [figure]
+  [title={Viewing two horizontal patches from below: \type {twosided = false}
+   receives no directional light, while \type {twosided = true} lights the back
+   side.}]
+  \startframed[TightBox]
+    \processMPbuffer[material-twosided]
+  \stopframed
+\stopplacefloat
+
+The two patches have the same geometry and diffuse color. The difference comes
+only from the back-face lighting rule; setting \type {twosided} does not make an
+opaque surface transparent.
+
+\stopsubsubject
+
+\stopsection
+
+\startsection[reference=surface-graphs,title=Surface graphs]
+
+A surface graph is the 3D version of a familiar function plot. For each point
+\m {(x,y)} in a chosen rectangle, the expression gives a height \m {z}. The
+renderer samples that rectangle, builds a triangle mesh from the sample points,
+and then shades the mesh like the other objects in the scene.
+
+Add a surface graph \m {z = f(x,y)} with
+
+\starttyping[option=MP]
+lmt_scene_surface [ ... ]
+\stoptyping
+
+A graph surface might look like this:
+
+\starttyping[option=MP]
+lmt_scene_surface [
+  code = "sin(x)*cos(y)",
+  xmin = -pi,
+  xmax =  pi,
+  ymin = -pi,
+  ymax =  pi,
+  nx   = 32,
+  ny   = 32,
+] ;
+\stoptyping
+
+The \type {code} value gives the height. The four bounds select the part of the
+\m {(x,y)} plane to sample, and \type {nx} and \type {ny} control the mesh density.
+These are the only object settings needed for a simple graph. The other settings
+handle naming, lighting normals, and material selection.
+
+\index {normals}%
+A normal is a direction perpendicular to the surface. It tells the lighting
+model which way each part of the mesh faces. Without derivative expressions, the
+renderer estimates normals from the sampled mesh. The \type {normal} setting
+chooses how to use them: \type {smooth} gives a continuous appearance,
+\type {flat} shows the triangle faces, and \type {up} uses the same upward
+direction everywhere.
+
+The graph keywords are:
+
+\startmixedcolumns
+\keywordindex {id}
+\keyword {id} gives the surface a name so that it can be referred to elsewhere,
+for example by an intersection.
+
+\keywordindex {code}
+\keyword {code} gives the function \m {z=f(x,y)} as an expression in \type {x} and
+\type {y}. It is evaluated at each sampled point in the domain.
+
+\keywordindex {dfdx}
+\keyword {dfdx} gives the slope in the \type {x} direction. It is optional; supply
+it together with \type {dfdy} when analytic slope information is available to
+improve the lighting normals.
+
+\keywordindex {dfdy}
+\keyword {dfdy} gives the slope in the \type {y} direction. Together with
+\type {dfdx}, it can be used when calculating more accurate surface normals.
+
+\keywordindex {normal}
+\keyword {normal} selects how normals are made for lighting. \type {smooth}
+interpolates normals across the mesh, \type {flat} exposes the triangle faces, and
+\type {up} uses \type {(0,0,1)} everywhere.
+
+\keywordindex {xmin}
+\keyword {xmin} sets the lower bound of the sampled rectangle in the \type {x}
+direction.
+
+\keywordindex {xmax}
+\keyword {xmax} sets the upper bound of the sampled rectangle in the \type {x}
+direction.
+
+\keywordindex {ymin}
+\keyword {ymin} sets the lower bound of the sampled rectangle in the \type {y}
+direction.
+
+\keywordindex {ymax}
+\keyword {ymax} sets the upper bound of the sampled rectangle in the \type {y}
+direction.
+
+\keywordindex {nx}
+\keyword {nx} sets the number of mesh intervals in the \type {x} direction. Higher
+values give more detail and more triangles.
+
+\keywordindex {ny}
+\keyword {ny} sets the number of mesh intervals in the \type {y} direction. Higher
+values give more detail and more triangles.
+
+\keywordindex {material}
+\keyword {material} selects the named material used when rendering the surface.
+
+\stopmixedcolumns
+
+The examples below keep the function fixed and change one choice at a time:
+mesh resolution, normal appearance, slope information, material, and cropping.
+That makes the effect of each setting easier to see.
+
+\startbuffer[surface]
+lmt_scene_start [
+  width      = 6cm,
+  crop      = true,
+] ;
+
+lmt_scene_surface [
+  code = ".55*exp(-.07*(x*x+y*y))*(cos(2.2*x)+sin(2.0*y))",
+  xmin = -3,
+  xmax =  3,
+  ymin = -3,
+  ymax =  3,
+] ;
+
+lmt_scene_stop ;
+\stopbuffer
+
+\startbuffer[surface-a]
+lmt_scene_start [
+  width      = 6cm,
+  crop      = true,
+] ;
+
+lmt_scene_surface [
+  code = ".55*exp(-.07*(x*x+y*y))*(cos(2.2*x)+sin(2.0*y))",
+  xmin = -3,
+  xmax =  3,
+  ymin = -3,
+  ymax =  3,
+  nx   = 10,
+  ny   = 10,
+] ;
+
+lmt_scene_stop ;
+\stopbuffer
+
+\typebuffer[surface][option=MP]
+
+\startplacefloat
+  [figure]
+  [title={Changing the graph mesh interval counts.}]
+  \startcombination[nx=2,ny=1]
+    {\processMPbuffer[surface]}{default \type {nx = 32, ny = 32}}
+    {\processMPbuffer[surface-a]}{\type {nx = 10, ny = 10}}
+  \stopcombination
+\stopplacefloat
+
+\startbuffer[surface-normal-smooth]
+lmt_scene_start [
+  width      = 4cm,
+  crop      = true,
+] ;
+
+lmt_scene_surface [
+  code = ".55*exp(-.07*(x*x+y*y))*(cos(2.2*x)+sin(2.0*y))",
+  xmin = -3,
+  xmax =  3,
+  ymin = -3,
+  ymax =  3,
+  normal = "smooth",
+] ;
+
+lmt_scene_stop ;
+\stopbuffer
+
+\startbuffer[surface-normal-flat]
+lmt_scene_start [
+  width      = 4cm,
+  crop      = true,
+] ;
+
+lmt_scene_surface [
+  code = ".55*exp(-.07*(x*x+y*y))*(cos(2.2*x)+sin(2.0*y))",
+  xmin = -3,
+  xmax =  3,
+  ymin = -3,
+  ymax =  3,
+  normal = "flat",
+] ;
+
+lmt_scene_stop ;
+\stopbuffer
+
+\startbuffer[surface-normal-up]
+lmt_scene_start [
+  width      = 4cm,
+  crop      = true,
+] ;
+
+lmt_scene_surface [
+  code = ".55*exp(-.07*(x*x+y*y))*(cos(2.2*x)+sin(2.0*y))",
+  xmin = -3,
+  xmax =  3,
+  ymin = -3,
+  ymax =  3,
+  normal = "up",
+] ;
+
+lmt_scene_stop ;
+\stopbuffer
+
+\startplacefloat
+  [figure]
+  [title={Different normal modes. \type {normal = "smooth"} is the default.}]
+  \startcombination[nx=3,ny=1]
+    {\processMPbuffer[surface-normal-smooth]}{\type {normal = "smooth"}}
+    {\processMPbuffer[surface-normal-flat]}  {\type {normal = "flat"}}
+    {\processMPbuffer[surface-normal-up]}    {\type {normal = "up"}}
+  \stopcombination
+\stopplacefloat
+
+\startbuffer[surface-noderivatives]
+lmt_scene_start [
+  width      = 6cm,
+  crop      = true,
+] ;
+
+lmt_scene_surface [
+  code = ".55*exp(-.07*(x*x+y*y))*(cos(2.2*x)+sin(2.0*y))",
+  % dfdx = ".55*exp(-.07*(x*x+y*y))*(-.14*x*(cos(2.2*x)+sin(2.0*y))-2.2*sin(2.2*x))",
+  % dfdy = ".55*exp(-.07*(x*x+y*y))*(-.14*y*(cos(2.2*x)+sin(2.0*y))+2.0*cos(2.0*y))",
+  xmin = -3,
+  xmax =  3,
+  ymin = -3,
+  ymax =  3,
+  nx   = 10,
+  ny   = 10,
+] ;
+
+lmt_scene_stop ;
+\stopbuffer
+
+\startbuffer[surface-derivatives]
+lmt_scene_start [
+  width      = 6cm,
+  crop      = true,
+] ;
+
+lmt_scene_surface [
+  code = ".55*exp(-.07*(x*x+y*y))*(cos(2.2*x)+sin(2.0*y))",
+  dfdx = ".55*exp(-.07*(x*x+y*y))*(-.14*x*(cos(2.2*x)+sin(2.0*y))-2.2*sin(2.2*x))",
+  dfdy = ".55*exp(-.07*(x*x+y*y))*(-.14*y*(cos(2.2*x)+sin(2.0*y))+2.0*cos(2.0*y))",
+  xmin = -3,
+  xmax =  3,
+  ymin = -3,
+  ymax =  3,
+  nx   = 10,
+  ny   = 10,
+] ;
+
+lmt_scene_stop ;
+\stopbuffer
+
+\startplacefloat
+  [figure]
+  [title={Comparing a surface with and without slope expressions.}]
+  \startcombination[nx=2,ny=1]
+    {\processMPbuffer[surface-noderivatives]}{\type {nx = 10, ny = 10}}
+    {\processMPbuffer[surface-derivatives]}  {also \type {dfdx = ..., dfdy = ...}}
+  \stopcombination
+\stopplacefloat
+
+\startbuffer[surface-material]
+lmt_scene_start [
+  width      = 6cm,
+  crop      = true,
+] ;
+
+lmt_scene_material [
+    name      = "mymaterial",
+    diffuse   = (.1,.8,.1),
+    specular  = (.25,.25,.5),
+    shininess = 10,
+    ambient   = .28,
+    opacity   = 1,
+] ;
+
+lmt_scene_surface [
+  code = ".55*exp(-.07*(x*x+y*y))*(cos(2.2*x)+sin(2.0*y))",
+  xmin = -3,
+  xmax =  3,
+  ymin = -3,
+  ymax =  3,
+  material = "mymaterial",
+] ;
+
+lmt_scene_stop ;
+\stopbuffer
+
+Change a surface's appearance by defining a material and selecting it with the
+\type {material} keyword.
+
+\starttyping[option=MP]
+lmt_scene_material [
+    name      = "mymaterial",
+    diffuse   = (.1,.8,.1),
+    specular  = (.25,.25,.5),
+    shininess = 10,
+    ambient   = .28,
+    opacity   = 1,
+] ;
+\stoptyping
+
+\startplacefloat
+  [figure]
+  [title={Changing a surface's appearance with a material.}]
+  \startcombination[nx=2,ny=1]
+    {\processMPbuffer[surface]}{default}
+    {\processMPbuffer[surface-material]}  {\type {material = "mymaterial"}}
+  \stopcombination
+\stopplacefloat
+
+\startbuffer[surface-cropfalse]
+lmt_scene_start [
+  width      = 6cm,
+  crop      = false,
+  fov        = 27,
+  eye        = (6,-8,4),
+] ;
+
+lmt_scene_surface [
+  code = ".55*exp(-.07*(x*x+y*y))*(cos(2.2*x)+sin(2.0*y))",
+  xmin = -3,
+  xmax =  3,
+  ymin = -3,
+  ymax =  3,
+] ;
+
+lmt_scene_stop ;
+\stopbuffer
+
+\startplacefloat
+  [figure]
+  [title={Cropping the rendered result.}]
+  \startcombination[nx=2,ny=1]
+    {\startframed[TightBox]\processMPbuffer[surface]\stopframed}          {default}
+    {\startframed[TightBox]\processMPbuffer[surface-cropfalse]\stopframed}{\type {crop = false}}
+  \stopcombination
+\stopplacefloat
+\stopsection
+
+\startsection[reference=parametric-surfaces,title=Parametric surfaces]
+
+A parametric surface is built from two parameters rather than from a height
+function. For each sampled pair \m {(u,v)}, three expressions give a point
+\m {(x,y,z)} in space. This covers shapes that are not naturally described as
+\m {z=f(x,y)}, such as tori, spheres, tubes, and twisted patches.
+
+Add a parametric surface with
+
+\starttyping[option=MP]
+lmt_scene_parametric [ ... ]
+\stoptyping
+
+A parametric surface might look like this:
+
+\starttyping[option=MP]
+lmt_scene_parametric [
+  x    = "(1+.35*cos(v))*cos(u)",
+  y    = "(1+.35*cos(v))*sin(u)",
+  z    = ".35*sin(v)",
+  umin = 0,
+  umax = 2*pi,
+  vmin = 0,
+  vmax = 2*pi,
+  nu   = 64,
+  nv   = 32,
+] ;
+\stoptyping
+
+\index {normals}%
+The coordinate expressions describe the shape. The \type{u} and \type{v} bounds
+choose the part of the parameter plane to sample, and \type{nu} and \type{nv}
+control the mesh resolution. The parameters \type {u} and \type {v} are just
+variables; they need not be spatial coordinates. The other settings handle
+naming, lighting normals, and material selection.
+
+The parametric-surface keywords are:
+
+\startmixedcolumns
+
+\keywordindex {id}
+\keyword {id} gives the surface a name so that it can be referred to elsewhere,
+for example by an intersection.
+
+\keywordindex {x}
+\keyword {x} gives the \type{x(u,v)} coordinate as an expression in \type{u} and
+\type{v}. It is evaluated at each sampled parameter pair.
+
+\keywordindex {y}
+\keyword {y} gives the \type{y(u,v)} coordinate as an expression in \type{u} and
+\type{v}. It is evaluated at each sampled parameter pair.
+
+\keywordindex {z}
+\keyword {z} gives the \type{z(u,v)} coordinate as an expression in \type{u} and
+\type{v}. It is evaluated at each sampled parameter pair.
+
+\keywordindex {xu/yu/zu}
+\keyword {xu/yu/zu} describe the tangent direction when \type{u} changes. They
+are optional; together with the other three tangent components they provide
+analytic normals.
+
+\keywordindex {xv/yv/zv}
+\keyword {xv/yv/zv} describe the tangent direction when \type{v} changes. Give
+all six derivative expressions together when analytic normals are desired. If
+they are omitted, normals are estimated from the sampled triangles.
+
+\keywordindex {normal}
+\keyword {normal} selects how normals are made for lighting. \type{smooth}
+interpolates normals across the mesh, \type{flat} exposes the triangle faces, and
+\type{up} uses \type{(0,0,1)} everywhere.
+
+\keywordindex {normalstep}
+\keyword {normalstep} sets the finite-difference step used when analytic tangent
+expressions are not supplied. A positive value can stabilize numerical normals
+for very small or very large parameter domains; otherwise an automatic
+domain-scaled step is used.
+
+\keywordindex {umin}
+\keyword {umin} sets the lower bound of the sampled rectangle in the \type{u}
+direction.
+
+\keywordindex {umax}
+\keyword {umax} sets the upper bound of the sampled rectangle in the \type{u}
+direction.
+
+\keywordindex {vmin}
+\keyword {vmin} sets the lower bound of the sampled rectangle in the \type{v}
+direction.
+
+\keywordindex {vmax}
+\keyword {vmax} sets the upper bound of the sampled rectangle in the \type{v}
+direction.
+
+\keywordindex {nu}
+\keyword {nu} sets the number of mesh intervals in the \type{u} direction. Higher
+values give more detail and more triangles.
+
+\keywordindex {nv}
+\keyword {nv} sets the number of mesh intervals in the \type{v} direction. Higher
+values give more detail and more triangles.
+
+\keywordindex {material}
+\keyword {material} selects the named material used when rendering the surface.
+
+\stopmixedcolumns
+
+The examples below keep the torus formula fixed and change the mesh resolution,
+derivative information, or normal mode.
+
+\startbuffer[parametric]
+lmt_scene_start [
+  width      = 5cm,
+  crop      = true,
+] ;
+
+lmt_scene_parametric [
+  x = "(1+.35*cos(v))*cos(u)",
+  y = "(1+.35*cos(v))*sin(u)",
+  z = ".35*sin(v)",
+] ;
+
+lmt_scene_stop ;
+\stopbuffer
+
+\startbuffer[parametric-lowmesh]
+lmt_scene_start [
+  width      = 5cm,
+  crop      = true,
+] ;
+
+lmt_scene_parametric [
+  x  = "(1+.35*cos(v))*cos(u)",
+  y  = "(1+.35*cos(v))*sin(u)",
+  z  = ".35*sin(v)",
+  nu = 16,
+  nv = 8,
+] ;
+
+lmt_scene_stop ;
+\stopbuffer
+
+\typebuffer[parametric][option=MP]
+
+\startplacefloat
+  [figure]
+  [title={Changing the parametric mesh resolution.}]
+  \startcombination[nx=2,ny=1]
+    {\processMPbuffer[parametric]}         {default}
+    {\processMPbuffer[parametric-lowmesh]} {\type {nu = 16, nv = 8}}
+  \stopcombination
+\stopplacefloat
+
+\startbuffer[parametric-derivatives]
+lmt_scene_start [
+  width      = 5cm,
+  crop      = true,
+] ;
+
+lmt_scene_parametric [
+  x  = "(1+.35*cos(v))*cos(u)",
+  y  = "(1+.35*cos(v))*sin(u)",
+  z  = ".35*sin(v)",
+  xu = "-(1+.35*cos(v))*sin(u)",
+  yu =  "(1+.35*cos(v))*cos(u)",
+  zu = "0",
+  xv = "-.35*sin(v)*cos(u)",
+  yv = "-.35*sin(v)*sin(u)",
+  zv =  ".35*cos(v)",
+%   nu = 16,
+%   nv = 8,
+] ;
+
+lmt_scene_stop ;
+\stopbuffer
+
+\startplacefloat
+  [figure]
+  [title={Giving derivatives for the parametric normals.}]
+  \startcombination[nx=2,ny=1]
+    {\processMPbuffer[parametric]}            {no derivatives}
+    {\processMPbuffer[parametric-derivatives]}{with derivatives}
+  \stopcombination
+\stopplacefloat
+
+\startbuffer[parametric-flat]
+lmt_scene_start [
+  width      = 5cm,
+  crop      = true,
+] ;
+
+lmt_scene_parametric [
+  x      = "(1+.35*cos(v))*cos(u)",
+  y      = "(1+.35*cos(v))*sin(u)",
+  z      = ".35*sin(v)",
+  normal = "flat",
+] ;
+
+lmt_scene_stop ;
+\stopbuffer
+
+\startbuffer[parametric-up]
+lmt_scene_start [
+  width      = 5cm,
+  crop      = true,
+] ;
+
+lmt_scene_parametric [
+  x      = "(1+.35*cos(v))*cos(u)",
+  y      = "(1+.35*cos(v))*sin(u)",
+  z      = ".35*sin(v)",
+  normal = "up",
+] ;
+
+lmt_scene_stop ;
+\stopbuffer
+
+\startplacefloat
+  [figure]
+  [title={Changing the normal mode of a parametric surface.}]
+  \startcombination[nx=3,ny=1]
+    {\processMPbuffer[parametric]}      {default}
+    {\processMPbuffer[parametric-flat]} {\type {normal = "flat"}}
+    {\processMPbuffer[parametric-up]}   {\type {normal = "up"}}
+  \stopcombination
+\stopplacefloat
+
+\stopsection
+
+\startsection[reference=implicit-surfaces,title=Implicit surfaces]
+
+An implicit surface is described by an equation instead of explicit coordinates.
+The usual form is \m {F(x,y,z)=c}: all points where the function has the chosen
+value belong to the surface. This suits shapes that are more natural to describe
+as a condition in space, for example a sphere with
+\m {x^2+y^2+z^2=1}.
+
+\index {normals}%
+The renderer samples a finite 3D box and builds a triangle mesh where the
+function crosses the chosen iso value. This is a local approximation, not a
+global solution of the equation. The box and sampling resolution matter: parts
+outside the box are not seen, and a feature can be missed when the grid is too
+coarse to reveal it.
+
+Add an implicit surface with
+
+\starttyping[option=MP]
+lmt_scene_implicit [ ... ]
+\stoptyping
+
+An implicit surface might look like this:
+
+\starttyping[option=MP]
+lmt_scene_implicit [
+  code = "x*x + y*y + z*z - 1",
+  xmin = -1.2,
+  xmax =  1.2,
+  ymin = -1.2,
+  ymax =  1.2,
+  zmin = -1.2,
+  zmax =  1.2,
+  nx   = 40,
+  ny   = 40,
+  nz   = 40,
+  iso  = 0,
+] ;
+\stoptyping
+
+Here the surface is where \type {code} evaluates to \type {iso}; in this
+example, that value is \type {0}. The same sphere could be written as
+\type {x*x + y*y + z*z} with \type {iso = 1}; subtracting \type {1} in the
+expression and keeping \type {iso = 0} is just a convenient alternative. The
+bounds define the box to search, and \type {nx}, \type {ny}, and \type {nz}
+control its sampling. All three counts are required and must be larger than one.
+The other settings handle naming, lighting normals, and material selection.
+
+You can also supply the implicit function as a \LUA\ function through
+\type {pfunction}. It receives \type {x}, \type {y}, and \type {z}, and returns
+the scalar value. Return \type {false} when a sampled point lies outside the
+part of the domain to draw. This lets you describe surfaces on specific,
+nonrectangular domains.
+
+The function is defined in the extended \type {xmath} table; inside a scene
+expression the same table is reached as \type {math}, so the reference below
+uses \type {pfunction = "math.paraboloid_domain"}.
+
+\starttyping[option=LUA]
+function xmath.paraboloid_domain(x,y,z)
+    local r2 = x^2 + y^2
+    if r2 < 0.25 or r2 > 1 then
+        return false
+    end
+    return z - r2
+end
+\stoptyping
+
+\startluacode
+function xmath.paraboloid_domain(x,y,z)
+    local r2 = x^2 + y^2
+    if r2 < 0.25 or r2 > 1 then
+        return false
+    end
+    return z - r2
+end
+\stopluacode
+
+This uses that function to draw a paraboloid with a circular hole:
+
+\startbuffer[implicit-lua-domain]
+lmt_scene_start [
+  width       = 6cm,
+  crop        = true,
+  resolution  = 100,
+  supersample = 2,
+  projection  = "perspective",
+  light       = (0,-1,-2),
+  eye         = (3,-2,3),
+  intensity   = 1.2,
+] ;
+
+lmt_scene_implicit [
+  pfunction = "math.paraboloid_domain",
+  xmin      = -1.25,
+  xmax      =  1.25,
+  ymin      = -1.25,
+  ymax      =  1.25,
+  zmin      = -1.25,
+  zmax      =  1.25,
+  nx        = 120,
+  ny        = 120,
+  nz        = 120,
+] ;
+
+lmt_scene_stop ;
+\stopbuffer
+
+\typebuffer[implicit-lua-domain][option=MP]
+
+\startplacefloat
+  [figure]
+  [title={An implicit paraboloid restricted by a \LUA-defined circular domain.}]
+  \processMPbuffer[implicit-lua-domain]
+\stopplacefloat
+
+For an annular domain, add a second test such as
+\type {or r2 > 1} to the condition. Because the predicate is sampled on the
+implicit grid, increase \type {nx} and \type {ny} when a curved domain boundary
+needs more detail.
+
+The example uses approximately \type {120^3} samples. This is a practical
+balance for a manual example: \type {200^3} gives a finer implicit grid but
+requires substantially more time and memory, especially when the document is
+compiled repeatedly (which is why we can cache).
+
+Higher values of \type {nx}, \type {ny}, and \type {nz} add detail but can make
+rendering much slower. A grid cell larger than a thin feature can miss it,
+especially when the feature is small or disconnected. The finite bounds are a
+hard clipping box, so geometry outside them is not extracted. Start with a box
+that contains the part of the surface you need, then increase the counts until
+the visible structure stops changing. Lower counts are useful for draft renders.
+Unlike the graph and parametric commands, these counts describe sampling points,
+not mesh intervals.
+
+When analytic derivatives are available, give all three of \type {dfdx},
+\type {dfdy}, and \type {dfdz}. They are used to make smoother and more accurate
+lighting normals. They improve the normals on the sampled mesh, but do not
+replace the mesh extraction or recover a component that the grid has missed.
+
+The comparison below keeps the equation, bounds, and derivatives fixed and
+changes only the grid resolution:
+
+\startbuffer[implicit-resolution-coarse]
+lmt_scene_start [
+  width = 5.5cm,
+  crop  = true,
+] ;
+
+lmt_scene_implicit [
+  code = "x*x + y*y + z*z - 1",
+  dfdx = "2*x",
+  dfdy = "2*y",
+  dfdz = "2*z",
+  xmin = -1.2,
+  xmax =  1.2,
+  ymin = -1.2,
+  ymax =  1.2,
+  zmin = -1.2,
+  zmax =  1.2,
+  nx   = 10,
+  ny   = 10,
+  nz   = 10,
+  iso  = 0,
+] ;
+
+lmt_scene_stop ;
+\stopbuffer
+
+\startbuffer[implicit-resolution-fine]
+lmt_scene_start [
+  width = 5.5cm,
+  crop  = true,
+] ;
+
+lmt_scene_implicit [
+  code = "x*x + y*y + z*z - 1",
+  dfdx = "2*x",
+  dfdy = "2*y",
+  dfdz = "2*z",
+  xmin = -1.2,
+  xmax =  1.2,
+  ymin = -1.2,
+  ymax =  1.2,
+  zmin = -1.2,
+  zmax =  1.2,
+  nx   = 32,
+  ny   = 32,
+  nz   = 32,
+  iso  = 0,
+] ;
+
+lmt_scene_stop ;
+\stopbuffer
+
+\typebuffer[implicit-resolution-coarse][option=MP]
+
+\startplacefloat
+  [figure]
+  [title={The same implicit sphere sampled on a coarse and a fine grid.}]
+  \startcombination[nx=2,ny=1]
+    {\processMPbuffer[implicit-resolution-coarse]}{coarse \type {nx = ny = nz = 10}}
+    {\processMPbuffer[implicit-resolution-fine]}  {fine \type {nx = ny = nz = 32}}
+  \stopcombination
+\stopplacefloat
+
+The coarse mesh shows the faceting caused by its larger cells. The fine mesh
+follows the curved surface more closely, but costs more to sample.
+
+The implicit-surface keywords are:
+
+\startmixedcolumns
+
+\keywordindex {id}
+\keyword {id} gives the surface a name so that it can be referred to elsewhere,
+for example by an intersection.
+
+\keywordindex {code}
+\keyword {code} gives \m {F(x,y,z)} as an expression in \type{x}, \type{y},
+and \type{z}. The extracted surface is where this function reaches the chosen
+\type {iso} value.
+
+\keywordindex {pfunction}
+\keyword {pfunction} gives a \LUA\ expression that evaluates to a function of
+\type {x}, \type {y}, and \type {z}. It takes precedence over \type {code}; the
+function can return \type {false} to omit a sampled point and restrict the
+surface to a nonrectangular domain.
+
+\keywordindex {splitdepth}
+\keyword {splitdepth} sets the maximum number of times a cube is subdivided when
+its corners contain a mixture of numeric and nonnumeric results from the point
+function. This provides local refinement at a domain boundary made with
+\type {pfunction}; an integer value of \type {1} subdivides a mixed cube once,
+while larger values allow deeper refinement. The default is \type {2}, and
+values outside the range \type {1}--\type {5} use that default. Cubes whose
+corners are all numeric are polygonized immediately, while cubes with no
+numeric corners are discarded, so this setting does not refine an ordinary
+implicit function that returns a number everywhere.
+
+\keywordindex {nfunction}
+\keyword {nfunction} gives a \LUA\ expression that evaluates to a function returning
+the normal components \type {(nx,ny,nz)} for \type {x}, \type {y}, and \type {z}.
+It takes precedence over the three derivative expressions when normals are
+calculated, while \type {code} or \type {pfunction} still defines the surface.
+
+\keywordindex {dfdx}
+\keyword {dfdx} gives the partial derivative with respect to \type{x}. When all
+three derivatives are given, they are used for smoother and more accurate
+normals.
+
+\keywordindex {dfdy}
+\keyword {dfdy} gives the partial derivative with respect to \type{y}. When all
+three derivatives are given, they are used for smoother and more accurate
+normals.
+
+\keywordindex {dfdz}
+\keyword {dfdz} gives the partial derivative with respect to \type{z}. When all
+three derivatives are given, they are used for smoother and more accurate
+normals.
+
+\keywordindex {normal}
+\keyword {normal} selects how normals are made for lighting. \type{smooth}
+interpolates normals across the mesh, \type{flat} exposes the triangle faces,
+\type{up} uses \type{(0,0,1)} everywhere, and \type{auto} estimates the
+gradient of the implicit function from nearby samples.
+
+\keywordindex {normalstep}
+\keyword {normalstep} sets the finite-difference step used for numerical gradient
+normals and for normal queries. A positive value overrides the automatic step;
+otherwise the step is derived from the implicit bounding box.
+
+\keywordindex {xmin}
+\keyword {xmin} sets the lower bound of the sampled box in the \type{x}
+direction.
+
+\keywordindex {xmax}
+\keyword {xmax} sets the upper bound of the sampled box in the \type{x}
+direction.
+
+\keywordindex {ymin}
+\keyword {ymin} sets the lower bound of the sampled box in the \type{y}
+direction.
+
+\keywordindex {ymax}
+\keyword {ymax} sets the upper bound of the sampled box in the \type{y}
+direction.
+
+\keywordindex {zmin}
+\keyword {zmin} sets the lower bound of the sampled box in the \type{z}
+direction.
+
+\keywordindex {zmax}
+\keyword {zmax} sets the upper bound of the sampled box in the \type{z}
+direction.
+
+\keywordindex {nx}
+\keyword {nx} sets the number of sampling points in the \type{x} direction. It
+is required and has to be larger than one. Higher values can capture more detail
+but take more work.
+
+\keywordindex {ny}
+\keyword {ny} sets the number of sampling points in the \type{y} direction. It
+is required and has to be larger than one. Higher values can capture more detail
+but take more work.
+
+\keywordindex {nz}
+\keyword {nz} sets the number of sampling points in the \type{z} direction. It
+is required and has to be larger than one. Higher values can capture more detail
+but take more work.
+
+\keywordindex {iso}
+\keyword {iso} sets the function value that will be extracted as the surface.
+The default sphere example uses \type {iso = 0}.
+
+\keywordindex {material}
+\keyword {material} selects the named material used when rendering the surface.
+
+\stopmixedcolumns
+
+\stopsection
+
+\startsection[reference=parametric-curves,title=Parametric curves]
+
+A parametric curve is a one-parameter version of a parametric surface. For each
+sampled value of \m {t}, three expressions give a point \m {(x,y,z)} in space.
+Use curves for paths, space curves, helper lines, and any curve that should use
+the same depth handling as the surrounding surfaces.
+
+The curve is sampled into points and rendered as a connected line in the scene
+raster, so surfaces can hide parts behind them. Curves obtain their color from
+their selected material, not from a separate curve-color setting; the material's
+\type {dx} and \type {dy} values control the line-like thickness in raster pixels.
+
+Add a parametric curve with
+
+\starttyping[option=MP]
+lmt_scene_curve [ ... ]
+\stoptyping
+
+A curve might look like this:
+
+\starttyping[option=MP]
+lmt_scene_curve [
+  id   = "helix",
+  x    = "cos(t)",
+  y    = "sin(t)",
+  z    = ".15*t",
+  tmin = 0,
+  tmax = 6*pi,
+  nt   = 160,
+] ;
+\stoptyping
+
+The coordinate expressions describe the path. The \type{t} bounds choose the
+part of the parameter line to sample, and \type{nt} or \type{tstep} controls the
+number of samples. More samples make a curved path smoother, but also add more
+segments to the rendered scene.
+
+The curve keywords are:
+
+\startmixedcolumns
+
+\keywordindex {id}
+\keyword {id} gives the curve a name in the scene.
+
+\keywordindex {x}
+\keyword {x} gives the \type{x(t)} coordinate as an expression in \type{t}. It is
+evaluated at each sampled parameter value.
+
+\keywordindex {y}
+\keyword {y} gives the \type{y(t)} coordinate as an expression in \type{t}. It is
+evaluated at each sampled parameter value.
+
+\keywordindex {z}
+\keyword {z} gives the \type{z(t)} coordinate as an expression in \type{t}. It is
+evaluated at each sampled parameter value.
+
+\keywordindex {tmin}
+\keyword {tmin} sets the lower bound of the sampled parameter interval.
+
+\keywordindex {tmax}
+\keyword {tmax} sets the upper bound of the sampled parameter interval.
+
+\keywordindex {nt}
+\keyword {nt} sets the number of sampling points along the curve. Both endpoints
+are included, so the visible step size is based on \type{nt-1} intervals.
+
+\keywordindex {tstep}
+\keyword {tstep} requests an approximate sampling step in the parameter direction.
+When it is positive, the point count is derived from the interval length and the
+actual step is adjusted so that the curve still ends at \type{tmax}.
+
+\keywordindex {material}
+\keyword {material} selects the material used when rendering the curve. For curves,
+the material controls the visible color, opacity, on-top behavior, and the raster
+size settings used for point-like or line-like meshes.
+
+\stopmixedcolumns
+
+\startbuffer[curve-helix]
+lmt_scene_start [
+  width = 6cm,
+  fov   = 90,
+] ;
+
+lmt_scene_curve [
+  x    = "cos(t)",
+  y    = "sin(t)",
+  z    = ".15*t",
+  tmin = 0,
+  tmax = 6*pi,
+  nt   = 300,
+] ;
+
+lmt_scene_stop ;
+\stopbuffer
+
+\startbuffer[curve-helix2]
+lmt_scene_start [
+  width = 6cm,
+  fov   = 90,
+] ;
+
+lmt_scene_material [
+    name      = "helix",
+    opacity   = 1,
+    dx        = 6,
+    dy        = 6,
+] ;
+
+lmt_scene_curve [
+  id   = "helix",
+  x    = "cos(t)",
+  y    = "sin(t)",
+  z    = ".15*t",
+  tmin = 0,
+  tmax = 6*pi,
+  nt   = 300,
+  material = "helix",
+] ;
+
+lmt_scene_stop ;
+\stopbuffer
+
+\startplacefloat
+  [figure]
+  [title={A space curve with the default and a custom line material.}]
+  \startcombination[nx=2,ny=1]
+    {\startframed[TightBox]\processMPbuffer[curve-helix]\stopframed}{default}
+    {\startframed[TightBox]\processMPbuffer[curve-helix2]\stopframed}{custom material}
+  \stopcombination
+\stopplacefloat
+
+\startbuffer[curve-knot]
+lmt_scene_start [
+  width = 6cm,
+  fov   = 90,
+] ;
+
+lmt_scene_material [
+    name      = "knot",
+    opacity   = 1,
+    dx        = 12,
+    dy        = 12,
+] ;
+
+lmt_scene_curve [
+  x = "(2 + cos(3*t)) * cos(2*t)",
+  y = "(2 + cos(3*t)) * sin(2*t)",
+  z = "sin(3*t)",
+  tmin = 0,
+  tmax = 2*pi,
+  nt   = 300,
+  material = "knot",
+] ;
+
+lmt_scene_stop ;
+\stopbuffer
+
+\startbuffer[curve-sphericalwoven]
+lmt_scene_start [
+  width = 6cm,
+  fov   = 90,
+] ;
+
+lmt_scene_material [
+    name      = "knot",
+    opacity   = 0.5,
+    dx        = 4,
+    dy        = 4,
+] ;
+
+lmt_scene_curve [
+  x = "(1 + 0.22*cos(7*t))*sin(2*t)*cos(3*t)",
+  y = "(1 + 0.22*cos(7*t))*sin(2*t)*sin(3*t)",
+  z = "(1 + 0.22*cos(7*t))*cos(2*t)",
+  tmin = 0,
+  tmax = 2*pi,
+  nt   = 300,
+  material = "knot",
+] ;
+
+lmt_scene_stop ;
+\stopbuffer
+
+\startplacefloat
+  [figure]
+  [title={Two sampled space curves.}]
+  \startcombination[nx=2,ny=1]
+    {\startframed[TightBox]\processMPbuffer[curve-knot]\stopframed}{knot}
+    {\startframed[TightBox]\processMPbuffer[curve-sphericalwoven]\stopframed}{woven curve}
+  \stopcombination
+\stopplacefloat
+
+\stopsection
+
+\startsection[reference=intersections,title=Intersections]
+
+An intersection finds where two objects already in the scene meet. The result is
+added as point-like or segment-like geometry and can be rendered with the source
+objects. Use intersections for level curves, cutting planes, and the places where
+two sampled surfaces pass through each other.
+
+Intersections are computed from sampled geometry, so the result is a sampled
+visualization rather than an exact geometric operation. Its appearance depends
+on the source resolution and the selected method; finer source meshes usually
+give a cleaner result. The \type {tolerance} is a small numerical threshold used
+when crossings are classified and nearby results are joined; the useful value
+depends on the scale of the objects. The most dependable case is a generated
+surface or mesh together with a finite plane.
+Intersections between two generated surfaces are still experimental and may
+produce no result for some object types.
+
+Request an intersection with
+
+\starttyping[option=MP]
+lmt_scene_intersection [ ... ]
+\stoptyping
+
+An intersection might look like this:
+
+\starttyping[option=MP]
+lmt_scene_intersection [
+  id        = "slice",
+  first     = "surface",
+  second    = "cutplane",
+  tolerance = .001,
+  material  = "default",
+] ;
+\stoptyping
+
+Here \type{surface} and \type{cutplane} are the \type{id} values of objects that
+have already been added to the same scene. A graph or mesh can be intersected
+with a finite plane patch. Mesh--mesh requests are experimental; for a cutting
+curve, start with the plane form shown here.
+
+The intersection keywords are:
+
+\startmixedcolumns
+
+\keywordindex {id}
+\keyword {id} gives the intersection request a name. The important names for
+this lookup are the source object names given by \type{first} and
+\type{second}.
+
+\keywordindex {first}
+\keyword {first} selects the first object in the intersection. It should match
+the \type{id} of an earlier object in the same scene.
+
+\keywordindex {second}
+\keyword {second} selects the second object in the intersection. It should match
+the \type{id} of another earlier object in the same scene.
+
+\keywordindex {tolerance}
+\keyword {tolerance} sets the numerical threshold used by the selected
+intersection method. It should normally remain small relative to the coordinate
+scale of the two objects.
+
+\keywordindex {material}
+\keyword {material} selects the material used when rendering the generated
+intersection result. For these line-like results, the material controls the
+visible color, opacity, on-top behavior, and raster size settings.
+
+\stopmixedcolumns
+
+\index {opacity}%
+The complete example below uses a parametric torus and a finite horizontal
+plane. By the time the intersection is calculated, the torus is a triangle mesh,
+so this exercises the mesh--plane path. The red loops are the generated
+line-like intersection. The plane is translucent so that both the mesh and the
+result remain visible.
+
+\startbuffer[intersection-mesh-plane]
+lmt_scene_start [
+  width      = 6cm,
+  crop       = true,
+  eye        = (3,-4,2.6),
+  target     = (0,0,0),
+  light      = (-1,-1,-2),
+] ;
+
+lmt_scene_material [
+  name      = "torus",
+  diffuse   = (.20,.48,.82),
+  ambient   = .25,
+  opacity   = 1,
+] ;
+
+lmt_scene_material [
+  name      = "slice",
+  diffuse   = (.72,.78,.68),
+  opacity   = .20,
+  twosided  = true,
+] ;
+
+lmt_scene_material [
+  name      = "section",
+  diffuse   = (.95,.05,.03),
+  dx        = 6,
+  dy        = 6,
+  ontop     = true,
+] ;
+
+lmt_scene_parametric [
+  id       = "torus",
+  x        = "(1+.35*cos(v))*cos(u)",
+  y        = "(1+.35*cos(v))*sin(u)",
+  z        = ".35*sin(v)",
+  umin     = 0,
+  umax     = 2*pi,
+  vmin     = 0,
+  vmax     = 2*pi,
+  nu       = 48,
+  nv       = 24,
+  material = "torus",
+] ;
+
+lmt_scene_plane [
+  id       = "slice",
+  normal   = (0,0,1),
+  center   = (0,0,0),
+  usize    = 3,
+  vsize    = 3,
+  material = "slice",
+] ;
+
+lmt_scene_intersection [
+  id        = "section",
+  first     = "torus",
+  second    = "slice",
+  tolerance = .001,
+  material  = "section",
+] ;
+
+lmt_scene_stop ;
+\stopbuffer
+
+\typebuffer[intersection-mesh-plane][option=MP]
+
+\startplacefloat
+  [figure]
+  [title={A tested mesh-plane intersection of a torus and a finite plane.}]
+  \processMPbuffer[intersection-mesh-plane]
+\stopplacefloat
+
+\stopsection
+
+\startsection[reference=reference-geometry,title=Reference geometry]
+
+Reference geometry provides finite planes, segments, grids, axes, and ticks that
+can be mixed with sampled surfaces and meshes. These helpers use raster-pixel
+widths where they draw lines, so their visual weight is independent of the
+document's physical dimensions.
+\index {depth testing}%
+\index {line widths}%
+The line-like helpers are depth-tested with the
+other scene geometry; grids, axes, and ticks additionally describe an origin,
+direction vectors, bounds or positions, color, and width.
+
+\startsubsubject[reference=planes,title=Planes]
+
+A plane object is a flat rectangular patch in 3D space. Use it as a visible
+reference sheet, a transparent cutting plane, or a simple surface for comparison.
+The plane is positioned by a point and oriented by a normal direction; its two
+sizes set the finite visible patch.
+
+The patch uses the same camera, light, material, and depth handling as the other
+scene objects. Its local \type{u} and \type{v} directions are chosen
+automatically from the normal.
+
+Add a plane with
+
+\starttyping[option=MP]
+lmt_scene_plane [ ... ]
+\stoptyping
+
+A plane might look like this:
+
+\starttyping[option=MP]
+lmt_scene_plane [
+  id       = "slice",
+  normal   = (0,0,1),
+  center   = (0,0,.35),
+  usize    = 3,
+  vsize    = 3,
+  material = "default",
+] ;
+\stoptyping
+
+The patch is centered at \type{(0,0,.35)} and has the normal \type{(0,0,1)}.
+The two sizes set the visible rectangle in directions perpendicular to that
+normal. For a helper or cutting surface, a transparent or on-top material often
+makes the plane easier to read with the rest of the scene.
+
+The plane keywords are:
+
+\startmixedcolumns
+
+\keywordindex {id}
+\keyword {id} gives the plane a name so that it can be referred to elsewhere,
+for example by an intersection.
+
+\keywordindex {normal}
+\keyword {normal} sets the plane normal. It gives the orientation of the plane
+and is normalized internally, so it does not have to be a unit vector.
+
+\keywordindex {center}
+\keyword {center} sets the center point of the finite plane patch.
+
+\keywordindex {usize}
+\keyword {usize} sets the size of the plane patch in the local \type{u}
+direction. This direction lies in the plane and is chosen automatically from the
+normal.
+
+\keywordindex {vsize}
+\keyword {vsize} sets the size of the plane patch in the local \type{v}
+direction. Together with \type{usize} it determines the visible rectangle.
+
+\keywordindex {material}
+\keyword {material} selects the material used when rendering the plane. This is
+where color, transparency, and on-top behavior are normally controlled.
+
+\stopmixedcolumns
+
+Here is a standalone plane scene:
+
+\startbuffer[plane-standalone]
+lmt_scene_start [
+  width      = 6cm,
+  resolution = 120,
+  crop       = true,
+  eye        = (3,-4,2.6),
+  target     = (0,0,0),
+] ;
+
+lmt_scene_material [
+  name      = "plane",
+  diffuse   = (.25,.55,.85),
+  twosided  = true,
+  opacity   = .75,
+] ;
+
+lmt_scene_plane [
+  id       = "plane",
+  normal   = (0,0,1),
+  center   = (0,0,0),
+  usize    = 3,
+  vsize    = 2,
+  material = "plane",
+] ;
+
+lmt_scene_stop ;
+\stopbuffer
+
+\typebuffer[plane-standalone][option=MP]
+
+\startplacefloat
+  [figure]
+  [title={A standalone finite plane patch.}]
+  \processMPbuffer[plane-standalone]
+\stopplacefloat
+
+\stopsubsubject
+
+\startsubsubject[reference=segments,title=Segments]
+
+A segment is a straight line between two 3D points. Use it for explicit helper
+lines: marking a distance, showing a direction, or highlighting an edge that is
+not part of a surface.
+
+Segments are rendered as line-like scene geometry, so they take part in the same
+depth handling as curves and intersections. A segment can therefore disappear
+behind an opaque surface unless it is styled through the usual on-top mechanisms.
+
+Add a visible 3D segment with
+
+\starttyping[option=MP]
+lmt_scene_segment [ ... ]
+\stoptyping
+
+A segment might look like this:
+
+\starttyping[option=MP]
+lmt_scene_segment [
+  id     = "baseline",
+  first  = (-1,0,0),
+  second = ( 1,0,0),
+  color  = red,
+  width  = 1,
+] ;
+\stoptyping
+
+The segment keywords are:
+
+\startmixedcolumns
+
+\keywordindex {id}
+\keyword {id} gives the segment helper a scene name.
+
+\keywordindex {first}
+\keyword {first} sets the first endpoint as a 3D point.
+
+\keywordindex {second}
+\keyword {second} sets the second endpoint as a 3D point.
+
+\keywordindex {color}
+\keyword {color} sets the segment color.
+
+\keywordindex {width}
+\keyword {width} sets the rendered segment width in raster pixels. This helper
+width controls the raster thickness directly, rather than the document width.
+
+\stopmixedcolumns
+
+Here is a standalone segment scene:
+
+\startbuffer[segment-standalone]
+lmt_scene_start [
+  width      = 6cm,
+  resolution = 120,
+  crop       = true,
+  eye        = (3,-4,2.6),
+  target     = (0,0,.3),
+] ;
+
+lmt_scene_segment [
+  id     = "segment",
+  first  = (-1.4,-.5,0),
+  second = ( 1.4,.8,1),
+  color  = red,
+  width  = 4,
+] ;
+
+lmt_scene_stop ;
+\stopbuffer
+
+\typebuffer[segment-standalone][option=MP]
+
+\startplacefloat
+  [figure]
+  [title={A standalone 3D segment with a four-pixel raster width.}]
+  \processMPbuffer[segment-standalone]
+\stopplacefloat
+
+\stopsubsubject
+
+\startsubsubject[reference=grids,title=Grids]
+
+A grid is a set of straight helper lines in a plane. It is defined by an origin
+and two direction vectors, \type{uaxis} and \type{vaxis}. The bounds and step
+sizes then say where the grid lines are placed in those two local directions.
+
+They work well as reference planes under or through a surface, or as a lightweight
+coordinate frame when a full axis setup would be too much.
+
+Add a grid with
+
+\starttyping[option=MP]
+lmt_scene_grid [ ... ]
+\stoptyping
+
+A grid might look like this:
+
+\starttyping[option=MP]
+lmt_scene_grid [
+  origin = (0,0,0),
+  uaxis  = (1,0,0),
+  vaxis  = (0,1,0),
+  umin   = -2,
+  umax   =  2,
+  ustep  = .5,
+  vmin   = -2,
+  vmax   =  2,
+  vstep  = .5,
+  color  = (.62,.62,.62),
+  width  = 1,
+] ;
+\stoptyping
+
+The grid keywords are:
+
+\startmixedcolumns
+
+\keywordindex {id}
+\keyword {id} gives the grid helper a scene name.
+
+\keywordindex {origin}
+\keyword {origin} sets the point where the local \type{u} and \type{v}
+coordinates start from.
+
+\keywordindex {uaxis}
+\keyword {uaxis} sets the first direction vector of the grid. Its length also
+sets the scale of one unit in the local \type{u} direction.
+
+\keywordindex {vaxis}
+\keyword {vaxis} sets the second direction vector of the grid. Its length also
+sets the scale of one unit in the local \type{v} direction.
+
+\keywordindex {umin}
+\keyword {umin} sets the lower bound in the local \type{u} direction.
+
+\keywordindex {umax}
+\keyword {umax} sets the upper bound in the local \type{u} direction.
+
+\keywordindex {ustep}
+\keyword {ustep} sets the spacing between grid lines in the local \type{u}
+direction.
+
+\keywordindex {vmin}
+\keyword {vmin} sets the lower bound in the local \type{v} direction.
+
+\keywordindex {vmax}
+\keyword {vmax} sets the upper bound in the local \type{v} direction.
+
+\keywordindex {vstep}
+\keyword {vstep} sets the spacing between grid lines in the local \type{v}
+direction.
+
+\keywordindex {color}
+\keyword {color} sets the color of the visible grid.
+
+\keywordindex {width}
+\keyword {width} sets the line width of the visible grid in raster pixels.
+
+\stopmixedcolumns
+
+The examples show the grid by itself and with an opaque surface. In the second
+case it is ordinary scene geometry, so the surface hides the parts behind it.
+Both examples use the grid from the code above.
+
+\startbuffer[grid-only]
+lmt_scene_start [
+  width      = 5cm,
+  crop       = true,
+  eye        = (3,-4,2.6),
+] ;
+
+lmt_scene_grid [
+  origin = (0,0,0),
+  uaxis  = (1,0,0),
+  vaxis  = (0,1,0),
+  umin   = -2,
+  umax   =  2,
+  ustep  = .5,
+  vmin   = -2,
+  vmax   =  2,
+  vstep  = .5,
+  color  = (.62,.62,.62),
+  width  = 1,
+] ;
+
+lmt_scene_stop ;
+\stopbuffer
+
+\startbuffer[grid-surface]
+lmt_scene_start [
+  width      = 5cm,
+  crop       = true,
+  eye        = (3,-4,2.6),
+] ;
+
+lmt_scene_material [
+  name      = "gridhill",
+  diffuse   = (.62,.72,.86),
+  specular  = (.1,.1,.1),
+  shininess = 12,
+  ambient   = .25,
+] ;
+
+lmt_scene_surface [
+  code     = ".7*exp(-.6*(x*x+y*y)) - 0.2",
+  dfdx     = "-.84*x*exp(-.6*(x*x+y*y))",
+  dfdy     = "-.84*y*exp(-.6*(x*x+y*y))",
+  xmin     = -1.8,
+  xmax     =  1.8,
+  ymin     = -1.8,
+  ymax     =  1.8,
+  nx       = 48,
+  ny       = 48,
+  material = "gridhill",
+] ;
+
+lmt_scene_grid [
+  origin = (0,0,0),
+  uaxis  = (1,0,0),
+  vaxis  = (0,1,0),
+  umin   = -2,
+  umax   =  2,
+  ustep  = .5,
+  vmin   = -2,
+  vmax   =  2,
+  vstep  = .5,
+  color  = (.62,.62,.62),
+  width  = 1,
+] ;
+
+lmt_scene_stop ;
+\stopbuffer
+
+\startplacefloat
+  [figure]
+  [title={A grid on its own and depth-tested with a surface.}]
+  \startcombination[nx=2,ny=1]
+    {\processMPbuffer[grid-only]}   {grid only}
+    {\processMPbuffer[grid-surface]}{with surface}
+  \stopcombination
+\stopplacefloat
+
+\stopsubsubject
+
+\startsubsubject[reference=axes,title=Axes]
+
+An axis overlay draws the three coordinate axes as straight 3D segments. It is a
+compact way to show orientation and scale without drawing a full grid. The axes
+share one origin, but each direction vector can be changed, so the overlay can
+also be used for a local coordinate frame.
+
+Add an axis with
+
+\starttyping[option=MP]
+lmt_scene_axis [ ... ]
+\stoptyping
+
+An axis overlay might look like this:
+
+\starttyping[option=MP]
+lmt_scene_axis [
+  origin = (0,0,0),
+  xaxis  = (1,0,0),
+  yaxis  = (0,1,0),
+  zaxis  = (0,0,1),
+  xmin   = -2,
+  xmax   =  2,
+  ymin   = -2,
+  ymax   =  2,
+  zmin   =  0,
+  zmax   =  1,
+  color  = black,
+  width  = 1,
+] ;
+\stoptyping
+
+The axis keywords are:
+
+\startmixedcolumns
+
+\keywordindex {id}
+\keyword {id} gives the axis helper a scene name.
+
+\keywordindex {origin}
+\keyword {origin} sets the common origin point of the three axes.
+
+\keywordindex {xaxis}
+\keyword {xaxis} sets the direction vector of the local \type{x} axis. Its length
+sets the scale of one local \type{x} unit.
+
+\keywordindex {yaxis}
+\keyword {yaxis} sets the direction vector of the local \type{y} axis. Its length
+sets the scale of one local \type{y} unit.
+
+\keywordindex {zaxis}
+\keyword {zaxis} sets the direction vector of the local \type{z} axis. Its length
+sets the scale of one local \type{z} unit.
+
+\keywordindex {xmin}
+\keyword {xmin} sets the lower bound of the visible local \type{x} axis.
+
+\keywordindex {xmax}
+\keyword {xmax} sets the upper bound of the visible local \type{x} axis.
+
+\keywordindex {ymin}
+\keyword {ymin} sets the lower bound of the visible local \type{y} axis.
+
+\keywordindex {ymax}
+\keyword {ymax} sets the upper bound of the visible local \type{y} axis.
+
+\keywordindex {zmin}
+\keyword {zmin} sets the lower bound of the visible local \type{z} axis.
+
+\keywordindex {zmax}
+\keyword {zmax} sets the upper bound of the visible local \type{z} axis.
+
+\keywordindex {color}
+\keyword {color} sets the color of the visible axes.
+
+\keywordindex {width}
+\keyword {width} sets the line width of the visible axes in raster pixels.
+
+\stopmixedcolumns
+
+
+\startbuffer[axis-surface]
+lmt_scene_start [
+  width      = 5cm,
+  crop       = true,
+  eye        = (3,-4,2.6),
+] ;
+
+lmt_scene_material [
+  name      = "axishill",
+  diffuse   = (.62,.72,.86),
+  specular  = (.1,.1,.1),
+  shininess = 12,
+  ambient   = .25,
+] ;
+
+lmt_scene_surface [
+  code     = ".7*exp(-.6*(x*x+y*y)) - 0.2",
+  dfdx     = "-.84*x*exp(-.6*(x*x+y*y))",
+  dfdy     = "-.84*y*exp(-.6*(x*x+y*y))",
+  xmin     = -1.8,
+  xmax     =  1.8,
+  ymin     = -1.8,
+  ymax     =  1.8,
+  nx       = 48,
+  ny       = 48,
+  material = "axishill",
+] ;
+
+lmt_scene_axis [
+  origin = (0,0,0),
+  xaxis  = (1,0,0),
+  yaxis  = (0,1,0),
+  zaxis  = (0,0,1),
+  xmin   = -2,
+  xmax   =  2,
+  ymin   = -2,
+  ymax   =  2,
+  zmin   =  0,
+  zmax   =  1,
+  color  = black,
+  width  = 1,
+] ;
+
+lmt_scene_stop ;
+\stopbuffer
+
+\startplacefloat
+  [figure]
+  [title={Axes depth-tested together with a surface.}]
+  \processMPbuffer[axis-surface]
+\stopplacefloat
+
+\stopsubsubject
+
+\startsubsubject[reference=ticks,title=Ticks]
+
+Ticks are short helper marks placed along one direction. They are normally used
+together with an axis: \type{axis} says where the tick positions lie, and
+\type{tickaxis} says which way the small marks extend.
+
+The tick command only draws the marks themselves; labels, when needed, are added
+separately.
+
+Add ticks with
+
+\starttyping[option=MP]
+lmt_scene_ticks [ ... ]
+\stoptyping
+
+A tick setup might look like this:
+
+\starttyping[option=MP]
+lmt_scene_ticks [
+  origin   = (0,0,0),
+  axis     = (1,0,0),
+  tickaxis = (0,1,0),
+  first    = -2,
+  last     =  2,
+  step     =  1,
+  size     = .15,
+  color    = red,
+  width    = 1,
+] ;
+\stoptyping
+
+The tick keywords are:
+
+\startmixedcolumns
+
+\keywordindex {id}
+\keyword {id} gives the tick helper a scene name.
+
+\keywordindex {origin}
+\keyword {origin} sets the point from which tick positions are measured.
+
+\keywordindex {axis}
+\keyword {axis} sets the direction vector along which the ticks are placed. Its
+length sets the scale of one tick-position unit.
+
+\keywordindex {tickaxis}
+\keyword {tickaxis} sets the direction vector along which each tick mark extends.
+
+\keywordindex {first}
+\keyword {first} sets the first tick position on the axis.
+
+\keywordindex {last}
+\keyword {last} sets the last tick position on the axis.
+
+\keywordindex {step}
+\keyword {step} sets the spacing between consecutive tick positions.
+
+\keywordindex {size}
+\keyword {size} sets the length of each tick mark, measured along
+\type{tickaxis}.
+
+\keywordindex {color}
+\keyword {color} sets the color of the visible ticks.
+
+\keywordindex {width}
+\keyword {width} sets the line width of the visible ticks in raster pixels.
+
+\stopmixedcolumns
+
+
+\startbuffer[ticks-surface]
+lmt_scene_start [
+  width       = 5cm,
+%   supersample = 2,
+  crop        = true,
+  eye         = (3,-4,2.6),
+] ;
+
+lmt_scene_material [
+  name      = "axishill",
+  diffuse   = (.62,.72,.86),
+  specular  = (.1,.1,.1),
+  shininess = 12,
+  ambient   = .25,
+] ;
+
+lmt_scene_surface [
+  code     = ".7*exp(-.6*(x*x+y*y)) - 0.2",
+  dfdx     = "-.84*x*exp(-.6*(x*x+y*y))",
+  dfdy     = "-.84*y*exp(-.6*(x*x+y*y))",
+  xmin     = -1.8,
+  xmax     =  1.8,
+  ymin     = -1.8,
+  ymax     =  1.8,
+  nx       = 48,
+  ny       = 48,
+  material = "axishill",
+] ;
+
+lmt_scene_axis [
+  origin = (0,0,0),
+  xaxis  = (1,0,0),
+  yaxis  = (0,1,0),
+  zaxis  = (0,0,1),
+  xmin   = -2,
+  xmax   =  2,
+  ymin   = -2,
+  ymax   =  2,
+  zmin   =  0,
+  zmax   =  1,
+  color  = black,
+  width  = 1,
+] ;
+
+lmt_scene_ticks [
+  origin   = (0,0,0),
+  axis     = (1,0,0),
+  tickaxis = (0,1,0),
+  first    = -2,
+  last     =  2,
+  step     =  1,
+  size     = .15,
+  color    = red,
+  width    = 1,
+] ;
+
+lmt_scene_stop ;
+\stopbuffer
+
+\startplacefloat
+  [figure]
+  [title={Axes and ticks depth-tested together with a surface.}]
+  \processMPbuffer[ticks-surface]
+\stopplacefloat
+
+\stopsubsubject
+
+\stopsection
+
+\startsection[reference=complete-scene,title=Putting it all together]
+
+The complete example below brings the basic workflow together. It combines a
+named surface, three named materials, a finite plane, their sampled
+intersection, and coordinate axes. The intersection refers to the two objects
+by their \type {id} values.
+
+\startbuffer[scene-first]
+lmt_scene_start [
+  width      = 6cm,
+  resolution = 120,
+  crop       = true,
+  eye        = (3.2,-4.4,3.0),
+  target     = (0,0,.1),
+] ;
+
+lmt_scene_material [
+  name      = "hill",
+  diffuse   = (.25,.55,.85),
+  specular  = (.12,.12,.12),
+  shininess = 12,
+  ambient   = .22,
+] ;
+
+lmt_scene_material [
+  name      = "cut",
+  diffuse   = (1,.65,.08),
+  opacity   = .28,
+  twosided  = true,
+] ;
+
+lmt_scene_material [
+  name      = "section",
+  diffuse   = (.9,.08,.06),
+  dx        = 5,
+  dy        = 5,
+  ontop     = true,
+] ;
+
+lmt_scene_surface [
+  id       = "hill",
+  code     = ".8*exp(-.35*(x*x+y*y)) - .25",
+  dfdx     = "-.56*x*exp(-.35*(x*x+y*y))",
+  dfdy     = "-.56*y*exp(-.35*(x*x+y*y))",
+  xmin     = -2,
+  xmax     =  2,
+  ymin     = -2,
+  ymax     =  2,
+  nx       = 56,
+  ny       = 56,
+  material = "hill",
+] ;
+
+lmt_scene_plane [
+  id       = "cutplane",
+  normal   = (0,0,1),
+  center   = (0,0,.15),
+  usize    = 3.6,
+  vsize    = 3.6,
+  material = "cut",
+] ;
+
+lmt_scene_intersection [
+  id        = "section",
+  first     = "hill",
+  second    = "cutplane",
+  tolerance = .01,
+  material  = "section",
+] ;
+
+lmt_scene_axis [
+  origin = (0,0,0),
+  xaxis  = (1,0,0),
+  yaxis  = (0,1,0),
+  zaxis  = (0,0,1),
+  xmin   = -2,
+  xmax   =  2,
+  ymin   = -2,
+  ymax   =  2,
+  zmin   = -.4,
+  zmax   =  .8,
+  color  = black,
+  width  = 1,
+] ;
+
+lmt_scene_stop ;
+\stopbuffer
+
+\typebuffer[scene-first][option=MP]
+
+\startplacefloat
+  [figure]
+  [title={A complete scene: a surface, a cutting plane, their intersection,
+   and coordinate axes.}]
+  \processMPbuffer[scene-first]
+\stopplacefloat
+
+Add the surface and plane before the intersection: \type {first} and
+\type {second} refer to objects that already exist in the scene. The axis has no
+such dependency, so it comes after the intersection to make the construction
+order clear. All four objects use the same camera, lighting, materials, and
+depth handling.
+
+The intersection is a sampled graph--plane result for visual cutting curves.
+Its numerical and tolerance-related limits are described in the
+\goto {Intersections} [intersections] section. Use this scene as a workflow
+example; the individual sections remain the command reference.
+
+The \type {width} above is the displayed document size. Since no explicit
+\type {bytewidth} or \type {byteheight} is given, \type {resolution} determines
+the raster size used before the result is placed at that width. With
+\type {crop = true}, the displayed bitmap is fitted to the projected bounds of
+the complete scene, including the plane, intersection, and axes.
+
+\type {lmt_scene_stop} renders the scene when no earlier render was requested. If
+ordinary \METAPOST\ labels or markers need the rendered bounds or projected
+positions, call \type {lmt_scene_render} after all scene objects and before
+\type {lmt_scene_stop}; the query helpers are described in the
+\goto {advanced annotation section} [annotation-helpers].
+
+\stopsection
+
+\startsection[reference=annotation-helpers,title=Rendering and annotation helpers (advanced)]
+
+These helpers work on a rendered scene. Use them when ordinary \METAPOST\
+material must be positioned relative to the result. Otherwise,
+\type {lmt_scene_stop} renders and finishes the scene for you.
+
+\type {lmt_scene_render} renders the scene once. After rendering,
+\index {bytemap}%
+\type {lmt_scene_width} and \type {lmt_scene_height} give the pixel dimensions of
+the final raster. They need not equal the document dimensions requested with
+\type {width} and \type {height}. The \type {lmt_scene_bytemap} and
+\type {lmt_scene_bounds} helpers give access to the selected bytemap and its
+displayed bounds.
+
+The projection helper \type {lmt_scene_project_point} maps a 3D point to the
+picture. The visibility helper \type {lmt_scene_project_visible} reports whether
+that point is visible at its projected position. Their shorter aliases are
+\type {lmt_scene_point} and \type {lmt_scene_visible}.
+
+For an object whose \type {id} is known, \type {lmt_scene_calculate_normal}
+returns a normal at a coordinate or parameter value; its shorter alias is
+\type {lmt_scene_normal}. Make these queries after \type {lmt_scene_render} and
+before \type {lmt_scene_stop}.
+
+Here is a complete query-and-annotation example. The scene is rendered first;
+the rest is ordinary \METAPOST\ code using the returned bounds, projected point,
+visibility result, raster dimensions, and normal.
+
+\startbuffer[scene-helpers]
+lmt_scene_start [
+  width      = 6cm,
+  resolution = 120,
+  crop       = true,
+  eye        = (3,-4,2.6),
+] ;
+
+lmt_scene_parametric [
+  id       = "surface",
+  x        = "u",
+  y        = "v",
+  z        = ".7*exp(-.6*(u*u+v*v)) - .2",
+  xu       = "1",
+  yu       = "0",
+  zu       = "-.84*u*exp(-.6*(u*u+v*v))",
+  xv       = "0",
+  yv       = "1",
+  zv       = "-.84*v*exp(-.6*(u*u+v*v))",
+  umin     = -1.8,
+  umax     =  1.8,
+  vmin     = -1.8,
+  vmax     =  1.8,
+  nu       = 48,
+  nv       = 48,
+] ;
+
+lmt_scene_render ;
+
+path     helper_bounds ;
+pair     helper_probe ;
+pair     helper_label ;
+triplet  helper_normal ;
+
+helper_bounds  := lmt_scene_bounds ;
+helper_probe   := lmt_scene_point((0,0,-.5)) ;
+helper_normal  := lmt_scene_normal("surface",(0,0)) ;
+helper_label   := llcorner helper_bounds + (4,6) ;
+
+draw helper_bounds withpen pencircle scaled .5 withcolor (.7,.7,.7) ;
+draw fullcircle scaled 6 shifted helper_probe withcolor red ;
+draw scenepoint "surface" (0,0,-.5)
+  withpen pencircle scaled 2
+  withcolor blue ;
+draw scenenormal "surface" (0,0)
+  withpen pencircle scaled .5
+  withcolor green ;
+draw textext("projected hidden point") shifted helper_probe shifted (4,16) ;
+
+if not lmt_scene_visible((0,0,-.5)):
+    draw textext("depth: hidden") shifted helper_probe shifted (4,-4) ;
+fi ;
+
+draw textext("raster " & decimal lmt_scene_width & " x " &
+    decimal lmt_scene_height) shifted (helper_label shifted (0,14)) ;
+
+draw textext("normal " & decimal redpart helper_normal & ", " &
+    decimal greenpart helper_normal & ", " &
+    decimal bluepart helper_normal) shifted (helper_label shifted (0,28)) ;
+
+lmt_scene_stop ;
+\stopbuffer
+
+\typebuffer[scene-helpers][option=MP]
+
+\startplacefloat
+  [figure]
+  [title={Using the rendered scene as a basis for ordinary \METAPOST\ annotations.}]
+  \processMPbuffer[scene-helpers]
+\stopplacefloat
+
+The point returned by \type {lmt_scene_point} is already in the displayed
+picture's coordinate system, so it can be used directly for a marker or label.
+The example uses an analytic parametric surface, so the pair passed to
+\type {lmt_scene_normal} is its \type {(u,v)} parameter pair. For an implicit
+surface, pass a 3D coordinate instead. The normal itself is a \type {triplet};
+the example formats its three components into a label. The projected hidden
+point demonstrates that a point can still have a position even when
+\type {lmt_scene_visible} reports that the depth test hides it.
+
+\type {scenepoint} is a convenience form of \type {lmt_scene_point}: the object
+tag comes first and the point follows it, and the result is an ordinary
+projected \METAPOST\ pair. \type {scenenormal} uses the same tag-and-parameter
+syntax but returns a small arrow picture. Both forms require
+\type {lmt_scene_render} first; they are useful when the result is drawn
+directly rather than stored for further calculations.
+
+\stopsection
+
+\startsection[reference=scene-cache,title=Scene cache (optional)]
+
+You can cache a complete scene as a rendered bytemap. This helps when repeated
+runs spend time generating the same geometry. Give the scene a stable
+\type {name} and set \type {cache = true}:
+
+\starttyping[option=MP]
+lmt_scene_start [
+  name       = "cached-plane",
+  cache      = true,
+  width      = 4cm,
+  resolution = 120,
+] ;
+
+lmt_scene_plane [
+  id     = "ground",
+  normal = (0,0,1),
+  center = (0,0,0),
+  usize  = 3,
+  vsize  = 3,
+] ;
+
+lmt_scene_stop ;
+\stoptyping
+
+The first run renders the scene and writes a cache file in the job directory.
+A later run with the same job name, scene name, and scene description reuses
+the cached bytemap instead of generating the 3D scene again. Changes to the
+documented scene or object settings invalidate the entry and cause a fresh
+render. Set \type {cache = false}, or omit \type {cache}, to bypass caching.
+
+The cache stores the complete rendered scene, not individual meshes. Use a
+stable, distinct \type {name} for each scene definition that should be cached.
+Cache files are not removed automatically, so obsolete entries can be deleted
+from the job directory. Caching requires an enabled \type {bytemap}, which is
+the default; \type {bytemap = false} is not supported with \type {cache = true}.
+You can use \typ {context --purge} to get rid of cache files.
+
+Scenes with a \type {process} or \type {stipple} postprocessor are rendered
+again when needed; those postprocessing passes are not reused from the scene
+cache.
+
+\stopsection
+
+\startsection[reference=stippling,title=Stippling (advanced)]
+
+Stippling converts the rendered scene into a field of colored dots. It is a
+raster postprocessing step: geometry, camera, lighting, and materials are
+resolved first, then the raster colors are converted to ink coverage. Depth
+and surface normals help preserve silhouettes, creases, and separation between
+visible surfaces.
+
+Enable stippling with a table on \type {lmt_scene_start}. The example below
+renders the same graph as a continuous raster and as a four-level stippled image:
+
+\startbuffer[stipple-plain]
+lmt_scene_start [
+  width      = 5.5cm,
+  resolution = 120,
+  crop       = true,
+  eye        = (3,-4,2.6),
+  target     = (0,0,0),
+  light      = (-1,-1,-2),
+] ;
+
+lmt_scene_surface [
+  code = ".55*exp(-.07*(x*x+y*y))*(cos(2.2*x)+sin(2.0*y))",
+  dfdx = ".55*exp(-.07*(x*x+y*y))*(-.14*x*(cos(2.2*x)+sin(2.0*y))-2.2*sin(2.2*x))",
+  dfdy = ".55*exp(-.07*(x*x+y*y))*(-.14*y*(cos(2.2*x)+sin(2.0*y))+2.0*cos(2.0*y))",
+  xmin = -3,
+  xmax =  3,
+  ymin = -3,
+  ymax =  3,
+  nx   = 64,
+  ny   = 64,
+] ;
+
+lmt_scene_stop ;
+\stopbuffer
+
+\startbuffer[stipple-dotted]
+lmt_scene_start [
+  width      = 5.5cm,
+  resolution = 120,
+  crop       = true,
+  eye        = (3,-4,2.6),
+  target     = (0,0,0),
+  light      = (-1,-1,-2),
+  stipple    = [
+    color           = (.15,.25,.55),
+    backgroundcolor = (1,1,1),
+    edgeboost       = .20,
+    coveragegamma   = 1.25,
+    levels          = 4,
+    tonedots        = true,
+    outline         = true,
+  ],
+] ;
+
+lmt_scene_surface [
+  code = ".55*exp(-.07*(x*x+y*y))*(cos(2.2*x)+sin(2.0*y))",
+  dfdx = ".55*exp(-.07*(x*x+y*y))*(-.14*x*(cos(2.2*x)+sin(2.0*y))-2.2*sin(2.2*x))",
+  dfdy = ".55*exp(-.07*(x*x+y*y))*(-.14*y*(cos(2.2*x)+sin(2.0*y))+2.0*cos(2.0*y))",
+  xmin = -3,
+  xmax =  3,
+  ymin = -3,
+  ymax =  3,
+  nx   = 64,
+  ny   = 64,
+] ;
+
+lmt_scene_stop ;
+\stopbuffer
+
+\typebuffer[stipple-dotted][option=MP]
+
+\startplacefloat
+  [figure]
+  [title={The same graph rendered as a continuous raster and as a stippled image.}]
+  \startcombination[nx=2,ny=1]
+    {\processMPbuffer[stipple-plain]} {continuous raster}
+    {\processMPbuffer[stipple-dotted]}{four-level stipple}
+  \stopcombination
+\stopplacefloat
+
+The left image is the ordinary rendered raster. The right applies stippling
+after lighting and visibility have been resolved. Stippling changes the raster,
+not the scene geometry. Its appearance depends on raster resolution; use
+\type {resolution} or explicit \type {bytewidth} and \type {byteheight} to
+control the dot spacing. The default \type {dotradius = 0} uses one-pixel dots.
+Larger radii can overlap and may need to be adjusted with the raster size.
+
+The stipple settings are in the nested table passed to \type {stipple}:
+
+\startmixedcolumns
+
+\keywordindex {color}
+\keyword {color} sets the ink color used for dots.
+
+\keywordindex {backgroundcolor}
+\keyword {backgroundcolor} sets the paper or background color. It is also used
+for the intermediate colors produced by \type {tonedots}.
+
+\keywordindex {nobackground}
+\keyword {nobackground} keeps the existing raster background instead of
+clearing it to the background color.
+
+\keywordindex {levels}
+\keyword {levels} selects evenly spaced tone levels. Give an integer from
+\type {3} through \type {16}; omit it for binary stippling.
+
+\keywordindex {tonedots}
+\keyword {tonedots} uses colors between the background and ink colors for
+intermediate tone levels. The default is true.
+
+\keywordindex {errorthreshold}
+\keyword {errorthreshold} sets the threshold used by binary stippling. The
+default is \type {.5}; it has no effect when \type {levels} is active.
+
+\keywordindex {coveragegamma}
+\keyword {coveragegamma} reshapes the coverage curve before quantization. The
+default is \type {1.25}; \type {1} leaves the curve unchanged.
+
+\keywordindex {minimumcoverage}
+\keywordindex {maximumcoverage}
+\keyword {minimumcoverage/maximumcoverage} clamp coverage after edge boosting
+and before the gamma adjustment. Their defaults are \type {0} and \type {1}.
+
+\keywordindex {edgeboost}
+\keyword {edgeboost} adds ink coverage near detected depth or normal edges. The
+default is \type {.20}.
+
+\keywordindex {usenormal}
+\keyword {usenormal} includes surface-normal continuity in edge detection and
+error diffusion. Set it to false to use depth information only.
+
+\keywordindex {creaseangle}
+\keyword {creaseangle} sets the normal-angle threshold for crease edges. The
+default is \type {25} degrees.
+
+\keywordindex {sameangle}
+\keyword {sameangle} sets the normal-angle threshold used to decide whether
+diffusion can cross neighboring pixels. The default is \type {15} degrees.
+
+\keywordindex {dzsamemultiplier}
+\keywordindex {dzedgemultiplier}
+\keyword {dzsamemultiplier/dzedgemultiplier} scale the automatically estimated
+depth differences for same-surface and edge tests. Their defaults are \type {2}
+and \type {8}.
+
+\keywordindex {mindepthstep}
+\keyword {mindepthstep} supplies the minimum absolute depth step used by those
+tests. The default is \type {1e-12}.
+
+\keywordindex {serpentine}
+\keyword {serpentine} alternates the scan direction on successive rows. The
+default is true.
+
+\keywordindex {dotradius}
+\keyword {dotradius} sets the radius of filled dots in raster pixels. Zero
+produces single-pixel dots.
+
+\keywordindex {clipdots}
+\keyword {clipdots} prevents larger dots from being painted onto background
+pixels. The default is true.
+
+\keywordindex {outline}
+\keyword {outline} adds a final edge-outline pass. The default is false.
+
+\keywordindex {outlinethreshold}
+\keyword {outlinethreshold} sets the edge strength required for the outline.
+The default is \type {.85}.
+
+\keywordindex {outlineradius}
+\keyword {outlineradius} sets the radius of outline dots in raster pixels. The
+default is zero.
+
+\keywordindex {luminance}
+\keyword {luminance} sets the \RGB\ weights used to convert rendered colors to
+intensity. The default is \type {(.2126,.7152,.0722)}.
+
+\stopmixedcolumns
+
+The numeric form of \type {levels} is convenient for ordinary use. A custom form
+can instead provide a table of levels, each with a \type {value}, an optional
+\type {radius}, and optional \type {red}, \type {green}, and \type {blue}
+values. Use it when you need custom coverage values, dot sizes, or colors; use
+the numeric form when evenly spaced levels are enough.
+
+Stippling is applied to the final raster, so raster size and visible detail both
+matter. Inspect the result at its intended output size and adjust the resolution,
+dot radii, tone levels, and edge settings together. A stippled scene is rendered
+again when needed instead of being reused from the scene cache.
+
+\stopsection
+
+\startsection[reference=external-meshes,title=External meshes (advanced)]
+
+An external mesh supplies its triangles from a file instead of sampling a
+function in the scene description. Add one with
+
+\starttyping[option=MP]
+lmt_scene_external [ ... ]
+\stoptyping
+
+The external loader reads standard binary STL files and the \type {lmtmesh}
+representation used by \CONTEXT. It does not support ASCII STL. The file name is
+passed through \CONTEXT's file resolver, so you can give a file in the job
+directory or in a searched \CONTEXT\ tree by name. A path also works.
+
+The example uses \type {luametafun-threed-sphere.stl}, a binary STL file shipped
+with the \CONTEXT\ distribution. The automatic camera settings fit the imported
+mesh after its bounds have been read.
+
+\startbuffer[external-sphere]
+lmt_scene_start [
+  width      = 6cm,
+  resolution = 120,
+  crop       = true,
+  projection = "perspective",
+  eye        = "auto",
+  target     = "auto",
+  fov        = 60,
+  light      = (-1,-1,-2),
+  intensity  = 1.1,
+] ;
+
+lmt_scene_material [
+  name      = "sphere",
+  diffuse   = (.72,.82,1),
+  specular  = (.7,.7,.7),
+  shininess = 30,
+] ;
+
+lmt_scene_external [
+  filename = "luametafun-threed-sphere.stl",
+  id       = "sphere",
+  material = "sphere",
+] ;
+
+lmt_scene_stop ;
+\stopbuffer
+
+\typebuffer[external-sphere][option=MP]
+
+The external-mesh keywords are:
+
+\startmixedcolumns
+
+\keywordindex {filename}
+\keyword {filename} names the external mesh file. The loader accepts
+standard binary STL and \type {lmtmesh} files; use a path or a file name that
+\CONTEXT\ can resolve.
+
+\keywordindex {id}
+\keyword {id} gives the imported object a scene name. Use a distinct name when
+the object is queried later or inspected with \type {lmt_scene_mesh}.
+
+\keywordindex {material}
+\keyword {material} selects the named material used when the mesh is rendered.
+
+\keywordindex {normal}
+\keyword {normal} selects how imported normals are handled. The default smooth
+mode uses supplied mesh normals when they are available; \type {flat} discards
+them and shades each triangle as an independent face.
+
+\keywordindex {flipnormals}
+\keyword {flipnormals} reverses supplied packed normals before shading. Use it
+when the file's orientation is opposite to the intended outside of the object.
+
+\stopmixedcolumns
+
+\startplacefloat
+  [figure]
+  [title={A binary STL mesh rendered as an ordinary shaded scene.}]
+  \processMPbuffer[external-sphere]
+\stopplacefloat
+
+The coordinates in the file are used as supplied. The preset still contains a
+\type {scale} key for compatibility, but the implementation does not apply it;
+scale the mesh before importing if needed. Binary STL facet normals are
+preserved when the file supplies nonzero normals, so their quality and
+orientation affect the shading. Use \type {normal = "flat"} when those normals
+are missing or unreliable, or \type {flipnormals = true} when their direction is
+reversed. The imported triangles otherwise use the same camera, lighting,
+material, depth handling, and cropping as other scene objects.
+
+Large external meshes can contain many more triangles than the sampled examples
+in this manual. Start with a modest output \type {resolution}, and increase it
+only when the final figure needs more raster detail; raster resolution does not
+reduce the cost of loading or transforming the mesh.
+
+\stopsection
+
+\startsection[reference=internal-meshes,title=Internal meshes (advanced)]
+
+An internal mesh is an extension point for geometry that already exists in \LUA\
+or is easier to generate there than with one of the mathematical surface
+commands. A named generator returns vertices and either triangle indices or a
+compact mesh type; it can also return one normal per triangle. The mesh can then
+be placed, shaded, and combined with the other scene objects.
+
+You can skip this section for ordinary graphs, parametric surfaces, and implicit
+surfaces. It requires \LUA\ code and a registered mesh generator.
+
+Here is a small pyramid generator:
+
+\starttyping[option=LUA]
+metapost.registermesher("manual-pyramid", function(specification)
+    return {
+        vertices = {
+            { -1, -1, 0 },
+            {  1, -1, 0 },
+            {  1,  1, 0 },
+            { -1,  1, 0 },
+            {  0,  0, 1.5 },
+        },
+        triangles = {
+            { 1, 2, 3 }, { 1, 3, 4 },
+            { 1, 5, 2 }, { 2, 5, 3 },
+            { 3, 5, 4 }, { 4, 5, 1 },
+        },
+    }
+end)
+\stoptyping
+
+\startluacode
+metapost.registermesher("manual-pyramid", function(specification)
+    return {
+        vertices = {
+            { -1, -1, 0 },
+            {  1, -1, 0 },
+            {  1,  1, 0 },
+            { -1,  1, 0 },
+            {  0,  0, 1.5 },
+        },
+        triangles = {
+            { 1, 2, 3 }, { 1, 3, 4 },
+            { 1, 5, 2 }, { 2, 5, 3 },
+            { 3, 5, 4 }, { 4, 5, 1 },
+        },
+    }
+end)
+\stopluacode
+
+The indices in \type {triangles} are one-based \LUA\ indices into
+\type {vertices}. The \type {triangles} field can be omitted when the generator
+returns \type {meshtype}: type \type {5} treats every three consecutive vertices
+as one triangle, while type \type {7} treats every four consecutive vertices as
+a quadrilateral split into two triangles. Explicit indices are usually the
+clearest choice for irregular meshes. An optional \type {normals} field supplies
+one normal per triangle, either as a table of triplets or as a packed
+\type {vector.normals} container.
+
+After registering the generator, select it with \type {name}:
+
+\startbuffer[internal-mesh]
+lmt_scene_start [
+  width = 6cm,
+  crop  = true,
+  eye   = (3,-4,2.5),
+] ;
+
+lmt_scene_material [
+  name      = "pyramid",
+  diffuse   = (.85,.35,.12),
+  specular  = (.2,.2,.2),
+  shininess = 20,
+] ;
+
+lmt_scene_internal [
+  id       = "pyramid",
+  name     = "manual-pyramid",
+  normal   = "flat",
+  material = "pyramid",
+] ;
+
+lmt_scene_stop ;
+\stopbuffer
+
+% \startplacefloat
+%   [figure]
+%   [title={An internal mesh supplied by a registered \LUA\ generator.}]
+%   \processMPbuffer[internal-mesh]
+% \stopplacefloat
+
+\startplacefloat
+  [figure]
+  [title={A}]
+  \processMPbuffer[internal-mesh]
+\stopplacefloat
+
+The internal-mesh keywords are:
+
+\startmixedcolumns
+
+\keywordindex {id}
+\keyword {id} gives the generated mesh a name inside the scene, so that an
+intersection can refer to it.
+
+\keywordindex {name}
+\keyword {name} selects the \LUA\ generator registered with
+\type {metapost.registermesher}.
+
+\keywordindex {material}
+\keyword {material} selects the named material used to render the mesh.
+
+\keywordindex {normal}
+\keyword {normal} selects the normal mode for the generated mesh. In particular,
+\type {flat} expands the triangles so that each face is shaded independently;
+otherwise supplied triangle normals can be used for smooth shading.
+
+\keywordindex {flipnormals}
+\keyword {flipnormals} reverses a packed normal container returned by the
+generator before it is used for shading.
+
+\stopmixedcolumns
+
+The generator receives the complete parameter specification, so it can define
+settings for a particular mesh. Those settings belong to the generator, not to
+the general \type {lmt_scene_internal} command.
+
+\stopsection
+
+\startsection[reference=lua-helpers,title=Low-level \LUA\ helpers (advanced)]
+
+The scene commands are normally enough. \LUA\ code that generates meshes or
+postprocesses a rendered image can also use two lower-level userdata libraries.
+The \type {vector} library stores points, normals, and indexed meshes; the
+separate \type {zbuffer} library stores a rendered pixel buffer. This section
+covers the small subset needed to connect a \LUA\ mesher or image postprocessor to
+the scene code. It is not a complete reference to every operation exposed by
+the engine.
+
+A registered internal mesher can return packed containers directly. This is the
+packed equivalent of the table-based pyramid in the previous section:
+
+\starttyping[option=LUA]
+local vertices = vector.points.new(5,1) -- default: xyz+n
+vertices(-1,-1,0)
+vertices( 1,-1,0)
+vertices( 1, 1,0)
+vertices(-1, 1,0)
+vertices( 0, 0,1.5)
+
+local triangles = vector.mesh.new(6) -- indexed triangles
+triangles(1,2,3)
+triangles(1,3,4)
+triangles(1,5,2)
+triangles(2,5,3)
+triangles(3,5,4)
+triangles(4,5,1)
+
+metapost.registermesher("packed-pyramid", function(specification)
+    return {
+        vertices = vertices,
+        triangles = triangles,
+    }
+end)
+\stoptyping
+
+Use \type {name = "packed-pyramid"} with \type {lmt_scene_internal} as in the
+previous section. The default point type is \type {0}, with the layout
+\type {xyz+n}; it is the layout expected by the low-level triangle rasterizer.
+Types \type {1} (\type {xyz}) and \type {2} (\type {xy}) are useful for
+coordinate-only calculations, but should not be passed directly as the vertex
+container for rasterized 3D triangles. When the optional normal components are
+not supplied, they remain zero and the selected scene normal mode determines
+how the mesh is handled.
+
+\page
+
+The main container operations are:
+
+\startmixedcolumns
+
+\keywordindex {vector.point}
+\keyword {vector.point} creates one point from coordinates or a small \LUA\ table.
+Points have one-based components, support arithmetic, and provide
+\type {dotproduct}, \type {crossproduct}, \type {normalize}, \type {distance},
+and \type {length}.
+
+\keywordindex {vector.points.new}
+\keyword {vector.points.new} takes \type {rows}, \type {columns}, an optional
+point type, and an optional growth step. Its initial capacity is
+\type {rows*columns}; call the container with coordinates to fill entries in
+order. \type {get}, \type {getxyz}, \type {getnormal}, \type {set},
+\type {totable}, and \type {getbounds} provide ordinary access. Indices are
+one-based.
+
+\keywordindex {vector.mesh.new}
+\keyword {vector.mesh.new} takes the number of entries and an optional mesh
+type. The default type is \type {3}, an indexed triangle. Call the container
+with three one-based vertex indices, or use \type {get}, \type {set}, and
+\type {totable}.
+
+\keywordindex {vector.normals}
+\keyword {vector.normals} creates a separate normal container with
+\type {new}; its entries can be filled or changed with \type {set}, inspected
+with \type {get}, and reversed with \type {flip}.
+
+\stopmixedcolumns
+
+For postprocessing, allocate and configure a z-buffer directly:
+
+\starttyping[option=LUA]
+local buffer = zbuffer.new()
+
+zbuffer.setup(buffer, {
+    width       = 5,
+    height      = 4,
+    perspective = false,
+    eye         = { 0, 0, 5 },
+    target      = { 0, 0, 0 },
+    up          = { 0, 1, 0 },
+    viewport    = { width = 5, height = 4 },
+    camera      = { near = 0, far = 10, scale = 1 },
+})
+
+local visible, behind, vx, vy, vz, px, py =
+    zbuffer.project(buffer, { 0, 0, 0 })
+\stoptyping
+
+The top-level \type {width} and \type {height} allocate the buffer.
+\type {viewport} controls the projected pixel area, while \type {eye},
+\type {target}, and \type {up} define the camera basis. With an orthographic
+setup, \type {camera.scale} controls the view scale; a perspective setup uses
+\type {camera.tanhalf} instead. \type {project} returns camera-space
+coordinates \type {vx}, \type {vy}, and \type {vz}, followed by projected
+coordinates \type {px} and \type {py}. A point behind the camera returns only
+\type {false, true}.
+
+The pixel accessors \type {get}, \type {set}, \type {getcolor},
+\type {setcolor}, \type {getdepth}, \type {setdepth}, \type {getnormal}, and
+\type {setnormal} use one-based \type {row,column} coordinates. \type {getsize}
+returns the number of rows and columns. \type {transform} converts a point
+to camera-space coordinates, and \type {tobytes} returns the \RGB\ byte string
+together with its height, width, and channel count. The separate global name
+\type {zbuffer} is intentional; it is not a field of \type {vector}.
+
+These calls are enough for a controlled \LUA\ integration or a diagnostic
+postprocessor. Matrix operations, contour builders, direct triangle rasterization,
+and stipple stages remain implementation-facing and are not listed as a complete
+low-level API.
+
+\stopsection
+
+\startsection[reference=raster-postprocessing,title=Raster postprocessing hooks (advanced)]
+
+The scene \type {process} setting selects a named \LUA\ hook that runs after the
+scene has been rasterized and before supersampling is resolved. It is useful for
+color effects or diagnostics that need access to the rendered colors, normals,
+or texture coordinates. Register the hook before using the scene:
+
+\startluacode
+local function dim(r,g,b)
+    return .8 * r, .8 * g, .8 * b
+end
+
+metapost.registermeshupper {
+    name    = "dim",
+    color   = true,
+    process = dim,
+}
+\stopluacode
+
+Select it by name in the scene:
+
+\starttyping[option=MP]
+lmt_scene_start [
+  process = "dim",
+  ...
+] ;
+\stoptyping
+
+The following rendered example uses that hook; the scene is otherwise an
+ordinary surface scene. The dimmed result makes the data flow through
+\type {process = "dim"} visible in the document rather than only in source.
+
+\startbuffer[dim-scene]
+lmt_scene_start [
+  width      = 5.5cm,
+  resolution = 120,
+  crop       = true,
+  eye        = (3,-4,2.6),
+  process    = "dim",
+] ;
+
+lmt_scene_surface [
+  code = ".7*exp(-.6*(x*x+y*y)) - .2",
+  xmin = -1.8,
+  xmax =  1.8,
+  ymin = -1.8,
+  ymax =  1.8,
+  nx   = 48,
+  ny   = 48,
+] ;
+
+lmt_scene_stop ;
+\stopbuffer
+
+\typebuffer[dim-scene][option=MP]
+
+\startplacefloat
+  [figure]
+  [title={A scene rendered through the dim postprocessing hook.}]
+  \processMPbuffer[dim-scene]
+\stopplacefloat
+
+The registration table accepts \type {name} and a required \type {process}
+callback. Set \type {color}, \type {normal}, \type {texture}, or \type {slot}
+to request the corresponding inputs. The callback arguments are concatenated in
+that order: \type {slot} supplies zero-based \type {(row,column)}, \type {color}
+supplies \type {(r,g,b)}, \type {normal} supplies \type {(nx,ny,nz)}, and
+\type {texture} supplies \type {(x,y,z,t)}. For example, a callback with
+\type {color = true} and \type {normal = true} receives
+\type {(r,g,b,nx,ny,nz)}. It returns up to three \RGB\ values; returned numeric
+values are clamped to the \type {0}--\type {1} range.
+
+By default, background pixels are skipped. Set \type {skip = false} when the
+background should also be passed to the callback. Optional \type {initialize}
+and \type {finalize} functions receive the registration table before and after
+the pixel pass.
+
+For direct access to the z-buffer, set \type {direct = true} or
+\type {method = "direct"}. In that form the callback receives the z-buffer and
+the registration table instead of per-pixel values; use the z-buffer operations
+described in the low-level \LUA\ helpers section.
+
+The hook runs before stippling and is rerun when the scene must be rendered
+again. Keep it limited to the raster work that belongs in this stage.
+
+\stopsection
+
+\startsection[reference=special-overlays,title=Special overlays (advanced)]
+
+\type {lmt_scene_special} adds small, depth-tested overlays to a scene. The
+supported kinds are \type {point}, \type {segment}, \type {normal}, and
+\type {arrow}. Add an overlay after the object it refers to and before
+\type {lmt_scene_stop}. The \type {normal} form needs a named parametric object
+and its derivatives.
+
+\startbuffer[scene-special]
+lmt_scene_start [
+  width      = 6cm,
+  resolution = 120,
+  crop       = true,
+  eye        = (3,-4,2.6),
+] ;
+
+lmt_scene_parametric [
+  id  = "surface",
+  x   = "u",
+  y   = "v",
+  z   = ".7*exp(-.6*(u*u+v*v)) - .2",
+  xu  = "1",
+  yu  = "0",
+  zu  = "-.84*u*exp(-.6*(u*u+v*v))",
+  xv  = "0",
+  yv  = "1",
+  zv  = "-.84*v*exp(-.6*(u*u+v*v))",
+  umin = -1.8,
+  umax =  1.8,
+  vmin = -1.8,
+  vmax =  1.8,
+  nu   = 48,
+  nv   = 48,
+] ;
+
+lmt_scene_special [
+  kind  = "point",
+  id    = "probe",
+  at    = (0,0,.5),
+  color = red,
+  width = 2,
+] ;
+
+lmt_scene_special [
+  kind  = "segment",
+  id    = "baseline",
+  from  = (-1.2,-1,0),
+  to    = ( 1.2,-1,0),
+  color = blue,
+  width = 1,
+] ;
+
+lmt_scene_special [
+  kind   = "normal",
+  id     = "normal",
+  name   = "surface",
+  u      = 0,
+  v      = 0,
+  length = .2,
+  span   = .12,
+  color  = green,
+  width  = 1,
+] ;
+
+lmt_scene_special [
+  kind   = "arrow",
+  id     = "arrow",
+  from   = (0,0,0),
+  to     = (0,0,1),
+  length = .15,
+  span   = .12,
+  color  = (.9,.4,0),
+  width  = 1,
+] ;
+
+lmt_scene_stop ;
+\stopbuffer
+
+\typebuffer[scene-special][option=MP]
+
+\startplacefloat
+  [figure]
+  [title={Point, segment, normal, and arrow overlays in one parametric scene.}]
+  \processMPbuffer[scene-special]
+\stopplacefloat
+
+The special-overlay keywords are:
+
+\startmixedcolumns
+
+\keywordindex {kind}
+\keyword {kind} selects the overlay form: \type {point}, \type {segment},
+\type {normal}, or \type {arrow}.
+
+\keywordindex {id}
+\keyword {id} gives the overlay a name.
+
+\keywordindex {at}
+\keyword {at} gives the literal 3D point where a \type {point} overlay is
+drawn. A point overlay draws a small cross there.
+
+\keywordindex {point}
+\keywordindex {x}
+\keywordindex {y}
+\keywordindex {z}
+\keyword {point} gives a spatial coordinate when a named object is resolved.
+The same coordinate can be given with \type {x}, \type {y}, and \type {z}.
+
+\keywordindex {from}
+\keyword {from} gives the first endpoint of a \type {segment} or \type {arrow}.
+
+\keywordindex {to}
+\keyword {to} gives the second endpoint of a \type {segment} or \type {arrow}.
+
+\keywordindex {name}
+\keyword {name} selects a named scene object for point or normal lookup. It is
+required by the \type {normal} form.
+
+\keywordindex {u}
+\keyword {u} gives the first parameter when a named parametric object is
+resolved.
+
+\keywordindex {v}
+\keyword {v} gives the second parameter when a named parametric object is
+resolved.
+
+\keywordindex {t}
+\keyword {t} gives the parameter when a named curve is resolved.
+
+\keywordindex {length}
+\keyword {length} controls the size of a point cross or the length of an
+arrowhead.
+
+\keywordindex {span}
+\keyword {span} controls the width of an arrowhead.
+
+\keywordindex {rotation}
+\keyword {rotation} rotates an arrowhead around its direction.
+
+\keywordindex {color}
+\keyword {color} selects the overlay line color.
+
+\keywordindex {width}
+\keyword {width} sets the overlay line width in raster pixels.
+
+\stopmixedcolumns
+
+The \type {normal} form resolves the named object using the same coordinate or
+parameter lookup and evaluates its normal; supplying analytic derivatives makes
+a parametric normal reliable. All four forms are depth-tested like other scene
+geometry.
+
+The named-normal example uses a parametric surface. For a graph or implicit
+surface, use the direct \type {lmt_scene_normal} query after rendering.
+
+\stopsection
+
+\startsection[reference=mesh-inspection,title=Mesh inspection (experimental)]
+
+This final example is diagnostic only. It shows the triangle paths captured for
+a scene object, which helps you check sampling, winding, and mesh coverage. It
+is not a normal rendering interface. Set the object's experimental \type {vector}
+flag, render the scene, and draw \type {lmt_scene_mesh} using its \type {id}:
+
+\startbuffer[mesh-inspection]
+lmt_scene_start [
+  width      = 6cm,
+  resolution = 120,
+  crop       = true,
+  eye        = (3,-4,2.6),
+] ;
+
+lmt_scene_surface [
+  id       = "surface",
+  vector   = true,
+  code     = ".7*exp(-.6*(x*x+y*y)) - .2",
+  dfdx     = "-.84*x*exp(-.6*(x*x+y*y))",
+  dfdy     = "-.84*y*exp(-.6*(x*x+y*y))",
+  xmin     = -1.8,
+  xmax     =  1.8,
+  ymin     = -1.8,
+  ymax     =  1.8,
+  nx       = 24,
+  ny       = 24,
+] ;
+
+lmt_scene_render ;
+
+draw lmt_scene_mesh "surface"
+  withpen pencircle scaled .2pt
+  withcolor red ;
+
+lmt_scene_stop ;
+\stopbuffer
+
+\typebuffer[mesh-inspection][option=MP]
+
+\startplacefloat
+  [figure]
+  [title={Diagnostic view of the sampled triangle mesh.}]
+  \processMPbuffer[mesh-inspection]
+\stopplacefloat
+
+\type {lmt_scene_mesh} returns a path made from the captured projected triangles.
+The path can include triangles hidden in the shaded rendering, so use it to
+inspect the mesh rather than to produce a clean visible outline. Call it after
+\type {lmt_scene_render}; the object's \type {vector = true} flag captures the
+paths. This flag and helper depend on experimental vector-point support and may
+change, so use them while debugging a scene.
+
+\stopsection
+
+\startsection[reference=rendering-pipeline,title=Rendering pipeline (advanced)]
+
+\index {mesh counts}%
+\index {raster resolution}%
+\index {depth testing}%
+The scene commands are declarative, but a rendered figure passes through several
+distinct stages. This distinction is useful when deciding whether to increase
+an object's mesh counts, the raster resolution, or the supersampling factor. It
+also explains why rendering must happen before projection and normal queries can
+be used.
+
+The main sources of render time are dense implicit grids
+(\type {nx*ny*nz}), large sampled surface grids, high \type {supersample} values
+which enlarge the temporary raster area roughly with the square of the factor,
+large external meshes, and mesh--mesh intersections. When a figure is slow,
+inspect these sources separately and increase one of them at a time.
+
+For an ordinary render without a cache hit, the overall path is:
+
+\starttyping
+scene description
+    -> object generation and triangle meshes
+    -> camera, crop, and raster setup
+    -> projection and z-buffer rasterization
+    -> resolution and raster postprocessing
+    -> final crop and bytemap conversion
+    -> MetaPost placement and scene queries
+\stoptyping
+
+The stages have the following roles:
+
+\startitemize
+  \startitem
+    The scene description records the shared camera, lighting, materials, output
+    settings, and the objects that belong to the scene. Object commands do not
+    immediately draw pixels; they add specifications to the scene.
+  \stopitem
+  \startitem
+    Object generation turns those specifications into geometry. A graph or
+    parametric surface is sampled over its parameter grid, an implicit surface is
+    extracted from samples in a 3D box, and external or internal mesh objects
+    provide their triangles directly. Normals are generated or attached at this
+    stage so that they are available during shading. The object mesh counts
+    control this geometric stage.
+  \stopitem
+  \startitem
+    Camera and raster setup chooses the internal pixel dimensions, allocates the
+    z-buffer, and derives the camera transform. \type {width}, \type {height},
+    \type {bytewidth}, \type {byteheight}, and \type {resolution} determine the
+    displayed and raster dimensions; \type {supersample} enlarges the temporary
+    raster used while drawing. With automatic cropping, the projected object
+    bounds also help fit the camera transform to the scene.
+  \stopitem
+  \startitem
+    Projection transforms mesh vertices into camera and screen coordinates.
+    Triangle rasterization then writes color, depth, and normal information to
+    the z-buffer. Depth tests decide which surfaces are visible, while materials,
+    lights, opacity, and the selected normals determine the shaded result.
+    Transparent and on-top objects are handled in their corresponding rendering
+    passes.
+  \stopitem
+  \startitem
+    After the internal drawing pass, an optional \type {process} hook (described
+    in the \goto {Raster postprocessing hooks} [raster-postprocessing] section)
+    can inspect or modify the rendered buffer. The supersampled buffer is then
+    reduced to the display raster. Stippling, if enabled, is applied later to
+    that resolved raster; neither operation changes the generated triangle mesh.
+  \stopitem
+  \startitem
+    Cropping then trims the resolved raster to the occupied scene bounds when
+    requested. Thus \type {crop} affects both the camera fitting used before
+    rasterization and, where appropriate, the dimensions of the final displayed
+    buffer. The resulting pixel data is converted to a \METAPOST\ bytemap.
+  \stopitem
+  \startitem
+    \type {lmt_scene_render} makes the rendered result available to projection,
+    visibility, bounds, bytemap, and normal helpers. \type {lmt_scene_stop}
+    performs the render when needed and places the finished bytemap in the
+    current picture. Queries and ordinary \METAPOST\ annotations therefore come
+    after rendering, while the scene is still open.
+  \stopitem
+\stopitemize
+
+This separation also explains several common adjustments. Increasing
+\type {nx}, \type {ny}, \type {nz}, \type {nu}, or \type {nv} changes the
+geometric approximation and can reveal features that a coarse mesh misses.
+Increasing \type {resolution} or \type {supersample} changes the raster quality
+of an already generated scene; it does not recover geometric detail that was
+never sampled. Stippling similarly changes the final raster rather than the
+surface or its projection.
+
+When caching is enabled and a valid cached result is available, the saved
+rendered scene can be restored instead of repeating the ordinary generation and
+rasterization stages. The cache is scene-level: it is not a reusable cache of
+individual object meshes.
+
+\stopsection
+
+\startsection[title=About the cover page]
+
+The cover captures the rendered scene in a \METAPOST\ picture with
+\type {picture q := image(...)}. The scene is rendered while the argument of
+\type {image} is evaluated; afterwards, shifting by \type {-center q} moves the
+picture's center to the origin, and the final shift places that center on the
+paper. This is a useful technique when a scene must be captured, scaled, and
+positioned independently of the surrounding \METAPOST\ drawing.
+
+\typebuffer[coverpage][option=TEX]
+
+\stopsection
+
+\starttitle[title=Index]
+
+\placeregister[index,keywordindex]
+
+\stoptitle
+
+\stoptext

@@ -85,6 +85,7 @@ local split = string.split
 local are_equal = table.are_equal
 local tonumber = tonumber
 local formatters = string.formatters
+local clock = os.gettimeofday or os.clock
 
 local report = application.report
 
@@ -144,50 +145,16 @@ function scripts.testsuite.process()
     end
 end
 
-local popen  = io.popen
-local close  = io.close
-local read   = io.read
-local gobble = io.gobble
-local clock  = os.clock
+-- early september 2026 : Intel Xeon E3-1505M v6 @ 3.00GHz, 48GB, 2TB, Dell 7220
+--
+-- 2200 files, windows 11, popen,           828 sec after prepare
+--                         process, native, 417 sec after prepare
+--                         process, fork,   417 sec after prepare
+--             ubuntu wsl, process, fork,   237 sec after prepare
 
-function scripts.testsuite.parallel() -- quite some overlap but ...
-    local pattern = environment.argument("pattern")
-    if pattern then
-        local cleanup = environment.argument("cleanup")
-        local engine  = environment.argument("luatex") and "--luatex" or ""
---         local signal  = environment.argument("signal")
-        local squid   = environment.argument("squid")
-        local results = { }
-        local start   = statistics.starttiming(scripts.testsuite.process)
-        local files   = dir.glob(pattern)
-        local luaname = "testsuite-process.lua"
-        local process = { }
-        local total   = #files
-        local runners = tonumber(environment.argument("parallel")) or 8
-        local count   = 0
-        local problem = false
---         local signalled = signal and function(state)
---             local c = format("mtxrun --script %s --state=%s --run=1 --all",signal,state)
---             os.resultof(c)
---         end or false
---         if signalled then
---             signalled("busy")
---         end
-        if squid then
-            squid = require("util-sig-imp-squid.lua")
-        end
-        if squid then
---             signalled = false
-            squid.stepper("reset")
-        end
-        local steps = { }
-        for i=1,runners do
-            steps[i] = 0
-        end
-        --
-        if squid then
-            squid.signal("busy")
-        end
+local function preparerun(capped)
+    statistics.starttiming("testsuite:prepare")
+    if not capped then
         os.execute("mtxrun  --generate")
         if squid then
             squid.signal("busy")
@@ -206,93 +173,299 @@ function scripts.testsuite.parallel() -- quite some overlap but ...
             os.sleep(2)
             squid.signal("reset")
         end
-        while true do
-            local done = false
-            for i=1,runners do
-                local pi = process[i]
-                if pi then
-                 -- local s = read(pi[1],"l")
-                    local s = gobble(pi[1])
-                    if s then
-                     -- print(pi[3],s)
-                        done = true
-                        goto done
-                    else
-                        local r, detail, n = close(pi[1])
-                        local bad = not r or n > 0
-                        if bad then
-                            results[pi[2]] = { detail, n }
-                        end
-                        if bad then
---                             if signalled and not problem then
---                                 signalled("problem")
---                             end
-                            problem = true
-                        end
-                        report("%02i : %04i : %s : %s : %0.3f ",i,pi[3],bad and "error" or "done ",pi[2],clock()-pi[4])
-                        process[i] = false
-                    end
-                end
-                count = count + 1
-                if count > total then
-                    -- we're done
-                else
-                    local filename = files[count]
-                    local dirname  = file.dirname(filename)
-                    local basename = file.basename(filename)
-                    local texname  = basename
-                    local pdfname  = file.replacesuffix(basename,"pdf")
-                    local tucname  = file.replacesuffix(basename,"tuc")
-                    local workdir  = lfs.currentdir()
-                    lfs.chdir(dirname)
-                    os.remove(pdfname)
-                    if cleanup then
-                        os.remove(tucname)
-                    end
-                    if lfs.isfile(texname) then
-steps[i] = steps[i] + 1
-if squid then
-    squid.stepper("busy",i,steps[i],problem)
-end
-                        local command = f_runner("context",engine,texname)
-                        local result  = popen(command)
-                        if result then
--- result:setvbuf("full",64*1024)
-                            process[i] = { result, filename, count, clock() }
-                        else
---                             if signalled and not problem then
---                                 signalled("problem")
---                                 problem = true
---                             end
-                            results[filename] = "error"
-if squid then
-    squid.stepper("busy",i,steps[i],problem)
-end
-                        end
-                        report("%02i : %04i : %s : %s",i,count,result and "start" or "error",filename)
-                    end
-                    lfs.chdir(workdir)
-                    done = true
-                end
-              ::done::
-            end
-            if not done then
-                break
-            end
-        end
-        if squid then
-            squid.signal(problem and "error" or "finished")
-        end
-        statistics.stoptiming(scripts.testsuite.process)
-        results.runtime = statistics.elapsedtime(scripts.testsuite.process)
-        io.savedata(luaname,table.serialize(results,true))
---         if signalled then
---             signalled(problem and "error" or "finished")
---         end
-        report()
-        report("files: %i, runtime: %s, overview: %s",total,results.runtime,luaname)
-        report()
     end
+    statistics.stoptiming("testsuite:prepare")
+end
+
+local function collectfiles(pattern,capped)
+    statistics.starttiming("testsuite:collect")
+    report()
+    report("collecting test files")
+    local files = dir.glob(pattern)
+    local total = #files
+    table.sort(files) -- unix
+    report("%i files found",total)
+    report()
+    statistics.stoptiming("testsuite:collect")
+    if capped then
+        total = capped
+    end
+    return files, total
+end
+
+local function setsteps(runners)
+    local squid = environment.argument("squid")
+    if squid then
+        squid = require("util-sig-imp-squid.lua")
+    end
+    if squid then
+        squid.stepper("reset")
+    end
+    local steps = { }
+    for i=1,runners do
+        steps[i] = 0
+    end
+    if squid then
+        squid.signal("busy")
+    end
+    return squid, steps
+end
+
+local function wrapuprun(squid,luaname,total,problem,results)
+    if squid then
+        squid.signal(problem and "error" or "finished")
+    end
+    results = {
+        files = results,
+        times = {
+            collect = statistics.elapsedtime("testsuite:collect"),
+            process = statistics.elapsedtime("testsuite:process"),
+            prepare = statistics.elapsedtime("testsuite:prepare"),
+        }
+    }
+    io.savedata(luaname,table.serialize(results,true))
+    report()
+    report("files: %i, collect: %s s, prepare: %s s, process: %s s, problems: %i, overview: %s",
+        total,
+        results.times.collect,
+        results.times.prepare,
+        results.times.process,
+        table.count(results.files),
+        luaname
+    )
+    report()
+end
+
+local function getlog(pi,exit,detail)
+    local name = file.removesuffix(pi[2]) .. "-error.log"
+    local log  = table.load(name)
+    if type(log) == "table" then
+        log = {
+            lastluaerror = log.lastluaerror and match(log.lastluaerror,"([^\n\r]*)") or nil,
+            lasttexerror = log.lasttexerror and match(log.lasttexerror,"([^\n\r]*)") or nil,
+            linenumber   = log.linenumber,
+        }
+    else
+        log = {
+            detail = detail,
+            exit   = exit
+        }
+    end
+    return log
+end
+
+if not process or environment.argument("popen") then
+
+    local popen  = io.popen
+    local close  = io.close
+    local read   = io.read
+    local gobble = io.gobble
+
+    function scripts.testsuite.parallel() -- quite some overlap but ...
+        local pattern = environment.argument("pattern")
+        if pattern then
+            local cleanup = environment.argument("cleanup")
+            local engine  = environment.argument("luatex") and "--luatex" or ""
+            local capped  = tonumber(environment.argument("capped"))
+            local runners = tonumber(environment.argument("parallel")) or 8
+            local process = { }
+            local results = { }
+            local luaname = "testsuite-process.lua"
+            local count   = 0
+            local problem = false
+
+            local files, total = collectfiles(pattern,capped)
+            local squid, steps = setsteps(runners)
+
+            preparerun(capped)
+
+            statistics.starttiming("testsuite:process")
+            while true do
+                local done = false
+                for i=1,runners do
+                    local pi = process[i]
+                    if pi then
+                        local s = gobble(pi[1])
+                        if s then
+                            done = true
+                            goto done
+                        else
+                            local r, detail, n = close(pi[1])
+                            local bad = not r or n > 0
+                            if bad then
+                                results[pi[2]] = getlog(pi,exit,detail)
+                            end
+                            if bad then
+                                problem = true
+                            end
+                            report("%02i : %04i : %s : %s : %0.3f ",i,pi[3],bad and "error" or "done ",pi[2],clock()-pi[4])
+                            process[i] = false
+                        end
+                    end
+                    count = count + 1
+                    if count > total then
+                        -- we're done
+                    else
+                        local filename = files[count]
+                        local dirname  = file.dirname(filename)
+                        local basename = file.basename(filename)
+                        local texname  = basename
+                        local pdfname  = file.replacesuffix(basename,"pdf")
+                        local tucname  = file.replacesuffix(basename,"tuc")
+                        local workdir  = lfs.currentdir()
+                        lfs.chdir(dirname)
+                        os.remove(pdfname)
+                        if cleanup then
+                            os.remove(tucname)
+                        end
+                        if lfs.isfile(texname) then
+                            steps[i] = steps[i] + 1
+                            if squid then
+                                squid.stepper("busy",i,steps[i],problem)
+                            end
+                            local command = f_runner("context",engine,texname)
+                            local result  = popen(command)
+                            if result then
+                                process[i] = { result, filename, count, clock(), 0, texname }
+                            else
+                                results[filename] = "error"
+                                if squid then
+                                    squid.stepper("busy",i,steps[i],problem)
+                                end
+                            end
+                            report("%02i : %04i : %s : %s",i,count,result and "start" or "error",filename)
+                        end
+                        lfs.chdir(workdir)
+                        done = true
+                    end
+                  ::done::
+                end
+                if not done then
+                    break
+                end
+            end
+            statistics.stoptiming("testsuite:process")
+
+            wrapuprun(squid,luaname,total,problem,results)
+        end
+    end
+
+else
+
+    local open   = process.open
+    local close  = process.close
+    local read   = process.read
+    local poll   = process.poll
+    local gobble = io.gobble
+
+    function scripts.testsuite.parallel() -- quite some overlap but ...
+        local pattern = environment.argument("pattern")
+        if pattern then
+            local cleanup = environment.argument("cleanup")
+            local engine  = environment.argument("luatex") and "--luatex" or ""
+            local capped  = tonumber(environment.argument("capped"))
+            local runners = tonumber(environment.argument("parallel")) or 8
+            local process = { }
+            local results = { }
+            local luaname = "testsuite-process.lua"
+            local count   = 0
+            local problem = false
+            local lookup  = { }
+
+            local files, total = collectfiles(pattern,capped)
+            local squid, steps = setsteps(runners)
+
+            preparerun(capped)
+
+            local function populated()
+                local active = { }
+                for i=1,runners do
+                    local pi = process[i]
+                    if pi then
+                        local handle = pi[1]
+                        active[#active+1] = handle
+                        lookup[handle]    = pi
+                    else
+                        count = count + 1
+                        if count > total then
+                            -- we're done
+                        else
+                            local filename = files[count]
+                            local dirname  = file.dirname(filename)
+                            local basename = file.basename(filename)
+                            local texname  = basename
+                            local pdfname  = file.replacesuffix(basename,"pdf")
+                            local tucname  = file.replacesuffix(basename,"tuc")
+                            local workdir  = lfs.currentdir()
+                            lfs.chdir(dirname)
+                            os.remove(pdfname)
+                            if cleanup then
+                                os.remove(tucname)
+                            end
+                            if lfs.isfile(texname) then
+                                steps[i] = steps[i] + 1
+                                if squid then
+                                    squid.stepper("busy",i,steps[i],problem)
+                                end
+                                local command = f_runner("context",engine,texname)
+                                local handle  = open(command,true)
+                                if handle then
+                                    local pi   = { handle, filename, count, clock(), i, texname }
+                                    process[i] = pi
+                                    active[#active+1] = handle
+                                    lookup[handle]    = pi
+                                else
+                                    results[filename] = "error"
+                                    if squid then
+                                        squid.stepper("busy",i,steps[i],problem)
+                                    end
+                                end
+                                report("%02i : %04i : %s : %s",i,count,handle and "start" or "error",filename)
+                            end
+                            lfs.chdir(workdir)
+                        end
+                    end
+                end
+                return active
+            end
+
+            statistics.starttiming("testsuite:process")
+            while true do
+                local active = populated()
+                if #active > 0 then
+                    local ready = poll(active,1000)
+                    for i=1,#ready do
+                        local index  = ready[i]
+                        local handle = active[index]
+                        local pi     = lookup[handle]
+                        if pi then
+                            -- we dont handle output
+                            local state = read(handle)
+                            if state == true then
+                                local exit = close(handle)
+                                local bad  = exit ~= 0
+                                if bad then
+                                    results[pi[2]] = getlog(pi,exit)
+                                end
+                                if bad then
+                                    problem = true
+                                end
+                                report("%02i : %04i : %s : %s : %0.3f ",i,pi[3],bad and "error" or "done ",pi[2],clock()-pi[4])
+                                process[pi[5]] = false
+                                lookup[handle] = nil
+                            end
+                        end
+                    end
+                else
+                    break
+                end
+            end
+            statistics.stoptiming("testsuite:process")
+
+            wrapuprun(squid,luaname,total,problem,results)
+        end
+    end
+
 end
 
 function scripts.testsuite.compare()

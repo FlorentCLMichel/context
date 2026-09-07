@@ -687,21 +687,21 @@ vardef flow_valid_connection (expr xfrom, yfrom, xto, yto) =
         else :
             % check for crossing shapes
             flow_xyfirst := flow_xypoints[1] ;
-            flow_xylast := flow_xypoints[flow_xypoint] ;
+            flow_xylast  := flow_xypoints[flow_xypoint] ;
             flow_trim_points ;
             pp := for i=1 upto flow_xypoint-1 : flow_xypoints[i]-- endfor flow_xypoints[flow_xypoint] ;
             flow_xypoints[1] := flow_xyfirst ;
             flow_xypoints[flow_xypoint] := flow_xylast ;
             for i=1 upto flow_max_x :
-                for j=1 upto flow_max_y :                % was bug: xfrom,yto
-%                     if not ( ( (i,j)=(xfrom,yfrom) ) or ( (i,j)=(xto,yto) ) ) :
+                for j=1 upto flow_max_y :
+                    if not ( ( (i,j)=(xfrom,yfrom) ) or ( (i,j)=(xto,yto) ) ) :
                         if not flow_xyfree[i][j] :
                             vc := pp intersection_point flow_xypath[i][j] ;
                             if intersection_found :
                                 ok := false
                             fi ;
                         fi ;
-%                     fi ;
+                    fi ;
                 endfor ;
             endfor ;
             % if not ok: message("crossing") ; fi ;

@@ -2009,8 +2009,7 @@
 \permanent\tolerant\protected\def\page_mvl_start_wide_yes[#1]%
   {\flushsubcolumnsets\relax
    \begingroup
-  %\ifnum\columnsetlastmvl{\currentcolumnset}=\plusone
-   \ifnum\columnsetlastmvl{\currentcolumnset}=\plusthree % changeD
+   \ifnum\columnsetlastmvl{\currentcolumnset}>\plusone
      \startsubcolumnset[1][\c!width=\makeupwidth,#1]\relax
      \page_mvl_wide_before\relax
      \enforced\let\stopwidecolumnset\page_mvl_stop_wide_yes

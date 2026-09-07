@@ -1525,7 +1525,6 @@ local transforms = setmetatableindex (
 
 local function checktransform(figure,forced)
     if auto_transform then
-
         local orientation = (forced ~= "" and forced ~= v_auto and forced) or figure.orientation or 0
         local transform   = transforms["orientation-"..orientation]
         figure.transform = transform

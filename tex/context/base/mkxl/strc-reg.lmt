@@ -1717,7 +1717,7 @@ function registers.flush(data,options,prefixspec,pagespec)
     -- for now, maybe at some point we will do a multipass or so
     data.result = nil
     data.metadata.sorted = false
-    -- temp hack for luajittex :
+    -- we save (reclaim) memory
     local entries = data.entries
     for i=1,#entries do
         entries[i].split = nil

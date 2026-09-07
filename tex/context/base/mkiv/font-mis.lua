@@ -59,9 +59,24 @@ if readers then
         end
     end
 
+    function fonts.helpers.getvariabledata(name)
+        local filename = resolvers.findfile(name) or ""
+        if filename ~= "" then
+            local data = otf.load(filename)
+            local resources = data and data.resources
+            if resources then
+                return data.resources.variabledata
+            end
+        end
+    end
+
 else
 
     function fonts.helpers.getfeatures(name)
+        -- not supported
+    end
+
+    function fonts.helpers.getvariabledata(name)
         -- not supported
     end
 

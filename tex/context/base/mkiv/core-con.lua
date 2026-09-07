@@ -394,17 +394,33 @@ local roman = {
 -- context(toroman(4002))      -- space separates thousands
 -- context(toroman(4002,true)) -- overstrikes thousands
 
+-- local function toroman(n,neat)
+--     if n >= 4000 then
+--         return
+--             (neat and ("M\\overbar{" .. toroman(n//1000) .. "}") or (toroman(n//1000) .. " "))
+--          .. toroman(n%1000)
+--     else
+--         return
+--             rep("M",  n      //1000)
+--          .. roman[3][(n%1000)// 100]
+--          .. roman[2][(n% 100)//  10]
+--          .. roman[1][(n%  10)//   1]
+--     end
+-- end
+--
+-- we need this (till we ditch luajittex)
+
 local function toroman(n,neat)
     if n >= 4000 then
         return
-            (neat and ("M\\overbar{" .. toroman(n//1000) .. "}") or (toroman(n//1000) .. " "))
+            (neat and ("M\\overbar{" .. toroman(floor(n/1000)) .. "}") or (toroman(floor(n/1000)) .. " "))
          .. toroman(n%1000)
     else
         return
-            rep("M",  n      //1000)
-         .. roman[3][(n%1000)// 100]
-         .. roman[2][(n% 100)//  10]
-         .. roman[1][(n%  10)//   1]
+            rep("M", floor( n      /1000))
+         .. roman[3][floor((n%1000)/ 100)]
+         .. roman[2][floor((n% 100)/  10)]
+         .. roman[1][floor((n%  10)/   1)]
     end
 end
 

@@ -13845,9 +13845,179 @@ end -- of closure
 
 do -- create closure to overcome 200 locals limit
 
+package.loaded["util-tmr"] = package.loaded["util-tmr"] or true
+
+-- original size: 2814, stripped down to: 1609
+
+if not modules then modules={} end modules ['util-tmr']={
+ version=1.001,
+ comment="companion to trac-inf.*",
+ author="Hans Hagen, PRAGMA-ADE, Hasselt NL",
+ copyright="PRAGMA ADE / ConTeXt Development Team",
+ license="see context related readme files"
+}
+local ticks=lua.getpreciseticks
+local seconds=lua.getpreciseseconds
+if not ticks or not seconds then
+ ticks=os.gettimeofday or os.clock
+ seconds=function(n) return n or 0 end
+end
+if not timer then
+ timer={
+  new=function()
+   return { timing=0,total=0,offset=0,start=0 }
+  end,
+  reset=function(t)
+   if t then
+    t.timing=0
+    t.total=0
+    t.offset=0
+    t.start=0
+   end
+  end,
+  start=function(t,reset)
+   if t then
+    local timing=t.timing
+    if reset then
+     timing=0
+     t.total=0
+    end
+    if timing==0 then
+     t.start=ticks()
+     if not t.total then
+      t.total=0
+     end
+    end
+    t.timing=timing+1
+   end
+  end,
+  stop=function(t)
+   if t then
+    local timing=t.timing
+    if timing>1 then
+     t.timing=timing-1
+    else
+     local start=t.start
+     if start>0 then
+      local stop=ticks()
+      local total=stop-start
+      t.total=t.total+total
+      t.timing=0
+      t.start=0
+     end
+    end
+   end
+  end,
+  setoffset=function(t,offset)
+   if t then
+    t.offset=offset*(ticks()-t.start)
+   end
+  end,
+  istiming=function(t)
+   return t.timing>0
+  end,
+  elapsed=function(t)
+   if t then
+    return seconds(t.total-t.offset)
+   end
+  end,
+  current=function(t)
+   if t then
+    local total=t.total
+    if t.timing>0 then
+     total=total+ticks()-t.start
+    end
+    return seconds(total-t.offset)
+   end
+  end,
+ }
+end
+
+
+end -- of closure
+
+do -- create closure to overcome 200 locals limit
+
+package.loaded["trac-tmr"] = package.loaded["trac-tmr"] or true
+
+-- original size: 2268, stripped down to: 1903
+
+if not modules then modules={} end modules ['trac-tmr']={
+ version=1.001,
+ comment="companion to trac-inf.*",
+ author="Hans Hagen, PRAGMA-ADE, Hasselt NL",
+ copyright="PRAGMA ADE / ConTeXt Development Team",
+ license="see context related readme files"
+}
+local format=string.format
+statistics=statistics or {}
+local statistics=statistics
+statistics.threshold=statistics.threshold or 0.01
+local timernew=timer.new
+local timerstart=timer.start
+local timerstop=timer.stop
+local timerreset=timer.reset
+local timersetoffset=timer.setoffset
+local timerelapsed=timer.elapsed
+local timercurrent=timer.current
+local timeristiming=timer.istiming
+local timers={}
+table.setmetatableindex(timers,function(t,k)
+ local v=timernew()
+ t[k]=v
+ return v
+end)
+function statistics.resettiming(instance)
+ timerreset(timers[instance or "notimer"])
+end
+function statistics.starttiming(instance,reset)
+ timerstart(timers[instance or "notimer"],reset)
+end
+function statistics.stoptiming(instance)
+ timerstop(timers[instance or "notimer"])
+end
+function statistics.benchmarktimer(instance)
+ timersetoffset(timers[instance or "notimer"],2)
+end
+function statistics.istiming(instance)
+ return timeristiming(timers[instance or "notimer"])
+end
+local function elapsed(instance)
+ if type(instance)=="number" then
+  return instance
+ else
+  return timerelapsed(timers[instance or "notimer"])
+ end
+end
+statistics.elapsed=elapsed
+function statistics.elapsedindeed(instance)
+ return elapsed(instance)>statistics.threshold
+end
+function statistics.currenttime(instance)
+ if type(instance)=="number" then
+  return instance
+ else
+  return timercurrent(timers[instance or "notimer"])
+ end
+end
+function statistics.elapsedtime(instance)
+ return format("%0.3f",elapsed(instance))
+end
+function statistics.elapsedseconds(instance,rest) 
+ local e=elapsed(instance)
+ if e>statistics.threshold then
+  return format("%0.3f seconds %s",e,rest or "")
+ end
+end
+
+
+end -- of closure
+
+do -- create closure to overcome 200 locals limit
+
 package.loaded["trac-inf"] = package.loaded["trac-inf"] or true
 
--- original size: 9740, stripped down to: 7296
+-- original size: 5370, stripped down to: 4067
 
 if not modules then modules={} end modules ['trac-inf']={
  version=1.001,
@@ -13867,142 +14037,13 @@ statistics=statistics or {}
 local statistics=statistics
 statistics.enable=true
 statistics.threshold=0.01
-local statusinfo,n,registered,timers={},0,{},{}
-setmetatableindex(timers,function(t,k)
- local v={ timing=0,loadtime=0,offset=0 }
- t[k]=v
- return v
-end)
-local function hastiming(instance)
- return instance and timers[instance]
-end
-local function resettiming(instance)
- timers[instance or "notimer"]={ timing=0,loadtime=0,offset=0 }
-end
-local ticks=clock
-local seconds=function(n) return n or 0 end
-if os.type~="windows" then
-elseif lua.getpreciseticks then
- ticks=lua.getpreciseticks
- seconds=lua.getpreciseseconds
-elseif FFISUPPORTED then
- local okay,kernel=pcall(ffi.load,"kernel32")
- if kernel then
-  local tonumber=ffi.number or tonumber
-  ffi.cdef[[
-            int QueryPerformanceFrequency(int64_t *lpFrequency);
-            int QueryPerformanceCounter(int64_t *lpPerformanceCount);
-        ]]
-  local target=ffi.new("__int64[1]")
-  ticks=function()
-   if kernel.QueryPerformanceCounter(target)==1 then
-    return tonumber(target[0])
-   else
-    return 0
-   end
-  end
-  local target=ffi.new("__int64[1]")
-  seconds=function(ticks)
-   if kernel.QueryPerformanceFrequency(target)==1 then
-    return ticks/tonumber(target[0])
-   else
-    return 0
-   end
-  end
- end
-else
-end
-local function starttiming(instance,reset)
- local timer=timers[instance or "notimer"]
- local it=timer.timing
- if reset then
-  it=0
-  timer.loadtime=0
- end
- if it==0 then
-  timer.starttime=ticks()
-  if not timer.loadtime then
-   timer.loadtime=0
-  end
- end
- timer.timing=it+1
-end
-local function stoptiming(instance)
- local timer=timers[instance or "notimer"]
- local it=timer.timing
- if it>1 then
-  timer.timing=it-1
- else
-  local starttime=timer.starttime
-  if starttime and starttime>0 then
-   local stoptime=ticks()
-   local loadtime=stoptime-starttime
-   timer.stoptime=stoptime
-   timer.loadtime=timer.loadtime+loadtime
-   timer.timing=0
-   timer.starttime=0
-  end
- end
-end
-local function benchmarktimer(instance)
- local timer=timers[instance or "notimer"]
- local it=timer.timing
- if it>1 then
-  timer.timing=it-1
- else
-  local starttime=timer.starttime
-  if starttime and starttime>0 then
-   timer.offset=ticks()-starttime
-  else
-   timer.offset=0
-  end
- end
-end
-local function elapsed(instance)
- if type(instance)=="number" then
-  return instance
- else
-  local timer=timers[instance or "notimer"]
-  return timer and seconds(timer.loadtime-2*(timer.offset or 0)) or 0
- end
-end
-local function currenttime(instance)
- if type(instance)=="number" then
-  return instance
- else
-  local timer=timers[instance or "notimer"]
-  local it=timer.timing
-  if it>1 then
-  else
-   local starttime=timer.starttime
-   if starttime and starttime>0 then
-    return seconds(timer.loadtime+ticks()-starttime-2*(timer.offset or 0))
-   end
-  end
-  return 0
- end
-end
-local function elapsedtime(instance)
- return format("%0.3f",elapsed(instance))
-end
-local function elapsedindeed(instance)
- return elapsed(instance)>statistics.threshold
-end
-local function elapsedseconds(instance,rest) 
- if elapsedindeed(instance) then
-  return format("%0.3f seconds %s",elapsed(instance),rest or "")
- end
-end
-statistics.hastiming=hastiming
-statistics.resettiming=resettiming
-statistics.starttiming=starttiming
-statistics.stoptiming=stoptiming
-statistics.currenttime=currenttime
-statistics.elapsed=elapsed
-statistics.elapsedtime=elapsedtime
-statistics.elapsedindeed=elapsedindeed
-statistics.elapsedseconds=elapsedseconds
-statistics.benchmarktimer=benchmarktimer
+local starttiming=statistics.starttiming
+local stoptiming=statistics.stoptiming
+local elapsedtime=statistics.elapsedtime
+starttiming(statistics)
+local registered={}
+local statusinfo={}
+local n=0
 function statistics.register(tag,fnc)
  if statistics.enable and type(fnc)=="function" then
   local rt=registered[tag] or (#statusinfo+1)
@@ -14062,7 +14103,6 @@ function statistics.memused()
   status.luastate_bytes_max and round(status.luastate_bytes_max/1000000) or "unknown"
  )
 end
-starttiming(statistics)
 function statistics.formatruntime(runtime) 
  return format("%s seconds",runtime)   
 end
@@ -15996,7 +16036,7 @@ do -- create closure to overcome 200 locals limit
 
 package.loaded["util-zip"] = package.loaded["util-zip"] or true
 
--- original size: 33051, stripped down to: 16324
+-- original size: 33158, stripped down to: 16373
 
 if not modules then modules={} end modules ['util-zip']={
  version=1.001,
@@ -16007,7 +16047,7 @@ if not modules then modules={} end modules ['util-zip']={
 local type,tostring,tonumber=type,tostring,tonumber
 local sort,concat=table.sort,table.concat
 local find,format,sub,gsub=string.find,string.format,string.sub,string.gsub
-local osdate,ostime,osclock=os.date,os.time,os.clock
+local osdate,ostime,osclock=os.date,os.time,os.gettimeofday or os.clock
 local ioopen=io.open
 local loaddata,savedata=io.loaddata,io.savedata
 local filejoin,isdir,dirname,mkdirs=file.join,lfs.isdir,file.dirname,dir.mkdirs
@@ -16453,7 +16493,8 @@ if xzip then
     for i=1,count do
      local l=list[i]
      local n=l.filename
-     if not validate or validate(n) then
+     if find(n,"/$") then
+     elseif not validate or validate(n) then
       local d=unzipfile(z,n) 
       if d then
        local p=filejoin(path,n)
@@ -21407,7 +21448,7 @@ do -- create closure to overcome 200 locals limit
 
 package.loaded["data-exp"] = package.loaded["data-exp"] or true
 
--- original size: 18579, stripped down to: 10569
+-- original size: 18985, stripped down to: 10801
 
 if not modules then modules={} end modules ['data-exp']={
  version=1.001,
@@ -21598,24 +21639,31 @@ function resolvers.joinpath(str)
  end
 end
 local attributes,directory=lfs.attributes,lfs.dir
-local weird=P(".")^1+lpeg.anywhere(S("~`!#$%^&*()={}[]:;\"\'||<>,?\n\r\t"))
-local lessweird=P(".")^1+lpeg.anywhere(S("~`#$%^&*:;\"\'||<>,?\n\r\t"))
 local timer={}
 local scanned={}
 local nofscans=0
 local scancache={}
 local fullcache={}
 local nofsharedscans=0
-local addcasecraptoo=true
-local function scan(files,remap,spec,path,n,m,r,onlyone,tolerant,reported)
+local addcasecraptoo=true 
+local lessweird=lfs.lessweird
+local moreweird=lfs.moreweird
+if not lessweird then
+ local less=P(".")+lpeg.anywhere(S("~`#$%^&*:;\"\'||<>,?\n\r\t"))
+ local more=P(".")+lpeg.anywhere(S("~`!#$%^&*()={}[]:;\"\'||<>,?\n\r\t"))
+ lessweird=function(str) return lpegmatch(less,str) end
+ moreweird=function(str) return lpegmatch(more,str) end
+ lfs.lessweird=lessweird
+ lfs.moreweird=moreweird
+end
+local function scan(files,remap,spec,path,n,m,r,onlyone,checker,reported)
  local full=path=="" and spec or (spec..path..'/')
  local dirlist={}
  local nofdirs=0
- local pattern=tolerant and lessweird or weird
  local filelist={}
  local noffiles=0
  for name,mode in directory(full) do
-  if not lpegmatch(pattern,name) then
+  if not checker(name) then
    if not mode then
     mode=attributes(full..name,"mode")
    end
@@ -21687,7 +21735,7 @@ local function scan(files,remap,spec,path,n,m,r,onlyone,tolerant,reported)
  if nofdirs>0 then
   sort(dirlist)
   for i=1,nofdirs do
-   files,remap,n,m,r=scan(files,remap,spec,dirlist[i],n,m,r,onlyonce,tolerant,reported)
+   files,remap,n,m,r=scan(files,remap,spec,dirlist[i],n,m,r,onlyonce,checker,reported)
   end
  end
  scancache[sub(full,1,-2)]=files
@@ -21709,9 +21757,10 @@ local function scanfiles(path,branch,usecache,onlyonce,tolerant)
  if trace_locating then
   report_expansions("scanning path %a, branch %a",path,branch or path)
  end
+ local checker=tolerant and lessweird or moreweird
  local content
  if isdir(realpath) then
-  local files,remap,n,m,r=scan({},{},realpath..'/',"",0,0,0,onlyonce,tolerant,{})
+  local files,remap,n,m,r=scan({},{},realpath..'/',"",0,0,0,onlyonce,checker,{})
   content={
    metadata={
     path=path,
@@ -25810,77 +25859,6 @@ end -- of closure
 
 do -- create closure to overcome 200 locals limit
 
-package.loaded["data-aux"] = package.loaded["data-aux"] or true
-
--- original size: 2610, stripped down to: 2019
-
-if not modules then modules={} end modules ['data-aux']={
- version=1.001,
- comment="companion to luat-lib.mkiv",
- author="Hans Hagen, PRAGMA-ADE, Hasselt NL",
- copyright="PRAGMA ADE / ConTeXt Development Team",
- license="see context related readme files"
-}
-local find=string.find
-local type,next=type,next
-local addsuffix,removesuffix=file.addsuffix,file.removesuffix
-local loaddata,savedata=io.loaddata,io.savedata
-local trace_locating=false  trackers.register("resolvers.locating",function(v) trace_locating=v end)
-local resolvers=resolvers
-local cleanpath=resolvers.cleanpath
-local findfiles=resolvers.findfiles
-local report_scripts=logs.reporter("resolvers","scripts")
-function resolvers.updatescript(oldname,newname)
- local scriptpath="context/lua"
- local oldscript=cleanpath(oldname)
- local newname=addsuffix(newname,"lua")
- local newscripts=findfiles(newname) or {}
- if trace_locating then
-  report_scripts("to be replaced old script %a",oldscript)
- end
- if #newscripts==0 then
-  if trace_locating then
-   report_scripts("unable to locate new script")
-  end
- else
-  for i=1,#newscripts do
-   local newscript=cleanpath(newscripts[i])
-   if trace_locating then
-    report_scripts("checking new script %a",newscript)
-   end
-   if oldscript==newscript then
-    if trace_locating then
-     report_scripts("old and new script are the same")
-    end
-   elseif not find(newscript,scriptpath,1,true) then
-    if trace_locating then
-     report_scripts("new script should come from %a",scriptpath)
-    end
-   elseif not (find(oldscript,removesuffix(newname).."$") or find(oldscript,newname.."$")) then
-    if trace_locating then
-     report_scripts("invalid new script name")
-    end
-   else
-    local newdata=loaddata(newscript)
-    if newdata then
-     if trace_locating then
-      report_scripts("old script content replaced by new content: %s",oldscript)
-     end
-     savedata(oldscript,newdata)
-     break
-    elseif trace_locating then
-     report_scripts("unable to load new script")
-    end
-   end
-  end
- end
-end
-
-
-end -- of closure
-
-do -- create closure to overcome 200 locals limit
-
 package.loaded["data-tmf"] = package.loaded["data-tmf"] or true
 
 -- original size: 2601, stripped down to: 1549
@@ -26931,10 +26909,10 @@ end
 
 end -- of closure
 
--- used libraries    : l-bit32.lua l-lua.lua l-macro.lua l-sandbox.lua l-package.lua l-lpeg.lua l-function.lua l-string.lua l-table.lua l-io.lua l-number.lua l-set.lua l-os.lua l-file.lua l-gzip.lua l-md5.lua l-sha.lua l-url.lua l-dir.lua l-boolean.lua l-unicode.lua l-math.lua util-str.lua util-tab.lua util-fil.lua util-sac.lua util-sto.lua util-prs.lua util-fmt.lua util-soc-imp-reset.lua util-soc-imp-socket.lua util-soc-imp-copas.lua util-soc-imp-ltn12.lua util-soc-imp-mime.lua util-soc-imp-url.lua util-soc-imp-headers.lua util-soc-imp-tp.lua util-soc-imp-http.lua util-soc-imp-ftp.lua util-soc-imp-smtp.lua trac-set.lua trac-log.lua trac-inf.lua trac-pro.lua util-lua.lua util-deb.lua util-tpl.lua util-sbx.lua util-mrg.lua util-env.lua luat-env.lua util-zip.lua util-sig.lua lxml-tab.lua lxml-lpt.lua lxml-mis.lua lxml-aux.lua lxml-xml.lua trac-xml.lua data-ini.lua data-exp.lua data-env.lua data-tmp.lua data-met.lua data-res.lua data-pre.lua data-inp.lua data-out.lua data-fil.lua data-con.lua data-use.lua data-zip.lua data-tre.lua data-sch.lua data-lua.lua data-aux.lua data-tmf.lua data-lst.lua libs-ini.lua luat-sta.lua luat-fmt.lua util-jsn.lua
+-- used libraries    : l-bit32.lua l-lua.lua l-macro.lua l-sandbox.lua l-package.lua l-lpeg.lua l-function.lua l-string.lua l-table.lua l-io.lua l-number.lua l-set.lua l-os.lua l-file.lua l-gzip.lua l-md5.lua l-sha.lua l-url.lua l-dir.lua l-boolean.lua l-unicode.lua l-math.lua util-str.lua util-tab.lua util-fil.lua util-sac.lua util-sto.lua util-prs.lua util-fmt.lua util-soc-imp-reset.lua util-soc-imp-socket.lua util-soc-imp-copas.lua util-soc-imp-ltn12.lua util-soc-imp-mime.lua util-soc-imp-url.lua util-soc-imp-headers.lua util-soc-imp-tp.lua util-soc-imp-http.lua util-soc-imp-ftp.lua util-soc-imp-smtp.lua trac-set.lua trac-log.lua util-tmr.lua trac-tmr.lua trac-inf.lua trac-pro.lua util-lua.lua util-deb.lua util-tpl.lua util-sbx.lua util-mrg.lua util-env.lua luat-env.lua util-zip.lua util-sig.lua lxml-tab.lua lxml-lpt.lua lxml-mis.lua lxml-aux.lua lxml-xml.lua trac-xml.lua data-ini.lua data-exp.lua data-env.lua data-tmp.lua data-met.lua data-res.lua data-pre.lua data-inp.lua data-out.lua data-fil.lua data-con.lua data-use.lua data-zip.lua data-tre.lua data-sch.lua data-lua.lua data-tmf.lua data-lst.lua libs-ini.lua luat-sta.lua luat-fmt.lua util-jsn.lua
 -- skipped libraries : -
--- original bytes    : 1079463
--- stripped bytes    : 430767
+-- original bytes    : 1078078
+-- stripped bytes    : 430837
 
 -- end library merge
 
@@ -26942,18 +26920,8 @@ end -- of closure
 --
 -- for k,v in pairs(arg) do print(k,v) end
 
-if arg and (arg[0] == 'luatex' or arg[0] == 'luatex.exe') and arg[1] == "--luaonly" then
-    arg[-1]=arg[0] arg[0]=arg[2] for k=3,#arg do arg[k-2]=arg[k] end arg[#arg]=nil arg[#arg]=nil
-end
-
--- End of hack.
-
 local format, gsub, gmatch, match, find = string.format, string.gsub, string.gmatch, string.match, string.find
 local concat = table.concat
-
-local ownname = environment and environment.ownname or arg[0] or 'mtxrun.lua'
-local ownpath = gsub(match(ownname,"^(.+)[\\/].-$") or ".","\\","/")
-local owntree = environment and environment.ownpath or ownpath
 
 local ownlibs = { -- order can be made better
 
@@ -27003,6 +26971,8 @@ local ownlibs = { -- order can be made better
 
     'trac-set.lua',
     'trac-log.lua',
+    'util-tmr.lua',
+    'trac-tmr.lua',
     'trac-inf.lua', -- was before trac-set
     'trac-pro.lua', -- not really needed
     'util-lua.lua', -- indeed here?
@@ -27046,7 +27016,7 @@ local ownlibs = { -- order can be made better
     'data-tre.lua',
     'data-sch.lua',
     'data-lua.lua',
-    'data-aux.lua', -- updater
+ -- 'data-aux.lua', -- updater
     'data-tmf.lua',
     'data-lst.lua',
 
@@ -27058,55 +27028,109 @@ local ownlibs = { -- order can be made better
     'util-jsn.lua',
 }
 
--- c:/data/develop/tex-context/tex/texmf-win64/bin/../../texmf-context/tex/context/base/mkiv/data-tmf.lua
--- c:/data/develop/context/sources/data-tmf.lua
+-- luametatex:
+--
 
-local ownlist = {
- -- '.',
- -- ownpath ,
-    owntree .. "/../../../../context/sources", -- HH's development path
-    --
-    owntree .. "/../../texmf-local/tex/context/base/mkiv",
-    owntree .. "/../../texmf-context/tex/context/base/mkiv",
-    owntree .. "/../../texmf/tex/context/base/mkiv",
-    owntree .. "/../../../texmf-local/tex/context/base/mkiv",
-    owntree .. "/../../../texmf-context/tex/context/base/mkiv",
-    owntree .. "/../../../texmf/tex/context/base/mkiv",
-    --
-    owntree .. "/../../texmf-local/tex/context/base",
-    owntree .. "/../../texmf-context/tex/context/base",
-    owntree .. "/../../texmf/tex/context/base",
-    owntree .. "/../../../texmf-local/tex/context/base",
-    owntree .. "/../../../texmf-context/tex/context/base",
-    owntree .. "/../../../texmf/tex/context/base",
-}
+-- We assume that we merge in a context aware environment. If we have no merge we
+-- need to locate libraries (slower). In e.g. texlive it can be more tricky because
+-- over the years locations have changes and relative locating can be hard; however,
+-- bin/platform is kind of lookup compatible with texmf-sometree/bin so it might
+-- work out.
 
-if ownpath == "." then table.remove(ownlist,1) end
+local ownbin  = os.selfbin
+local ownpath = os.selfpath
+local ownname = 'mtxrun.lua'
+local ownlist = false
+local ownused = false
 
-own = {
+if ownbin then
+    -- luametatex
+    ownbin = "luametatex"
+else
+    -- luatex
+    if arg and (arg[0] == 'luatex' or arg[0] == 'luatex.exe') and arg[1] == "--luaonly" then
+        arg[-1] = arg[0]
+        arg[ 0] = arg[2]
+        for k=3,#arg do
+            arg[k-2] = arg[k]
+        end
+        arg[#arg] = nil
+        arg[#arg] = nil
+    end
+    ownbin  = arg[-2] or arg[-1] or arg[0] or "luatex"
+    ownpath = gsub(match(ownname,"^(.+)[\\/].-$") or ".","\\","/")
+ -- if ownbin ~= "luatex" and ownbin ~= "luajittex" then
+ --     -- something bad happened
+ -- end
+end
+
+local own = {
+    bin  = ownbin,
     name = ownname,
     path = ownpath,
-    tree = owntree,
-    list = ownlist,
     libs = ownlibs,
 }
 
 local function locate_libs()
-    for l=1,#ownlibs do
-        local lib = ownlibs[l]
-        for p =1,#ownlist do
-            local pth = ownlist[p]
-            local filename = pth .. "/" .. lib
-            local found = lfs.isfile(filename)
-            if found then
-                package.path = package.path .. ";" .. pth .. "/?.lua" -- in case l-* does a require
-                return pth
+    if not libused then
+        -- delayed
+        if not ownlist then
+            -- One can update from the tree but on my machine it's easier to just use the development
+            -- path. In order to avoid confusion from now on we just use the environment variable, like
+            -- we do when we make profiled binaries. It's more reliable than fuzzy heuristics.
+            local mine = os.getenv("CONTEXTROOT")
+            if mine then
+                local tex = mine .. "/sources"
+                local lua = mine .. "/lua"
+                if lfs.isfile(lua .."/" .. "mtxrun.lua") and lfs.isfile(tex .."/" .. "data-res.lua") then
+                    ownlist = { tex }
+                end
+            end
+            if resolvers then
+                -- can be the development path !
+                local found = resolvers.findfile("data-res.lua")
+                if found and found ~= "" then
+                    ownlist = { file.dirname(found) }
+                end
+            end
+            if not ownlist then
+                local owntree = ownpath .. "/../../"
+                local ownused = ownpath .. ownname
+                if lfs.isfile(ownused) then
+                    ownlist = { ownused }
+                else
+                    ownlist = {
+                        owntree .. "texmf-context/tex/context/base/mkiv", -- the official path
+                        owntree .. "texmf/tex/context/base/mkiv",         -- one of the tex live paths
+                        owntree .. "texmf-dist/tex/context/base/mkiv",    -- another tex live path
+                    }
+                end
+            end
+        end
+        --
+        for i=1,#ownlist do
+            local path = ownlist[i]
+            if lfs.isfile(path .. "/data-res.lua") then
+                package.path = package.path .. ";" .. path .. "/?.lua" -- in case l-* does a require
+                libused = path
+                break
             end
         end
     end
+    return libused
 end
 
-local function load_libs()
+local function valid_libs(path)
+    for i=1,#ownlibs do
+        if not lfs.isfile(path .. "/" .. ownlibs[i]) then
+            return false
+        end
+    end
+    return true
+end
+
+if not resolvers then
+
     local found = locate_libs()
     if found then
         for l=1,#ownlibs do
@@ -27119,18 +27143,19 @@ local function load_libs()
     else
         resolvers = nil
     end
-end
 
-if not resolvers then
-    load_libs()
 end
 
 if not resolvers then
     print("")
-    print("Mtxrun is unable to start up due to lack of libraries. You may")
-    print("try to run 'lua mtxrun.lua --selfmerge' in the path where this")
-    print("script is located (normally under ..../scripts/context/lua) which")
-    print("will make this script library independent.")
+    print("Mtxrun is unable to start up due to lack of libraries. You may try to run 'lua mtxrun.lua --selfmerge' in")
+    print("the path where this script is located (normally under ..../scripts/context/lua) which will make this script")
+    print("library independent. This is the current state:")
+    print("")
+    print("ownbin  : " .. ownbin)
+    print("ownname : " .. ownname)
+    print("ownpath : " .. ownpath)
+    print("")
     os.exit()
 end
 
@@ -27271,7 +27296,7 @@ local helpinfo = [[
    </subcategory>
    <subcategory>
     <flag name="pattern" value="string"><short>filter variables</short></flag>
-    <flag name="all" value="string"><short>report all (when applicable)</short></flag>
+    <flag name="all"><short>report all (when applicable)</short></flag>
     <flag name="format" value="string"><short>filter by file format (when applicable)</short></flag>
    </subcategory>
    <subcategory>
@@ -28127,42 +28152,59 @@ elseif e_argument("evaluate") then
 
 elseif e_argument("selfmerge") then
 
-    -- embed used libraries
-
-    runners.loadbase()
-    local found = locate_libs()
-
-    if found then
-        local mtxrun = resolvers.findfile("mtxrun.lua") -- includes local name
-        if lfs.isfile(mtxrun) then
-            utilities.merger.selfmerge(mtxrun,own.libs,{ found })
-            application.report("runner updated on resolved path: %s",mtxrun)
+    if own.bin == "luametatex" then
+        runners.loadbase()
+        local path = locate_libs()
+        if path and valid_libs(path) then
+            local mtxrun = resolvers.findfile("mtxrun.lua")
+            if lfs.isfile(mtxrun) then
+                utilities.merger.selfmerge(mtxrun,own.libs,{ path })
+                application.report("runner updated on resolved path: %s",mtxrun)
+            else
+                application.report("no runner found")
+             -- utilities.merger.selfmerge(own.name,own.libs,{ path })
+             -- application.report("runner updated on relative path: %s",own.name)
+            end
+        elseif not path then
+            application.report("no library path found")
         else
-            utilities.merger.selfmerge(own.name,own.libs,{ found })
-            application.report("runner updated on relative path: %s",own.name)
+            application.report("missing files on path %a",path)
         end
     end
 
 elseif e_argument("selfclean") then
 
-    -- remove embedded libraries
-
-    runners.loadbase()
-
-    local mtxrun = resolvers.findfile("mtxrun.lua") -- includes local name
-    if lfs.isfile(mtxrun) then
-        utilities.merger.selfclean(mtxrun)
-        application.report("runner cleaned on resolved path: %s",mtxrun)
-    else
-        utilities.merger.selfclean(own.name)
-        application.report("runner cleaned on relative path: %s",own.name)
+    if own.bin == "luametatex" then
+        runners.loadbase()
+        local mtxrun = resolvers.findfile("mtxrun.lua")
+        if lfs.isfile(mtxrun) then
+            utilities.merger.selfclean(mtxrun)
+            application.report("runner cleaned on resolved path: %s",mtxrun)
+        else
+            application.report("no runner found")
+         -- utilities.merger.selfclean(own.name)
+         -- application.report("runner cleaned on relative path: %s",own.name)
+        end
     end
 
 elseif e_argument("selfupdate") then
 
-    runners.loadbase()
-    trackers.enable("resolvers.locating")
-    resolvers.updatescript(own.name,"mtxrun")
+    if own.bin == "luametatex" then
+        runners.loadbase()
+     -- trackers.enable("resolvers.locating")
+        local source = resolvers.findfile("mtxrun.lua")
+        local target = file.join(own.path,"mtxrun.lua")
+        if not lfs.isfile(source) then
+            application.report("no runner source found")
+        elseif not lfs.isfile(target) then
+            application.report("no runner target found")
+        elseif dir.expandname(file.dirname(source)) == dir.expandname(file.dirname(target)) then
+            application.report("runner source and target are the same")
+        else
+            application.report("runner copied to %a",own.path)
+            file.copy(source,target)
+        end
+    end
 
 elseif e_argument("ctxlua") or e_argument("internal") then
 
@@ -28261,7 +28303,7 @@ elseif e_argument("configurations") or e_argument("show-configurations") then
     resolvers.load("nofiles")
     resolvers.listers.configurations()
 
-elseif e_argument("find-file") then
+elseif e_argument("find-file") or e_argument("findfile") then
 
     resolvers.load()
     local e_all     = e_argument("all")

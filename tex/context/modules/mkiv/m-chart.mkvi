@@ -22,6 +22,11 @@
 %    setups
 %    mp instance with less files
 
+% Shape/focus setup is frozen when cells are defined, so later setup changes do not affect
+% already-defined charts. A different aqpproach would mean that we have to delay definitions
+% which has other side effects. We can at some point (given demand) consider namespaces
+% for settings (as with some table mechanisms) that then kick in.
+
 \registerctxluafile{m-chart}{}
 
 \unprotect
@@ -198,6 +203,15 @@
      \usebodyfontparameter\FLOWchartparameter
 % \meta_process_graphic_start
 % \meta_start_current_graphic
+     % hack, mkiv and mkxl : none overlay standard
+     \scratchoffset\zeropoint
+     \edef\p_offset{\FLOWchartparameter\c!offset}%
+     \ifx\p_offset\v!none    \else
+     \ifx\p_offset\v!overlay \else
+     \ifx\p_offset\v!standard\else
+       \scratchoffset\dimexpr\p_offset\relax
+       \let\p_offset\empty
+     \fi\fi\fi
      \clf_flow_make_chart
         chart {
             name            {#name}
@@ -207,7 +221,8 @@
             height          \dimexpr\FLOWchartparameter\c!height\relax
             dx              \dimexpr\FLOWchartparameter\c!dx\relax
             dy              \dimexpr\FLOWchartparameter\c!dy\relax
-            offset          \dimexpr\FLOWchartparameter\c!offset\relax
+            offset          \scratchoffset
+            poffset         {\p_offset}%
             leftoffset      \dimexpr\FLOWchartparameter\c!leftoffset\relax
             rightoffset     \dimexpr\FLOWchartparameter\c!rightoffset\relax
             topoffset       \dimexpr\FLOWchartparameter\c!topoffset\relax
@@ -317,10 +332,14 @@
 \unexpanded\def\module_charts_FLOW_exit               [#location]#text{\clf_flow_set_exit{#location}{\detokenize{#text}}\ignorespaces}
 \unexpanded\def\module_charts_FLOW_connection[#location][#offset]#name{\clf_flow_set_connection{#location}{#offset}{#name}\ignorespaces}
 
-\unexpanded\def\module_charts_FLOW_include          [#name][#settings]{%
+\unexpanded\def\module_charts_FLOW_include[#name][#settings]{%
     \begingroup
         \getdummyparameters[\c!x=1,\c!y=1,#settings]%
-        \clf_flow_set_include{#name}\numexpr\dummyparameter\c!x\relax\numexpr\dummyparameter\c!y\relax{\detokenize{#settings}}%
+        \clf_flow_set_include
+           {#name}%
+           \numexpr\dummyparameter\c!x\relax
+           \numexpr\dummyparameter\c!y\relax
+           {\detokenize{#settings}}%
     \endgroup
     \ignorespaces
 }

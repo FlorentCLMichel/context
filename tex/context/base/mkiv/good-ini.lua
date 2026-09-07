@@ -242,6 +242,85 @@ local function setfeatureset(tfmdata,set,features)
     end
 end
 
+local function applicable(entry,fontname) -- also use in extensions
+    if not fontname then
+        return true
+    end
+    local fnames = entry.fonts
+    if fnames == fontname then
+        return true
+    end
+    local tnames = type(fnames)
+    if tnames == "table" then
+        if fnames[fontname] then
+            return true
+        elseif #fnames > 0 and contains(fnames,fontname) then
+            return true
+        end
+    elseif tnames == "string" then
+        fnames = topattern(fnames)
+        return find(fontname,fnames) and true
+    else
+        return true
+    end
+end
+
+local setparameters  do
+
+    local function apply(tfmdata,data,fontname)
+        local target = tfmdata.parameters
+        if data and target then
+            for tag, new in sortedhash(data) do
+                local old = target[tag]
+                if old then
+                    if tag == "descender" then
+                        new = -new -- indeed, we do this in context as it's depth
+                    end
+                    if old ~= new then
+                        if trace_goodies then
+                            report_goodies("changing %a for font %a from %N to %N",
+                                tag,fontname or "unknown",old,new
+                            )
+                        end
+                        target[tag] = new
+                    end
+                end
+            end
+        end
+    end
+
+    setparameters = function(tfmdata)
+        local goodies = tfmdata.goodies
+        if goodies then
+            for i=1,#goodies do
+                local g = goodies[i]
+                local p = g.parameters
+                if p then
+                    local goodie   = g.name or "unknown"
+                    local shared   = tfmdata.shared
+                    local metadata = shared and shared.rawdata and shared.rawdata.metadata
+                    local fontname = metadata and metadata.fontname
+                    if trace_goodies then
+                        report_goodies("checking parameters for font %a",fontname or "unknown")
+                    end
+                    local entry = p[fontname]
+                    if entry then
+                        apply(tfmdata,entry,fontname)
+                    else
+                        for i=1,#p do
+                            local entry = p[i]
+                            if applicable(entry,fontname) then
+                                apply(tfmdata,entry.data,fontname)
+                            end
+                        end
+                    end
+                end
+            end
+        end
+    end
+
+end
+
 -- postprocessors (we could hash processor and share code)
 
 function fontgoodies.registerpostprocessor(tfmdata,f,prepend)
@@ -340,26 +419,15 @@ local function setextensions(tfmdata)
                 if trace_extensions then
                     report_goodies("checking extensions for font %a",fontname or "unknown")
                 end
+                -- local entry = e[fontname]
+                -- if entry then
+                --     -- todo
+                -- else
+                --     -- below
+                -- end
                 for i=1,#e do
-                    local entry  = e[i]
-                    local fnames = entry.fonts
-                    local tnames = type(fnames)
-                    local valid  = false
-                    if not fontname then
-                        valid = true
-                    elseif tnames == "table" then
-                        if fnames[fontname] then
-                            valid = true
-                        elseif #fnames > 0 and contains(fnames,fontname) then
-                            valid = true
-                        end
-                    elseif tnames == "string" then
-                        fnames = topattern(fnames)
-                        valid  = find(fontname,fnames) and true
-                    else
-                        valid = true
-                    end
-                    if valid then
+                    local entry = e[i]
+                    if applicable(entry,fontname) then
                         local name = "extension-" .. i
                         if trace_extensions then
                             report_goodies("adding extension %a from %a for font %a",name,goodie,fontname or "unknown")
@@ -428,5 +496,16 @@ registerotffeature {
     initializers = {
         base = setpostprocessor,
         node = setpostprocessor,
+    }
+}
+
+registerotffeature {
+    name        = "parameters",
+    description = "goodie parameters",
+    default     = true,
+    initializers = {
+        position = 2,
+        base     = setparameters,
+        node     = setparameters,
     }
 }

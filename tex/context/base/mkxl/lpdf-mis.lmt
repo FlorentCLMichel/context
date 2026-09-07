@@ -107,8 +107,8 @@ end
 
 local function initializeoverprint()
     local g = pdfconstant("ExtGState")
-    local knockout  = pdfdictionary { Type = g, OP = false, OPM  = 0 }
-    local overprint = pdfdictionary { Type = g, OP = true,  OPM  = 1 }
+    local knockout  = pdfdictionary { Type = g, OP = false, op = false, OPM  = 0 }
+    local overprint = pdfdictionary { Type = g, OP = true,  op = true,  OPM  = 1 }
     adddocumentextgstate("GSknockout",  pdfreference(pdfflushobject(knockout)))
     adddocumentextgstate("GSoverprint", pdfreference(pdfflushobject(overprint)))
     initializeoverprint = nil
@@ -118,7 +118,7 @@ function nodeinjections.overprint()
     if initializeoverprint then initializeoverprint() end
     return copy_node(overprint)
 end
-function nodeinjections.knockout ()
+function nodeinjections.knockout()
     if initializeoverprint then initializeoverprint() end
     return copy_node(knockout)
 end

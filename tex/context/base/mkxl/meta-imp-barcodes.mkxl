@@ -318,7 +318,7 @@ do -- ean13 etc
         return sum % 10
     end
 
-    generators["ean13"] = function(str)
+    local function ean(str,quietsign)
 
         local first, second = string.match(str,"^(.-)%-(.-)$")
 
@@ -437,7 +437,7 @@ do -- ean13 etc
         insert(list_one,2," ")
         insert(list_one,9," ")
         insert(list_one," ")
-        insert(list_one,">")
+        insert(list_one,quietsign and ">" or "~")
 
         -- Ok, a somewhat curious way to communicate information to the MetaPost
         -- end. But it's not like we're into making a masterpiece of hybrid code
@@ -453,6 +453,9 @@ do -- ean13 etc
             width    = width,
         }
     end
+
+    generators["ean13"]  = function(str) return ean(str,false) end
+    generators["gtin13"] = function(str) return ean(str,true ) end
 
 end
 
