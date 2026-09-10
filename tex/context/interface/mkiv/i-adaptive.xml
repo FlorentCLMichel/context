@@ -22,7 +22,7 @@
                     <cd:constant type="cd:name"/>
                 </cd:parameter>
                 <cd:parameter name="foregroundstyle">
-                    <cd:resolve nale="value-style"/>
+                    <cd:resolve name="value-style"/>
                 </cd:parameter>
                 <cd:parameter name="foregroundcolor">
                     <cd:constant type="cd:color"/>

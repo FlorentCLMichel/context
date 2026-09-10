@@ -27,6 +27,7 @@
             <cd:constant type="nofit"/>
             <cd:constant type="paragraph"/>
             <cd:constant type="joinedup"/>
+            <cd:constant type="notjoinedup"/>
             <cd:constant type="serried"/>
             <cd:constant type="stopper"/>
             <cd:constant type="nostopper"/>
@@ -273,6 +274,7 @@
                 <cd:constant type="nofit"/>
                 <cd:constant type="paragraph"/>
                 <cd:constant type="joinedup"/>
+                <cd:constant type="notjoinedup"/>
                 <cd:constant type="serried"/>
                 <cd:constant type="stopper"/>
                 <cd:constant type="unpacked"/>

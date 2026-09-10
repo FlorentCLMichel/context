@@ -1,0 +1,832 @@
+% language=us
+
+% \nopdfcompression
+
+% we have local fonts here so no: runpath=texruns:manuals/ontarget
+
+% Timestamp: Porcupine Tree closure/contuation blu-ray and Peter Gabriel i/o
+% in loop mode (December 2023).
+
+\startcomponent ontarget-authentic
+
+\environment ontarget-style
+
+\logo[HP]     {HP}
+\logo[OCE]    {OCE}
+\logo[SUMATRA]{Sumatra}
+
+\startchapter[title={Bitmap fonts}]
+
+\def\PKxsize{0}
+\def\PKysize{0}
+
+\startluacode
+    local readers = fonts.handlers.tfm.readers
+
+    function document.loadPKshapes(name)
+        local f = readers.loadpk(name)
+        if not f then
+            print("missing file @ 1")
+        end
+        local function set(f,target,char)
+            local g = f and f.glyphs[char]
+            local b = g and readers.showpk(g) or ""
+            potrace.setbitmap(target,b)
+        end
+        set(f,"authentic-@", string.byte("@"))
+        set(f,"authentic-i", string.byte("i"))
+        set(f,"authentic-K", string.byte("K"))
+        set(f,"authentic-æ", 26)
+        set(f,"authentic-111", 111)
+    end
+
+    function document.showPKshapes(name)
+        local f = readers.loadpk(name)
+        if not f then
+            print("missing file @ 2")
+        end
+        local g = f and f.glyphs[string.byte("m")]
+        local b = g and readers.showpk(g) or ""
+        tokens.setters.macro("PKxsize",g and g.xsize or 0)
+        tokens.setters.macro("PKysize",g and g.ysize or 0)
+        buffers.assign("bitmap",b)
+    end
+\stopluacode
+
+\startMPdefinitions
+    vardef showPKshape(expr _name, _polygon, _threshold) =
+        save p ; path p ; p := lmt_potraced [
+            threshold  = _threshold,
+            stringname = _name,
+            polygon    = _polygon,
+            value      = "1",
+            size       = 0,
+        ] ;
+        p shifted (0,-ypart llcorner p)
+    enddef ;
+\stopMPdefinitions
+
+This is a follow up on potrace|-|generated outlines from bitmaps (see preceding
+article, ``Unusual bitmaps''). Most of today's \TEX\ users have probably never
+generated a document with bitmap fonts but back in the day we only had these,
+almost always Computer Modern. Because we don't use bitmap fonts in \CONTEXT\
+there is no need to support so|-|called \PK\ (bitmap) fonts in the backend, but,
+because we did support them in \MKIV, we still have it in \LMTX. After all, what
+is \TEX\ without bitmap fonts? We also owe it to Don Knuth.
+
+It is a bit of challenge to load a traditional eight bit font using only a \TFM\
+file because in \CONTEXT\ we map everything to \UNICODE. Regular \TYPEONE\ fonts
+are still supported, although they are declared obsolete, and vendors have moved
+on to \OPENTYPE\ fonts. When we define a font that has \TYPEONE\ resources, we
+load it as if it were an \OPENTYPE\ font. These eight bit fonts thus become wide
+(up to 64K glyphs) fonts internally. Normally we consult the \AFM\ and \PFB\
+files and leave the \TFM\ files, if present at all, for what they are. You can
+think of runtime \type {afmtotfm} conversion. An exception is the few traditional
+math fonts that we support: Antykwa, Iwona and Kurier; here the \TFM\ files
+provide dimensions.
+
+For the purpose of demonstrating what comes next it is enough to know that in
+principle one can still mess around with \TFM\ values, either outline or bitmap,
+and that encoding files play a role in mapping them onto \UNICODE. We never set
+out to do something like this, but, because we had the loaders available anyway,
+some quick (few line) experiments of passing \PK\ bitmaps to the \METAPOST\
+potrace helpers we got curious.
+
+If you've run into an old \TEX\ document on the web you might have noticed bitmap
+fonts being used. Often these are of a relatively low resolution. The reason that
+one never noticed that in print is that, when read on screen, we see glyphs large
+and can even zoom in, while in print they are seen small. When larger glyphs are
+used (say in a title) the scaled glyphs are actually different bitmaps: they have
+the same resolution as the smaller ones but more pixels because they are larger.
+Take these characters at 600 dpi, scaled up from their original 10 point size:
+
+\ctxlua{document.loadPKshapes("ontarget-cmr10.600pk")}
+
+\starttexdefinition showPKshapes #1#2#3
+    \startcombination[nx=4,ny=1,distance=2em]
+        {\ruledhbox{\startMPcode fill showPKshape("authentic-@",#2,#3) scaled (2*600/#1); \stopMPcode}} {}
+        {\ruledhbox{\startMPcode fill showPKshape("authentic-i",#2,#3) scaled (2*600/#1); \stopMPcode}} {}
+        {\ruledhbox{\startMPcode fill showPKshape("authentic-K",#2,#3) scaled (2*600/#1); \stopMPcode}} {}
+        {\ruledhbox{\startMPcode fill showPKshape("authentic-æ",#2,#3) scaled (2*600/#1); \stopMPcode}} {}
+    \stopcombination
+\stoptexdefinition
+
+\startlocallinecorrection
+    \texdefinition{showPKshapes}{600}{true}{1}
+\stoplocallinecorrection
+
+How do these patterns translate into an outline? For this we use the potrace
+library that we have available in \LUAMETATEX\ and interfaced to \METAFUN\ in
+\CONTEXT\ (as discussed in the companion article), although for fonts we follow a
+more direct route.
+
+\startlocallinecorrection
+    \texdefinition{showPKshapes}{600}{false}{1}
+\stoplocallinecorrection
+
+\ctxlua{document.showPKshapes("ontarget-cmr10.600pk")}
+
+So why do these glyphs look somewhat different (smoother) from a normal outline
+Computer Modern? This is because the 600 may sound like a lot but actually isn't.
+Distributed over an inch we have 600 pixels on 25.4 mm so roughly one pixel per
+0.05 mm, which might be acceptable in a small print but not when scaled. Here is
+how an \quote {m} in 600 dpi pixels is coded (\PKxsize\ by \PKysize\ pixels):
+
+\start\switchtobodyfont[4pt]\typebuffer[bitmap]\stop
+
+In the days of sending bitmaps to printers, possibly wrapped in a \POSTSCRIPT\
+file, one could often recognize the characters from blobs like this. You might
+also remember some of that line printer art. At any rate, it shows that 600 dots
+per inch is much less than it sounds. A decent 2400 dpi (dots per inch) is more
+normal these days for printing on presses (with ink) but although there are 1200
+dpi laser printers, 600 became the norm. After all, toner particles are not that
+small. For quite a while the authors used high speed \OCE\ low temperature toner
+printer (first 508 dpi, later 600 dpi) and these were visually superior to most
+of what the competition had \emdash\ but \OCE\ never quite managed to do the same
+in color (only in lab testing, not reaching the market). Nowadays we use \HP\
+full width high speed inkjet printers that give a rather good quality full color
+experience at 600 dpi. This is what a scaled|-|up 2400 dpi bitmap look like:
+
+\ctxlua{document.loadPKshapes("ontarget-cmr10.2400pk")}
+
+\startlocallinecorrection
+    \texdefinition{showPKshapes}{2400}{false}{1}
+\stoplocallinecorrection
+
+This already looks more crisp although we can go back to the smoother variant by
+setting a higher threshold in potrace:
+
+\startlocallinecorrection
+    \texdefinition{showPKshapes}{2400}{false}{2}
+\stoplocallinecorrection
+
+We can go higher. In the next rendering we use 7200 dpi bitmaps and now we see
+some details that didn't show up before. Keep in mind that subtle details might
+not be noticed in 10 point running text. {\red Are the \quotation{ends of the at
+and e cut?}}
+
+\ctxlua{document.loadPKshapes("ontarget-cmr10.7200pk")}
+
+\startlocallinecorrection
+    \texdefinition{showPKshapes}{7200}{false}{1}
+\stoplocallinecorrection
+
+The top of the \quote {K} now has a little dent (likely not visible except with
+magnification). If you ever viewed a document with Latin Modern outlines you
+might recognize this. It is a side effect of outlines having that information
+while a bitmap needs to get the exact bits, which won't happen if such a dent
+stays beyond the pixel threshold. We now are ready for some real text. We define
+two font features to load bitmap and outlines, respectively:
+
+\startbuffer
+\definefontfeature[whateverpk][default][reencode=ontarget-cmr.enc,bitmap=pk]
+\definefontfeature[whateverpt][default][reencode=ontarget-cmr.enc,bitmap=outline]
+\stopbuffer
+
+\typebuffer \getbuffer
+
+and some colors:
+
+\startbuffer
+\definecolor[pkcolor][r=1,t=.5,a=1]
+\definecolor[ptcolor][b=1,t=.5,a=1]
+\stopbuffer
+
+\typebuffer \getbuffer
+
+We use the following three font definitions in three overlaid examples (\in
+{figure} [fig:pkdemo]). The results are close enough to justify a closer look at
+the possibilities.
+
+% plex has a large 20% more exheight
+
+\startbuffer
+\definefont[PKdemoA][file:lmroman10-regular.otf*default sa 1.2]
+\definefont[PKdemoB][file:ontarget-cmr10.tfm*whateverpk sa 1.2]
+\definefont[PKdemoC][file:ontarget-cmr10.tfm*whateverpt sa 1.2]
+\stopbuffer
+
+\typebuffer \getbuffer
+
+\startplacefigure[title=Overlayed regular, bitmap and potraced samples.,reference=fig:pkdemo]
+    \startoverlay
+        {\ruledvbox{\hsize12cm\PKdemoA\relax  \samplefile{tufte}}}
+        {\ruledvbox{\hsize12cm\PKdemoB\pkcolor\samplefile{tufte}}}
+        {\ruledvbox{\hsize12cm\PKdemoC\ptcolor\samplefile{tufte}}}
+    \stopoverlay
+\stopplacefigure
+
+In \in {figure} [fig:smooth] we see from top to bottom: Latin Modern OpenType
+outlines, a bitmap Computer Modern and a potraced Computer Modern. The fourth
+line has the bitmap and potraced overlaid. \in {Figure} [fig:smoothclip] shows a
+small portion of the last one as seen on screen. Blown up, some drift is seen but
+so far we didn't find a way to get rid of it. Some is due to the way glyph
+streams get rendered and synchronized (after spacing, for instance).
+
+\startplacefigure[title={Bitmap and potraced compared: \OPENTYPE, \PK, potraced & overlayed.},reference=fig:smooth]
+    \scale[width=1tw]\bgroup
+        \vbox\bgroup \forgetall\showglyphs \offinterlineskip
+          \ruledhbox{\PKdemoA         Smooth}
+          \vskip.1ex
+          \ruledhbox{\PKdemoB\pkcolor Smooth}
+          \vskip.1ex
+          \ruledhbox{\PKdemoC\ptcolor Smooth}
+          \vskip.1ex
+          {\startoverlay
+                {\ruledhbox{\pkcolor\PKdemoB Smooth}}
+                {\ruledhbox{\ptcolor\PKdemoC Smooth}}
+          \stopoverlay}
+        \egroup
+    \egroup
+\stopplacefigure
+
+\startplacefigure[title=An enlarged clip of the overlay.,reference=fig:smoothclip]
+    \externalfigure[ontarget-authentic-001.png][height=.2th]
+\stopplacefigure
+
+When not overlaid we get this for a normal Latin Modern Regular:
+
+\start\blank\PKdemoA\samplefile{tufte}\blank\stop
+
+And this for a Computer Modern Roman \PK\ bitmap:
+
+\start\blank\PKdemoB\samplefile{tufte}\blank\stop
+
+The same Computer Modern Roman outlined by potrace gives this:
+
+\start\blank\PKdemoC\samplefile{tufte}\blank\stop
+
+Because these are outlines we can actually scale them nicely with
+\type {\glyphscale 800} here:
+
+\start\blank\PKdemoC \glyphscale 800 \samplefile{tufte}\blank\stop
+
+We can additionally scale an extra \type {\glyphxscale 1200}. This can of course
+also be done with bitmaps but outlines are a safer bet.
+
+\start\blank\PKdemoC \glyphscale 800 \glyphxscale 1200 \samplefile{tufte}\blank\stop
+
+The conversion happens in the backend and can have some impact on the runtime but
+we cache the outlines, so a subsequent run is faster. Of course outlines are more
+efficient than bitmaps in terms of bytes and viewers also tend to render them
+better than bitmaps, which, especially at a lower resolution, can look pretty bad
+(in some viewers).
+
+One might wonder if bitmaps are worse than outlines. When we use a reasonable
+resolution there is no need to generate more than one size, and in \CONTEXT\ we
+assume this anyway because we scale all fonts to 10 big points and scale that
+shared instance on demand. The 600 dpi \quote {m} that we showed has \PKxsize\
+pixels in the horizontal direction. So, 75 of these (a line of text) need 4800
+%\the \numexpr \PKxsize * 75 \relax\ pixels, which is more than enough for a
+4\endash8 display. Unfortunately viewers still render a bitmap font somewhat
+badly.
+
+Let's dive a little into why bitmaps might render suboptimally in \PDF\ viewers.
+Consider these three lines typeset in our three fonts:
+
+\starttyping
+\PKdemoA Smooth \vskip.1ex
+\PKdemoB Smooth \vskip.1ex
+\PKdemoC Smooth \vskip.1ex
+\stoptyping
+
+These \quote {Smooth} lines (this time in 12pt) end up in the \PDF\ file as
+follows :
+
+\starttyping
+BT
+/F1 10 Tf
+1.195514 0 0 1.195514 0 30.316793 Tm [<000100020003>-28<000300040005>] TJ
+/F2 10 Tf
+1.195514 0 0 1.195514 0 15.415656 Tm [<010203>-28<030405>] TJ
+/F3 10 Tf
+1.195514 0 0 1.195514 0 0.514763 Tm [<010203>-28<030405>] TJ
+ET
+\stoptyping
+
+This code first switches to font \type {/F1}, a wide outline font so we have
+four|-|byte indices (in angle brackets). Next we trigger \type {/F2}, the bitmap
+variant and finally the potraced \type {/F3}; these are both \TYPETHREE\ fonts so
+they get two|-|byte indices. We don't scale except to the 10 big points design
+size. After such a switch comes lines of text and there we do scale, here by
+$1.195514$ in both directions. We're slightly off $1.2$ because the \PDF\ font
+system (by tradition) is set up in PostScript (big) points so we need to scale up
+a little from 12pt to 12bp. Scaling an outline is translated (in the end) to some
+factor and the renderer can keep the device into account when it comes to
+rounding. With bitmaps it's different, because these are not
+mathematically|-|defined fonts, but some image that gets scaled. This can
+introduce the first inaccuracy. An inline bitmap in \PDF\ is given between \type
+{ID} and \type {EI} operators, as demonstrated in the next two charproc entries
+for the \TYPETHREE\ bitmap font (reformatted and abridged to save space):
+
+\starttyping
+21 0 obj
+<< /Length 40708 >>
+stream
+556 0 55 -22 498 703 d1
+q
+442 0 0 725 55 -22 cm
+BI
+  /W 442 /H 725 /IM true /BPC 1 /D [1 0]
+ID ...bytes...
+EI
+Q
+endstream
+endobj
+\stoptyping
+
+Watch the different in length:
+
+\starttyping
+22 0 obj
+<< /Length 42784 >>
+stream
+833 0 33 0 809 440 d1
+q
+775 0 0 440 33 0 cm
+BI
+  /W 775 /H 440 /IM true /BPC 1 /D [1 0]
+ID ...bytes...
+EI
+Q
+endstream
+endobj
+\stoptyping
+
+In contrast, a character in the potraced outline font looks like this:
+
+\starttyping
+31 0 obj
+<< /Length 3678 >>
+stream
+556 0 55 -22 498 703 d1
+q
+1 0 0 1 55 -22 cm
+172 723.960456969 m 144.844454411 720.63823631 ...
+Q
+endstream
+endobj
+\stoptyping
+
+The length is much smaller and the outline shape is just a sequence of moveto
+(\type {m}), lineto (\type {l}) and curveto (\type {c}) operators mixed with
+numbers.
+
+\starttyping
+32 0 obj
+<< /Length 4260 >>
+stream
+833 0 33 0 809 440 d1
+q
+1 0 0 1 33 0 cm
+68.5 434.441743787 m 32.2 431.509475939 1.9375 ...
+Q
+endstream
+endobj
+\stoptyping
+
+Experiments demonstrated that it's better to use rounded widths because otherwise
+(at least in \SUMATRA) we get some accumulated drift. The bitmap variants have a
+transform matrix like this:
+
+\starttyping
+442 0 0 725 55 -22 cm
+775 0 0 440 33   0 cm
+\stoptyping
+
+and the potraced outlines have:
+
+\starttyping
+1 0 0 1 55 -22 cm
+1 0 0 1 33   0 cm
+\stoptyping
+
+This means that a bitmap again gets scaled, luckily by an integer, but still
+there is some inaccuracy. In the end, we get the bits put on screen and
+especially at small scales we end up with artifacts in positioning and scaling.
+Where the font renderer is optimized for (indeed) rendering fonts, the bitmap
+renderer isn't. In \in {figure} [fig:zoom] we see bitmaps being rendered bolder
+when they become smaller, because in the end, even at high resolutions, we're not
+talking pixels but bits (that can occupy multiple pixels). Outline fonts talk
+pixels, bitmap fonts speak in bits.
+
+\startplacefigure[title=Three zoom levels compared.,reference=fig:zoom]
+    \startcombination[nx=3,ny=1]
+        {\externalfigure[ontarget-authentic-002.png][height=3cm]} {smallest}
+        {\externalfigure[ontarget-authentic-003.png][height=3cm]} {small}
+        {\externalfigure[ontarget-authentic-004.png][height=3cm]} {normal}
+    \stopcombination
+\stopplacefigure
+
+We haven't yet discussed how we got the bitmaps that we used. You might have
+noticed in the examples that there are some differences with the outline when it
+comes to dimensions. This is partly due to the fact that where Latin Modern is an
+\OPENTYPE\ font with no limits to dimensions, Computer Modern has to accommodate
+the limited number of heights, depths and widths that the \TFM\ format permits.
+Think of arbitrary values of height compared to categories of height.
+
+When you generate a bitmap you rely on scripts that do the work and these work
+together with so|-|called printer modes as defined in the \METAFONT\ file \type
+{modes.mf} (\hyphenatedurl {https://ctan.org/pkg/modes}). These modes are for
+printers which means that there can be compensation going on: rounding up or down
+of points exceeding bounding box edges, the size of printer pixels (toner, ink)
+and accuracy of positioning them, etc. In our case, when we went for 8000 dpi we
+ended up with a device that did more compensation than needed. Better is to
+investigate time in figuring out how to control the machinery to cook up (maybe)
+7200 dpi bitmaps because down the inclusion route there is some division by 72.
+If we decide to play a bit more, we might as well first figure out how to control
+the bitmap generation and see if we can come up with this 7200 resolution. Not
+only does it divide nicely by 72 (for display) but also by 600 (for the average
+printer). To what extent that matters is to be seen.
+
+A bitmap font (instance) is generated by \METAFONT\ and driven by a (printer)
+mode defined in \type {modes.mf}. We added this one:
+
+\starttyping
+mode_def potrace =
+    mode_param (pixels_per_inch, 2 * 3600) ;
+    mode_param (blacker, 0) ;
+    mode_param (fillin, 0) ;
+    mode_param (o_correction, 1) ;
+    mode_common_setup_ ;
+enddef;
+\stoptyping
+
+The \type {2 * 3600} is a trick to get around \METAFONT\ maxing out at 4096 but
+internally being capable to deal with larger numbers. Of course we forgot to
+run \typ {fmtutil-sys --byfmt mf} which is needed to get these modes in the
+format file, but eventually we managed to generate the 7200 dpi \PK\ file for
+\type {cmr10}. Generating is easiest done with \PDFTEX\ with \typ {\pdfmapfile
+{}}, which wipes the mapping to a \TYPEONE\ file.
+
+We mentioned using \METAPOST\ in our first attempts to get an idea how well
+potrace can vectorize the bitmaps. Here is how that is done:
+
+\starttyping
+\startluacode
+    local f = fonts.handlers.tfm.readers.loadpk("cmr10.pk")
+    if f then
+        local g = f.glyphs[string.byte("R")]
+        if g then
+            local b = fonts.handlers.tfm.readers.showpk(g)
+            potrace.setbitmap("demo",b)
+        end
+    end
+\stopluacode
+
+\startMPpage[offset=1ts]
+    draw lmt_potraced [
+        stringname = name,
+        value      = "1",
+    ];
+\stopMPpage
+\stoptyping
+
+In \in {figure} [fig:metapotrace] we demonstrate three such renderings. Watch how
+the number of points increases as the shape gets better. In \in {figure}
+[fig:metapotracecompare] we show the potraced variant alongside the \OPENTYPE\
+outline. Left is the default potrace output, next comes the regular \OPENTYPE\
+(here \CFF) outline, and at the right we see two potraced results, both with \typ
+{optimize = true} passed; the first has the default tolerance of 0.2 and the
+second uses 0.5 and thereby has less points. For sure the middle one has less
+points which is nice, but the potrace ones are not that excessive so we can live
+with it. We've run into cases (especially math) where the regular outlines are
+also not perfect. Most will go unnoticed anyway given the small size at which
+glyphs are normally rendered. When you look closely at the rightmost output
+you'll notice that the bend in the stems makes for more points which is an
+indication that the \METAFONT\ output might actually be more subtle. In \in
+{figure} [fig:comparecontrols] we also show the controls and you see subtle
+differences in the angles there. Also note that when there are no lines that
+indicates that there is likely a lineto instead of a curveto.
+
+\startluacode
+    local function Example(filename,name,char)
+        local f = fonts.handlers.tfm.readers.loadpk(filename)
+        if not f then
+            print("missing file @ 1")
+        end
+        local c = type(char) == "string" and string.byte(char) or tonumber(char)
+        local g = f and c and f.glyphs[c]
+        local b = g and fonts.handlers.tfm.readers.showpk(g) or ""
+        potrace.setbitmap(name,b)
+    end
+    Example("ontarget-cmr10.600pk","demo-R-600","R")
+    Example("ontarget-cmr10.2400pk","demo-R-2400","R")
+    Example("ontarget-cmr10.7200pk","demo-R-7200","R")
+    Example("ontarget-frualt.7200pk","demo-allrunes-7200",111)
+\stopluacode
+
+\startMPdefinitions
+    vardef Example(expr name, clr, opt, tol, linestoo) =
+        image (
+            save p ; path p ; p := lmt_potraced [
+                stringname = name,
+                value      = "1",
+                optimize   = opt,
+                tolerance  = tol,
+            ];
+            p := p xsized 4cm ;
+            draw p ;
+            drawpoints       p withpen pencircle scaled 2.0 withcolor clr ;
+        if linestoo :
+            drawcontrollines p withpen pencircle scaled 0.5 withcolor clr ;
+        fi
+        )
+    enddef ;
+\stopMPdefinitions
+
+\startplacefigure[title=Using \METAPOST\ for analysis.,reference=fig:metapotrace]
+    \startMPcode
+        draw Example("demo-R-600", "red",false,0.2,false) ;
+        draw Example("demo-R-2400","red",false,0.2,false) shifted ( 5cm,0) ;
+        draw Example("demo-R-7200","red",false,0.2,false) shifted (10cm,0) ;
+        currentpicture := currentpicture xsized TextWidth ;
+    \stopMPcode
+\stopplacefigure
+
+\startplacefigure[title=Comparing potraced bitmaps with \TYPEONE.,reference=fig:metapotracecompare]
+\startMPcode
+    picture p[] ;
+    p[1] := Example("demo-R-7200","red",false,0.2,false) ;
+    p[2] := lmt_outline [ text = "\definedfont[file:lmroman10-regular.otf]R", kind = "path" ] ;
+    p[3] := Example("demo-R-7200","red",true,0.2,false) ;
+    p[4] := Example("demo-R-7200","red",true,0.5,false) ;
+    for i=1 upto 4 :
+        p[i] := p[i] ysized 4cm ;
+        p[i] := p[i] shifted ((i-1)*5cm,0) ;
+    endfor
+    draw p[1] ;
+    draw p[3] ;
+    draw p[4] ;
+    draw p[2] withpen pencircle scaled 1/2 ;
+    for i within p[2] :
+        drawpoints       pathpart i withpen pencircle scaled 2.0 withcolor "blue" ;
+    endfor
+    currentpicture := currentpicture xsized TextWidth ;
+\stopMPcode
+\stopplacefigure
+
+\startplacefigure[title=Comparing control points.,reference=fig:comparecontrols]
+\startMPcode
+    picture p[] ;
+    p[1] := Example("demo-R-7200","red",true,0.5,true) ;
+    p[2] := lmt_outline [ text = "\definedfont[file:lmroman10-regular.otf]R", kind = "path" ] ;
+    p[1] := p[1] ysized 4cm ;
+    p[2] := p[2] ysized 4cm ;
+    p[1] := p[1] shifted (5cm,0) ;
+    draw p[1] ;
+    draw p[2] withpen pencircle scaled 1/2 ;
+    for i within p[2] :
+        drawpoints       pathpart i withpen pencircle scaled 2.0 withcolor "blue" ;
+        drawcontrollines pathpart i withpen pencircle scaled 0.5 withcolor "blue" ;
+    endfor
+    currentpicture := currentpicture xsized TextWidth ;
+\stopMPcode
+\stopplacefigure
+
+If you like the look of these shapes, take a look at Volume~E of Don Knuth's
+\quotation {Computers \& Typesetting} series. An incredible amount of work went
+into the details of the fonts and you'll run into brackets, beaks, crisps,
+notches, slabs, juts, dishes and more elements and parameters that are used. For
+instance the serifs as seen in the \quote {R} are actually made programmatically
+(so that they can be discarded in the sans shapes). If you check out the proof
+sheet of the \quote {R} you will only see the basic points that describe the
+character, not the points we see above, after conversion to (any kind of)
+outline.
+
+So now that we can turn a \PK\ into a proper outline we're done, right? Well, not
+entirely. Because we have relatively simple shapes (moveto, lineto and curveto)
+we can directly go to \CFF\ and avoid the \METAPOST\ to \TYPETHREE\ conversions.
+Because we already can load (and adapt) \CFF\ outlines it is not that complicated
+to do the reverse. The backend already can include them so we can also borrow
+code there.
+
+When going from potrace output to \CFF, we need a high resolution, so we started
+out again with 7200 dpi. Although in the end we were quite satisfied with the
+results, we tested with 20000 dpi and thought it looks even better than the Latin
+Modern successor (although one can argue about it). Some first experiments showed
+that it was doable but it actually took a whole day to (test and) decide how to
+get better results. For instance, \METAPOST\ uses floats while a renderer uses
+integers, so we run into rounding issues if we delegate that (although we can
+include floats in \CFF, it is not a success). When overlaying the \METAPOST\
+output and the \CFF\ shapes the latter was quite disappointing: weird protrusions
+and bubbles. Of course one may doubt the implementation, but double and triple
+checking showed that we use the same numbers.
+
+The results improved a lot when the results from potrace were multiplied by 10
+(or 20) effectively giving very huge glyphs (on a 10000 unit canvas) and in the
+page stream scaling down by that factor. By then using rounded values we got
+enough precision to get the \CFF\ results close to the (always) high quality
+\METAPOST\ rendering. In \in {figure} [fig:mpovercff] we can see how close they
+became.
+
+\startplacefigure[title={A \METAPOST\ rendering on top of the \CFF\ counterpart},reference=fig:mpovercff]
+    \definefontfeature[MyFontA][default][reencode=ontarget-cmr.enc,bitmap=cff,resolution=7200]%
+    \definedfont[file:ontarget-cmr10.tfm*MyFontA]%
+    \scale[width=.3\textheight]{\ruledhbox{\startoverlay
+      {\scale[height=5cm]{\hbox{\blue s}}}
+      {\hbox
+         xoffset -0.14mm
+         yoffset  0.20mm
+         \bgroup
+           \startMPcode
+             draw image (
+               save p ; path p ; p := lmt_potraced [
+                 filename   = "ontarget-cmr10.pk",
+                 resolution = 7200,
+                 index      = 115,
+                 value      = "1",
+               ] ;
+               p := p ysized 5cm ;
+               draw p ;
+               drawpoints       p withpen pencircle scaled 2.00 withcolor "red" ;
+               drawcontrollines p withpen pencircle scaled 0.25 withcolor "red" ;
+             ) scaled 1.06 ;
+           \stopMPcode
+       \egroup}
+    \stopoverlay}}
+\stopplacefigure
+
+The next question is, how do we control this: \PK, \METAPOST\ \TYPETHREE\ or
+native \CFF ? Even more challenging is that we had wanted to use different
+resolutions, and mix these three methods, if only because we want to be able to
+experiment and document the mix. That means that it has to be available not only
+in the font feature mechanism, which is rather trivial, but also in the backend,
+which then involves a font with the same name (say \type {CMR10}) to be rendered
+differently, so we need different handlers, distinctive caching of streams, etc.
+In the end we got there. It is even possible to mix variants with different
+potrace parameters in one document.
+
+We start with \CFF\ definitions. In \in {figure} [fig:cffoverlayed] we show three
+resolutions overlaid, with the 7200 dpi variant below. In \in {figure}
+[fig:mpovercffagain] we show the default and optimized (fewer points) traces.
+
+\startbuffer
+\definefontfeature[CMRCFF][reencode=ontarget-cmr.enc,bitmap=cff]
+
+\definefontfeature[MyFontCffA][default,CMRCFF][resolution=7200]
+\definefontfeature[MyFontCffB][default,CMRCFF][resolution=2400]
+\definefontfeature[MyFontCffC][default,CMRCFF][resolution=600]
+\definefontfeature[MyFontCffD][default,CMRCFF][resolution=7200,potrace={optimize=true}]
+\stopbuffer
+
+\getbuffer \typebuffer
+
+The overlays look fuzzy, demonstrating the need for high resolutions. Font
+definitions are done as follows; we only show one definition:
+
+\starttyping
+\definefont[MyFont][file:ontarget-cmr10.tfm*MyFontCffA]
+\stoptyping
+
+\startplacefigure[title={The 7200, 2400 and 600 \CFF\ variants overlayed.},reference=fig:cffoverlayed]
+    \startoverlay
+        {\vbox{\colored[r=1,a=1,t=.5]{\definedfont[file:ontarget-cmr10.tfm*MyFontCffA]\samplefile{tufte}}}}
+        {\vbox{\colored[g=1,a=1,t=.5]{\definedfont[file:ontarget-cmr10.tfm*MyFontCffB]\samplefile{tufte}}}}
+        {\vbox{\colored[b=1,a=1,t=.5]{\definedfont[file:ontarget-cmr10.tfm*MyFontCffC]\samplefile{tufte}}}}
+    \stopoverlay
+    \blank
+    \vbox{\definedfont[file:ontarget-cmr10.tfm*MyFontCffA]\samplefile{tufte}}
+\stopplacefigure
+
+\startplacefigure[title={The normal 7200 and optimized 7200 dpi variants},reference=fig:mpovercffagain]
+    \startoverlay
+        {\vbox{\colored[r=1,a=1,t=.5]{\definedfont[file:ontarget-cmr10.tfm*MyFontCffA]\samplefile{tufte}}}}
+        {\vbox{\colored[b=1,a=1,t=.5]{\definedfont[file:ontarget-cmr10.tfm*MyFontCffD]\samplefile{tufte}}}}
+    \stopoverlay
+    \blank
+    \vbox{\definedfont[file:ontarget-cmr10.tfm*MyFontCffA]\samplefile{tufte}}
+\stopplacefigure
+
+\startbuffer
+\definefontfeature[CMRPK][reencode=ontarget-cmr.enc,bitmap=pk]
+
+\definefontfeature[MyFontBitmapA][default,CMRPK][resolution=7200]
+\definefontfeature[MyFontBitmapB][default,CMRPK][resolution=2400]
+\definefontfeature[MyFontBitmapC][default,CMRPK][resolution=600]
+\stopbuffer
+
+\getbuffer \typebuffer
+
+These definitions are used in \in {figure} [fig:pkoverlayed]. The differences
+aren't immediately apparent in small print but zoom in (if you're online) and
+you'll understand why we need more than 600 dpi to feel comfortable.
+
+\startplacefigure[title={The 7200, 2400 and 600 \PK\ variants overlayed.},reference=fig:pkoverlayed]
+    \startoverlay
+        {\vbox{\colored[r=1,a=1,t=.5]{\definedfont[file:ontarget-cmr10.tfm*MyFontBitmapA]\samplefile{tufte}}}}
+        {\vbox{\colored[r=1,a=1,t=.5]{\definedfont[file:ontarget-cmr10.tfm*MyFontBitmapB]\samplefile{tufte}}}}
+        {\vbox{\colored[b=1,a=1,t=.5]{\definedfont[file:ontarget-cmr10.tfm*MyFontBitmapC]\samplefile{tufte}}}}
+    \stopoverlay
+    \blank
+    \vbox{\definedfont[file:ontarget-cmr10.tfm*MyFontBitmapA]\samplefile{tufte}}
+\stopplacefigure
+
+\startbuffer
+\definefontfeature[CMROUTLINE][reencode=ontarget-cmr.enc,bitmap=outline]
+
+\definefontfeature[MyFontOutlineA][default,CMROUTLINE][resolution=7200]
+\definefontfeature[MyFontOutlineB][default,CMROUTLINE][resolution=2400]
+\definefontfeature[MyFontOutlineC][default,CMROUTLINE][resolution=600]
+\stopbuffer
+
+\getbuffer \typebuffer
+
+Finally we show the \METAPOST|-|generated threesome in \in {figure}
+[fig:outlineoverlayed] and these look quite reasonable. One thing to keep in mind when
+wrapping shapes into a \TYPETHREE\ font is that one has to make sure that color keeps
+working.
+
+\startplacefigure[title={The 7200, 2400 and 600 \METAPOST\ variants overlayed.},reference=fig:outlineoverlayed]
+    \startoverlay
+        {\vbox{\colored[r=1,a=1,t=.5]{\definedfont[file:ontarget-cmr10.tfm*MyFontOutlineA]\samplefile{tufte}}}}
+        {\vbox{\colored[r=1,a=1,t=.5]{\definedfont[file:ontarget-cmr10.tfm*MyFontOutlineB]\samplefile{tufte}}}}
+        {\vbox{\colored[b=1,a=1,t=.5]{\definedfont[file:ontarget-cmr10.tfm*MyFontOutlineC]\samplefile{tufte}}}}
+    \stopoverlay
+    \blank
+    \vbox{\definedfont[file:ontarget-cmr10.tfm*MyFontOutlineA]\samplefile{tufte}}
+\stopplacefigure
+
+So, how useful is all this? Maybe it's time for a revival of \METAFONT. Or maybe
+we can get some old designs out of the archives where they got tagged obsolete
+and use them again. Or maybe it's just for the fun of it. We started out with
+\PK\ bitmaps that we need to support anyway. Next we were curious how well a
+traced outline would look, and for that using a \METAPOST\ \TYPETHREE\ font makes
+sense. Then we took the challenge to turn potrace output into a \CFF\ \OPENTYPE\
+font. We could now make a whole tool chain but it makes little sense: we can do
+it in \CONTEXT, so we're fine, and we don't expect widespread usage outside the
+\TEX\ ecosystem. Next on the agenda is to locate some interesting
+\hbox{\METAFONT}s and see if they can be put to use. In case you wonder how these
+eight bit fonts fit into the \UNICODE\ ecosystem, don't worry, we can use the
+virtual font mechanism to hook shapes into existing fonts (which is what we do
+anyway) or create combined fonts. We can even make variable fonts using
+\METAFONT, but for that we need to become experienced designers first. As a
+teaser we show a character from the runes font by Carl|-|Gustav Werner in \in
+{figures} [fig:allrunes] \in {and} [fig:allrunesclip]. Mikael, knowing the
+author, promised to come up with a proper encoding for that one, so stay tuned.
+
+\definefontfeature[MyRunesA][reencode=ontarget-frualt.enc,pfbfile=ontarget-frualt.pfb]
+\definefontfeature[MyRunesB][reencode=ontarget-frualt.enc,bitmap=cff,resolution=7200]
+\definefontfeature[MyRunesC][reencode=ontarget-frualt.enc,bitmap=pk,resolution=7200]
+\definefontfeature[MyRunesD][reencode=ontarget-frualt.enc,bitmap=outline,resolution=7200]
+
+% \ctxlua{document.loadPKshapes("ontarget-frualt.pk")}
+%
+% actually there is no need to go through mp any more as we can mix them in the backend
+%
+% \startplacefigure[title={A simple test with one of the allrunes fonts. Left is using the \PK\ at a 7200 resolution. Next is the potraced 7200 \PK\ original outline. Third from left is the generated \CFF. Right is the shipped \PFB.},reference=fig:allrunes]
+%     \startcombination[nx=4,ny=1,distance=2em]
+%       {\ruledhbox{\startMPcode
+% `      % save p ; picture p; p := image(fill showPKshape("authentic-111",true,1)) ;
+%          save p ; picture p; p := textext("\setbox\scratchbox\hbox{\definedfont[file:ontarget-frualt.tfm*MyRunesC]a}\dp\scratchbox\zeropoint\box\scratchbox") ;
+%          p := p shifted -llcorner p ;
+%          draw p ysized 4cm ;
+%       \stopMPcode}} {\TYPETHREE: \PK}
+%       {\ruledhbox{\startMPcode
+%        % save p ; picture p; p := Example("demo-allrunes-7200","darkred",false,0.2,false) ;
+%          save p ; picture p; p := textext("\setbox\scratchbox\hbox{\definedfont[file:ontarget-frualt.tfm*MyRunesD]a}\dp\scratchbox\zeropoint\box\scratchbox") ;
+%          p := p shifted -llcorner p ;
+%          draw p ysized 4cm ;
+%       \stopMPcode}} {\TYPETHREE: \METAPOST}
+%       {\ruledhbox{\startMPcode
+%          save p ; picture p; p := textext("\setbox\scratchbox\hbox{\definedfont[file:ontarget-frualt.tfm*MyRunesB]a}\dp\scratchbox\zeropoint\box\scratchbox") ;
+%          p := p shifted -llcorner p ;
+%          draw p ysized 4cm ;
+%       \stopMPcode}} {\OPENTYPE: \CFF}
+%       {\ruledhbox{\startMPcode
+%          save p ; picture p; p := textext("\setbox\scratchbox\hbox{\definedfont[file:ontarget-frualt.tfm*MyRunesA]a}\dp\scratchbox\zeropoint\box\scratchbox") ;
+%          p := p shifted -llcorner p ;
+%          draw p ysized 4cm ;
+%       \stopMPcode}} {\TYPEONE: \PFB}
+%     \stopcombination
+% \stopplacefigure
+
+\protected\def\MySample#1#2#3%
+  {\scale[height=#1cm]\bgroup
+     \setbox\scratchbox\hbox{\definedfont[file:ontarget-frualt.tfm*MyRunes#2]a}%
+     \dp\scratchbox\zeropoint
+     \ht\scratchbox\dimexpr\ht\scratchbox+#3pt\relax
+     \box\scratchbox
+   \egroup}
+
+\startplacefigure[title={A simple test with one of the allrunes fonts. Left is using the \PK\ at a 7200 resolution. Next is the potraced 7200 \PK\ original outline. Third from left is the generated \CFF. Right is the shipped \PFB.},reference=fig:allrunes]
+    \startcombination[nx=4,ny=1,distance=2em]
+        {\ruledhbox{\MySample{4}{C}{0}}} {\TYPETHREE: \PK}
+        {\ruledhbox{\MySample{4}{D}{0}}} {\TYPETHREE: \METAPOST}
+        {\ruledhbox{\MySample{4}{B}{0}}} {\OPENTYPE : \CFF}
+        {\ruledhbox{\MySample{4}{A}{0}}} {\TYPEONE  : \PFB}
+    \stopcombination
+\stopplacefigure
+
+\startplacefigure[title={Enlarged clips the four variants in \in {figure} [fig:allrunes].},reference=fig:allrunesclip]
+    \startcombination[nx=4,ny=1,distance=1em]
+        {\clip[ny=6,y=1,nx=5,x=2]{\MySample{20}{C}{.075}}} {\TYPETHREE: \PK}
+        {\clip[ny=6,y=1,nx=5,x=2]{\MySample{20}{D}{.075}}} {\TYPETHREE: \METAPOST}
+        {\clip[ny=6,y=1,nx=5,x=2]{\MySample{20}{B}{.075}}} {\OPENTYPE : \CFF}
+        {\clip[ny=6,y=1,nx=5,x=2]{\MySample{20}{A}{.075}}} {\TYPEONE  : \PFB}
+    \stopcombination
+\stopplacefigure
+
+\stopchapter
+
+\stopcomponent

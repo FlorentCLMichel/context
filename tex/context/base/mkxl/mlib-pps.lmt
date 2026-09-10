@@ -368,7 +368,6 @@ do
 --      return concat(t," ")
 --  end
 
-local nn = 0
     f_gray = function(s)
      -- if s == 0 then s = "0" elseif s == 1 then s = "1" else s = f(s,"%.3f") end
      -- return s .. " g "

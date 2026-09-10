@@ -115,7 +115,7 @@
         </cd:arguments>
     </cd:command>
 
-    <cd:command name="showmakeup" level="document" category="boxes" file="trc-vis.mkxl">
+    <cd:command name="showmakeup" level="document" category="boxes" file="trac-vis.mkxl">
         <cd:arguments>
             <cd:keywords optional="yes">
                 <cd:constant type="reset"/>
@@ -163,9 +163,9 @@
         </cd:arguments>
     </cd:command>
 
-    <cd:command name="setlocalshowmakeup" level="document" category="boxes" file="trc-vis.mkxl"/>
+    <cd:command name="setlocalshowmakeup" level="document" category="boxes" file="trac-vis.mkxl"/>
 
-    <cd:command name="resetlocalshowmakeup" level="document" category="boxes" file="trc-vis.mkxl"/>
+    <cd:command name="resetlocalshowmakeup" level="document" category="boxes" file="trac-vis.mkxl"/>
 
     <cd:command name="showallmakeup" level="document" category="boxes" file="trac-vis.mkxl"/>
 

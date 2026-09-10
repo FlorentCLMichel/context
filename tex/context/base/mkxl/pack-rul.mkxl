@@ -3206,27 +3206,31 @@
 
 % \let\themaxboxwidth % defined at the lua end
 
-%D Fast enough for most cases (we could do a massive \type {\ifhastok} instead):
-
-% \permanent\protected\def\doifelseframed#1%
-%          {\ifcstok{#1\c!frame      }\v!on\expandafter\firstoftwoarguments
-%    \orelse\ifcstok{#1\c!topframe   }\v!on\expandafter\firstoftwoarguments
-%    \orelse\ifcstok{#1\c!bottomframe}\v!on\expandafter\firstoftwoarguments
-%    \orelse\ifcstok{#1\c!leftframe  }\v!on\expandafter\firstoftwoarguments
-%    \orelse\ifcstok{#1\c!rightframe }\v!on\expandafter\firstoftwoarguments
-%    \orelse\ifempty{#1\c!background }\expandafter\secondoftwoarguments
-%      \else                          \expandafter\firstoftwoarguments\fi}
-%
-% we need to handler 'round' too:
+%D Fast enough for most cases (we could do a massive \type {\ifhastok} instead). We
+%D only use this in floats combined with captions anyway.
 
 \permanent\protected\def\doifelseframed#1%
-    {\unless\ifcstok{#1\c!frame      }\v!off\expandafter\firstoftwoarguments
-   \orunless\ifcstok{#1\c!topframe   }\v!off\expandafter\firstoftwoarguments
-   \orunless\ifcstok{#1\c!bottomframe}\v!off\expandafter\firstoftwoarguments
-   \orunless\ifcstok{#1\c!leftframe  }\v!off\expandafter\firstoftwoarguments
-   \orunless\ifcstok{#1\c!rightframe }\v!off\expandafter\firstoftwoarguments
-     \orelse\ifempty{#1\c!background }\expandafter\secondoftwoarguments
-       \else                          \expandafter\firstoftwoarguments\fi}
+         {\ifcstok{#1\c!frame      }\v!on     \expandafter\firstoftwoarguments
+   \orelse\iflastnamedcs            \v!closed \expandafter\firstoftwoarguments
+   \orelse\iflastnamedcs            \v!dash   \expandafter\firstoftwoarguments
+   \orelse\iflastnamedcs            \v!small  \expandafter\firstoftwoarguments
+   \orelse\iflastnamedcs            \v!overlay\expandafter\firstoftwoarguments
+   \orelse\iflastnamedcs            \v!none   \expandafter\firstoftwoarguments
+   \orelse\ifcstok{#1\c!topframe   }\v!on     \expandafter\firstoftwoarguments
+%  \orelse\iflastnamedcs            \v!dash   \expandafter\firstoftwoarguments
+%  \orelse\iflastnamedcs            \v!small  \expandafter\firstoftwoarguments
+   \orelse\ifcstok{#1\c!bottomframe}\v!on     \expandafter\firstoftwoarguments
+%  \orelse\iflastnamedcs            \v!dash   \expandafter\firstoftwoarguments
+%  \orelse\iflastnamedcs            \v!small  \expandafter\firstoftwoarguments
+   \orelse\ifcstok{#1\c!leftframe  }\v!on     \expandafter\firstoftwoarguments
+%  \orelse\iflastnamedcs            \v!dash   \expandafter\firstoftwoarguments
+%  \orelse\iflastnamedcs            \v!small  \expandafter\firstoftwoarguments
+   \orelse\ifcstok{#1\c!rightframe }\v!on     \expandafter\firstoftwoarguments
+%  \orelse\iflastnamedcs            \v!dash   \expandafter\firstoftwoarguments
+%  \orelse\iflastnamedcs            \v!small  \expandafter\firstoftwoarguments
+   \orelse\ifempty{#1\c!background }\expandafter\secondoftwoarguments
+     \else                          \expandafter\firstoftwoarguments
+   \fi}
 
 %D A bit out of place here:
 

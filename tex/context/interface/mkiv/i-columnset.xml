@@ -451,6 +451,15 @@
         </cd:arguments>
     </cd:command>
 
+    <cd:command name="subcolumnsetgroup" type="environment" level="document" category="columns" file="page-mvl.mkxl">
+        <cd:arguments>
+            <cd:resolve name="keyword-name-optional"/>
+            <cd:assignments list="yes" optional="yes">
+                <cd:inherit name="setupsubcolumnset"/>
+            </cd:assignments>
+        </cd:arguments>
+    </cd:command>
+
     <cd:command name="subcolumnset" type="environment" level="document" category="columns" file="page-mvl.mkxl">
         <cd:arguments>
             <cd:resolve name="keyword-name-optional"/>
@@ -481,5 +490,55 @@
     </cd:command>
 
     <cd:command name="blockcolumnsetrows" level="document" category="columns" file="page-mvl.mkxl"/>
+
+    <cd:command name="setcolumnsetsheet" type="environment" level="document" category="columns" file="page-mvl.mkxl">
+        <cd:arguments>
+            <cd:resolve name="keyword-number"/>
+        </cd:arguments>
+    </cd:command>
+
+    <cd:command name="setcolumnsetsht" type="environment" level="document" category="columns" file="page-mvl.mkxl">
+        <cd:arguments>
+            <cd:assignments list="yes" optional="yes">
+                <cd:parameter name="c">
+                    <cd:constant type="cd:number"/>
+                </cd:parameter>
+                <cd:parameter name="r">
+                    <cd:constant type="cd:number"/>
+                </cd:parameter>
+                <cd:parameter name="nc">
+                    <cd:constant type="cd:number"/>
+                </cd:parameter>
+                <cd:parameter name="nr">
+                    <cd:constant type="cd:number"/>
+                </cd:parameter>
+                <cd:parameter name="method">
+                    <cd:constant type="here"/>
+                    <cd:constant type="fixed"/>
+                    <cd:constant type="top"/>
+                    <cd:constant type="bottom"/>
+                    <cd:constant type="tblr"/>
+                    <cd:constant type="lrtb"/>
+                    <cd:constant type="tbrl"/>
+                    <cd:constant type="rltb"/>
+                    <cd:constant type="btlr"/>
+                    <cd:constant type="lrbt"/>
+                    <cd:constant type="btrl"/>
+                    <cd:constant type="rlbt"/>
+                    <cd:constant type="fxtb"/>
+                    <cd:constant type="fxbt"/>
+                </cd:parameter>
+                <cd:parameter name="option">
+                    <cd:constant type="page"/>
+                </cd:parameter>
+                <cd:parameter name="ntop">
+                    <cd:constant type="cd:number"/>
+                </cd:parameter>
+                <cd:parameter name="nbottom">
+                    <cd:constant type="cd:number"/>
+                </cd:parameter>
+            </cd:assignments>
+        </cd:arguments>
+    </cd:command>
 
 </cd:interface>

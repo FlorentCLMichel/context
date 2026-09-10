@@ -1678,7 +1678,7 @@ do
     local setcolor   = colortracers.set
     local resetcolor = colortracers.reset
 
-    local cache = { }
+    local cache = setmetatableindex("table") -- { }  -- todo: reset per formula
     local top   = 0
     local retry = false
 
@@ -1738,18 +1738,17 @@ do
                                         local class = cdata and cdata.mathclass or false -- use helper
                                         -- inspect(cdata)
                                         if class == "open" then
-                                            top = top + 1
+--                                             top = top + 1
                                         elseif class == "close" then
                                             -- for cases like (] we also choose the matching
                                             -- choice which is not ok but let's assume that
                                             -- there is some consistency here
-                                            value = cache[top]
--- report_alternates("random fence, top %a, class %a, value %a",top,class,value)
-                                            cache[top] = false
-                                            top = top - 1
+                                            value = remove(cache[i])
+-- report_alternates("random close fence, top %a, class %a, value %a",#cache[i],class,value)
                                         elseif class == "middle" then
-                                            value = cache[top]
--- report_alternates("random fence, top %a, class %a, value %a",top,class,value)
+                                            value = remove(cache[i])
+                                            insert(cache[i],value)
+-- report_alternates("random middle fence, top %a, class %a, value %a",#cache[i],class,value)
                                         else
                                             -- keep value as it is
                                         end
@@ -1761,6 +1760,7 @@ do
                                             local m = 0          -- number of choices
                                             while n >= 0 do
                                                 alt, choice, m = otf.getalternate(fontdata[fontid],char,feature,value,_,_,true)
+-- report_alternates("random fence, value %a, choice %a",value,choice)
                                                 if not random then
                                                     break -- no random
                                                 elseif not choice then
@@ -1778,8 +1778,8 @@ do
                                             end
                                         end
                                         if class == "open" then
-                                            cache[top] = choice
--- report_alternates("random fence, top %a, class %a, value %a",top,class,choice)
+                                            insert(cache[i],choice)
+-- report_alternates("random open fence, top %a, class %a, value %a",#cache[i],class,choice)
                                         end
                                      --
                                      -- local cdata  = chardata[char]

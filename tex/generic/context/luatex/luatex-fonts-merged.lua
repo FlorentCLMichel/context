@@ -1,6 +1,6 @@
 -- merged file : c:/data/develop/context/sources/luatex-fonts-merged.lua
 -- parent file : c:/data/develop/context/sources/luatex-fonts.lua
--- merge date  : 2026-09-07 21:49
+-- merge date  : 2026-09-10 09:53
 
 do -- begin closure to overcome local limits and interference
 
@@ -13031,6 +13031,10 @@ local function readdata(f,offset,specification)
  fontdata.locations=nil
  fontdata.cidmaps=nil
  fontdata.dictionaries=nil
+ if variabledata then
+  variabledata.gdef=nil
+  variabledata.avar2=nil
+ end
  if specification.tableoffsets then
   fontdata.tableoffsets=tables
   setmetatableindex(tables,{
@@ -13235,6 +13239,7 @@ function readers.loadfont(filename,n,instance)
     version=getname(fontdata,"version"),
     cidinfo=fontdata.cidinfo,
     mathconstants=fontdata.mathconstants,
+    mathfactors=fontdata.mathfactors,
     gasp=fontdata.gasp,
     colorpalettes=fontdata.colorpalettes,
     colorpaintdata=fontdata.colorpaintdata,
@@ -21625,7 +21630,7 @@ local trace_defining=false  registertracker("fonts.defining",function(v) trace_d
 local report_otf=logs.reporter("fonts","otf loading")
 local fonts=fonts
 local otf=fonts.handlers.otf
-otf.version=3.152 
+otf.version=3.153 
 otf.cache=containers.define("fonts","otl",otf.version,true)
 otf.svgcache=containers.define("fonts","svg",otf.version,true)
 otf.pngcache=containers.define("fonts","png",otf.version,true)

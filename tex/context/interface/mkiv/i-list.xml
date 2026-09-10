@@ -125,6 +125,12 @@
                     <cd:constant type="none"/>
                     <cd:constant type="cd:dimension"/>
                 </cd:parameter>
+                <cd:parameter name="leftmargin">
+                    <cd:constant type="cd:dimension"/>
+                </cd:parameter>
+                <cd:parameter name="rightmargin">
+                    <cd:constant type="cd:dimension"/>
+                </cd:parameter>
                 <cd:parameter name="distance">
                     <cd:constant type="none"/>
                     <cd:constant type="cd:dimension"/>

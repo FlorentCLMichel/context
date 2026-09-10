@@ -3818,4 +3818,16 @@
         </cd:arguments>
     </cd:command>
 
+    <cd:command name="tracingprocess" level="system" category="system" file="syst-ini.mkxl"/>
+
+    <cd:command name="tracingtypesetting" level="system" category="system" file="syst-ini.mkxl"/>
+
+    <cd:command name="tracingall" level="system" category="system" file="syst-ini.mkxl"/>
+
+    <cd:command name="loggingall" level="system" category="system" file="syst-ini.mkxl"/>
+
+    <cd:command name="tracingnone" level="system" category="system" file="syst-ini.mkxl"/>
+
+    <cd:command name="overloadmode" type="environment" begin="push" end="pop" level="system" category="system" file="syst-ini.mkxl"/>
+
 </cd:interface>

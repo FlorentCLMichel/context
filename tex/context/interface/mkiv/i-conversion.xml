@@ -619,7 +619,7 @@
                 <cd:constant type="telugunumerals"/>
                 <cd:constant type="bengalinumerals"/>
                 <cd:constant type="gurmurkhinumerals"/>
-                <cd:constant type="gujaratinnumerals"/>
+                <cd:constant type="gujaratinumerals"/>
                 <cd:constant type="tibetannumerals"/>
                 <cd:constant type="greeknumerals"/>
                 <cd:constant type="Greeknumerals"/>

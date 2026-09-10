@@ -93,6 +93,11 @@
                     <cd:constant type="none"/>
                     <cd:constant type="cd:dimension"/>
                 </cd:parameter>
+                <cd:parameter name="action">
+                    <cd:constant type="transpose"/>
+                    <cd:constant type="negate"/>
+                    <cd:constant type="scale"/>
+                </cd:parameter>
             </cd:assignments>
         </cd:arguments>
     </cd:command>
@@ -162,6 +167,12 @@
     </cd:command>
 
     <cd:command name="substack" type="environment" level="document" category="mathematics" file="math-ali.mkxl"/>
+
+    <cd:command name="mstack" level="document" category="mathematics" file="math-ali.mkxl">
+        <cd:arguments>
+            <cd:resolve name="argument-text-list"/>
+        </cd:arguments>
+    </cd:command>
 
     <cd:command name="overset" level="document" category="mathematics" file="math-ali.mkxl">
         <cd:arguments>

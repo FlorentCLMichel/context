@@ -52,7 +52,7 @@ local report_otf          = logs.reporter("fonts","otf loading")
 local fonts               = fonts
 local otf                 = fonts.handlers.otf
 
-otf.version               = 3.152 -- beware: also sync font-mis.lua and in mtx-fonts and even font-otl.lua
+otf.version               = 3.153 -- beware: also sync font-mis.lua and in mtx-fonts and even font-otl.lua
 otf.cache                 = containers.define("fonts", "otl", otf.version, true)
 otf.svgcache              = containers.define("fonts", "svg", otf.version, true)
 otf.pngcache              = containers.define("fonts", "png", otf.version, true)
@@ -170,14 +170,14 @@ function otf.load(filename,sub,instance)
             if cleanup == 0 then
                 checkmemory(used,threshold,tracememory)
             end
-local fixer = fixers[lower(file.basename(filename))]
-if type(fixer) ~= "table" then
-    fixer = false
-end
-if fixer and type(fixer.before) == "function" then
-    report_otf("fixing before %a",filename)
-    fixer.before(fixer,data) -- ,filename,sub or 1,instance)
-end
+            local fixer = fixers[lower(file.basename(filename))]
+            if type(fixer) ~= "table" then
+                fixer = false
+            end
+            if fixer and type(fixer.before) == "function" then
+                report_otf("fixing before %a",filename)
+                fixer.before(fixer,data) -- ,filename,sub or 1,instance)
+            end
             if svgshapes then
                 resources.svgshapes = nil
                 if otf.svgenabled then
@@ -226,10 +226,11 @@ end
             otfreaders.rehash(data,"unicodes")
             otfreaders.addunicodetable(data)
             otfreaders.extend(data)
-if fixer and type(fixer.after) == "function" then
-    report_otf("fixing after %a",filename)
-    fixer.after(fixer,data) -- ,filename,sub or 1,instance)
-end         if cleanup == 0 then
+            if fixer and type(fixer.after) == "function" then
+                report_otf("fixing after %a",filename)
+                fixer.after(fixer,data) -- ,filename,sub or 1,instance)
+            end
+            if cleanup == 0 then
                 checkmemory(used,threshold,tracememory)
             end
             if context then
@@ -282,7 +283,7 @@ end         if cleanup == 0 then
             applyruntimefixes(filename,data) -- e.g. see treatments.lfg
         end
         --
-        data.metadata.math = data.resources.mathconstants
+        data.metadata.math        = data.resources.mathconstants
         --
         -- delayed tables (experiment)
         --
@@ -379,6 +380,8 @@ local function copytotfm(data,cache_id,wipemath)
         local maxsize        = metadata.maxsize or designsize
         local mathspecs      = metadata.math
         --
+        local mathfactors    = resources.mathfactors
+        --
         if designsize == 0 then
             designsize = 100
             minsize    = 100
@@ -435,6 +438,10 @@ local function copytotfm(data,cache_id,wipemath)
             end
             if resources.mathconstants then
                 resources.mathconstants = nil
+                wiped = true
+            end
+            if resources.mathfactors then
+                resources.mathfactors = nil
                 wiped = true
             end
             if resources.math then
@@ -618,6 +625,7 @@ local function copytotfm(data,cache_id,wipemath)
             descriptions   = descriptions,
             parameters     = parameters,
             mathparameters = mathparameters,
+            mathfactors    = mathfactors,
             resources      = resources,
             properties     = properties,
             goodies        = goodies,
@@ -726,62 +734,6 @@ local function read_from_otf(specification)
     end
     return tfmdata
 end
-
--- local function checkmathsize(tfmdata,mathsize)
---     local mathdata = tfmdata.shared.rawdata.metadata.math
---     local mathsize = tonumber(mathsize)
---     if mathdata then -- we cannot use mathparameters as luatex will complain
---         local parameters = tfmdata.parameters
---         parameters.scriptpercentage       = mathdata.ScriptPercentScaleDown
---         parameters.scriptscriptpercentage = mathdata.ScriptScriptPercentScaleDown
---         parameters.mathsize               = mathsize -- only when a number !
---      -- print(mathdata.ScriptPercentScaleDown,mathdata.ScriptScriptPercentScaleDown)
---     end
--- end
---
--- registerotffeature {
---     name         = "mathsize",
---     description  = "apply mathsize specified in the font",
---     initializers = {
---         base = checkmathsize,
---         node = checkmathsize,
---     }
--- }
-
--- readers
-
--- todo: maybe keep the cache in resources so that we can also (nicer) use this from
--- addfeature (mail on list):
---
--- local getsubstitution = fonts.handlers.otf.getsubstitution
---
--- fonts.handlers.otf.addfeature {
---     name = "kern",
---     type = "kern",
---     data = function(data,specification,list,i)
---         -- maybe intercept this cheat in a next version
---         data = { shared = { rawdata = { resources = data.resources } } }
---         --
---         local char_a = getsubstitution(data,utf.byte("a"),"smcp",1,"latn","dflt")
---         local char_s = getsubstitution(data,utf.byte("s"),"smcp",1,"latn","dflt")
---         return {
---             ["A"]    = { ["V"]    = 1500 },
---             ["P"]    = { ["Æ"]    = 1500 },
---             [char_a] = { [char_s] = 1500 },
---         }
---     end,
--- }
--- \stopluacode
---
--- \definefontfamily [mainface] [serif]  [Palatino Linotype]
--- \definefontfamily [mainface] [math]   [TeX Gyre Pagella]
---
--- \setupbodyfont [mainface]
---
--- \starttext
---     AVAPÆV þýðask {\smallcaps þýðask} 123
--- \stoptext
-
 
 function otf.collectlookups(rawdata,kind,script,language)
     if not kind then

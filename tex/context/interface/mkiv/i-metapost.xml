@@ -78,6 +78,8 @@
                     <cd:constant type="decimal"/>
                     <cd:constant type="double"/>
                     <cd:constant type="scaled"/>
+                    <cd:constant type="posit"/>
+                    <cd:constant type="interval"/>
                     <cd:constant type="default" default="yes"/>
                 </cd:parameter>
             </cd:assignments>

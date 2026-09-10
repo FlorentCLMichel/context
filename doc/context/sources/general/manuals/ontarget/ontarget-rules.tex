@@ -1,0 +1,190 @@
+% language=us runpath=texruns:manuals/ontarget
+
+\startcomponent ontarget-rules
+
+\environment ontarget-style
+
+\startchapter[title={Getting rid of math rules}]
+
+There are a few characteristics of typesetting math that determine how the
+internals of the \TEX\ math engine are shaped:
+
+\startitemize
+    \startitem
+        A formula is made from atoms: in $x + 1$ there are three of them.
+        Sometimes a few are combined into subformulas.
+    \stopitem
+    \startitem
+        An atom can have scripts attached: in $x^2_i$ we have a super- and
+        subscript. We can also have prescripts and indices.
+    \stopitem
+    \startitem
+        Spacing between atoms depends on what it represents: a operator, binary,
+        ordinal etc. Sometimes we look back, sometimes we look ahead.
+    \stopitem
+    \startitem
+        The raw math list is stepwise converted to a normal node list. A next pass
+        can use information from a previous one.
+    \stopitem
+    \startitem
+        Fractions are implemented as dedicated objects with two atoms on top of
+        each other and optionally scripts and fences.
+    \stopitem
+    \startitem
+        Accents can be put on top of or below an atom or subformula and are an
+        object too. Again they can have scripts.
+    \stopitem
+    \startitem
+        Fences that are supposed to scale can wrap an atom or subformula and are
+        an object. Scripts can be attached as usual.
+    \stopitem
+    \startitem
+        Radicals have a symbols in from that extends over the atom or subformula
+        and therefore they are objects. Such an object can have a degree and
+        scripts.
+    \stopitem
+\stopitemize
+
+Some specific constructs like integrals and actuarians use these mechanisms and
+don't have their own. So, for instance \quote {radical} is more a generic
+construct than one specific for roots.
+
+Although in principle one can implement a math renderer in \TEX\ it is the
+interplay between atoms, objects, scripts, fence sizing, spacing, etc,\ that
+makes the argument for using a hard|-|coded solution. Because there is some
+general agreement about how math should be rendered, this also results in some
+standardization. There are plenty parameters that drive this process and
+especially the extensive interaction between fonts and \quotation {what to do in
+what situation} makes it more convenient to do this in the engine than in
+macro code. There is a mix of styles, fonts, nesting, local and per|-|formula
+data management involved and not all of that is easy in macros.
+
+Fonts play an important role in the rendering: they provide the symbols and also
+the specialized means for composing radicals, fences, scripts, etc. There are two
+aspects that have determined how the engine deals with it: the (sometimes pseudo)
+width and (sometimes abused) italic correction, extensible snippets that get
+combined into a shape of a defined size, and rules that complement these
+extensible snippets or stand on their own. None of the fonts that we have
+available is perfect and the way around that in \CONTEXT\ is to tweak them at
+runtime when we load them.
+
+Tweaks have some history. In \MKIV\ they were mostly responsible for fixing
+dimensions and providing additional extensibles. In \LMTX\ we go further and also
+use them to improve rendering for which they cooperate with additional engine
+features. During the years that we implemented new and better tweaks the
+mechanism in \CONTEXT\ that deal with atoms, fractions, radicals, accents and
+fences have been partially redone too. Although the engine can do more, we don't
+always use the new features. Some are just there because we wanted to improve the
+traditional approach. We can actually simplify the math engine a lot by for
+instance removing all the code that deals with italic correction (kind of special
+in traditional \TEX) and just wipe features we never use.
+
+Among the tasks that the engine delegates to macros is the construction of
+adaptive extensibles, especially those combined with text and most of these are
+horizontal: arrow or combinations of arrows with other frills, either or not with
+tex on top or below. In traditional fonts these are made from tips and rules,
+(repeated) minuses, (repeated) equals and other symbols with compensating spaces
+in between, to get rid of side bearings, and driven by for instance \TEX's leader
+feature. A lot of the chosen methods has to do with the lack of slots in fonts
+(to create extensibles) and the fact that commands are used to inject them in
+formulas. One can hide a lot in a command (macro) and the user doesn't see how
+ugly the hacks are. But no matter what one comes up with, rules are used in
+combination with glyphs. Till recently.
+
+When we were making sure that most \OPENTYPE\ math fonts can make nice math using
+tweaks, we wondered what to do with the few reasonable \TYPEONE\ math fonts left:
+the Antykwa, Iwona and Kurier. In retrospect we should have made a few companion
+fonts with extra glyphs but that insight came after re|-|implementing (read:
+stripping) virtual \UNICODE\ math to just suit these fonts. A nice challenge was
+to make \quotation {everything ruled} to use the more curved rule|-|based symbols
+in Antykwa and once that was done a logical next step was to see if that could
+also be done with tweaks in \OPENTYPE\ fonts. Once we got started with that the
+aim became to completely eradicate the use of rules, which are on the one hand
+made for some additions to the engine and on the other hand simplified related
+\TEX\ code. It also introduced a few more tweaks for fonts that lack snippets
+that replace rules. The mechanisms that are involved are accents (normally
+thinner and|/|or smaller symbols), fences (bars), radicals (the top rule) and
+what we call stackers in \CONTEXT: the thicker already mentioned arrow like
+extensibles. In fact, the smaller accent based arrows were never in \TEX\ fonts
+so we cannot use them as stackers: users expect some stability in rendering after
+all.
+
+A side effect of this approach is that, if we want, we can now not only strip all
+the code that deals with italic correction from the engine, but also all code
+related to rules! And we're not only talking of rendering but also all the
+variables that somehow determine how rules are done. In the end, when we also rid
+code that we don't use half the math engine can go. Of course we've added all
+kind of new things too so in the end the size and complexity is still comparable
+to the original.
+
+All this doesn't change the fact that the specific math representations that use
+some kind of \quote {rulish shape} is still a mess: in \UNICODE\ as well as
+\OPENTYPE. First of all the \TEX\ community didn't make sure that the things we
+call stackers in \CONTEXT\ got code points, which means that for instance a so
+called relbar is basically a stretched minus and that symbols that represent
+implying are tagged as left or right arrows. Compare that with the plank constant
+h which resulted in omission of the italic math \quote {$h$}.. The same is true
+for the vertical bars where there is no distinction between left, right and
+middle bars. At the same time the opportunity to get it all right in \OPENTYPE\
+fonts has been missed too. That is why we now have to tweak our way out of it.
+
+\starttexdefinition NoMoreRules #1
+    \startlinecorrection
+    \switchtobodyfont[#1,10pt]%
+    \scale[width=\textwidth]\bgroup
+        \startframed[offset=1ts,strut=no,width=.5\textwidth]
+           \startformula
+                   -
+             \quad \mrel    {1+2}{a+b+c}
+             \quad \overbar {x+y}
+             \quad \underbar{x+y}
+             \quad \frac    {x+y}{z}
+             \quad \sqrt    {x+y}
+             \quad -
+            \stopformula
+        \stopframed
+    \egroup
+    \blank[nowhite,samepage]
+    \midaligned{\strut#1}
+    \stoplinecorrection
+\stoptexdefinition
+
+\NoMoreRules{antykwa}
+\NoMoreRules{bonum}
+\NoMoreRules{cambria}
+\NoMoreRules{concrete}
+\NoMoreRules{dejavu}
+\NoMoreRules{ebgaramond}
+\NoMoreRules{euleroverpagella}
+\NoMoreRules{erewhon}
+\NoMoreRules{iwona}
+\NoMoreRules{kpfonts}
+\NoMoreRules{kurier}
+\NoMoreRules{libertinus}
+\NoMoreRules{lucida}
+\NoMoreRules{modern}
+\NoMoreRules{pagella}
+\NoMoreRules{schola}
+\NoMoreRules{stixtwo}
+\NoMoreRules{termes}
+\NoMoreRules{xcharter}
+
+From the perspective of the macro package (read: \CONTEXT) it means that we need
+to provide extensibles for relbar like stackers, over- and underbars, fraction
+separators, and radical top elements. Where possible we can borrow snippets from
+the extensible minus and tweak their dimensions and when a font lacks them we
+fake extensibles using the regular minus. As a reminder: that ensures that we
+have the proper left and right tips, that often have some curvature. In a follow
+up we will try to implement a more organic approach to rules (see \in {figure}
+[fig:organic-roots]).
+
+\startplacefigure
+      [title={An experiment with organic square roots in \TEX.},
+       reference=fig:organic-roots]
+    \externalfigure[ontarget-rules-001.jpg][width=.8\textwidth]
+\stopplacefigure
+
+\stopchapter
+
+\stopcomponent
+

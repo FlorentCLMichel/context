@@ -67,6 +67,9 @@
                         <cd:constant type="no"/>
                     </cd:parameter>
                 -->
+                <cd:parameter name="snapping">
+                    <cd:resolve name="value-snapping"/>
+                </cd:parameter>
                 <cd:parameter name="mathstyle">
                     <cd:resolve name="value-mathstyle"/>
                 </cd:parameter>
@@ -91,7 +94,7 @@
                 <cd:parameter name="fences">
                     <cd:resolve name="value-mathfence"/>
                 </cd:parameter>
-                <cd:parameter name="adapative">
+                <cd:parameter name="adaptive">
                     <cd:constant type="yes"/>
                     <cd:constant type="no" default="yes"/>
                 </cd:parameter>
@@ -252,5 +255,15 @@
             <cd:resolve name="instance-mathsimplealign"/>
         </cd:instances>
     </cd:command>
+
+    <!--
+
+        <cd:command name="eqalign" level="document" category="mathematics" file="math-ali.mkxl">
+            <cd:arguments>
+                <cd:content/>
+            </cd:arguments>
+        </cd:command>
+
+    -->
 
 </cd:interface>

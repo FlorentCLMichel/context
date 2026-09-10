@@ -99,7 +99,6 @@ function scripts.testsuite.process()
     local pattern = environment.argument("pattern")
     if pattern then
         local cleanup = environment.argument("cleanup")
-        local jit     = environment.argument("jit")
         local engine  = environment.argument("luatex") and "--luatex" or ""
         local results = { }
         local start   = statistics.starttiming(scripts.testsuite.process)
@@ -125,7 +124,7 @@ function scripts.testsuite.process()
                     os.remove(tucname)
                 end
                 if lfs.isfile(texname) then
-                    local command = f_runner(jit and "contextjit" or "context",engine,texname)
+                    local command = f_runner("context",engine,texname)
                     local result  = tonumber(os.execute(command)) or 0
                     if result > 0 then
                         results[filename] = result
@@ -476,7 +475,6 @@ function scripts.testsuite.compare()
     local bitmaps = environment.argument("bitmaps")
     local objects = environment.argument("objects")
     local cleanup = environment.argument("cleanup")
-    local jit     = environment.argument("jit")
     local engine  = environment.argument("luatex") and "--luatex" or ""
     if pattern and newname then
         oldname = oldname and file.addsuffix(oldname,"lua")
@@ -530,7 +528,7 @@ function scripts.testsuite.compare()
                 end
                 os.remove(pngname)
                 if lfs.isfile(texname) then
-                    local command = f_runner(jit and "contextjit" or "context",engine,texname)
+                    local command = f_runner("context",engine,texname)
                     local result  = os.execute(command)
                     if result > 0 then
                         new[filename] = { status = "error", comment = "error code: " .. result }

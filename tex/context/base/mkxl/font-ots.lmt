@@ -3877,8 +3877,6 @@ otf.helpers.pardirstate = pardirstate
 
 do
 
-local nn = 0
-
     local testdics = false
 
     -- using a merged combined hash as first test saves some 30% on ebgaramond and

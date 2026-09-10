@@ -1,0 +1,1533 @@
+
+% language=us runpath=texruns:manuals/ontarget
+
+\startcomponent ontarget-bitmaps
+
+\environment ontarget-style
+
+\startchapter[title={Unusual bitmaps}]
+
+\startsection[title=Introduction]
+
+In the early days of \TEX, fonts mostly were bitmaps and when such a bitmap was
+shown in zeros and ones, the shape was rather recognizable. A recent example of a
+special|-|purpose (TAOCP) bitmap font is Don Knuths three|-|six font. Do you
+recognize this character?
+
+\starttyping
+1111111111
+1100110011
+1100110011
+0000110000
+0000110000
+0000110000
+0001111000
+0001111000
+\stoptyping
+
+It has a rather low resolution, but can still serve its purpose as we will see
+later on. One problem is of course that such a low resolution doesn't render too
+well. Although vector images are often preferred, especially in a \METAPOST\
+context, below we will explain how we can also use bitmaps in a constructive way.
+
+This article appeared in the first 2024 issue of \TUGBOAT\ and as usual Karl
+Berry helped to make it better than it was submitted.
+
+\stopsection
+
+\startsection[title=Vectorizing bitmaps]
+
+The potrace library by Peter Selinger is a nice tool: you feed it a bitmap and
+are rewarded with an outline specification. Details about the process can be
+found in \hyphenatedurl {https://potrace.sourceforge.net/potrace.pdf}. When you
+limit yourself to only the basics, there are not that many source files and
+therefore I decided to add it to \LUAMETATEX\ in order to explore if we can do
+runtime conversions. Possible applications are logos and maybe converted bitmap
+fonts, although these can best be prepared beforehand because consistent metrics
+need to be taken care of. There are, however, other applications possible. Here I
+will discuss usage only in the perspective of \METAFUN, simply because we have to
+be visual, and \METAFUN\ is all about that. The library is of course accessible
+from the \LUA\ end, if only because that way we can use it in \METAFUN.
+
+We start with a simple example that also shows a potential usage:
+
+\startbuffer
+\startMPcode
+    string s ; s := "010 111 010";
+
+    draw lmt_potraced [
+        bytes = s,
+    ] ysized 2cm
+      withpen pencircle scaled 4
+      withcolor darkgreen ;
+\stopMPcode
+\stopbuffer
+
+\typebuffer
+
+We feed the \type {lmt_potraced} macro a $3\times3$ bitmap encoded as
+a string and this is what we get back:
+
+\startlocallinecorrection
+\getbuffer
+\stoplocallinecorrection
+
+We expect a cross and get back a circle which is not what we want. This is
+because we don't have much body in this bitmap and potrace needs more pixels in
+order to give back a decent outline.
+
+\startbuffer
+\startMPcode
+    string s ; s := "010 111 010";
+
+    draw lmt_potraced [
+        bytes   = s,
+        explode = true,
+    ] ysized 2cm
+      withpen pencircle scaled 4
+      withcolor darkgreen ;
+\stopMPcode
+\stopbuffer
+
+\typebuffer
+
+So, this time we \quote {explode} the bitmap, that is: we repeat every pixel
+three times in the horizontal and vertical direction. One can specify \type {nx}
+and \type {ny} but so far using different values doesn't help more than the magic
+threesome.
+
+\startlocallinecorrection
+\getbuffer
+\stoplocallinecorrection
+
+We're getting there but need to do a bit more.
+
+\startbuffer
+\startMPcode
+    string s ; s := "010 111 010";
+
+    draw lmt_potraced [
+        bytes     = s,
+        threshold = 0.25,
+        explode   = true,
+    ] ysized 2cm
+      withpen pencircle scaled 4
+      withcolor darkgreen ;
+\stopMPcode
+\stopbuffer
+
+\typebuffer
+
+Here we've set a threshold which will clip the paths in a range so that our case
+will get a better fit:
+
+\startlocallinecorrection
+\getbuffer
+\stoplocallinecorrection
+
+By now you will have noticed that we get back a path and this is an important
+feature of potrace: it returns a closed path expressed in lines and curves that
+one is supposed to fill. That result is converted into a \LUA\ table that we then
+can use for instance to generate a valid \METAPOST\ path. We can do whatever we
+like with that path: draw or fill it for clipping. Natively, the library might
+return multiple paths but the user sees only one because we concatenate them
+which is a feature of the \METAPOST\ library that comes with \LUAMETATEX.
+
+Once we could do this it was no big deal to add support for filtering. After all,
+we have more than \type {0} and \type {1} characters available. Take this
+example, where we lay out the bitmap a bit differently, for clarity:
+
+\startbuffer
+\startMPcode
+    string s ; s := "
+        211222122
+        133111311
+        211222122
+    ";
+
+    path p[] ;
+
+    p[1] := lmt_potraced [
+        bytes     = s,
+        threshold = 0.25,
+        explode   = true,
+        value     = "1",
+    ] ;
+    p[2] := lmt_potraced [
+        bytes     = s,
+        threshold = 0.25,
+        explode   = true,
+        value     = "2",
+    ] ;
+    p[3] := lmt_potraced [
+        bytes     = s,
+        threshold = 0.25,
+        explode   = true,
+        value     = "3",
+    ] ;
+
+    fill p[1] withcolor darkgreen ;
+    draw p[1] withcolor darkyellow ;
+    draw p[2] withcolor darkred ;
+    draw p[3] withcolor darkblue ;
+
+    currentpicture := currentpicture ysized 3cm ;
+\stopMPcode
+\stopbuffer
+
+\typebuffer
+
+We save the paths so that we can use them multiple times, here for a draw and
+fill operation on the first path but you could scale, rotate, or manipulate the
+result before rendering it.
+
+\startlocallinecorrection
+    \doifmodeelse {tugboat} {
+        \noindent\scale[width=\textwidth]{\getbuffer}
+    } {
+        \noindent\getbuffer
+    }
+\stoplocallinecorrection
+
+This example demonstrates that a user can define outlines using a bitmap
+specification and that the amount of code is rather small. At some point we might
+add a few more helpers that might reduce the amount of code even more.
+
+\startbuffer
+\startMPcode
+    string s ; s := "
+        212111233
+        131111233
+        212222133
+        212222133
+    ";
+
+    path p[] ;
+
+    p[1] := lmt_potraced [
+        bytes     = s,
+        threshold = 0.25,
+        explode   = true,
+        value     = "1",
+    ] ;
+    p[2] := lmt_potraced [
+        bytes     = s,
+        threshold = 0.25,
+        explode   = true,
+        value     = "2",
+    ] ;
+    p[3] := lmt_potraced [
+        bytes     = s,
+        threshold = 0.25,
+        explode   = true,
+        value     = "3",
+    ] ;
+
+    linejoin := butt ;
+
+    fill p[1] withcolor darkgreen  withtransparency (1,.50) ;
+    fill p[2] withcolor darkred    withtransparency (1,.50) ;
+    fill p[3] withcolor darkblue   withtransparency (1,.50) ;
+    draw p[1] withcolor darkyellow withtransparency (1,.75) ;
+    draw p[2] withcolor darkyellow withtransparency (1,.75) ;
+    draw p[3] withcolor darkyellow withtransparency (1,.75) ;
+
+    currentpicture := currentpicture ysized 4cm ;
+\stopMPcode
+\stopbuffer
+
+Because we have single paths we can safely apply properties like transparency, as
+shown below: crossing lines come out right instead of with accumulated
+transparent colors.
+
+\startlocallinecorrection
+    \doifmodeelse {tugboat} {
+        \noindent\scale[width=\textwidth]{\getbuffer}
+    } {
+        \noindent\getbuffer
+    }
+\stoplocallinecorrection
+
+% {\em basically we can make tabular info if we relate cells to texts}
+
+Sometimes you want to swap the rows and columns so we provide a feature for doing
+that:
+
+\startbuffer
+\startMPcode
+    string s[] ;
+
+    s[1] := "1110 0110 0110 0111";
+    s[2] := "1000 1111 1111 0001";
+
+    draw lmt_potraced [
+        bytes   = s[1],
+        explode = true,
+    ] ysized 2cm withcolor darkgreen withpen pencircle scaled 4 ;
+
+    draw lmt_potraced [
+        bytes   = s[2],
+        explode = true,
+    ] ysized 2cm withcolor darkblue withpen pencircle scaled 4 ;
+
+    draw lmt_potraced [
+        bytes   = s[1],
+        explode = true,
+        swap    = true,
+    ] ysized 2cm withcolor white withpen pencircle scaled 2 ;
+\stopMPcode
+\stopbuffer
+
+\typebuffer
+
+When one uses \LUA\ input (as we will see later), one can do that when generating
+the bitmap. At any rate, this is what we get from the above:
+
+\startlocallinecorrection
+\getbuffer
+\stoplocallinecorrection
+
+The previous examples demonstrate that not much code is needed in order to
+achieve nice effects. It also illustrates that one needs to twist the mind a
+little and think of bitmap specifications as actually efficient outline
+definitions. One could argue that such rectangular shapes are easy to program in
+\METAPOST\ anyway, and going via bitmaps is kind of strange. So, let's move on to
+a more attractive example.
+
+\stopsection
+
+\startsection[title=How about fonts]
+
+In order to demonstrate building fonts we need a decent bitmap font and it
+happens that Don Knuth's \quote {Font36} is a good candidate. We have discussed
+that one elsewhere and its usage can be found in the \METAFUN\ \type {threesix}
+library. We happily borrow the definitions from that library:
+
+\startbuffer
+\startMPdefinitions
+string dekthreesix[] ; path shapes[] ;
+
+def DEK(expr n, b) =
+    dekthreesix[utfnum(n)] := b ;
+enddef ;
+
+DEK("0", "00111100 01111110 11000011 11000011 11000011 11000011 01111110 00111100" ) ;
+DEK("1", "00011100 11111100 11101100 00001100 00001100 00001100 11111111 11111111" ) ;
+DEK("2", "00111110 01110011 01110011 00000011 00001110 00111000 11110001 11111111" ) ;
+DEK("3", "01111110 01100110 00000110 00111100 00000110 11100111 11100111 01111110" ) ;
+DEK("4", "00001110 00011110 00110110 01100110 11111111 11111111 00000110 00001110" ) ;
+DEK("5", "01111110 01111110 01000000 01111100 01000111 00000011 11000111 11111110" ) ;
+DEK("6", "01111110 01100110 11000000 11011100 11100110 11000011 01100011 01111110" ) ;
+DEK("7", "11111111 11111111 10000111 10001110 00011100 00011100 00011100 00011100" ) ;
+DEK("8", "01111110 01100110 01100110 00111100 11000011 11000011 11000011 01111110" ) ;
+DEK("9", "01111110 11000110 11000011 01100111 00111011 00000011 01100110 01111110" ) ;
+DEK("A", "000110000 000111000 001111100 001101100 011001110 011111110 010000110 111100111") ;
+DEK("B", "1111100 1110110 0110110 0111100 0110011 0110011 1110011 1111100") ;
+DEK("C", "01111101 11110011 11100001 11100001 11100000 11100000 11100001 01111110") ;
+DEK("D", "11111100 11100010 01100011 01100011 01100011 01100011 11100010 11111100") ;
+DEK("E", "1111111 1110001 0110101 0111100 0110100 0110001 1110001 1111111") ;
+DEK("F", "11111111 11100001 01100101 01111100 01100100 01100000 11111000 11111000") ;
+DEK("G", "01111010 11100110 11100010 11100000 11100111 11100010 11100010 01111100") ;
+DEK("H", "11100111 11100111 01000010 01111110 01000010 01000010 11100111 11100111") ;
+DEK("I", "1111111 1111111 0011000 0011000 0011000 0011000 1111111 1111111") ;
+DEK("J", "01111111 01111111 00000110 00000110 11110110 01100110 01100110 00111100") ;
+DEK("K", "11101110 11100100 01101000 01110000 01111000 01101100 11100110 11101111") ;
+DEK("L", "111111000 111111000 011000000 011000000 011000000 011000011 111000011 111111111") ;
+DEK("M", "1100000011 1110000111 0111111110 0100110010 0100110010 0100000010 1100000011 1100000011") ;
+DEK("N", "11000011 11100011 01110010 01111010 01011110 01001110 11100110 11100010") ;
+DEK("O", "01111110 11000011 11000011 11000011 11000011 11000011 11000011 01111110") ;
+DEK("P", "11111110 11100011 01100011 01111110 01100000 01100000 11111000 11111000") ;
+DEK("Q", "01111100 11000110 11000110 11000110 11000110 11001110 11000110 01111101") ;
+DEK("R", "11111100 11100110 01100110 01111100 01101000 01100100 11100010 11100111") ;
+DEK("S", "01111110 11100001 11100001 01111000 00011110 10000111 11000011 10111110") ;
+DEK("T", "1111111111 1100110011 1100110011 0000110000 0000110000 0000110000 0001111000 0001111000") ;
+DEK("U", "111101111 111101111 011000010 011000010 011000010 011000010 011000010 001111100") ;
+DEK("V", "11111000111 11111000111 01110000010 00110000100 00111000100 00011001000 00001101000 00001110000") ;
+DEK("W", "111000000111 111000000111 110000000010 011000000100 011001000100 001101101000 001101101000 000110110000") ;
+DEK("X", "1111001110 1111000110 0001101000 0000110000 0000110000 0001011000 0110001111 0111001111") ;
+DEK("Y", "111100011 111100011 011000010 001110100 000111000 000011000 001111110 001111110") ;
+DEK("Z", "11111111 10000111 00001110 00011100 00111000 01110000 11100001 11111111") ;
+\stopMPdefinitions
+\stopbuffer
+
+\doifelsemode {tugboat} {
+    \typebuffer
+} {
+    \typebuffer[style=\small\tt]
+}
+
+\getbuffer
+
+We use these definitions in the \METAPOST\ code below. Helpers like \type
+{utfnum} are part of \LUAMETAFUN\ and we use (named) colors defined at the
+\CONTEXT\ end.
+
+\startbuffer
+\startMPcode
+def shapethem(expr first, last) =
+    for i = utfnum(first) upto utfnum(last) :
+        shapes[i] := lmt_potraced [
+            bytes   = dekthreesix[i],
+            explode = true,
+          % threshold = .25, % more rectangular
+            value   = "1",
+        ] ;
+    endfor ;
+enddef ;
+
+def drawthem(expr first, last, dx, dy) =
+    numeric d ; d := 0 ;
+    numeric f ; f := utfnum(first) ;
+    numeric l ; l := utfnum(last) ;
+    for i = f upto l :
+        fill shapes[i] shifted (d,dy) withcolor "middlegray" ;
+        draw shapes[i] shifted (d,dy) withcolor "darkgreen" ;
+      % draw boundingbox shapes[i] shifted (d,dy);
+        d := d + bbwidth(shapes[i]) + dx;
+    endfor ;
+enddef ;
+
+shapethem("0","9") ;
+shapethem("A","Z") ;
+
+drawthem("0", "9", 10, -00) ;
+drawthem("A", "J", 10, -30) ;
+drawthem("K", "S", 10, -60) ;
+drawthem("T", "Z", 10, -90) ;
+
+currentpicture := currentpicture xsized TextWidth ;
+\stopMPcode
+\stopbuffer
+
+\typebuffer
+
+Here we don't integrate it as a font but just show the characters as they come
+out, which hopefully is easier to understand. You can take a close look at the
+bitmaps in order to see what we get rendered in \in {figure} [fig:fancyfont].
+Setting a lower threshold will give more rectangular results.
+
+\startplacefigure[title=A fancy outline font,reference=fig:fancyfont]
+    \getbuffer
+\stopplacefigure
+
+Because we're not going to use this font for typesetting here, a simple example
+of a definition will do. We first load an already existing module so that we
+don't need to define the bitmap definitions; basically they are the same as
+above.
+
+\startbuffer
+\useMPlibrary[threesix]
+
+\startMPcalculation{simplefun}
+    vardef ThreeSixPotraced (expr code, spread, lift) =
+        draw lmt_potraced [
+            bytes   = code,
+            explode = true,
+            value   = "1",
+        ] scaled (1/3) shifted (spread,lift) ;
+    enddef ;
+\stopMPcalculation
+\stopbuffer
+
+\typebuffer \getbuffer
+
+Next we register a \METAFUN\ font using similar trickery as in that module. There
+we define a few variants but that is not needed here.
+
+\startbuffer
+\startluacode
+    local utfbyte = utf.byte
+
+    local f_code = string.formatters['ThreeSixPotraced("%s",%s,%s);']
+
+    function MP.registerthreesixpotraced(name)
+        fonts.dropins.registerglyphs {
+            name     = name,
+            units    = 12,
+            usecolor = true,
+        }
+        for u, data in table.sortedhash(MP.font36) do
+            local ny     = 8
+            local nx     = ((#data + 1) // ny) - 1
+            local height = ny * 1.1 - 0.1
+            local width  = nx * 1.1 - 0.1
+            local spread = 0.9
+            local lift   = 0.3
+            fonts.dropins.registerglyph {
+                category = name,
+                unicode  = utfbyte(u),
+                width    = width + spread,
+                height   = height,
+                code     = f_code(data,spread,lift),
+            }
+        end
+    end
+
+    MP.registerthreesixpotraced("fontthreesixpotraced")
+\stopluacode
+\stopbuffer
+
+\typebuffer \getbuffer
+
+Finally we define a font feature that will hook the previous code into the font
+handler. There a \TYPETHREE\ font will be constructed.
+
+\startbuffer
+\definefontfeature
+  [fontthreesixpotraced]
+  [default]
+  [metapost=fontthreesixpotraced,
+   spacing=.375 plus .2 minus .1 extra .375]
+
+\definefont[DEKFontP][Serif*fontthreesixpotraced]
+\stopbuffer
+
+\typebuffer \getbuffer
+
+We now show an example of usage (abridged). This font only has uppercase
+characters so one might consider duplicating these into the lowercase slots.
+Because we replace glyphs in the serif font used, we still have a complete font,
+albeit of mixed design.
+
+% {\DEKFontP \showglyphs THIS IS JUST A TEST}
+\startbuffer
+\DEKFontP \WORD{\samplefile{knuth}}
+\stopbuffer
+
+\typebuffer
+
+This gives us a rendering that is quite readable, especially when you consider
+how small the bitmaps are (the red bar is the overfull box marker):
+
+\startbuffer[tex]
+\protected\def\TeX
+  {\dontleavehmode
+   \begingroup
+   T%
+   \kern-.40\fontcharwd\font`T%
+   \lower.45\fontcharht\font`X\hbox{E}%
+   \kern-.15\fontcharwd\font`X%
+   X%
+   \endgroup}
+\stopbuffer
+
+\start \pushoverloadmode
+    \def|#1|{\endash}
+    \getbuffer[tex]
+    \doifelsemode {tugboat} {
+        \raggedright
+        \blank
+        \getbuffer
+        \blank
+    } {
+        \getbuffer
+    }
+\stop
+
+Just in case Don Knuth runs into this example, we need to cheat a little here and
+redefine the \TEX\ logo definition:
+
+\typebuffer[tex]
+
+A real font would have proper font kerns but if needed you can set that up using
+the \OPENTYPE\ feature plug in mechanism that \CONTEXT\ provides. A font like
+this can also be colored:
+
+\startlocallinecorrection
+\scale[height=2cm]{\darkblue\pushoverloadmode\DEKFontP\getbuffer[tex]\TeX}
+\stoplocallinecorrection
+
+\stopsection
+
+\startsection[title=External bitmaps]
+
+A convenient way to include traced images is to use the potrace command line
+tool. However, we can also include grayscale single|-|byte \PNG|-|encoded images:
+
+\startbuffer
+\startMPcode
+    path p ; p := lmt_potraced [
+        filename  = "mill.png",
+        criterium = 100,
+    ] ;
+
+    fill last_potraced_bounds withcolor "middlegray" ;
+    fill p withcolor "darkgreen" ;
+    draw p withcolor "darkred" withpen pencircle scaled 1.5 ;
+    setbounds currentpicture to last_potraced_bounds ;
+
+    currentpicture := currentpicture ysized 10cm ;
+\stopMPcode
+\stopbuffer
+
+\typebuffer
+
+This is not the best image but the photograph happens to be part of the \CONTEXT\
+distribution so why not use it. You can of course apply a different criterion and
+overlay a subsequent trace in a different color. The result is shown in \in {figure}
+[fig:tracedmill].
+
+\startplacefigure[title=A traced \PNG\ image.,reference=fig:tracedmill]
+    \getbuffer
+\stopplacefigure
+
+In addition to the \typ {last_potraced_bounds} path variable we also have \typ
+{last_potraced_width} and \typ {last_potraced_height} numeric available.
+
+\stopsection
+
+\startsection[title=Using \LUA|-|generated bitmaps]
+
+It is tempting to see what can be done with a bitmap generated by \LUA, but let's
+first give a simple example. Here we register a bitmap:
+
+\startbuffer
+\startluacode
+local s = [[
+    000000010000000000000010000000
+    000000101000000000000101000000
+    000001000100000000001000100000
+    000010000010000000010000010000
+    000100000001000000100000001000
+    001000000000100001000000000100
+    010000000000010010000000000010
+    100000000000001100000000000001
+]]
+
+potrace.setbitmap("mybitmap",s)
+\stopluacode
+\stopbuffer
+
+\typebuffer \getbuffer
+
+\startbuffer
+\startMPcode
+    path p ; p := lmt_potraced [
+        stringname = "mybitmap",
+    ] ;
+
+    fill p ysized 2cm withcolor "darkblue" ;
+\stopMPcode
+\stopbuffer
+
+\typebuffer
+
+We could play with the parameters but what we get is an outline that is supposed
+to be filled:
+
+\startlocallinecorrection
+    \doifmodeelse {tugboat} {
+        \noindent\scale[width=\textwidth]{\getbuffer}
+    } {
+        \noindent\getbuffer
+    }
+\stoplocallinecorrection
+
+Next we create a bitmap from a dataset; in this case, we draw a function. Of
+course we could create some handy helpers to do this:
+
+\startbuffer
+\startluacode
+local d = table.setmetatableindex("table")
+
+local t    = { }
+local step = 100
+local ymin = 0
+local ymax = 0
+
+local x    = 0
+local dx   = 10*math.pi/step
+
+for i=1,step do
+    local y = math.round(math.cos(x)*20)
+    x = x + dx
+    if y > ymax then
+        ymax = y
+    end
+    if y < ymin then
+        ymin = y
+    end
+    t[i] = y
+end
+
+for i=1,step do
+    for j=ymin, ymax do
+        d[j][i] = '0'
+    end
+end
+
+for i=1,step do
+    d[t[i]][i] = '1'
+end
+
+for y=ymin,ymax do
+    d[y] = table.concat(d[y])
+end
+
+potrace.setbitmap("mybitmap",table.concat(d," ",ymin,ymax))
+\stopluacode
+\stopbuffer
+
+\typebuffer \getbuffer
+
+\startbuffer
+\startMPcode
+    path p ; p := lmt_potraced [
+        stringname = "mybitmap",
+        explode   = true,
+      % tolerance = 0.5,
+        threshold = 0,
+      % optimize  = true,
+    ] ;
+
+    fill p withcolor "darkblue" ;
+\stopMPcode
+\stopbuffer
+
+% if texmode("tugboat") : currentpicture := currentpicture xsized(TextWidth) fi
+
+\typebuffer
+
+To what extent this is a useful application is to be decided:
+
+\startlocallinecorrection
+    \doifmodeelse {tugboat} {
+        \noindent\scale[width=\textwidth]{\getbuffer}
+    } {
+        \noindent\getbuffer
+    }
+\stoplocallinecorrection
+
+Later we will see that it is less work if we stay in the first quadrant, using
+$(1,1)$ as lower left corner. Here we explicitly need to provide \type {concat}
+the range because we have a negative $y_{\tf min}$.
+
+It quickly gets more interesting when we use an intermediate bitmap for (a kind
+of) surface plots.
+
+% \startbuffer
+% \startluacode
+% local sin, cos, pi = math.sin, math.cos, math.pi
+%
+% local d  = table.setmetatableindex("table")
+% local pp = pi/10
+%
+% for x=1,100 do
+%     for y=1,100 do
+%         local z = sin(pp*x) + cos(pp*y)
+%         if z > 0.5 then
+%             d[x][y] = '1'
+%         elseif z > 0 then
+%             d[x][y] = '2'
+%         elseif z < -0.5 then
+%             d[x][y] = '3'
+%         else
+%             d[x][y] = '4'
+%         end
+%     end
+% end
+%
+% potrace.setbitmap("mybitmap",d)
+% \stopluacode
+% \stopbuffer
+
+\startbuffer
+\startluacode
+local sin, cos, pi = math.sin, math.cos, math.pi
+
+local pp = pi/10
+
+local function f(x,y)
+    local z = sin(pp*x) + cos(pp*y)
+    if z > 0.5 then
+        return '1'
+    elseif z > 0 then
+        return '2'
+    elseif z < -0.5 then
+        return '3'
+    else
+        return'4'
+    end
+end
+
+potrace.setbitmap("mybitmap",potrace.contourplot(100,100,f))
+\stopluacode
+\stopbuffer
+
+\typebuffer \getbuffer
+
+Here we use a helper that runs the given function over the maxima and collects
+the results in a bitmap. More such helpers will be provided when users come up
+with more demands.
+
+\startbuffer[1]
+\startMPcode
+    fill lmt_potraced [
+        stringname = "mybitmap",
+        value      = "1",
+        explode    = true,
+        threshold  = 0.25,
+      % tolerance  = 0.1,
+      % threshold  = 1.0,
+        optimize   = true,
+    ] withcolor "darkred" ;
+
+    fill lmt_potraced [
+        stringname = "mybitmap",
+        value      = "2",
+        explode    = true,
+        threshold  = 0.25,
+      % tolerance  = 0.1,
+      % threshold  = 1.0,
+        optimize   = true,
+    ] withcolor "darkgreen" ;
+
+    fill lmt_potraced [
+        stringname = "mybitmap",
+        value      = "3",
+        explode    = true,
+        threshold  = 0.25,
+      % tolerance  = 0.1,
+      % threshold  = 1.0,
+        optimize   = true,
+    ] withcolor "darkblue" ;
+
+    fill lmt_potraced [
+        stringname = "mybitmap",
+        value      = "4",
+        explode    = true,
+        threshold  = 0.25,
+      % tolerance  = 0.1,
+      % threshold  = 1.0,
+        optimize   = true,
+    ] withcolor "darkyellow" ;
+
+    clip currentpicture to last_potraced_bounds enlarged -1;
+    currentpicture := currentpicture xysized (.45*TextWidth,4cm) ;
+\stopMPcode
+\stopbuffer
+
+\startbuffer[2]
+\startMPcode
+    fill lmt_potraced [
+        stringname = "mybitmap",
+        value      = "1",
+        explode    = true,
+      % threshold  = 0.25,
+        tolerance  = 0.1,
+        threshold  = 1.0,
+        optimize   = true,
+    ] withcolor "darkred" ;
+
+    fill lmt_potraced [
+        stringname = "mybitmap",
+        value      = "2",
+        explode    = true,
+      % threshold  = 0.25,
+        tolerance  = 0.1,
+        threshold  = 1.0,
+        optimize   = true,
+    ] withcolor "darkgreen" ;
+
+    fill lmt_potraced [
+        stringname = "mybitmap",
+        value      = "3",
+        explode    = true,
+      % threshold  = 0.25,
+        tolerance  = 0.1,
+        threshold  = 1.0,
+        optimize   = true,
+    ] withcolor "darkblue" ;
+
+    fill lmt_potraced [
+        stringname = "mybitmap",
+        value      = "4",
+        explode    = true,
+      % threshold  = 0.25,
+        tolerance  = 0.1,
+        threshold  = 1.0,
+        optimize   = true,
+    ] withcolor "darkyellow" ;
+
+    clip currentpicture to last_potraced_bounds enlarged -1;
+    currentpicture := currentpicture xysized (.45*TextWidth,4cm) ;
+\stopMPcode
+\stopbuffer
+
+\typebuffer[1]
+
+Here we are only exploring the possibilities so there is no interface like we
+have with contour plots. One can imagine that we provide this as a plugin, which
+is not that hard but whether it eventually happens depends on user demand or
+rainy days. So to summarize: here we generate the bitmap, we call out to potrace
+for a vector representation, that gets fed into \METAPOST\ and which gives us
+back a result that can be converted to \PDF. Of course we could go directly from
+potrace output to \PDF\ if we want to, but now we get full control over the final
+result. In case you wonder about performance: it compiles real fast!
+
+\startlocallinecorrection
+    \noindent\getbuffer[1]\enspace\getbuffer[2]
+\stoplocallinecorrection
+
+Some work is needed to scale the image to the proportions that reflect the input
+ranges but because we have a vector image that does not affect the quality of the
+outcome. Here we also show the effects of \typ {tolerance} which influences the
+optimizing and \typ {threshold} that determines the accuracy (number of points).
+In the second rendering: we use the commented values that work quite well with
+this kind of more mathematical images.
+
+\startsection[title=Experimenting]
+
+You can use bitmaps as a design tool but it needs a little experimenting to get
+the idea. Take these examples:
+
+\startbuffer[1]
+\startMPcode
+    fill lmt_potraced [ bytes = "
+        00100000001
+        01010000010
+        10001000100
+        01000101000
+        00100010000
+        00010101000
+        00001000100
+        00010100010
+        00100010001
+        01000001010
+        10000000100
+    " ] xsized 2cm
+        withcolor darkgreen ;
+\stopMPcode
+\stopbuffer
+
+\startbuffer[2]
+\startMPcode
+    fill lmt_potraced [ bytes = "
+        00100000001
+        01010000011
+        10001000100
+        01000101000
+        00100010000
+        00010101000
+        00001000100
+        00010100010
+        00100010001
+        11000001010
+        10000000100
+    " ] xsized 2cm
+        withcolor darkblue ;
+\stopMPcode
+\stopbuffer
+
+\startbuffer[3]
+\startMPcode
+    fill lmt_potraced [ bytes = "
+        00100000011
+        01110000111
+        11111001110
+        01111111100
+        00111111000
+        00011111000
+        00011111100
+        00111111110
+        01110011111
+        11100001110
+        11000000100
+    " ] xsized 2cm
+        withcolor darkyellow ;
+\stopMPcode
+\stopbuffer
+
+\startlocallinecorrection
+\startcombination[nx=3,ny=1]
+    {\getbuffer[1]} {}
+    {\getbuffer[2]} {}
+    {\getbuffer[3]} {}
+\stopcombination
+\stoplocallinecorrection
+
+We started with a simple X|-|like symbol:
+
+\typebuffer[1]
+
+Next we started filling the shape a bit and tried to make it less spiked:
+
+\typebuffer[2]
+
+And finally we add even more ones to the bitmap. You need to fill a bitmap area
+in order to get an efficient fill.
+
+\typebuffer[3]
+
+If you're in doubt you can also render the bitmap, assuming that it has
+reasonable proportions.
+
+\startbuffer[1]
+\startMPcode
+    string s ; s := "
+        00100000011
+        01110000111
+        11111001110
+        01111111100
+        00111111000
+        00011111000
+        00011111100
+        00111111110
+        01110011111
+        11100001110
+        11000000100
+    " ;
+    fill lmt_potraced [ bytes = s ]
+        xsized 3cm
+        withcolor darkyellow ;
+    draw lmt_potraced [ bytes = s, alternative = "text" ]
+        shifted (.25,.25)
+        xsized 3cm ;
+\stopMPcode
+\stopbuffer
+
+\startbuffer[2]
+\startMPcode
+    string s ; s := "
+        00100000011
+        01110000111
+        11111001110
+        01111111100
+        00111111000
+        00011111000
+        00011111100
+        00111111110
+        01110011111
+        11100001110
+        11000000100
+    " ;
+    fill lmt_potraced [ bytes = s, polygon = true ]
+        shifted (.25,.25)
+        xsized 3cm
+        withcolor darkblue ;
+    fill lmt_potraced [ bytes = s ]
+        xsized 3cm
+        withtransparency (1,.75)
+        withcolor darkyellow ;
+    draw lmt_potraced [ bytes = s, alternative = "text" ]
+        shifted (.25,.25)
+        xsized 3cm ;
+\stopMPcode
+\stopbuffer
+
+\typebuffer[1]
+
+The article that we mentioned in the introduction explains how potrace looks at a
+bits in relation to its neighbors.
+
+\startlocallinecorrection
+    \noindent\getbuffer[1]\quad\getbuffer[2]
+\stoplocallinecorrection
+
+You can save some runtime (and coding) by using the start|-|stop wrappers that
+keep the (intermediate) potrace object available. This permits for instance
+showing the \quote {original} polygon that serves as basis for successive steps
+in the library towards to the final curve(s).
+
+\startbuffer
+\startMPcode
+    string s ; s :=
+        "01111111111111111111111111111100
+         11000000000000000000000000000110
+         11000000000000000000000000000011
+         11000000000000000000000000000011
+         11000000000000000000000000000011
+         01100000000000000000000000000011
+         00111111111111111111111111111110";
+
+    lmt_startpotraced [ bytes = s ] ;
+
+        p := lmt_potraced [
+            value     = "0",
+            threshold = 0,
+            tolerance = 0,
+            optimize  = true,
+        ] ;
+
+        draw image (
+            p := p shifted - center p ;
+            draw p
+                withpen pencircle scaled 1
+                withcolor "darkblue" ;
+            drawpoints p
+                withpen pencircle scaled .5
+                withcolor "white" ;
+            draw boundingbox p
+                withpen pencircle scaled .1
+                withcolor "darkgray" ;
+        ) ysized 3cm ;
+
+        path p ; p := lmt_potraced [
+            value   = "0",
+            polygon = true,
+        ] ;
+
+        draw image (
+            p := p shifted - center p ;
+            draw p
+                withpen pencircle scaled .25
+                withcolor "middleyellow" ;
+            drawpoints p
+                withpen pencircle scaled .175
+                withcolor "white" ;
+            draw boundingbox p
+                withpen pencircle scaled .05
+                withcolor "darkgray" ;
+        ) ysized 3cm ;
+
+    lmt_stoppotraced ;
+\stopMPcode
+\stopbuffer
+
+\typebuffer
+
+\startlocallinecorrection
+    \doifmodeelse {tugboat} {
+        \noindent\scale[width=\textwidth]{\getbuffer}
+    } {
+        \noindent\getbuffer
+    }
+\stoplocallinecorrection
+
+The above is just a bit of exploring the possibilities so eventually there will
+be a chapter on this in the \LUAMETAFUN\ manual, because it is definitely fun to
+play with this in the perspective of \METAPOST.
+
+\stopsection
+
+\startsection[title=Contour plots]
+
+We end with showing how we can do rather nice contour plots and region plots with
+help of the potracer. Let us start with the latter type of graphics. In a recent
+math paper Mikael was counting nodal domains of Neumann eigenfunctions to the
+Laplace operator in a square. These eigenfunctions are built from cosines. One
+example is given by
+
+\startformula
+    \Psi(x,y) = \cos(8\pi x)\cos(3\pi y) + \cos(3\pi y)\cos(8\pi x)\mtp{.}
+\stopformula
+
+The related graphic of interest is to fill the part of the unit square where \im
+{\Psi} is positive. In the article, Wolfram Mathematica was used to produce this
+graphic, with its built-in function \typ {RegionPlot}. The result was indeed
+satisfactory (\in{Figure}{(a)}[fig:Mathematica]).
+
+If one looks closely at the graphics one will see that the filled regions are
+made up of a mesh. With potrace we instead receive one~(!) path. To generate the
+corresponding graphic we first use \LUA\ to define a function that takes a point
+as input and returns 1 if \im {\Psi} is positive at the point and 0 otherwise. We
+then use it to generate a \im {1000\times 1000} bitmap image of zeros and ones
+accordingly.
+
+\startbuffer
+\startluacode
+    local cos, pi = math.cos, math.pi
+
+    local N       = 1000
+    local pp      = pi/N
+    local pp3     = 3 * pp
+    local pp8     = 8 * pp
+    local cospp8y = 0
+    local cospp3y = 0
+
+    local function f(x,y)
+        if x == 1 then
+            cospp8y = cos(pp8*y)
+            cospp3y = cos(pp3*y)
+        end
+        local z = cos(pp8*x)*cospp3y + cos(pp3*x)*cospp8y
+        if z > 0 then
+            return '1'
+        else
+            return '0'
+        end
+    end
+
+    potrace.setbitmap("mybitmap", potrace.contourplot(N,N,f))
+\stopluacode
+\stopbuffer
+
+\typebuffer
+\getbuffer
+
+Once this is done, we can use the result in \typ{lmt_potraced}.
+
+\startbuffer
+\startMPcode
+    path p ; p := lmt_potraced [
+        stringname = "mybitmap",
+        value      = "1",
+        threshold  = 0.25,
+        optimize   = true,
+    ] ;
+
+    p := p xsized .45TextWidth ;
+    fill p withcolor "darkred" ;
+\stopMPcode
+\stopbuffer
+
+\typebuffer
+
+This results in \in{Figure}{(b)}[fig:Mathematica], which looks very similar to
+the one generated by Wolfram Mathematica. Note that \type {p} is one
+(disconnected) path.
+
+\startplacefloat
+    [figure]
+    [reference=fig:Mathematica,
+     title={(a) A region plot generated by Wolfram Mathematica.
+            (b) The same, generated by potrace and \METAFUN.}]
+    \startcombination[nx=2,ny=1,distance=.02tw]
+        {\externalfigure[ontarget-bitmaps-mathematica][width=.45tw]}{(a)}
+        {\getbuffer}{(b)}
+    \stopcombination
+\stopplacefloat
+
+We give one example of a contour plot. By a contour plot, here we mean a plot of
+the curve that is described as the solution to an equation \im {F(x,y) = 0}. With
+\im {F(x,y) = y - f(x)} we realize that function graphs \im {y = f(x)} provide a
+particular example, but we can also handle more complicated curves here, for
+example the unit circle (\im {F(x,y) = x^2 + y^2 -1}).
+
+Let us draw a part of the curve that goes under the name the Trisectrix of
+Maclaurin, a curve that can be used to trisect angles (named after Colin
+Maclaurin in 1742). We use the function
+
+\startformula
+    F(x,y) = 2x(x^2 + y^2) - (3x^2 - y^2)\mtp{.}
+\stopformula
+
+Let us construct the path and draw it.
+
+\startbuffer
+\startluacode
+    local N   = 1000
+    local xx  = 3/N
+    local yy  = 3/N
+
+    local function f(x,y)
+        local x = xx*x - 1
+        local y = yy*y - 1.5
+        local z = 2*x*(x^2 + y^2) - (3*x^2 - y^2)
+        if z > 0 then
+            return '1'
+        else
+            return '0'
+        end
+    end
+
+    potrace.setbitmap("mybitmap", potrace.contourplot(N,N,f))
+\stopluacode
+\stopbuffer
+
+\typebuffer
+
+\getbuffer
+
+\startbuffer[1]
+\startMPcode
+    path p ; p := lmt_potraced [
+        stringname = "mybitmap",
+        value      = "1",
+        tolerance  = 0.1,
+        threshold  = 1,
+        optimize   = true,
+    ] ;
+    p := p xsized TextWidth ;
+    draw p withcolor "darkred" ;
+    drawpoints p withcolor "orange" ;
+    drawpointlabels p ;
+    currentpicture := currentpicture ysized .4TextHeight ;
+\stopMPcode
+\stopbuffer
+
+\typebuffer[1]
+
+The leftmost graphic in \in {figure} [fig:contourplot] shows the result of this
+code. We also draw the points and the point labels. This way we can easily find
+out which part of the path to draw. In this case it seems that we need the first
+\im {34} points.
+
+\startbuffer[2]
+\startMPcode
+    path p ; p := lmt_potraced [
+        stringname = "mybitmap",
+        value      = "1",
+        tolerance  = 0.1,
+        threshold  = 1,
+        optimize   = true,
+    ] ;
+    p := subpath(0,33) of p ;
+    p := p xsized 4cm ;
+    draw p
+        withcolor "darkred"
+        withpen pencircle scaled .5mm ;
+    currentpicture := currentpicture ysized .4TextHeight ;
+\stopMPcode
+\stopbuffer
+
+\typebuffer[2]
+
+You need to keep the resolution (determined by the input) and therefore scaling
+in mind and choose the pen accordingly as in the second drawing in
+\in {figure} [fig:contourplot].
+
+\startplacefigure[title=The same contour plot with different details.,reference=fig:contourplot]
+    \startcombination[nx=2,ny=1,distance=.05tw]
+        {\getbuffer[1]} {}
+        {\getbuffer[2]} {}
+    \stopcombination
+\stopplacefigure
+
+This method of drawing contour plots is efficient, and it gives, in contrast to
+some traditional methods, curves that look smooth, with relatively few points. It
+also has weaknesses, one of them being that the inequality \im {F(x,y) > 0} does
+not always single out the curve \im {F(x,y) = 0}; it might be the case that the
+function \im {F} is positive on both sides of the curve \im {F(x,y) = 0}.
+
+We invite the reader to be creative and play with this (to us) new toy. Have fun!
+
+\stopsection
+
+\startsection[title=Coda]
+
+And, in the spirit of having fun, here are some final images. This first one is a
+photo of a \quote {tool} that we came up with at the \CONTEXT\ meeting. Willi
+Egger made a kit for the attendees, so there was the usual cutting and glueing
+involved. This kit is shown in \in {figure} [fig:bitmapdevice]. The dots are
+seeds. It also shows an emoji that Mikael's children made when we were playing
+with this feature. The first image has the rendering of that input, while the
+second \quote {explodes} the pixels in the x direction (so columns are
+duplicated), resulting in a more symmetric image.
+
+\startbuffer[1]
+draw image (
+    lmt_startpotraced [
+        bytes =
+            "..11111..
+             .1.....1.
+             1.......1
+             1.22.22.1
+             1.......1
+             1.3...3.1
+             1..333..1
+             .1.....1.
+             ..11111.."
+    ] ;
+    fill lmt_potraced
+        [ value = "1", size = 1 ]
+        withcolor "darkgray"
+        withpen pencircle scaled 0.1 ;
+    fill lmt_potraced
+        [ value = "2", size = 1 ]
+        withcolor "darkblue"
+        withpen pencircle scaled 0.1 ;
+    fill lmt_potraced
+        [ value = "3", size = 1 ]
+        withcolor "darkred"
+        withpen pencircle scaled 0.1 ;
+    lmt_stoppotraced ;
+) sized 5cm ;
+\stopbuffer
+
+\startbuffer[2]
+draw image (
+    lmt_startpotraced [
+        nx    = 2, % more symmetric, 3 gives different curves
+     %  ny    = 3, % clown
+        bytes =
+            "..11111..
+             .1.....1.
+             1.......1
+             1.22.22.1
+             1.......1
+             1.3...3.1
+             1..333..1
+             .1.....1.
+             ..11111.."
+    ] ;
+    fill lmt_potraced
+        [ value = "1", size = 1 ]
+        withcolor "darkgray"
+        withpen pencircle scaled 0.1 ;
+    fill lmt_potraced
+        [ value = "2", size = 1 ]
+        withcolor "darkblue"
+        withpen pencircle scaled 0.1 ;
+    fill lmt_potraced
+        [ value = "3", size = 1 ]
+        withcolor "darkred"
+        withpen pencircle scaled 0.1 ;
+    lmt_stoppotraced ;
+) sized 5cm ;
+\stopbuffer
+
+\startplacefigure[title=A bitmap kit by Willi Egger.,reference=fig:bitmapdevice]
+    \startcombination[nx=3,ny=1,distance=5mm]
+        {\externalfigure[ontarget-bitmaps-device][height=5cm]} {}
+        {\processMPbuffer[1]} {}
+        {\processMPbuffer[2]} {}
+    \stopcombination
+\stopplacefigure
+
+We only show the second emoji. When we set \type {ny} too, we get a still
+interesting but somewhat weird face instead. You can try that yourself.
+
+\typebuffer[2]
+
+\stopsection
+
+\stopchapter
+
+% % >mutool convert -O colorspace=gray,resolution=200 -F png temp-potracex.pdf
+%
+% % \startMPpage[offset=1bp]
+% %     draw for i=0 step 2pi/50 until 2pi :
+% %         (2*i, sin(i)^2+sqrt(i)) ..
+% %     endfor nocycle withpen pencircle scaled 0 ;
+% % \stopMPpage
+%
+% \startMPpage
+%
+%     path p ; p := lmt_potraced [
+%         filename  = "out-0001.png",
+%         criterium = 255,
+%         optimize = true,
+% %         explode   = true,
+% %         tolerance = 0,
+% %         threshold = 0,
+%     ] ;
+%
+%     fill p withcolor "darkred" ;
+%
+% \stopMPpage
+
+\stopcomponent
+
+\startluacode
+local sin, cos, pi = math.sin, math.cos, math.pi
+
+local N   = 1000
+local pp  = pi/N
+local yy  = 1/N
+
+local function f(x,y)
+    local z = yy*y - cos(pp*x)
+    if z > 0 then
+        return '1'
+    else
+        return '0'
+    end
+end
+
+potrace.setbitmap("mybitmap", potrace.contourplot(N,N,f))
+\stopluacode
+
+\startMPpage[offset=1TS]
+    path p ; p := lmt_potraced [
+        stringname = "mybitmap",
+        value      = "1",
+        threshold  = 1,
+        tolerance  = 0.01,
+        optimize   = true,
+    ] ;
+
+    draw p withpen pencircle scaled 3 withcolor "darkred" ;
+
+    currentpicture := currentpicture xysized (4cm,4cm) ;
+    path cp ; cp := boundingbox currentpicture ;
+
+    drawarrow ulcorner cp -- llcorner cp ;
+    drawarrow ulcorner cp -- urcorner cp ;
+
+    label.urt ("\im{x}",llcorner cp) ;
+    label.llft("\im{y}",urcorner cp) ;
+\stopMPpage
+
+% \startluacode
+% local sin, cos, pi = math.sin, math.cos, math.pi
+%
+% local N       = 1000
+% local pp      =     pi/N
+% local pp3     = 3 * pp
+% local pp8     = 8 * pp
+% local cospp8y = 0
+% local cospp3y = 0
+%
+% local function f(x,y)
+%     if x == 1 then
+%         cospp8y = cos(pp8*y)
+%         cospp3y = cos(pp3*y)
+%     end
+%     local z = cos(pp8*x)*cospp3y + cos(pp3*x)*cospp8y
+%     if z > 0 then
+%         return '1'
+%     else
+%         return '0'
+%     end
+% end
+%
+% potrace.setbitmap("mybitmap", potrace.contourplot(N,N,f))
+% \stopluacode
+%
+% \startMPpage[offset=1TS]
+%     path p ; p := lmt_potraced [
+%         stringname = "mybitmap",
+%         value      = "1",
+%         threshold  = 0.25,
+%         optimize   = true,
+%     ] ;
+%
+% fill p withcolor "darkred" ;
+% \stopMPpage
+
+% \startluacode
+% local sin, cos, pi = math.sin, math.cos, math.pi
+%
+% local N   = 250
+% local xx  = 6/N
+% local yy  = 6/N
+%
+% local function f(x,y)
+%     local x = xx*x - 3
+%     local y = yy*y - 3
+%     -- local z = y*x^2+2*y^2-3
+%     -- local z = (x+y+1)^2 - 0.1
+%     -- local z = x^2-y^2-1
+%     -- local z = x^y - y^x
+%      local z = -y*(1/(x^2+y^2)^(3/2)-1)
+%     -- local z = 2*x*(x^2+y^2) - (3*x^2-y^2)
+%     -- local z = x^2+y^2 - (x^2+y^2-1*x)^2 + y^3
+%     -- local z = x*y^6 + y^7 + 2*x*y^3*sin(x) + 2*y^4*sin(x) + x*sin(x)*sin(x) + y*sin(x)*sin(x)
+%     if z > 0 then
+%         return '1'
+%  -- elseif z < 0 then
+%  --     return '2'
+%     else
+%         return '0'
+%     end
+% end
+%
+% potrace.setbitmap("mybitmap", potrace.contourplot(N,N,f))
+% \stopluacode
+%
+% \startMPpage[offset=1TS]
+%     path p ; p := lmt_potraced [
+%         stringname = "mybitmap",
+%         value      = "1",
+%         % explode    = true,
+%         % tolerance  = 0.5,
+%         threshold  = 1.5,
+%         optimize   = true,
+%     ] ;
+%     p := p scaled 4 ;
+%     fill p withcolor "darkred" withtransparency (1,0.5) ;
+%     draw p withpen pencircle scaled 5 withcolor "darkred" ;
+%     drawpoints p withcolor white ;
+%     currentpicture := currentpicture xsized 12cm ;
+% \stopMPpage

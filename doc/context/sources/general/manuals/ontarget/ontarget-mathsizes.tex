@@ -1,0 +1,307 @@
+% language=us runpath=texruns:manuals/ontarget
+
+\startcomponent ontarget-mathsizes
+
+\environment ontarget-style
+
+\startchapter[title={The three math sizes}]
+
+What follow is a short explanation about how a \TEX\ math engine deals with
+sizes. When typesetting a formula there are three different sizes assumed, as
+shown in the next example:
+
+\startlinecorrection
+\scale[scale=3000]{\im{x^{x^x}}}
+\stoplinecorrection
+
+If we take each \im{x} and scale it to the same height we get the following. It
+is clear that the smallest size runs wider and looks a bit bolder which makes it
+more readable at the smaller size.
+
+\startlinecorrection
+\dontleavehmode
+\scale[height=2cm]{\im{\textstyle         x}}
+\scale[height=2cm]{\im{\scriptstyle       x}}
+\scale[height=2cm]{\im{\scriptscriptstyle x}}
+\stoplinecorrection
+
+So why is this? The \im {x} is a math italic character and in traditional \TEX\
+that comes from what is called a math italic font. However, when \TEX\ processes
+the list of intermediate math nodes, that \im {x} is specified as two numbers: a
+family and an index. A family is a collection of three references to fonts: they
+can be the same or different but whatever one chooses, they have to be scaled to
+what is expected. The initial \TEX\ setup for instance makes a family from \type
+{cmmi10}, \type {cmmi7} and \type {cmmi5}. Each font has a slightly different
+design and when we typeset at 10 points no scaling takes place.
+
+That all changed a bit when \OPENTYPE\ math fonts came around. In fact, there was
+only one such font to start with so that basically set the standard: Cambria from
+\MICROSOFT. Instead of making three variants, the fonts contains upto three
+alternatives (although there is no real limit) for a specific shape. These
+variants are \type {ssty=1} and \type {ssty=2} where \type {ssty} refers to the
+alternative substitution font feature.
+
+Fonts like Latin Modern also follow this model. So, in the case of an \im {x}, we
+have three options to choose from: the normal shape, or one of the \type {ssty}
+replacements. Because that font is mostly compatible with Computer Modern the \im
+{x} is like \type {cmmi10} and the smaller sizes like \type {cmmi} and \type
+{cmmi5} respectively. It is important to keep in mind that we are talking of one
+font! That means that in principle we only consume one family. Where with eight
+bit fonts we need quite some families, for instance for all these symbols, with
+\OPENTYPE\ fonts in a \UNICODE\ universe we can stick to one. Of course you can
+still use the more traditional model of multiple families, but just a copy of
+this one font will do then. In practice most symbols scale perfectly well to a
+smaller size so no special design size variants are provided and that makes an \type
+{ssty} mapping table relatively small: only for characters that benefit from it
+get an alternate.
+
+It should also be noted that the alternates are not scaled down in their design,
+so actually the script \im {x} is in the font as if it were from \type {cmmi7}
+scaled up to 10 points. The font specifies two scaling factors but a macro
+package can decide to scale differently. \footnote{Many font parameters in an
+\OPENTYPE\ math fonts can be considered to have recommended values, and sometimes
+it makes sense to change them.} All this means that in \TEX\ a family has three
+times the same font, the original (text), and two scaled down copies with \type
+{ssty=1} replacements (script and scriptscript). Although in practice an \type
+{ssty} feature will provide two alternates, there is no rule that mandates that.
+This introduces a dilemma:
+
+\startnarrower
+What are we supposed to do when there is a \type {ssty=1} but no \type {ssty=2}:
+do we use a scaled down text for scriptscript or do we scale down the script
+variant? Because all this is very much design related one can debate this.
+\stopnarrower
+
+Actually this is a general question. In for instance the Latin Modern Math font
+there is an \type {aalt} feature where some glyphs have two and others three
+variants. Should choosing variant three when there are two available use the
+first or the last. The fact that in \type {ssty} there is some order, from small
+to even smaller, other alternate features provide just that: an alternative
+shape. It is good to keep in mind that \OPENTYPE\ provides mechanisms, just that,
+and these can be uses any way a designer wants. This is why we see the ligature
+mechanism being used for non|-|ligatures and ligatures being constructed by
+contextual replacements (that still can be single characters).
+
+After dealing with math fonts for decades one gets a feeling of what is needed by
+users. And after implementing math font mechanism for eight bit fonts as well as
+\OPENTYPE\ fonts, one also gets an idea how much the ideal situation differs from
+reality. You can make a subsystem with plenty degrees of freedom but in the end
+when little gets used it only adds overhead. And math actually comes with some.
+In a traditional engine one has to deal with a limited number of families, which
+results in switching mechanisms (for instance to full range bold, not only
+alphabets) that also redefine math characters and reassign families. Because even
+a simple \type {$x$} already can trigger quite some initialization one has to be
+careful in coding this. For instance what happens with \type {{\bf $x$}} or \type
+{{\small $x$}} is not just a simple family switch. In for instance section titles
+switching style and size happens at the same time. I won't go into details how we
+dealt with all that in \CONTEXT, lets stick to: we just have to make sure that
+the overhead is acceptable.
+
+When working on \LUAMETATEX\ it was decided to introduce a more dynamic scaling
+model. First for regular text, later for math. There are several reasons for
+this. For text if can reduce the overhead of loading fonts at different sizes. It
+saves memory as well as load time, which involves scaling and passing to \TEX,
+something that is noticeable for large fonts used for non Latin scripts.
+
+This is also true for math but there we can go further. If instead of defining a
+font three times (per family) we pass the engine the information where a script
+and from that a scriptscript variant is located in the font, then we can delay
+scaling till such a glyph is needed. Every character has a \type {smaller} field
+and because we also support right to left math typesetting there's even a \type
+{mirror} field. It is up to the engine to deal with that. In principle we could
+now even turn family id's into font id's, but then we also need to handle the way
+families are used in math character specifications. For that reason mid 2023 this
+hasn't yet happened. We also don't want to abandon this nice \TEX\ family
+concept, if only because we always need to support both models.
+
+So, to summarize this:
+
+\startitemize[packed]
+    \startitem
+        The traditional approach to sizes is to have three fonts with possibly
+        different designs for shapes. A family consists of three different fonts.
+    \stopitem
+    \startitem
+        The \OPENTYPE\ approach is to have optional \type {ssty} alternates for
+        different shapes at smaller sizes. A family can use the same font scaled
+        differently.
+    \stopitem
+    \startitem
+        The \LUAMETATEX\ approach is to have one font for al three with size
+        variants as part of the glyph definition. The engine replaces and scales
+        on demand.
+    \stopitem
+\stopitemize
+
+It will be clear that in the case of \LUAMETATEX, when scaling is delayed, the
+engine has to do more work, because not only glyphs scale but also related font
+parameters. And because we can also apply dynamic scaling of text to math, that
+means multiple times scaling every time a dimension is needed. Not only that, we
+also scale in two dimensions so for every math parameter we need to take that
+into account. It meant a rather fundamental overhaul of the code, on top of the
+plenty extra features that the \LUAMETATEX\ math engine provides. Of course we
+could not divert too much from the principe approach to math typesetting, which
+is why this all happened stepwise and why it is an option. The fact that we have
+dynamic scaling also means that we can have smaller than scriptscript sizes
+without much effort, but that is besides the point we want to make here. Anyway,
+when a math font is defined one can set a \typ {compactmath} field as well as a
+\typ {textscale}, \typ {scriptscale} and \typ {scriptscriptscale} when defining
+the font (via the \LUA\ interface)
+
+So far what we do is not that much different from what fonts have been doing
+since the beginning of \TEX. Even the potential lack of \type {ssty=2} dilemma is
+not unique: one can have design sizes eight bit fonts with holes too and it is
+actually harder to deal with that. However, there are other potential issues.
+Just like \type {ssty} is an alternate feature there can be more. And alternates
+are a great way out of endless discussions about preferred shapes. Some math
+fonts therefore have many alternates in the \type {ssXX} and \type {cvXX} feature
+namespace. Of course there is no agreement about this so there is our second
+dilemma:
+
+\startnarrower
+    How do we deal with additional alternates, given that the distribution of
+    alternative shapes is arbitrary as is their grouping.
+\stopnarrower
+
+Although one way to control this is using \UNICODE\ modifiers, that is not
+something that \TEX ies like to input. It still demands some agreement about
+modifier related to original shapes and it doesn't cover the plenty unspecified
+ones. And how portable is this?
+
+If we assume that a math user wants consistency (which is quite an assumption)
+one solution is to specify additional substitutions when we load the font. But then
+we have a third dilemma:
+
+\startnarrower
+    Which substitution comes first: the chosen style alternatives or the size
+    related alternates?
+\stopnarrower
+
+One can argue that the order that features are defines in fonts also determine
+this accumulated substitutions. That makes a lot of sense but when you look at
+some specification of how scripts are supposed to be dealt with in \OPENTYPE\ you
+can find somewhat vague remarks about the order in which specific features are to
+be applied. However, in practice one can best follow the order in the font. Say that
+we want a different lowercase delta. There are two options:
+
+\startitemize[packed,n]
+\startitem
+    The stylistic variant comes before the sizing one.
+\stopitem
+\startitem
+    The sizing variant comes before the stylistic one.
+\stopitem
+\stopitemize
+
+Now, if fonts are well designed, when there is a different design for each size,
+there should also be one for the variant. Or the reverse, when there are
+different variants, there should be different sizes. In practice that means that
+there can be six different deltas. The replacement tables can be made such that
+they both take care of mapping. Think of these glyphs names being related:
+
+\starttyping
+delta        delta.ss03
+delta.ssty1  delta.ss03.ssty1
+delta.ssty2  delta.ss03.ssty2
+\stoptyping
+
+So what if the two deltas are missing we first replace the sizes? We basically get this:
+
+\starttyping
+delta        delta.ss03
+delta.ssty1  delta.ss03 (scaled)
+delta.ssty2  delta.ss03 (scaled)
+\stoptyping
+
+or this:
+
+\starttyping
+delta        delta.ss03
+delta.ssty1  delta (scaled)
+delta.ssty2  delta (scaled)
+\stoptyping
+
+It depends bit om the machinery and the order of features in the font. It makes
+no sense to point fingers to fonts here, simply because what would be shown here
+could be different after a font gets updated.
+
+In \CONTEXT\ we have two choices of dealing with this. We can immediately apply
+features, or we can delay them which permits a mixture of different deltas. This
+is actually needed for calligraphic versus script alphabets as one document can
+have both while \UNICODE\ math combines them, which then means that we need to
+revert to a feature applied. \footnote {In \CONTEXT\ we have a variant on this
+where we have a dedicated additional alphabets to this which also permits for
+taking calligraphic or script from other fonts, because not all fonts have both.}
+
+Even if we delay there is an issue: in the three fonts per family approach we
+already have the \type {ssty} applied. So then we replace the delta based on the
+size replacement. So, we can end up with:
+
+\starttyping
+text         : delta              -> delta.ss03
+script       : delta.ssty1 scaled -> delta.ssty1 scaled
+scriptscript : delta.ssty2 scaled -> delta.ssty1 scaled
+\stoptyping
+
+However, when we delay scaling and use one font, as described for \LUAMETATEX, we
+haven't yet applied \type {ssty}, so instead of pre|-|scaled replacements:
+
+\starttyping
+text         : delta
+script       : delta scaled -> delta.ssty1 scaled
+scriptscript : delta scaled -> delta.ssty2 scaled
+\stoptyping
+
+We can first replace and then scale.
+
+\starttyping
+text         : delta    delta.ss03
+script       : delta -> delta.ss03 -> scaled
+scriptscript : delta -> delta.ss03 -> scaled
+\stoptyping
+
+In the non|-|replaced delta case we would have had:
+
+\starttyping
+text         : delta
+script       : delta.ssty1 -> scaled
+scriptscript : delta.ssty2 -> scaled
+\stoptyping
+
+The difference is that because we haven't yet done the scaling and \type {ssty}
+replacement we check against the original \UNICODE\ and when there is a lacking
+\type {delta.ss03.ssty1} at that size, we just scale down the text size \type
+{delta.ss03}. One can argue that we then might violate the lookup because maybe
+there was on purpose no alternate but how to distinguish design from error in
+fonts?
+
+Of course when replacement is delayed one can also again consult the \type {ssty}
+table and sort of fix the font runtime but there is a catch there: you end up
+with a scaled glyph (scriptscript) in a differently scaled (text) font so you get
+different dimensions and although the \CONTEXT\ backend can handle that it is
+confusing and not pretty. One has to use the virtual font mechanism and in fact
+the glyph we're dealing with can already be virtual (tweaked).
+
+There are more cases where confusion can kick in. Examples are primes where can
+have different shapes and positioning in text compared to the script sizes, and
+accents, where text and replacements have either or not zero widths. To some
+extend it is no real surprise because one needs a math engine that can expose it
+when making the font. And after a while the font can't change any more because
+it's being and there are many \TEX\ users who expect the same output after years.
+I can imagine that a text editor that basically assumes one specific math font
+being used (or expects other math fonts to be set up the same way) can provide a
+list of magic key combinations that choose some shape and|/|or provide some
+graphical user interface. I remember presentations at Bacho\TeX\ where was
+demonstrated how a desktop publishing application deals with alternates and every
+version got different or additional interfaces for that. In such a case a feature
+and interface depend on each other, something that is not the case in a \TEX\
+ecosystem: there we just access whatever we want. Of course there we also need
+some interface but there are at least some traditions in place, like naming
+characters or hiding complex and inconsistent choices in macros.
+
+% emptyset in stix
+% plank constant in ebgaramond
+
+\stopchapter
+
+\stopcomponent

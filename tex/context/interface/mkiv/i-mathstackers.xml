@@ -18,6 +18,12 @@
         <cd:arguments>
             <cd:resolve name="keyword-name-list-optional"/>
             <cd:assignments list="yes">
+                <cd:parameter name="top">
+                    <cd:constant type="cd:text"/>
+                </cd:parameter>
+                <cd:parameter name="bottom">
+                    <cd:constant type="cd:text"/>
+                </cd:parameter>
                 <cd:parameter name="left">
                     <cd:constant type="cd:command"/>
                 </cd:parameter>
@@ -50,6 +56,12 @@
                 </cd:parameter>
                 <cd:parameter name="middlecolor">
                     <cd:constant type="cd:color"/>
+                </cd:parameter>
+                <cd:parameter name="topalign">
+                    <cd:resolve name="value-alignsimple"/>
+                </cd:parameter>
+                <cd:parameter name="bottomalign">
+                    <cd:resolve name="value-alignsimple"/>
                 </cd:parameter>
                 <cd:parameter name="plugin">
                     <cd:constant type="mp"/>
@@ -153,7 +165,7 @@
         </cd:arguments>
     </cd:command>
 
-    <cd:command name="definemathextensible" level="style" category="mathematics" file="math-sty.mkvi">
+    <cd:command name="definemathextensible" level="style" category="mathematics" file="math-stc.mklx">
         <cd:arguments>
             <cd:keywords optional="yes">
                 <cd:constant type="reverse"/>
@@ -201,7 +213,7 @@
         </cd:instances>
     </cd:command>
 
-    <cd:command name="directmathextensible" level="document" category="mathematics" file="math-stc.mklx">   
+    <cd:command name="directmathextensible" level="document" category="mathematics" file="math-stc.mklx">
         <cd:arguments>
             <cd:keywords optional="yes">
                 <cd:constant type="reverse"/>
@@ -215,7 +227,7 @@
         </cd:arguments>
     </cd:command>
 
-    <cd:command name="mathstacker" level="document" category="mathematics" file="math-stc.mklx">   
+    <cd:command name="mathstacker" level="document" category="mathematics" file="math-stc.mklx">
         <cd:arguments>
             <cd:keywords optional="yes">
                 <cd:constant type="reverse"/>
@@ -229,7 +241,7 @@
         </cd:arguments>
     </cd:command>
 
-    <cd:command name="directtextextensible" level="document" category="mathematics" file="math-stc.mklx">   
+    <cd:command name="directtextextensible" level="document" category="mathematics" file="math-stc.mklx">
         <cd:arguments>
             <cd:keywords optional="yes">
                 <cd:constant type="reverse"/>
@@ -243,7 +255,7 @@
         </cd:arguments>
     </cd:command>
 
-    <cd:command name="textstacker" level="document" category="mathematics" file="math-stc.mklx">   
+    <cd:command name="textstacker" level="document" category="mathematics" file="math-stc.mklx">
         <cd:arguments>
             <cd:keywords optional="yes">
                 <cd:constant type="reverse"/>
@@ -257,7 +269,7 @@
         </cd:arguments>
     </cd:command>
 
-    <cd:command name="definemathoverextensible" level="system" category="mathematics" file="math-sty.mkvi">
+    <cd:command name="definemathoverextensible" level="system" category="mathematics" file="math-stc.mklx">
         <cd:arguments>
             <cd:keywords optional="yes">
                 <cd:constant type="top"/>
@@ -283,7 +295,7 @@
         </cd:instances>
     </cd:command>
 
-    <cd:command name="definemathunderextensible" level="style" category="mathematics" file="math-sty.mkvi">
+    <cd:command name="definemathunderextensible" level="style" category="mathematics" file="math-stc.mklx">
         <cd:arguments>
             <cd:keywords optional="yes">
                 <cd:constant type="bottom"/>
@@ -309,7 +321,7 @@
         </cd:instances>
     </cd:command>
 
-    <cd:command name="definemathdoubleextensible" level="style" category="mathematics" file="math-sty.mkvi">
+    <cd:command name="definemathdoubleextensible" level="style" category="mathematics" file="math-stc.mklx">
         <cd:arguments>
             <cd:keywords optional="yes">
                 <cd:constant type="both"/>
@@ -446,7 +458,7 @@
         </cd:arguments>
     </cd:command>
 
-    <cd:command name="definemathovertextextensible" level="style" category="mathematics" file="math-sty.mkvi">
+    <cd:command name="definemathovertextextensible" level="style" category="mathematics" file="math-stc.mklx">
         <cd:arguments>
             <cd:keywords optional="yes">
                 <cd:constant type="bothtext"/>
@@ -479,7 +491,7 @@
         </cd:arguments>
     </cd:command>
 
-    <cd:command name="definemathundertextextensible" level="style" category="mathematics" file="math-sty.mkvi">
+    <cd:command name="definemathundertextextensible" level="style" category="mathematics" file="math-stc.mklx">
         <cd:arguments>
             <cd:keywords optional="yes">
                 <cd:constant type="bothtext"/>
@@ -512,7 +524,7 @@
         </cd:arguments>
     </cd:command>
 
-    <cd:command name="definemathtriplet" level="style" category="mathematics" file="math-sty.mkvi">
+    <cd:command name="definemathtriplet" level="style" category="mathematics" file="math-stc.mklx">
         <cd:arguments>
             <cd:resolve name="keyword-name-optional"/>
             <cd:resolve name="keyword-name"/>

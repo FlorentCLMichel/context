@@ -549,6 +549,7 @@ function constructors.scale(tfmdata,specification)
         properties.hasmath   = true  -- to be sure
         target.nomath        = false -- hm
         target.MathConstants = target.mathparameters
+        target.mathfactors   = target.mathfactors
 
         local compactmath    = properties.compactmath
 
@@ -978,7 +979,7 @@ function constructors.finalize(tfmdata)
         properties.hasmath = not tfmdata.nomath
     end
     --
-    tfmdata.MathConstants    = nil
+    tfmdata.MathConstants    = nil -- some day we go mathconstants
     tfmdata.postprocessors   = nil
     --
     tfmdata.fontname         = nil

@@ -2377,6 +2377,21 @@
              \v!right=>\let\next\strc_floats_build_box_next_right]%
    \next}
 
+% \setupcaption[figure][location=right]
+% \starttext
+%     \placefigure{\input{ward}}{\framed[height=5cm]{figure 1}}
+%     \placefigure{\input{ward}}{\framed[height=5cm]{figure 2}}
+%     \placefigure{\input{ward}}{\framed            {figure 3}}
+%     \placefigure{\input{ward}}{\framed            {figure 4}}
+% \stoptext
+
+\def\strc_floats_build_check_boxes
+  {\ifdim\htdp\b_strc_floats_content<\htdp\b_strc_floats_caption
+     \setbox\b_strc_floats_content\vpack to \htdp\b_strc_floats_caption\bgroup
+         \box\b_strc_floats_content\vfill
+     \egroup
+   \fi}
+
 \def\strc_floats_build_box_side
   {\c_page_sides_force_shape\conditionalfalse % global ?
    \ifconditional\c_strc_floats_par_float
@@ -2388,6 +2403,7 @@
         \v!middle=>\let\next\strc_floats_build_box_middle,
           \v!high=>\let\next\strc_floats_build_box_high]%
    \fi
+   \doifinset\v!fitheight{\floatcaptionlocation}\strc_floats_build_check_boxes
    \next}
 
 \def\strc_floats_flush_right_caption_hang

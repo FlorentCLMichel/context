@@ -27,6 +27,10 @@
                 <cd:parameter name="inbetween">
                     <cd:constant type="cd:command"/>
                 </cd:parameter>
+                <cd:parameter name="alternative">
+                    <cd:constant type="horizontal" default="yes"/>
+                    <cd:constant type="vertical"/>
+                </cd:parameter>
                 <cd:parameter name="location">
                     <cd:constant type="left"/>
                     <cd:constant type="middle"/>
@@ -40,6 +44,7 @@
                     <cd:constant type="cd:number"/>
                 </cd:parameter>
                 <cd:parameter name="distance">
+                    <cd:constant type="fit"/>
                     <cd:constant type="cd:dimension"/>
                 </cd:parameter>
                 <cd:parameter name="bodyfont">

@@ -28,6 +28,7 @@
             <cd:keywords list="yes">
                 <cd:constant type="broad"/>
                 <cd:constant type="wide"/>
+                <cd:constant type="squeeze"/>
                 <cd:constant type="bottom" default="yes"/>
                 <cd:constant type="height"/>
                 <cd:constant type="depth"/>
@@ -98,6 +99,7 @@
                 <cd:constant type="notoddlers"/>
                 <cd:constant type="keeptoddlers"/>
                 <cd:constant type="tight"/>
+                <cd:constant type="slanted"/>
                 <cd:constant type="granular"/>
                 <cd:constant type="lesswidows"/>
                 <cd:constant type="lessclubs"/>
@@ -109,11 +111,11 @@
                 <cd:constant type="defaultwidows"/>
                 <cd:constant type="defaultclubs"/>
                 <cd:constant type="defaultbroken"/>
-                <cd:constant type="strictwidows "/>
+                <cd:constant type="strictwidows"/>
                 <cd:constant type="strictwidows:2"/>
                 <cd:constant type="strictwidows:3"/>
                 <cd:constant type="strictwidows:4"/>
-                <cd:constant type="strictclubs "/>
+                <cd:constant type="strictclubs"/>
                 <cd:constant type="strictclubs:2"/>
                 <cd:constant type="strictclubs:3"/>
                 <cd:constant type="strictclubs:4"/>
@@ -359,6 +361,12 @@
 
     <cd:command name="raggedslanted" level="style" category="alignment" file="spac-ali.mkxl"/>
 
+    <cd:command name="riggedleft" level="style" category="alignment" file="spac-ali.mkxl"/>
+
+    <cd:command name="riggedcenter" level="style" category="alignment" file="spac-ali.mkxl"/>
+
+    <cd:command name="riggedright" level="style" category="alignment" file="spac-ali.mkxl"/>
+
     <cd:command name="line" level="document" category="alignment" file="spac-ali.mkxl">
         <cd:arguments>
             <cd:content/>
@@ -499,5 +507,11 @@
     <cd:command name="hangrangestep" type="environment" level="style" category="alignment" file="spac-ali.mkxl"/>
 
     <cd:command name="emptyhangrangestep" level="style" category="alignment" file="spac-ali.mkxl"/>
+
+    <cd:command name="showraggedrules" level="style" category="alignment" file="spac-ali.mkxl">
+        <cd:arguments>
+            <cd:resolve name="argument-number"/>
+        </cd:arguments>
+    </cd:command>
 
 </cd:interface>

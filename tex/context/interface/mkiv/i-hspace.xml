@@ -57,11 +57,17 @@
         </cd:arguments>
     </cd:command>
 
-    <cd:command name="frenchspacing" level="system" category="whitespace" file="spac-hor.mkxl"/>
+    <cd:command name="nonfrenchspacing" level="style" category="whitespace" file="spac-hor.mkxl"/>
 
-    <cd:command name="newfrenchspacing" level="system" category="whitespace" file="spac-hor.mkxl"/>
+    <cd:command name="frenchspacing" level="style" category="whitespace" file="spac-hor.mkxl"/>
 
-    <cd:command name="nonfrenchspacing" level="system" category="whitespace" file="spac-hor.mkxl"/>
+    <cd:command name="newfrenchspacing" level="style" category="whitespace" file="spac-hor.mkxl"/>
+
+    <cd:command name="nonpenalizedspacing" level="style" category="whitespace" file="spac-hor.mkxl"/>
+
+    <cd:command name="penalizedspacing" level="style" category="whitespace" file="spac-hor.mkxl"/>
+
+    <cd:command name="pbsp" level="document" category="whitespace" file="spac-hor.mkxl"/>
 
     <cd:command name="setupspacing" level="style" category="whitespace" file="spac-hor.mkxl">
         <cd:arguments>
@@ -69,6 +75,8 @@
                 <cd:constant type="fixed"/>
                 <cd:constant type="packed" default="yes"/>
                 <cd:constant type="broad"/>
+                <cd:constant type="fixed:small"/>
+                <cd:constant type="broad:small"/>
             </cd:keywords>
         </cd:arguments>
     </cd:command>

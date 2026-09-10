@@ -2239,6 +2239,13 @@ local function readdata(f,offset,specification)
     fontdata.dictionaries = nil
  -- fontdata.cff          = nil
 
+    if variabledata then
+        -- These have been used so we can wipe them. Actually it could be done
+        -- right after we used them.
+        variabledata.gdef  = nil
+        variabledata.avar2 = nil
+    end
+
     if specification.tableoffsets then
         fontdata.tableoffsets = tables
         setmetatableindex(tables, {
@@ -2459,6 +2466,7 @@ function readers.loadfont(filename,n,instance)
                 version          = getname(fontdata,"version"),
                 cidinfo          = fontdata.cidinfo,
                 mathconstants    = fontdata.mathconstants,
+                mathfactors      = fontdata.mathfactors,
                 gasp             = fontdata.gasp,
                 colorpalettes    = fontdata.colorpalettes,
                 colorpaintdata   = fontdata.colorpaintdata,

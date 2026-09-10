@@ -119,7 +119,8 @@
       <cd:constant type="cd:name"/>
      </cd:parameter>
      <cd:parameter name="foregroundstyle">
-      <cd:resolve nale="value-style"/>
+      <cd:constant type="cd:style"/>
+      <cd:constant type="cd:command"/>
      </cd:parameter>
      <cd:parameter name="foregroundcolor">
       <cd:constant type="cd:color"/>
@@ -239,6 +240,7 @@
     <cd:keywords list="yes">
      <cd:constant type="broad"/>
      <cd:constant type="wide"/>
+     <cd:constant type="squeeze"/>
      <cd:constant default="yes" type="bottom"/>
      <cd:constant type="height"/>
      <cd:constant type="depth"/>
@@ -309,6 +311,7 @@
      <cd:constant type="notoddlers"/>
      <cd:constant type="keeptoddlers"/>
      <cd:constant type="tight"/>
+     <cd:constant type="slanted"/>
      <cd:constant type="granular"/>
      <cd:constant type="lesswidows"/>
      <cd:constant type="lessclubs"/>
@@ -320,11 +323,11 @@
      <cd:constant type="defaultwidows"/>
      <cd:constant type="defaultclubs"/>
      <cd:constant type="defaultbroken"/>
-     <cd:constant type="strictwidows "/>
+     <cd:constant type="strictwidows"/>
      <cd:constant type="strictwidows:2"/>
      <cd:constant type="strictwidows:3"/>
      <cd:constant type="strictwidows:4"/>
-     <cd:constant type="strictclubs "/>
+     <cd:constant type="strictclubs"/>
      <cd:constant type="strictclubs:2"/>
      <cd:constant type="strictclubs:3"/>
      <cd:constant type="strictclubs:4"/>
@@ -637,6 +640,9 @@
   <cd:command category="alignment" file="spac-ali.mkxl" level="style" name="ttraggedright"/>
   <cd:command category="alignment" file="spac-ali.mkxl" level="style" name="forgetragged"/>
   <cd:command category="alignment" file="spac-ali.mkxl" level="style" name="raggedslanted"/>
+  <cd:command category="alignment" file="spac-ali.mkxl" level="style" name="riggedleft"/>
+  <cd:command category="alignment" file="spac-ali.mkxl" level="style" name="riggedcenter"/>
+  <cd:command category="alignment" file="spac-ali.mkxl" level="style" name="riggedright"/>
   <cd:command category="alignment" file="spac-ali.mkxl" level="document" name="line">
    <cd:arguments>
     <cd:content/>
@@ -744,6 +750,13 @@
   <cd:command category="alignment" file="spac-ali.mkxl" level="style" name="hangrange" type="environment"/>
   <cd:command category="alignment" file="spac-ali.mkxl" level="style" name="hangrangestep" type="environment"/>
   <cd:command category="alignment" file="spac-ali.mkxl" level="style" name="emptyhangrangestep"/>
+  <cd:command category="alignment" file="spac-ali.mkxl" level="style" name="showraggedrules">
+   <cd:arguments>
+    <cd:keywords delimiters="braces">
+     <cd:constant type="cd:number"/>
+    </cd:keywords>
+   </cd:arguments>
+  </cd:command>
  </cd:interface>
  <cd:interface file="i-alternate.xml">
   <cd:command category="structure" file="attr-alt.mkxl" level="document" name="alternate" type="environment">
@@ -7238,6 +7251,16 @@
     </cd:assignments>
    </cd:arguments>
   </cd:command>
+  <cd:command category="columns" file="page-mvl.mkxl" level="document" name="subcolumnsetgroup" type="environment">
+   <cd:arguments>
+    <cd:keywords optional="yes">
+     <cd:constant type="cd:name"/>
+    </cd:keywords>
+    <cd:assignments list="yes" optional="yes">
+     <cd:inherit name="setupsubcolumnset"/>
+    </cd:assignments>
+   </cd:arguments>
+  </cd:command>
   <cd:command category="columns" file="page-mvl.mkxl" level="document" name="subcolumnset" type="environment">
    <cd:arguments>
     <cd:keywords optional="yes">
@@ -7265,6 +7288,56 @@
    </cd:arguments>
   </cd:command>
   <cd:command category="columns" file="page-mvl.mkxl" level="document" name="blockcolumnsetrows"/>
+  <cd:command category="columns" file="page-mvl.mkxl" level="document" name="setcolumnsetsheet" type="environment">
+   <cd:arguments>
+    <cd:keywords>
+     <cd:constant type="cd:number"/>
+    </cd:keywords>
+   </cd:arguments>
+  </cd:command>
+  <cd:command category="columns" file="page-mvl.mkxl" level="document" name="setcolumnsetsht" type="environment">
+   <cd:arguments>
+    <cd:assignments list="yes" optional="yes">
+     <cd:parameter name="c">
+      <cd:constant type="cd:number"/>
+     </cd:parameter>
+     <cd:parameter name="r">
+      <cd:constant type="cd:number"/>
+     </cd:parameter>
+     <cd:parameter name="nc">
+      <cd:constant type="cd:number"/>
+     </cd:parameter>
+     <cd:parameter name="nr">
+      <cd:constant type="cd:number"/>
+     </cd:parameter>
+     <cd:parameter name="method">
+      <cd:constant type="here"/>
+      <cd:constant type="fixed"/>
+      <cd:constant type="top"/>
+      <cd:constant type="bottom"/>
+      <cd:constant type="tblr"/>
+      <cd:constant type="lrtb"/>
+      <cd:constant type="tbrl"/>
+      <cd:constant type="rltb"/>
+      <cd:constant type="btlr"/>
+      <cd:constant type="lrbt"/>
+      <cd:constant type="btrl"/>
+      <cd:constant type="rlbt"/>
+      <cd:constant type="fxtb"/>
+      <cd:constant type="fxbt"/>
+     </cd:parameter>
+     <cd:parameter name="option">
+      <cd:constant type="page"/>
+     </cd:parameter>
+     <cd:parameter name="ntop">
+      <cd:constant type="cd:number"/>
+     </cd:parameter>
+     <cd:parameter name="nbottom">
+      <cd:constant type="cd:number"/>
+     </cd:parameter>
+    </cd:assignments>
+   </cd:arguments>
+  </cd:command>
  </cd:interface>
  <cd:interface file="i-combination.xml">
   <cd:command category="tables" file="pack-com.mkxl" level="style" name="definecombination">
@@ -9393,7 +9466,7 @@
      <cd:constant type="telugunumerals"/>
      <cd:constant type="bengalinumerals"/>
      <cd:constant type="gurmurkhinumerals"/>
-     <cd:constant type="gujaratinnumerals"/>
+     <cd:constant type="gujaratinumerals"/>
      <cd:constant type="tibetannumerals"/>
      <cd:constant type="greeknumerals"/>
      <cd:constant type="Greeknumerals"/>
@@ -9859,6 +9932,19 @@
     </cd:keywords>
     <cd:keywords delimiters="braces">
      <cd:constant type="cd:true"/>
+    </cd:keywords>
+   </cd:arguments>
+  </cd:command>
+  <cd:command category="counter" file="strc-num.mkxl" keywords="conditional" level="system" name="doifelsecounteractive">
+   <cd:arguments>
+    <cd:keywords delimiters="braces">
+     <cd:constant type="cd:name"/>
+    </cd:keywords>
+    <cd:keywords delimiters="braces">
+     <cd:constant type="cd:true"/>
+    </cd:keywords>
+    <cd:keywords delimiters="braces">
+     <cd:constant type="cd:false"/>
     </cd:keywords>
    </cd:arguments>
   </cd:command>
@@ -19007,6 +19093,11 @@
       <cd:constant default="yes" type="no"/>
       <cd:constant type="auto"/>
      </cd:parameter>
+     <cd:parameter name="gray">
+      <cd:constant type="yes"/>
+      <cd:constant default="yes" type="no"/>
+      <cd:constant type="auto"/>
+     </cd:parameter>
      <cd:parameter name="arguments">
       <cd:constant type="cd:text"/>
      </cd:parameter>
@@ -20240,15 +20331,20 @@
     </cd:keywords>
    </cd:arguments>
   </cd:command>
-  <cd:command category="whitespace" file="spac-hor.mkxl" level="system" name="frenchspacing"/>
-  <cd:command category="whitespace" file="spac-hor.mkxl" level="system" name="newfrenchspacing"/>
-  <cd:command category="whitespace" file="spac-hor.mkxl" level="system" name="nonfrenchspacing"/>
+  <cd:command category="whitespace" file="spac-hor.mkxl" level="style" name="nonfrenchspacing"/>
+  <cd:command category="whitespace" file="spac-hor.mkxl" level="style" name="frenchspacing"/>
+  <cd:command category="whitespace" file="spac-hor.mkxl" level="style" name="newfrenchspacing"/>
+  <cd:command category="whitespace" file="spac-hor.mkxl" level="style" name="nonpenalizedspacing"/>
+  <cd:command category="whitespace" file="spac-hor.mkxl" level="style" name="penalizedspacing"/>
+  <cd:command category="whitespace" file="spac-hor.mkxl" level="document" name="pbsp"/>
   <cd:command category="whitespace" file="spac-hor.mkxl" level="style" name="setupspacing">
    <cd:arguments>
     <cd:keywords optional="yes">
      <cd:constant type="fixed"/>
      <cd:constant default="yes" type="packed"/>
      <cd:constant type="broad"/>
+     <cd:constant type="fixed:small"/>
+     <cd:constant type="broad:small"/>
     </cd:keywords>
    </cd:arguments>
   </cd:command>
@@ -22187,6 +22283,7 @@
      <cd:constant type="nofit"/>
      <cd:constant type="paragraph"/>
      <cd:constant type="joinedup"/>
+     <cd:constant type="notjoinedup"/>
      <cd:constant type="serried"/>
      <cd:constant type="stopper"/>
      <cd:constant type="nostopper"/>
@@ -22462,6 +22559,7 @@
       <cd:constant type="nofit"/>
       <cd:constant type="paragraph"/>
       <cd:constant type="joinedup"/>
+      <cd:constant type="notjoinedup"/>
       <cd:constant type="serried"/>
       <cd:constant type="stopper"/>
       <cd:constant type="unpacked"/>
@@ -22696,6 +22794,7 @@
       <cd:constant type="nofit"/>
       <cd:constant type="paragraph"/>
       <cd:constant type="joinedup"/>
+      <cd:constant type="notjoinedup"/>
       <cd:constant type="serried"/>
       <cd:constant type="stopper"/>
       <cd:constant type="unpacked"/>
@@ -22895,6 +22994,7 @@
      <cd:constant type="nofit"/>
      <cd:constant type="paragraph"/>
      <cd:constant type="joinedup"/>
+     <cd:constant type="notjoinedup"/>
      <cd:constant type="serried"/>
      <cd:constant type="stopper"/>
      <cd:constant type="nostopper"/>
@@ -25808,6 +25908,12 @@
       <cd:constant type="none"/>
       <cd:constant type="cd:dimension"/>
      </cd:parameter>
+     <cd:parameter name="leftmargin">
+      <cd:constant type="cd:dimension"/>
+     </cd:parameter>
+     <cd:parameter name="rightmargin">
+      <cd:constant type="cd:dimension"/>
+     </cd:parameter>
      <cd:parameter name="distance">
       <cd:constant type="none"/>
       <cd:constant type="cd:dimension"/>
@@ -27940,10 +28046,6 @@
      <cd:parameter name="setups">
       <cd:constant type="cd:name"/>
      </cd:parameter>
-     <cd:parameter name="domain">
-      <cd:constant type="default"/>
-      <cd:constant type="cd:name"/>
-     </cd:parameter>
      <cd:parameter name="textstyle">
       <cd:constant type="cd:style"/>
       <cd:constant type="cd:command"/>
@@ -28537,12 +28639,32 @@
     </cd:keywords>
    </cd:arguments>
   </cd:command>
+  <cd:command category="mathematics" file="math-ini.mkxl" level="style" name="mathlimop">
+   <cd:arguments>
+    <cd:content/>
+   </cd:arguments>
+  </cd:command>
+  <cd:command category="mathematics" file="math-ini.mkxl" level="style" name="mathbox">
+   <cd:arguments>
+    <cd:content/>
+   </cd:arguments>
+  </cd:command>
+  <cd:command category="mathematics" file="math-ini.mkxl" level="style" name="mathnolop">
+   <cd:arguments>
+    <cd:content/>
+   </cd:arguments>
+  </cd:command>
   <cd:command category="mathematics" file="math-ini.mkxl" level="style" name="mathop">
    <cd:arguments>
     <cd:content/>
    </cd:arguments>
   </cd:command>
   <cd:command category="mathematics" file="math-ini.mkxl" level="document" name="mbox">
+   <cd:arguments>
+    <cd:content/>
+   </cd:arguments>
+  </cd:command>
+  <cd:command category="mathematics" file="math-ini.mkxl" level="document" name="snappedmath">
    <cd:arguments>
     <cd:content/>
    </cd:arguments>
@@ -28557,6 +28679,12 @@
     <cd:keywords delimiters="braces">
      <cd:constant type="cd:name"/>
     </cd:keywords>
+   </cd:arguments>
+  </cd:command>
+  <cd:command category="mathematics" file="math-ini.mkxl" level="document" name="mathopwithlimits">
+   <cd:arguments>
+    <cd:content/>
+    <cd:content/>
    </cd:arguments>
   </cd:command>
   <cd:command category="mathematics" file="math-ini.mkxl" level="document" name="stackrel">
@@ -29594,6 +29722,11 @@
     </cd:keywords>
    </cd:arguments>
   </cd:command>
+  <cd:command category="mathematics" file="math-ini.mkxl" level="document" name="mscaledtext">
+   <cd:arguments>
+    <cd:content/>
+   </cd:arguments>
+  </cd:command>
   <cd:command category="mathematics" file="math-pln.mkxl" level="document" name="matrix">
    <cd:arguments>
     <cd:content/>
@@ -29672,6 +29805,16 @@
    </cd:arguments>
   </cd:command>
   <cd:command category="mathematics" file="strc-mat.mkxl" level="document" name="mathqed"/>
+  <cd:command category="mathematics" file="math-ini.mkxl" level="document" name="dimension">
+   <cd:arguments>
+    <cd:content/>
+   </cd:arguments>
+  </cd:command>
+  <cd:command category="mathematics" file="math-ini.mkxl" level="document" name="nodimension">
+   <cd:arguments>
+    <cd:content/>
+   </cd:arguments>
+  </cd:command>
  </cd:interface>
  <cd:interface file="i-mathaccent.xml">
   <cd:command category="mathematics" file="math-acc.mklx" level="style" name="definemathaccent">
@@ -29980,6 +30123,21 @@
       <cd:constant type="unpacked"/>
       <cd:constant default="yes" type="formula"/>
      </cd:parameter>
+     <cd:parameter name="snapping">
+      <cd:constant type="yes"/>
+      <cd:constant type="normal"/>
+      <cd:constant type="0"/>
+      <cd:constant type="1"/>
+      <cd:constant type="2"/>
+      <cd:constant type="0:10"/>
+      <cd:constant type="1:10"/>
+      <cd:constant type="2:10"/>
+      <cd:constant type="2:20"/>
+      <cd:constant type="1:top"/>
+      <cd:constant type="1:bottom"/>
+      <cd:constant type="2:top"/>
+      <cd:constant type="2:bottom"/>
+     </cd:parameter>
      <cd:parameter name="mathstyle">
       <cd:constant type="display"/>
       <cd:constant type="text"/>
@@ -30070,7 +30228,7 @@
       <cd:constant type="sequence"/>
       <cd:constant type="tuple"/>
      </cd:parameter>
-     <cd:parameter name="adapative">
+     <cd:parameter name="adaptive">
       <cd:constant type="yes"/>
       <cd:constant default="yes" type="no"/>
      </cd:parameter>
@@ -31842,6 +32000,11 @@
       <cd:constant type="none"/>
       <cd:constant type="cd:dimension"/>
      </cd:parameter>
+     <cd:parameter name="action">
+      <cd:constant type="transpose"/>
+      <cd:constant type="negate"/>
+      <cd:constant type="scale"/>
+     </cd:parameter>
     </cd:assignments>
    </cd:arguments>
   </cd:command>
@@ -31917,6 +32080,13 @@
    </cd:arguments>
   </cd:command>
   <cd:command category="mathematics" file="math-ali.mkxl" level="document" name="substack" type="environment"/>
+  <cd:command category="mathematics" file="math-ali.mkxl" level="document" name="mstack">
+   <cd:arguments>
+    <cd:keywords delimiters="braces" list="yes">
+     <cd:constant type="cd:text"/>
+    </cd:keywords>
+   </cd:arguments>
+  </cd:command>
   <cd:command category="mathematics" file="math-ali.mkxl" level="document" name="overset">
    <cd:arguments>
     <cd:keywords delimiters="braces">
@@ -32483,6 +32653,12 @@
      <cd:constant type="cd:name"/>
     </cd:keywords>
     <cd:assignments list="yes">
+     <cd:parameter name="top">
+      <cd:constant type="cd:text"/>
+     </cd:parameter>
+     <cd:parameter name="bottom">
+      <cd:constant type="cd:text"/>
+     </cd:parameter>
      <cd:parameter name="left">
       <cd:constant type="cd:command"/>
      </cd:parameter>
@@ -32518,6 +32694,24 @@
      </cd:parameter>
      <cd:parameter name="middlecolor">
       <cd:constant type="cd:color"/>
+     </cd:parameter>
+     <cd:parameter name="topalign">
+      <cd:constant type="left"/>
+      <cd:constant type="right"/>
+      <cd:constant type="middle"/>
+      <cd:constant type="flushleft"/>
+      <cd:constant type="flushright"/>
+      <cd:constant type="inner"/>
+      <cd:constant type="outer"/>
+     </cd:parameter>
+     <cd:parameter name="bottomalign">
+      <cd:constant type="left"/>
+      <cd:constant type="right"/>
+      <cd:constant type="middle"/>
+      <cd:constant type="flushleft"/>
+      <cd:constant type="flushright"/>
+      <cd:constant type="inner"/>
+      <cd:constant type="outer"/>
      </cd:parameter>
      <cd:parameter name="plugin">
       <cd:constant type="mp"/>
@@ -32663,7 +32857,7 @@
     </cd:assignments>
    </cd:arguments>
   </cd:command>
-  <cd:command category="mathematics" file="math-sty.mkvi" level="style" name="definemathextensible">
+  <cd:command category="mathematics" file="math-stc.mklx" level="style" name="definemathextensible">
    <cd:arguments>
     <cd:keywords optional="yes">
      <cd:constant type="reverse"/>
@@ -32958,7 +33152,7 @@
     </cd:keywords>
    </cd:arguments>
   </cd:command>
-  <cd:command category="mathematics" file="math-sty.mkvi" level="system" name="definemathoverextensible">
+  <cd:command category="mathematics" file="math-stc.mklx" level="system" name="definemathoverextensible">
    <cd:arguments>
     <cd:keywords optional="yes">
      <cd:constant type="top"/>
@@ -33011,7 +33205,7 @@
     <cd:constant value="overbracket"/>
    </cd:instances>
   </cd:command>
-  <cd:command category="mathematics" file="math-sty.mkvi" level="style" name="definemathunderextensible">
+  <cd:command category="mathematics" file="math-stc.mklx" level="style" name="definemathunderextensible">
    <cd:arguments>
     <cd:keywords optional="yes">
      <cd:constant type="bottom"/>
@@ -33064,7 +33258,7 @@
     <cd:constant value="underbracket"/>
    </cd:instances>
   </cd:command>
-  <cd:command category="mathematics" file="math-sty.mkvi" level="style" name="definemathdoubleextensible">
+  <cd:command category="mathematics" file="math-stc.mklx" level="style" name="definemathdoubleextensible">
    <cd:arguments>
     <cd:keywords optional="yes">
      <cd:constant type="both"/>
@@ -33239,7 +33433,7 @@
     </cd:keywords>
    </cd:arguments>
   </cd:command>
-  <cd:command category="mathematics" file="math-sty.mkvi" level="style" name="definemathovertextextensible">
+  <cd:command category="mathematics" file="math-stc.mklx" level="style" name="definemathovertextextensible">
    <cd:arguments>
     <cd:keywords optional="yes">
      <cd:constant type="bothtext"/>
@@ -33284,7 +33478,7 @@
     </cd:keywords>
    </cd:arguments>
   </cd:command>
-  <cd:command category="mathematics" file="math-sty.mkvi" level="style" name="definemathundertextextensible">
+  <cd:command category="mathematics" file="math-stc.mklx" level="style" name="definemathundertextextensible">
    <cd:arguments>
     <cd:keywords optional="yes">
      <cd:constant type="bothtext"/>
@@ -33329,7 +33523,7 @@
     </cd:keywords>
    </cd:arguments>
   </cd:command>
-  <cd:command category="mathematics" file="math-sty.mkvi" level="style" name="definemathtriplet">
+  <cd:command category="mathematics" file="math-stc.mklx" level="style" name="definemathtriplet">
    <cd:arguments>
     <cd:keywords optional="yes">
      <cd:constant type="cd:name"/>
@@ -33620,6 +33814,8 @@
       <cd:constant type="decimal"/>
       <cd:constant type="double"/>
       <cd:constant type="scaled"/>
+      <cd:constant type="posit"/>
+      <cd:constant type="interval"/>
       <cd:constant default="yes" type="default"/>
      </cd:parameter>
     </cd:assignments>
@@ -38038,6 +38234,10 @@
      <cd:parameter name="inbetween">
       <cd:constant type="cd:command"/>
      </cd:parameter>
+     <cd:parameter name="alternative">
+      <cd:constant default="yes" type="horizontal"/>
+      <cd:constant type="vertical"/>
+     </cd:parameter>
      <cd:parameter name="location">
       <cd:constant type="left"/>
       <cd:constant type="middle"/>
@@ -38051,6 +38251,7 @@
       <cd:constant type="cd:number"/>
      </cd:parameter>
      <cd:parameter name="distance">
+      <cd:constant type="fit"/>
       <cd:constant type="cd:dimension"/>
      </cd:parameter>
      <cd:parameter name="bodyfont">
@@ -49301,6 +49502,10 @@
       <cd:constant type="min"/>
       <cd:constant default="yes" type="max"/>
      </cd:parameter>
+     <cd:parameter name="compress">
+      <cd:constant type="yes"/>
+      <cd:constant default="yes" type="no"/>
+     </cd:parameter>
     </cd:assignments>
    </cd:arguments>
   </cd:command>
@@ -54621,6 +54826,12 @@
     </cd:keywords>
    </cd:arguments>
   </cd:command>
+  <cd:command category="system" file="syst-ini.mkxl" level="system" name="tracingprocess"/>
+  <cd:command category="system" file="syst-ini.mkxl" level="system" name="tracingtypesetting"/>
+  <cd:command category="system" file="syst-ini.mkxl" level="system" name="tracingall"/>
+  <cd:command category="system" file="syst-ini.mkxl" level="system" name="loggingall"/>
+  <cd:command category="system" file="syst-ini.mkxl" level="system" name="tracingnone"/>
+  <cd:command begin="push" category="system" end="pop" file="syst-ini.mkxl" level="system" name="overloadmode" type="environment"/>
  </cd:interface>
  <cd:interface file="i-systemlog.xml">
   <cd:command category="tracker" file="core-sys.mkxl" level="system" name="systemlog">
@@ -56747,55 +56958,55 @@
     </cd:keywords>
    </cd:arguments>
   </cd:command>
-  <cd:command category="tracker" file="trac-deb.mkiv" level="style" name="enabletrackers">
+  <cd:command category="tracker" file="trac-deb.lmt" level="style" name="enabletrackers">
    <cd:arguments>
     <cd:keywords list="yes">
      <cd:constant type="cd:name"/>
     </cd:keywords>
    </cd:arguments>
   </cd:command>
-  <cd:command category="tracker" file="trac-deb.mkiv" level="style" name="disabletrackers">
+  <cd:command category="tracker" file="trac-deb.lmt" level="style" name="disabletrackers">
    <cd:arguments>
     <cd:keywords list="yes">
      <cd:constant type="cd:name"/>
     </cd:keywords>
    </cd:arguments>
   </cd:command>
-  <cd:command category="tracker" file="trac-deb.mkiv" level="system" name="resettrackers"/>
-  <cd:command category="tracker" file="trac-deb.mkiv" level="document" name="showtrackers"/>
-  <cd:command category="tracker" file="trac-deb.mkiv" level="style" name="enabledirectives">
+  <cd:command category="tracker" file="trac-deb.lmt" level="system" name="resettrackers"/>
+  <cd:command category="tracker" file="trac-deb.lmt" level="document" name="showtrackers"/>
+  <cd:command category="tracker" file="trac-deb.lmt" level="style" name="enabledirectives">
    <cd:arguments>
     <cd:keywords list="yes">
      <cd:constant type="cd:name"/>
     </cd:keywords>
    </cd:arguments>
   </cd:command>
-  <cd:command category="tracker" file="trac-deb.mkiv" level="style" name="disabledirectives">
+  <cd:command category="tracker" file="trac-deb.lmt" level="style" name="disabledirectives">
    <cd:arguments>
     <cd:keywords list="yes">
      <cd:constant type="cd:name"/>
     </cd:keywords>
    </cd:arguments>
   </cd:command>
-  <cd:command category="tracker" file="trac-deb.mkiv" level="document" name="showdirectives"/>
-  <cd:command category="tracker" file="trac-deb.mkiv" level="style" name="enableexperiments">
+  <cd:command category="tracker" file="trac-deb.lmt" level="document" name="showdirectives"/>
+  <cd:command category="tracker" file="trac-deb.lmt" level="style" name="enableexperiments">
    <cd:arguments>
     <cd:keywords list="yes">
      <cd:constant type="cd:name"/>
     </cd:keywords>
    </cd:arguments>
   </cd:command>
-  <cd:command category="tracker" file="trac-deb.mkiv" level="style" name="disableexperiments">
+  <cd:command category="tracker" file="trac-deb.lmt" level="style" name="disableexperiments">
    <cd:arguments>
     <cd:keywords list="yes">
      <cd:constant type="cd:name"/>
     </cd:keywords>
    </cd:arguments>
   </cd:command>
-  <cd:command category="tracker" file="trac-deb.mkiv" level="document" name="showexperiments"/>
+  <cd:command category="tracker" file="trac-deb.lmt" level="document" name="showexperiments"/>
   <cd:command category="tracker" file="trac-deb.mkiv" level="system" name="showedebuginfo"/>
   <cd:command category="tracker" file="trac-deb.mkiv" level="system" name="overloaderror"/>
-  <cd:command category="tracker" file="trac-deb.mkiv" level="system" name="showlogcategories"/>
+  <cd:command category="tracker" file="trac-deb.lmt" level="system" name="showlogcategories"/>
   <cd:command category="tracker" file="trac-jus.mkxl" level="system" name="showjustification"/>
  </cd:interface>
  <cd:interface file="i-translation.xml">
@@ -58074,7 +58285,6 @@
      </cd:parameter>
      <cd:parameter name="escape">
       <cd:constant type="yes"/>
-      <cd:constant default="yes" type="no"/>
       <cd:constant type="cd:text"/>
       <cd:constant method="apply" prefix="cd:processor" type="cd:text"/>
      </cd:parameter>
@@ -58254,7 +58464,6 @@
      </cd:parameter>
      <cd:parameter name="escape">
       <cd:constant type="yes"/>
-      <cd:constant default="yes" type="no"/>
       <cd:constant type="cd:text"/>
       <cd:constant method="apply" prefix="cd:processor" type="cd:text"/>
      </cd:parameter>
@@ -58852,7 +59061,7 @@
     <cd:content/>
    </cd:arguments>
   </cd:command>
-  <cd:command category="boxes" file="trc-vis.mkxl" level="document" name="showmakeup">
+  <cd:command category="boxes" file="trac-vis.mkxl" level="document" name="showmakeup">
    <cd:arguments>
     <cd:keywords optional="yes">
      <cd:constant type="reset"/>
@@ -58899,8 +59108,8 @@
     </cd:keywords>
    </cd:arguments>
   </cd:command>
-  <cd:command category="boxes" file="trc-vis.mkxl" level="document" name="setlocalshowmakeup"/>
-  <cd:command category="boxes" file="trc-vis.mkxl" level="document" name="resetlocalshowmakeup"/>
+  <cd:command category="boxes" file="trac-vis.mkxl" level="document" name="setlocalshowmakeup"/>
+  <cd:command category="boxes" file="trac-vis.mkxl" level="document" name="resetlocalshowmakeup"/>
   <cd:command category="boxes" file="trac-vis.mkxl" level="document" name="showallmakeup"/>
   <cd:command category="boxes" file="trac-vis.mkxl" level="document" name="showboxes"/>
   <cd:command category="fonts" file="trac-vis.mkxl" level="document" name="showglyphs"/>
@@ -59180,6 +59389,8 @@
     <cd:csname/>
    </cd:arguments>
   </cd:command>
+  <cd:command category="whitespace" file="spac-ver.mkxl" level="style" name="nowhitespace"/>
+  <cd:command category="whitespace" file="spac-ver.mkxl" level="style" name="whitespace"/>
   <cd:command category="whitespace" file="spac-ver.mkxl" level="system" name="inhibitblank"/>
   <cd:command category="whitespace" file="spac-ver.mkxl" level="system" name="inhibitwhitespace"/>
   <cd:command category="whitespace" file="spac-ver.mkxl" level="system" name="inhibitallspacing"/>

@@ -1,0 +1,285 @@
+% language=us runpath=texruns:manuals/ontarget
+
+\pushoverloadmode
+
+\input trac-riv.mkxl
+
+\startcomponent ontarget-rivers
+
+\environment ontarget-style
+
+\startchapter[title={Crossing rivers}]
+
+Occasionally you can hear or read a \TEX ie argue that the engine should be able
+to deal with rivers. Now, to be honest, we never really bothered much about that,
+if only because one should rewrite the content if one is really disturbed, but we
+come to that. The excursion below is a side track of introducing some new graphic
+capabilities in \CONTEXT\ while at the same time looking at possible improvements
+in the paragraph builder.
+
+Let's start with some terminology. In \type {tex.web} you can find Don Knuth
+saying: \quotation {After considering \TEX's eyes and stomach, we come now to the
+bowels} and I've heard talks at \TEX\ meetings where the presenter impresses the
+audience by using these terms. The same happens with talking about widows, clubs,
+penalties, demerits and such. Talking rivers fits into this phenomena. The fact that
+after decades of \TEX\ usage no one really bothered much about it beyond mentioning
+and suggesting half|-|way solutions is a telling sign.
+
+If one talks about a river in a typeset text what is actually meant is that there
+are spaces in successive lines that when you look at it seem to be connected and
+that is considered bad or at least annoying. Of course there is nothing that
+prevents us to consider (say) \type {m}'s or \type {oo}'s stacked in successive
+lines to be seen as mountain rig but let's stick to spaces.
+
+You can wonder what is so bad about a gently meandering river. In fact, the more
+it meanders, the less it will be noticed. It's canals that matter more. In a
+paragraph with wide spaces due to the constraints one can be annoyed by those,
+and we will call them ponds. When they become too large we can talk about lakes.
+Actually, when rivers are narrow, it would be better to talk of creeks.
+
+So, in order to please those who love this analogy speak, we now have a decent
+repertoire of seemingly bad things to look at: ponds and lakes, creeks and
+rivers, and canals. An empty page is basically an ocean and too much white space
+between paragraphs might be seen as a sea, but that can be intentional.
+
+So how bad is all this in practice? Before we show some examples, we make a decision:
+a pond is as bad as a creek, and a lake as bad as a river. Canals are even worse but
+they will often show up like rivers: it is mostly a visual thing. A river can meander
+which means that it can backtrack: a real worse case is a paragraph where it meanders
+over multiple lines horizontally.
+
+\startbuffer[profile]
+01000000000000000000000000000001100000000000000
+01000000000000000000011000000000011000000000011
+01000001100000000001100110000000000110000001100
+00100110011000000110000001100110000001100110000
+00011000000110011000000000011001100000000110000
+00000000000001100000000000000000000000000001100
+00000000000000000000000000000000000000000110000
+\stopbuffer
+
+\startlocallinecorrection
+\startMPcode
+fill lmt_potraced [
+    buffer  = "profile",
+    size    = 1,
+    value   = "0",
+    polygon = true,
+] xsized TextWidth
+    withcolor "darkgreen" ;
+\stopMPcode
+\stoplocallinecorrection
+
+Anyway, we distinguish three different cases small (ponds and creeks), large
+(lakes and rivers) and whatever sits in between. In the next example we see these
+three cases, where blue is small and red is large.
+
+\startlocallinecorrection
+\setbox\scratchbox\vbox{\samplefile{tufte}}%
+\addriverstobox[criterium=7]\scratchbox
+\box\scratchbox
+\stoplocallinecorrection
+
+The question now is, are these red rivers really that bad? Let's see how the text
+looks when we don't identify them:
+
+\samplefile{tufte}
+
+We bet no one is really bothered by this. In fact, one can be more annoyed by the
+commas at the end of nearly every line. This text (a quote from Tufte actually)
+is also a bit atypical because of the many words separated by commas but that
+makes it such an excellent quotation for many tests. There's always something a
+user can complain about.
+
+\startlocallinecorrection
+\setbox\scratchbox\vbox{\samplefile{ward}}%
+\addriverstobox[criterium=2]\scratchbox
+\box\scratchbox
+\stoplocallinecorrection
+
+In the previous example we are in a way worse situation: plenty of creeks and
+rivers there, but again, you won't hear us complain. So can we make an example
+that will make us feel bad? In \in {figure} [fig:overflooding] we see something
+that will never (or at least seldom) happen in a \TEX\ document: we see no
+hyphenation.
+
+\startplacefigure[title=Overflooding,reference=fig:overflooding]
+\startcombination[nx=2,ny=1,location=top]
+    {\setbox\scratchbox\vbox
+       {\nohyphens
+        \showglyphs
+        \hsize 7cm
+        \setupalign[verytolerant,stretch]%
+        \samplefile{tufte}}%
+      \addriverstobox[criterium=4]\scratchbox
+      \box\scratchbox}
+    {tufte}
+    {\setbox\scratchbox\vbox
+       {\nohyphens
+        \showglyphs
+        \hsize 7cm
+        \setupalign[verytolerant,stretch]%
+        \samplefile{knuth}}%
+      \addriverstobox[criterium=7]\scratchbox
+      \box\scratchbox}
+    {knuth}
+\stopcombination
+\stopplacefigure
+
+By now you might wonder how we get to these areas. What happens here is that we
+first turn the typeset result into a (sort of) bitmap. Every line gets the same
+number of slots, each representing 2pt advance. We start out with all slots being
+zero but then assign slots that overlap with interword spacing to one. We can
+then run over the rows and see where what columns have value one. But that is
+not what we do. Because we want a picture, and because we also want meandering
+visualized, we feed the bitmap into potrace, a library that is built in
+\LUAMETATEX, and convert the resulting vector representation into a \METAPOST\
+graphic.
+
+If one is only interested if there are rivers at all, one can set the criteria
+high and look only at the red blobs. In fact, if there is more than one red blob
+one can already decide that we have a bad situation. But what can we do about it?
+Well, not that much. Without hyphenation one is kind of lost, with hyphenation
+one can best rewrite the paragraph and hope for the best. Of course a way out is
+to use a new feature of \LUAMETATEX\ (and \CONTEXT): additional emergency par
+builder steps. These come cheap and just try to do a better job by changing
+constraints, one of which is selective expansion (aka hz). In fact, trying to get
+rid of rivers and lakes by tweaking can be considered as harmful as messing with
+looseness, a trick that one only applies when the results can be visually
+checked. As with real rivers, messing with them will just make things worse.
+Let's consider them natural boundaries that we don't even bother to cross.
+
+\typebuffer[profile]
+
+Just in case you're curious about what bitmap gets fed into potrace, we show it
+above. You might see rivers, or not. And it might be clear now that we are not
+going to waste time on this in the perspective of improving the par builder. It
+would be one of these tuning options that in the end no one would use, just
+because \quotation {fixing this} might as well \quotation {break that} which
+means that such an automatism will demand closer inspection of the output than a
+user wants. You might also realize that we don't really need potrace for
+detecting lakes and rivers but it just gives nice graphics, and that's what we're
+after. One can even argue that if avoiding any river is the objective, even one
+pair of vertical ones is already enough to not look further and declare the whole
+paragraph to be bad which then has to trigger a new attempt. It is however not
+that hard to imagine something \typ {\riverdemerits} and maybe even \typ
+{\doubleriverdemerits} based on a rather dumb fast pairwise check. The
+complication of adding this to the par builder is that we then need to package
+all the possible lines and that's not going to happen any time soon.
+
+What might get unnoticed here is that we not only look at inter|-|word spacing
+but also treat small glyphs like punctuation followed by such spacing as part of
+a river and we can imagine plenty more cases to consider. It just shows that if
+spacing is a problem, anything else can become one. We can also add some margin
+to a space because being a bit more or less tolerant can matter.
+
+% After wrapping up this experiment, Mikael Sundqvist found this example on stack
+% exchange (entry 4507 52406) and after turning the example to use the same
+% settings we get \in {figure} [fig:longrivers].
+%
+% \startbuffer
+% % Of all the great rivers fo the world, none is as intriguing
+% % as the Pearl. Short by world standards, it epitomizes the
+% % old expression that good things come in small packages.
+% Though the Pearl measures less than 50~miles in total length from its
+% modest source as a cool mountain spring to the screaming cascades and
+% steaming estuary of its downstream reaches, over those miles, the
+% river has in one place or another everything you could possibly ask
+% for. You can roam among lush temperate rain forests, turgid white
+% water canyons, contemplative meanders among aisles of staid aspens
+% (with trout leaping to slurp all the afternoon insects from its calm
+% surface), and forbidding swamp land as formidable as any that Humphrey
+% Bogart muddled through in \emph{The African Queen}.
+% \stopbuffer
+%
+% \startplacefigure[title=A very long river,reference=fig:longrivers]
+%     \scale [width=\textwidth] {%
+%         \startcombination[nx=2,ny=1]
+%           {\startshowrivers[criterium=8]
+%              \switchtobodyfont[termes,10pt]
+% %              \hangindent23pt \hangafter -3
+%              \setupindenting[yes,23pt]
+%              \showglyphs\hsize 247pt
+%              \setupalign[verytolerant,stretch]
+%              \getbuffer
+%           \stopshowrivers} {shapes}
+%           {\startshowrivers[criterium=8,option=test]
+%              \switchtobodyfont[termes,10pt]
+%              \hangindent23pt \hangafter -3
+% %              \setupindenting[yes,23pt]
+%              \showglyphs\hsize 247pt
+%              \setupalign[verytolerant,stretch]
+%              \getbuffer
+%            \stopshowrivers} {polygons}
+%         \stopcombination
+%     }
+% \stopplacefigure
+%
+% Indeed there is a pretty big canal running down the paragraph but is it really
+% annoying enough to spend time on it? How many users stare long enough at a
+% paragraph without reading it (which moves the eyes) to get fed up?
+
+Just in case you want to experiment with this, here how it goes:
+
+\starttyping
+\startshowrivers[criterium=6]
+    ...
+\stopshowrivers
+\stoptyping
+
+where the following optional parameters can be set:
+
+\starttabulate[]
+\NC \type{step}           \NC \type{2pt}             \NC \NR
+\NC \type{margin}         \NC \type{0pt}             \NC \NR
+\NC \type{height}         \NC \type{.2\bodyfontsize} \NC \NR
+\NC \type{depth}          \NC \type{.2\bodyfontsize} \NC \NR
+\NC \type{spaceinbetween} \NC \type{.1\lineheight}   \NC \NR
+\NC \type{criterium}      \NC \type{4}               \NC \NR
+\stoptabulate
+
+Here the \type {step} determines the accuracy, the \type {margin} is what gets
+added to the space skip when it is encountered, the \type {height} and \type
+{depth} are used to identify for instance punctuation characters that are treated
+like glue. When we have a vertical glue that exceeds \typ {spaceinbetween} we
+assume a new paragraph is started. Finally, \type {criterium} is what makes the
+red shapes show up; steps 1 and 3 result in the green and blue ones.
+
+Of course this is mostly an attempt to show that in practice we shouldn't care
+too much about these rivers. As with quite some nice features, in the end once
+they are there one forgets about them because in retrospect they were not that
+much needed. This is why we only mention that there is a simple and fast variant
+that one can enable with \typ {\showrivers} which acts upon the page but it is
+less fun to look at.
+
+Let us end by mentioning that we downloaded the Henry James book \quotation{The
+turn of the screw} from the Project Gutenberg web page and compiled it in many
+different page layouts and with different choices of fonts, and it was not so
+easy to produce any disturbing rivers. \TEX\ does a very good job. The bigger
+space after the period could be a bit disturbing, in particular if it appeared
+on consecutive lines and if the lines had different stretch.
+
+\startlocallinecorrection
+\setbox\scratchbox\vbox{\samplefile{tufte}}
+\addriverstobox[step=.5pt]\scratchbox
+\ruledhbox{\box\scratchbox}
+\stoplocallinecorrection
+
+% \page
+% \enabletrackers[typesetting.rivers]
+% \dorecurse{10}{
+%     \hsize \dimexpr\textwidth-#1cm\relax
+%     \samplefile{tufte}\par
+% }
+
+% \page
+% \enabletrackers[typesetting.rivers]
+% \dorecurse{30}{
+%     \samplefile{knuth}\par
+%     \samplefile{ward}\par
+%     \samplefile{tufte}\par
+% }
+
+\stopchapter
+
+\stopcomponent

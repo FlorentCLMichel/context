@@ -178,33 +178,67 @@ return {
             --
             -- The next alternates may supress randomness:
             --
-            { name = "alternateletters",   feature = 'ss01', value = "yes",    comment = "Alternate a,g,I"                      },
-            { name = "sharpletters",       feature = 'ss02', value = "yes",    comment = "Alternate A,M,N,V,W,Q,Z,v,z"          },
-            { name = "alternatefour",      feature = 'ss03', value = "yes",    comment = "Alternate four"                       },
-            { name = "straightfeet",       feature = 'ss04', value = "yes",    comment = "Alternate l,t"                        },
-            { name = "simplifiedfraktur",  feature = 'ss05', value = "yes",    comment = "Simplified fraktur-like letters"      },
-            { name = "alternateseven",     feature = 'ss07', value = "yes",    comment = "Alternate seven"                      },
-            { name = "alternatefences",    feature = 'cv05', value = 2,        comment = "Alternate parentheses and braces"     },
-            { name = "alternateintegrals", feature = 'cv03', value = 2,        comment = "Serif integrals"                      },
-            { name = "flair",              feature = 'ss20', value = "yes",    comment = "Extra flair throughout"               },
+            { name = "alternateletters",   feature = "ss01", value = "yes",    comment = "Alternate a,g,I"                      },
+            { name = "sharpletters",       feature = "ss02", value = "yes",    comment = "Alternate A,M,N,V,W,Q,Z,v,z"          },
+            { name = "alternatefour",      feature = "ss03", value = "yes",    comment = "Alternate four"                       },
+            { name = "straightfeet",       feature = "ss04", value = "yes",    comment = "Alternate l,t"                        },
+            { name = "simplifiedfraktur",  feature = "ss05", value = "yes",    comment = "Simplified fraktur-like letters"      },
+            { name = "alternateseven",     feature = "ss07", value = "yes",    comment = "Alternate seven"                      },
+            { name = "flair",              feature = "ss20", value = "yes",    comment = "Extra flair throughout"               },
             --
             -- Now various random alternates:
             --
-            { name = "randomfences",       feature = "cv01", value = "random", comment = "Random fences"                        },
-            { name = "randomletters",      feature = "cv10", value = "random", comment = "Random letters"                       },
-            { name = "randomnumerals",     feature = "cv04", value = "random", comment = "Random numerals"                      },
-            { name = "randomintegrals",    feature = "cv02", value = "random", comment = "Random integrals"                     },
-         -- { name = "randomsymbols",      feature = "cvXX", value = "random", comment = "Random symbols"                       },
-            { name = "random",             feature = "rand", value = "random", comment = "All randoms"                          },
+--             { name = "randomfences",       feature = "cv01", value = "random", comment = "Random fences"                        },
+--             { name = "randomletters",      feature = "cv10", value = "random", comment = "Random letters"                       },
+--             { name = "randomnumerals",     feature = "cv04", value = "random", comment = "Random numerals"                      },
+--             { name = "randomintegrals",    feature = "cv02", value = "random", comment = "Random integrals"                     },
+--          -- { name = "randomsymbols",      feature = "cvXX", value = "random", comment = "Random symbols"                       },
+--             { name = "random",             feature = "rand", value = "random", comment = "All randoms"                          },
+--             { name = "alternatefences",    feature = "cv05", value = 2,        comment = "Alternate parentheses and braces"     },
+--             { name = "alternateintegrals", feature = "cv03", value = 2,        comment = "Serif integrals"                      },
             --
             -- The rest is just for testing:
             --
-            { name = "allrandomintegrals", feature = "cv06", value = "random", comment = "All random integrals"                 },
-            { name = "random0",            feature = "rand", value = false,    comment = "For testing only"                     },
-            { name = "random1",            feature = "rand", value = 1,        comment = "For testing only"                     },
-            { name = "random2",            feature = "rand", value = 2,        comment = "For testing only"                     },
-            { name = "random3",            feature = "rand", value = 3,        comment = "For testing only"                     },
-            { name = "random4",            feature = "rand", value = 4,        comment = "For testing only"                     },
+--             { name = "allrandomintegrals", feature = "cv06", value = "random", comment = "All random integrals"                 },
+--             { name = "random0",            feature = "rand", value = false,    comment = "For testing only"                     },
+--             { name = "random1",            feature = "rand", value = 1,        comment = "For testing only"                     },
+--             { name = "random2",            feature = "rand", value = 2,        comment = "For testing only"                     },
+--             { name = "random3",            feature = "rand", value = 3,        comment = "For testing only"                     },
+--             { name = "random4",            feature = "rand", value = 4,        comment = "For testing only"                     },
+
+            -- stylealternative=cv21,  % 40 41 123 125 fixed
+            -- stylealternative=cv31,  % integrals fixed == ss20
+
+            { name = "randomletters",     feature = "cv01", value = "random", comment = "letters"   },
+            { name = "randomnumerals",    feature = "cv10", value = "random", comment = "numerals"  }, -- 49 50 53 120787 120803 120804 120807 120817 983740
+            { name = "randomintegrals",   feature = "cv32", value = "random", comment = "integrals" }, -- 8747 8748 8749 8750 8751 8752 8753 8754 8755 10764 10765 10766 10767 10768 10769 10770 10771 10772 10773 10774 10775 10776 10777 10778 10779 10780
+            { name = "randomfences",      feature = "cv20", value = "random", comment = "fences"    }, -- 40 41
+            { name = "randomintegrals-1", feature = "cv30", value = "random", comment = "integrals" }, -- 8747 8748 8749 8750 8751 8752 8753 8754 8755 10764 10765 10766 10767 10768 10769 10772 10774 10775 10776 10777 10778 10779 10780
+            { name = "randomintegrals-2", feature = "cv32", value = "random", comment = "integrals" }, -- 8747 8748 8749 8750 8751 8752 8753 8754 8755 10764 10765 10766 10767 10768 10769 10770 10771 10772 10773 10774 10775 10776 10777 10778 10779 10780
+            { name = "randomfences-1",    feature = "cv20", value = "random", comment = "fences"    }, -- 40 41 91 93 123 125 8968 8969 8970 8971 10214 10215 10216 10217 random fences
+            { name = "randomfences-2",    feature = "cv66", value = "random", comment = "fences"    }, -- 40 41
+
+         -- { name = "aalt", feature = "aalt", value = "random" },
+         -- { name = "cv01", feature = "cv01", value = "random" },
+         -- { name = "cv10", feature = "cv10", value = "random" },
+         -- { name = "cv20", feature = "cv20", value = "random" },
+         -- { name = "cv21", feature = "cv21", value = "random" },
+         -- { name = "cv30", feature = "cv30", value = "random" },
+         -- { name = "cv31", feature = "cv31", value = "random" },
+         -- { name = "cv32", feature = "cv32", value = "random" },
+         -- { name = "cv66", feature = "cv66", value = "random" },
+         -- { name = "dtls", feature = "dtls", value = "random" },
+         -- { name = "frac", feature = "frac", value = "random" },
+         -- { name = "ss01", feature = "ss01", value = "random" },
+         -- { name = "ss02", feature = "ss02", value = "random" },
+         -- { name = "ss03", feature = "ss03", value = "random" },
+         -- { name = "ss04", feature = "ss04", value = "random" },
+         -- { name = "ss05", feature = "ss05", value = "random" },
+         -- { name = "ss07", feature = "ss07", value = "random" },
+         -- { name = "ss20", feature = "ss20", value = "random" },
+         -- { name = "ssty", feature = "ssty", value = "random" },
+         -- { name = "zero", feature = "zero", value = "random" },
+
         },
        --
     },

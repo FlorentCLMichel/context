@@ -15843,6 +15843,10 @@ return {
    ["pe"]="پرکردن",
    ["ro"]="ajustat",
   },
+  ["fitheight"]={
+   ["en"]="fitheight",
+   ["nl"]="passendehoogte",
+  },
   ["five"]={
    ["cs"]="pet",
    ["de"]="fuenf",

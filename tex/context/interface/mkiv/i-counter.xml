@@ -144,6 +144,14 @@
         </cd:arguments>
     </cd:command>
 
+    <cd:command name="doifelsecounteractive" level="system" category="counter" keywords="conditional" file="strc-num.mkxl">
+        <cd:arguments>
+            <cd:resolve name="argument-name"/>
+            <cd:resolve name="argument-true"/>
+            <cd:resolve name="argument-false"/>
+        </cd:arguments>
+    </cd:command>
+
     <cd:command name="setcounter" level="system" category="counter" file="strc-num.mkxl">
         <cd:arguments>
             <cd:resolve name="keyword-name"/>
@@ -362,7 +370,7 @@
             </cd:keywords>
         </cd:arguments>
     </cd:command>
-    
+
     <cd:command name="doifelsedefinedcounter" level="system" category="counter" keywords="conditional" file="strc-num.mkxl">
         <cd:arguments>
             <cd:resolve name="argument-name"/>

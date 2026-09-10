@@ -296,12 +296,18 @@ function statistics.showusage(when)
             report("")
             report("  linebreak statistics  :           %8i  %8i  %8i  %8i  %8i  %8i",n_calls,n_first,n_second,n_final,n_specification,n_sub)
         end
+        report("")
+        for k, v in sortedhash(l) do
+            if type(v) == "number" and v ~= 0 then
+                report("  linebreak statistics  : %-11s  %7i",k,v)
+            end
+        end
     end
     do
         if p.calls > 0 then
             report("")
             for k, v in sortedhash(p) do
-                if v ~= 0 then
+                if type(v) == "number" and v ~= 0 then
                     report("  balance state         : %-14s  %7i",k,v)
                 end
             end
@@ -311,7 +317,7 @@ function statistics.showusage(when)
      -- if h.checked > 0 then
             report("")
             for k, v in sortedhash(h) do
-                if v ~= 0 then
+                if type(v) == "number" and v ~= 0 then
                     report("  hyphenation state     : %-10s  %7i",k,v)
                 end
             end

@@ -46,6 +46,8 @@
 
     <cd:command name="S" level="document" category="mathematics" keywords="character" file="char-def.lua"/>
 
+    <cd:command name="lnot" level="document" category="mathematics" keywords="character" file="char-def.lua"/>
+
     <cd:command name="ddot" level="document" category="mathematics" keywords="character" file="char-def.lua"/>
 
     <cd:command name="bar" level="document" category="mathematics" keywords="character" file="char-def.lua"/>
@@ -214,9 +216,15 @@
 
     <cd:command name="invisibletimes" level="document" category="mathematics" keywords="character" file="char-def.lua"/>
 
+    <cd:command name="invisiblecomma" level="document" category="mathematics" keywords="character" file="char-def.lua"/>
+
+    <cd:command name="invisibleplus" level="document" category="mathematics" keywords="character" file="char-def.lua"/>
+
     <cd:command name="positivesign" level="document" category="mathematics" keywords="character" file="char-def.lua"/>
 
     <cd:command name="negativesign" level="document" category="mathematics" keywords="character" file="char-def.lua"/>
+
+    <cd:command name="cev" level="document" category="mathematics" keywords="character" file="char-def.lua"/>
 
     <cd:command name="vec" level="document" category="mathematics" keywords="character" file="char-def.lua"/>
 
@@ -232,7 +240,7 @@
 
     <cd:command name="Eulerconst" level="document" category="mathematics" keywords="character" file="char-def.lua"/>
 
-    <cd:command name="Plankconst" level="document" category="mathematics" keywords="character" file="char-def.lua"/>
+    <cd:command name="Planckconst" level="document" category="mathematics" keywords="character" file="char-def.lua"/>
 
     <cd:command name="Im" level="document" category="mathematics" keywords="character" file="char-def.lua"/>
 
@@ -493,6 +501,8 @@
     <cd:command name="nexists" level="document" category="mathematics" keywords="character" file="char-def.lua"/>
 
     <cd:command name="emptyset" level="document" category="mathematics" keywords="character" file="char-def.lua"/>
+
+    <cd:command name="laplace" level="document" category="mathematics" keywords="character" file="char-def.lua"/>
 
     <cd:command name="nabla" level="document" category="mathematics" keywords="character" file="char-def.lua"/>
 
@@ -757,6 +767,14 @@
     <cd:command name="nVdash" level="document" category="mathematics" keywords="character" file="char-def.lua"/>
 
     <cd:command name="nVDash" level="document" category="mathematics" keywords="character" file="char-def.lua"/>
+
+    <cd:command name="vartriangleleft" level="document" category="mathematics" keywords="character" file="char-def.lua"/>
+
+    <cd:command name="vartriangleright" level="document" category="mathematics" keywords="character" file="char-def.lua"/>
+
+    <cd:command name="trianglelefteq" level="document" category="mathematics" keywords="character" file="char-def.lua"/>
+
+    <cd:command name="trianglerighteq" level="document" category="mathematics" keywords="character" file="char-def.lua"/>
 
     <cd:command name="multimap" level="document" category="mathematics" keywords="character" file="char-def.lua"/>
 
@@ -1081,6 +1099,8 @@
     <cd:command name="imath" level="document" category="mathematics" keywords="character" file="char-def.lua"/>
 
     <cd:command name="jmath" level="document" category="mathematics" keywords="character" file="char-def.lua"/>
+
+    <cd:command name="mathpiitalicshape" level="document" category="mathematics" keywords="character" file="char-def.lua"/>
 
     <cd:command name="vartheta" level="document" category="mathematics" keywords="character" file="char-def.lua"/>
 
