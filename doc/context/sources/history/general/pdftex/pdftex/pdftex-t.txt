@@ -1,0 +1,118 @@
+%PDF-1.4
+3 0 obj <<
+/Length 127
+>>
+stream
+BT
+/F52 9.9626 Tf 91.9253 726.7472 Td[(W)80
+(elcome)-250(to)-250(pdfT)]TJ 67.8181
+-2.2415 Td[(E)]TJ 4.8418 2.2415 Td[(X!)]TJ
+ET
+endstream
+endobj
+2 0 obj <<
+/Type /Page
+/Contents 3 0 R
+/Resources 1 0 R
+/MediaBox [0 0 612 808.7099]
+/Parent 6 0 R
+>> endobj
+1 0 obj <<
+/Font << /F52 5 0 R >>
+/ProcSet [ /PDF /Text ]
+>> endobj
+7 0 obj <<
+/Type /Encoding
+/Differences [ 0 /.notdef 1/dotaccent/fi/fl
+/fraction/hungarumlaut/Lslash/lslash/ogonek
+/ring 10/.notdef 11/breve/minus 13/.notdef
+14/Zcaron/zcaron/caron/dotlessi/dotlessj/ff
+/ffi/ffl 22/.notdef 30/grave/quotesingle
+/space/exclam/quotedbl/numbersign/dollar
+/percent/ampersand/quoteright/parenleft
+/parenright/asterisk/plus/comma/hyphen
+/period/slash/zero/one/two/three/four/five
+/six/seven/eight/nine/colon/semicolon/less
+/equal/greater/question/at/A/B/C/D/E/F/G/H
+/I/J/K/L/M/N/O/P/Q/R/S/T/U/V/W/X/Y/Z
+/bracketleft/backslash/bracketright
+/asciicircum/underscore/quoteleft/a/b/c/d
+/e/f/g/h/i/j/k/l/m/n/o/p/q/r/s/t/u/v/w/x
+/y/z/braceleft/bar/braceright/asciitilde
+127/.notdef 130/quotesinglbase/florin
+/quotedblbase/ellipsis/dagger/daggerdbl
+/circumflex/perthousand/Scaron
+/guilsinglleft/OE 141/.notdef 147
+/quotedblleft/quotedblright/bullet/endash
+/emdash/tilde/trademark/scaron
+/guilsinglright/oe 157/.notdef 159
+/Ydieresis 160/.notdef 161/exclamdown
+/cent/sterling/currency/yen/brokenbar
+/section/dieresis/copyright/ordfeminine
+/guillemotleft/logicalnot/hyphen/registered
+/macron/degree/plusminus/twosuperior
+/threesuperior/acute/mu/paragraph
+/periodcentered/cedilla/onesuperior
+/ordmasculine/guillemotright/onequarter
+/onehalf/threequarters/questiondown/Agrave
+/Aacute/Acircumflex/Atilde/Adieresis/Aring
+/AE/Ccedilla/Egrave/Eacute/Ecircumflex
+/Edieresis/Igrave/Iacute/Icircumflex
+/Idieresis/Eth/Ntilde/Ograve/Oacute
+/Ocircumflex/Otilde/Odieresis/multiply
+/Oslash/Ugrave/Uacute/Ucircumflex/Udieresis
+/Yacute/Thorn/germandbls/agrave/aacute
+/acircumflex/atilde/adieresis/aring/ae
+/ccedilla/egrave/eacute/ecircumflex
+/edieresis/igrave/iacute/icircumflex
+/idieresis/eth/ntilde/ograve/oacute
+/ocircumflex/otilde/odieresis/divide
+/oslash/ugrave/uacute/ucircumflex
+/udieresis/yacute/thorn/ydieresis]
+>> endobj
+5 0 obj <<
+/Type /Font
+/Subtype /Type1
+/Encoding 7 0 R
+/BaseFont /Times-Roman
+>> endobj
+6 0 obj <<
+/Type /Pages
+/Count 1
+/Kids [2 0 R]
+>> endobj
+8 0 obj <<
+/Type /Catalog
+/Pages 6 0 R
+>> endobj
+9 0 obj <<
+/Producer (pdfTeX-1.20a)
+/Creator (TeX)
+/CreationDate (D:20040915112757+02'00')
+/PTEX.Fullbanner (This is pdfeTeX,
+Version 3.141592-1.20a-rc7.2-2.1
+(Web2c 7.5.3) kpathsea version )
+>> endobj
+xref
+0 10
+0000000004 65535 f
+0000000303 00000 n
+0000000194 00000 n
+0000000009 00000 n
+0000000000 00000 f
+0000002159 00000 n
+0000002247 00000 n
+0000000371 00000 n
+0000002304 00000 n
+0000002353 00000 n
+trailer
+<<
+/Size 10
+/Root 8 0 R
+/Info 9 0 R
+/ID [<9C5EB4D6BC5DCD07641240C47C497799>
+<9C5EB4D6BC5DCD07641240C47C497799>]
+>>
+startxref
+2556
+%%EOF

@@ -1,0 +1,271 @@
+% interface=en output=pdftex
+
+\environment mstyle
+
+\TitlePage{514}{0}{\TeX UTIL\\explained}{}{1}
+
+\subject {Introduction}
+
+While typesetting a document, tables of contents, references and index
+entries are often to be included. The items of a table of contents is
+collected during the typesetting process, and therefore an additional
+typesetting pass is needed to get the right one at the front of the document.
+In a similar way, index entries are collected and need to be sorted before
+inclusion. And, forward references can only be resolved when known. 
+
+When processing a text, \CONTEXT\ saves table and index entries, cross
+references, and some more information in a so called utility file. After a
+successful run, this file is converted into a format suitable for the next
+run. This conversion is done by \TEXUTIL, a \PERL\ script that comes with the
+\CONTEXT\ distribution. 
+
+As a bonus, \TEXUTIL\ can prepare documentation files, analyze graphics and
+filter log files. These modes of operation will be discussed later. I will
+not bother you with technical details on the file formats used. These can be
+found in the \PERL\ file itself. 
+
+To fill you in on the backgrounds of the \TEXUTIL\ logo as shown on this
+cover: many lines of data produced by \CONTEXT\ are read in, interpreted,
+converted, sorted and or combined, and written back to file in a similar or
+adapted form: \TEXUTIL\ is dealing with transformations. 
+
+{\em A next version will integrate (simple) conversion from \SGML\ to \TEX\ 
+as well as sorting of mapped encodings.}
+
+\subject {Running} 
+
+\switch references   
+
+When you use \TEXEXEC, running \TEXUTIL\ is taken care of automatically.
+Otherwise, you need to call \TEXUTIL\ manually: 
+
+\starttyping
+texutil  --references  somefile
+\stoptyping
+
+In this case, \TEXUTIL\ loads the file \type {somefile.tui} sorts and
+converts the content, and writes a file called \type {somefile.tuo}.
+Additional switches may be passed; these will be discussed later. 
+
+\switch documents   
+
+The \CONTEXT\ related source files often contain documentation. The
+documentation lines can be recognized by \type {%D} for text lines, \type
+{%M} for macro code needed for the documentation, and \type {%S B} and \type
+{%S E} for parts that do not make it into the documentation. In \PERL\
+scripts, the~\type {%} is replaced by a~\type {#}. So, when you take a look
+at source files, you now know what these symbols stand for. 
+
+\starttyping
+texutil  --documents  somefile
+\stoptyping
+
+This command converts a \TEX\ file with suffix \type {tex} into a file with
+suffix \type {ted}. A related switch \type {--sources} does the opposite: it
+removes the documentation lines and generates a source only file with suffix
+\type {tes}. More information can be found in \type {texutil.pl}. 
+
+\switch figures   
+
+Although \PDFTEX\ can include graphics data, traditional \TEX\ depends on the
+\DVI\ post||processor. Whatever method is used, \TEX\ has to reserve space
+and therefore has to now the dimensions of graphics. Determining the
+dimensions of for instance \EPS\ graphics can be done by \TEX\ itself, but
+bitmap formats need to be analyzed by some other program, and that is where
+\TEXUTIL\ comes into view. 
+
+\starttyping
+texutil  --figures 
+\stoptyping 
+
+When told to, \TEXUTIL\ starts searching for graphic files and collects some
+information on them in a file called \type {texutil.tuf}. When a graphic is
+included, and \CONTEXT\ cannot sort out the dimensions itself, it will search
+for data in this file. When needed and enabled, \CONTEXT\ will call \TEXUTIL\
+to provide the information. 
+
+\starttyping
+texutil  --figures  *.png  *.tif 
+\stoptyping 
+
+As demonstrated here, you can limit the inventory. This is useful when you 
+want \CONTEXT\ to typeset a directory of figures. This kind of \TEXEXEC\ 
+features are not that special; they just take care of calling the right 
+\CONTEXT\ macro. 
+
+\switch logfile   
+
+\TEXUTIL\ is capable of concerns parsing the log file as produced by
+\CONTEXT. The command: 
+
+\starttyping
+texutil  --logfile  somefile 
+\stoptyping 
+
+will report information on unknown references and overfull boxes: both being
+important issues to resolve when typesetting a file. 
+
+\switch purge  
+
+Although \CONTEXT\ uses only one utility file, many scratch files can scatter
+your disk after a run: buffers, \METAPOST\ graphics as well as files that 
+communicate between \CONTEXT\ and \METAPOST, log files, etc. 
+
+\starttyping
+texutil  --purge 
+\stoptyping 
+
+Afterwards, \TEXUTIL\ reports the number of bytes regained. Optionally, you
+can pass a file pattern, thereby limiting the cleansing. 
+
+\subject {Switches} 
+
+Before we will explain the mode dependant switched, we will introduce some
+general ones. 
+
+\switch help 
+
+This switch results in some help information on the switches to use. 
+
+\switch silent
+
+This switch suppresses all messages to the screen. It enables the use of
+\TEXUTIL\ in ways like: 
+
+\starttyping
+texutil  --figures  --silent --verbose somefile.png 
+\stoptyping 
+
+This reports something like:  
+
+\starttyping
+n=somefile.png t=png x=0bp y=0bp w=443bp h=591bp
+\stoptyping 
+
+This information can be piped into another program. 
+
+\switch verbose
+
+Sometimes there is more to report than useful at first sight. This switch
+will therefore lead to more screen output. 
+
+\switch interface=languagecode
+
+If you want to let \TEXUTIL\ talk back in your own language, use this switch.
+Currently \type {en}, \type {de} and \type {nl} are supported. 
+
+\subject {Installation} 
+
+Installation is not complicated. When you have \PERL\ running, \TEXUTIL\
+should run too. On \MSWINDOWS\ you can copy \type {runperl.exe} into \type
+{texutil.exe} to directly run \TEXUTIL. This program is part of the \FPTEX\
+distribution. 
+
+\subject {References}
+
+The slightly misleading switch \type {--references} concerns more than
+handling cross references. Actually these, as well as list entries and two
+pass data, are simply passed on to the output file. Index entries and sorted
+list entries however are sorted and redundant index entries are removed. 
+
+\switch ij 
+
+Sort \type{IJ} as \type {Y}. This is a typical dutch oriented switch. 
+
+\switch high 
+
+This switch converts high standard \MSDOS\ \ASCII\ values into \TEX\
+commands. This switch is provided for backward compatibility reasons. 
+
+\switch quotes 
+
+Normally quotes are used as boundary characters for strings. This switch
+forces \TEXUTIL\ to handle quotes differently. 
+
+\subject {Documents}   
+
+Documentation is part of the source files. The \type {--documents} option
+lets \TEXUTIL\ enter a filter mode. Because typesetting of documentation is
+supported by \TEXEXEC, users seldom have to deal with this option directly. 
+
+\switch type=suffix   
+
+Normally \TEXUTIL\ will try to sort out the right filetype, but when more
+instances of a file (with different suffices) are present, it makes sense to
+tell \TEXUTIL\ explicitly which filetype is to be converted. 
+
+\switch outputfile=filename
+
+This file can be used to force \TEXUTIL\ in using a different name for the
+resulting output. 
+
+\switch sources 
+
+By default, documentation files are generated, but when this switch is
+passed, source code only files are produced. 
+
+\switch setups   
+
+There used to be a time when syntax definitions were part of the source
+files. Currently these are collected in one file, but maybe some day they
+will make it to the source files again. This option collects all definitions
+in a file \type {texutil.tus}. 
+
+\switch infos   
+
+The first few years of \CONTEXT\ all macro definitions were collected into a
+few files. These files also contained explanations of the commands, that
+could be used by help systems, as implemented in \TEXEDIT. While documenting
+the sources, this information is removed, but the feature is still there. The
+help information is recognized by \type {%I} directives and is collected in
+files with the suffix \type {tud}. 
+
+\switch templates 
+
+This option is related to the previous one and concerns editor templates.
+Again we're dealing with a features that might become obsolete. 
+
+\subject {Figures} 
+
+As mentioned, \TEXUTIL\ can analyze graphics (\PNG, \JPG, \TIF, \EPS, \PDF\
+and \MPS). The next few switches deal with a different topic: conversion from
+\EPS\ to \PDF. 
+
+\switch epspage 
+
+In preparation for conversion to \PDF, \EPS\ files should be prepared in such
+a way that the bounding box is similar to the paper dimensions. This option
+prepares the files and also removes some redundant (rubbish) information. To
+prevent repetitive adaption the files are marked as being adapted. 
+ 
+\switch epstopdf 
+
+When issued, this option calls \GS\ to convert the \EPS\ graphic into a \PDF\
+one. 
+
+\subject {Logfile}
+
+The faster machines get, the less obvious are messages. Filtering the log
+files therefore makes sense. The \type {--logfile} option serves this
+purpose. 
+
+\switch box 
+
+Issuing this switch lets \TEXUTIL\ report overfull boxes, both horizontal and
+vertical. ALternatively you can use \type {--vbox} and \type {--hbox}. 
+
+\switch criterium=number 
+
+When reporting overfull boxes, small deviations, in the order of magnitude of
+a few points, are seldom disturbing. By setting a criterium \TEXUTIL\ will
+only report those overfull boxes that exceed the criterium. The number
+represents points. 
+
+\switch unknown 
+
+A missing reference or an unknown figure is not what we expect to be
+reflected in the final document. This option makes sure we don't miss them 
+
+\ColofonPage
+
+\stoptext

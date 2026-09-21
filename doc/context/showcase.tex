@@ -1,0 +1,77 @@
+\environment show-env
+
+\setuplayout
+  [topspace=30pt,
+   height=middle,
+   backspace=30pt,
+   width=middle,
+   header=0pt,
+   footer=0pt]
+
+\setupbackgrounds
+  [page]
+  [background={color,quit},
+   backgroundcolor=shade-2]
+
+\setupbackgrounds
+  [text][text]
+  [background=forward]
+
+% \setupbackgrounds
+%   [text]
+%   [foregroundcolor=shade-1]
+
+\setupinteraction
+  [style=,
+   color=,
+   contrastcolor=]
+
+\setupcolors
+  [textcolor=white]
+
+\starttext
+
+\startstandardmakeup
+
+\definedfont[RegularBold*default at 60pt]
+
+Out Of \ConTeXt \vfill
+
+\definedfont[RegularBold*default at 32pt] \setupinterlinespace
+
+\goto {Manuals}       [show-man::]    \hspace[medium]
+\goto {Presentations} [show-pre::]    \hspace[medium]
+\goto {Graphics}      [show-gra::]    \par
+\goto {History}       [show-his::]    \hspace[medium]
+\goto {Magazines}     [show-mag::]    \hspace[medium]
+\goto {Examples}      [show-exa::]    \par
+\goto {Demos}         [show-dem::]    \hspace[medium]
+\goto {Notes}         [show-not::]    \par
+%goto {Articles}      [show-art::]    \hspace[medium]
+%goto {Papers}        [show-pap::]    \hspace[medium] % gone
+%goto {Files}         [show-fil::]    \hspace[medium] % gone
+%goto {Quit}          [CloseDocument] \par            % dropped from pdf (as usual)
+
+\stopstandardmakeup
+
+\startstandardmakeup
+
+\vfilll
+
+{\bfd Colofon}
+
+\blank \bf
+
+This is a collection of files produced as part of \ConTeXt, a consistent set of
+\TeX\ macros that can be used to typeset paper and screen documents.
+
+\blank
+
+You can open a document by clicking on its graphic, go to the next page by
+clicking on the description, and close the parent document by clicking on the
+rest of the page (assuming the browser supports it). Not all documents might
+be present on yoru system.
+
+\stopstandardmakeup
+
+\stoptext

@@ -331,6 +331,9 @@ local function handle_overload_callback(fatal,overload,csname,flags,index)
         end
         logs.newline()
         if fatal then
+            -- new:
+            tracers.processerror("overload",formatters["you can't redefine %a"](csname))
+            --
             cleanup_run()
             setexitcode(1)
             osexit(1)

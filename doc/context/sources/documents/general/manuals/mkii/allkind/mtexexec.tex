@@ -1,0 +1,533 @@
+% interface=en xxoutputxx=pdftex
+
+% toevoegen: --background=name
+
+\environment mstyle 
+
+\TitlePage{506}{0}{\TeX EXEC\\explained}{}{1}
+
+\starttext
+
+\subject {Introduction}
+
+\TEX\ the program is a batch text processer. You key in a document source
+file in \ASCII, and \TEX\ takes this file and interprets the \TEX\ specific
+typesetting instructions embedded in the text (usually preceded by \type
+{\}). 
+
+When we launch \TEX\ it first loads a so called format file, a pre||compiled
+collection of macro definitions, hyphenation patterns, and sometimes font
+metric data. In our case, we use the \CONTEXT\ format. 
+
+Each time we install a new version of \CONTEXT, we have to regenerate this
+format, and each time we run \TEX\ we have to specify the format to use. To
+free the user from this burden of specifying and generating, we have written
+\TEXEXEC, a \PERL\ script that, like \TEX, is not bound to specific hard- and
+software platform. 
+
+Just in case you wonder why the \TEXEXEC\ logo (on this cover) looks like it
+is: one of the main objectives of \TEXEXEC\ is to enable users to produce
+his|/|her pages as efficient as possible. So, \TEXEXEC\ is dealing with
+pages. 
+
+\subject {Running} 
+
+Each \CONTEXT\ user interface has its own format. The next command generates
+two formats, one with the English interface, also defaulting to English
+typesetting, and one for the Dutch language: 
+
+\starttyping
+texexec  --make  nl en
+\stoptyping
+
+By default, the main language matches the user interface, which is normally
+what we expect from a Dutch (\type {nl}), English (\type {en}) or German
+(\type {de}) version. You can default to another main language and|/|or font
+by changing the file \type {cont-usr.tex}, but the next alternative works
+well too: 
+
+\starttyping
+texexec  --make  --language=pl,cz,sk  --bodyfont=plr  en
+\stoptyping
+
+This will generate a format file with an english user interface, while the
+main language is Polish (\type {pl}) and the default body font is the Polish
+alternative \type {plr} of the Computer Modern Roman (\type {cmr}). In
+addition, Czech and Slovak patterns are loaded. In a similar way you can
+generate a Czech version (\type {cz} and \type {csr}). 
+
+When the appropriate formats are present, we can process a file, say \type
+{test.tex}, and typeset it by calling \TEXEXEC: 
+
+\starttyping
+texexec  test
+\stoptyping
+
+\TEXEXEC\ tries to determine what interface is used. It does so by analyzing
+the file. Later we will see how we can force an interface. 
+
+When, instead of \DVI\ output, we want to produce \PDF\ code, we say: 
+
+\starttyping
+texexec --pdf  test
+\stoptyping
+
+Often one processing cycle is not enough. When no errors are encountered,
+\TEXEXEC\ will call its relative \TEXUTIL. When changes are found in the
+number of pages, references and/or lists, \TEXEXEC\ will process the file
+again. You can prevent this by: 
+
+\starttyping
+texexec  --once  test
+\stoptyping
+
+or
+
+\starttyping
+texexec  --runs=2  test
+\stoptyping
+
+We already mentioned \PDF\ production, that can be forced by \type {--pdf}.
+Specific output can be forced by: 
+
+\starttyping
+texexec  --output=dvips,acrobat  test
+\stoptyping
+
+This means that the \DVIPS\ special driver is used (which happens to be
+default anyway) combined with \PDF\ instructions written in \POSTSCRIPT. 
+
+You can force an interface on the command line by using the \type
+{--interface} switch. 
+
+\starttyping
+texexec  --interface=en test
+\stoptyping
+
+This specification is seldom needed because \TEXEXEC\ has its own way of
+finding out what interface to use. A rather safe way of forcing an interface
+is adding a specification to the file: 
+
+\starttyping
+% interface=en tex=pdfetex output=pdftex
+\stoptyping
+
+Beware: this line should be the first line in the file! For \TEX\ this line
+is simply a comment line, but \TEXEXEC\ will read it as an instruction. The
+binary to be used can also be forced on the command line: 
+
+\starttyping
+texexec  --tex=pdftex  --format=plain
+\stoptyping
+
+\subject {Encodings}
+
+In the Eastern European Countries like Poland and Czech, the normal \ASCII\
+encodings are no longer sufficient. Although course, you can access the
+non||latin glyphs in a font by using for instance \type {\.z}, it makes more
+sense to use the slots from 127 and onwards. This not only permits a more
+convenient way of keying in a document |<|in those countries people use word
+processors that show the appropriate glyphs on the screen|>| but also permits
+proper hyphenation. 
+
+Instead of supporting all kind of (sometimes very rare and weird) encodings,
+the default \CONTEXT\ distribution sticks to the most commonly used ones.
+More details can be found in the files prefixed by \type {enco-}, \type
+{lang-} and \type {font-}. 
+
+When using the \WEBC\ distribution, you can use a mapping mechanism to map
+from the document encoding to an encoding that matches the \CONTEXT\
+internals, the fonts, and the hyphenation patterns. For this reason you can
+inform \TEX\ on the mapping to be applied, either on the command line, or on
+the first line of the file. The latter method is to be preferred, because
+that way the encoding used is also properly documented in the file. Both: 
+
+\starttyping 
+%& --translate-file=cp1250pl 
+\stoptyping 
+
+\starttyping 
+% --translate=cp1250pl 
+\stoptyping 
+
+are understood. The other way of informing \TEX\ is: 
+
+\starttyping 
+texexec  --translate=il2pl  somefile
+\stoptyping 
+
+In both cases, users should be aware of the fact that their files are not on
+forehand portable! 
+
+\subject {Installation} 
+
+At start||up \TEXEXEC\ tries to locate the file \type {texexec.ini}. This
+file tells \TEXEXEC\ where to find things and what binaries to use. When fed
+with \type {--verbose}, \TEXEXEC\ will report the settings found there. 
+
+In order to run \TEXEXEC\ you need to have \PERL\ installed. Installing
+\PERL\ makes sense anyway. On \UNIX\ running \PERL\ scripts is natural, but
+on for instance \MSWINDOWS\ you must often launch the scripts in an indirect
+way. One way is simply calling \PERL: \type {perl texexec.pl}. The \FPTEX\
+distribution comes with a program called \type {runperl.exe} that, when
+copied to \type {texexec.exe}, takes care of the loading. Of course you also
+have to copy this program to \type {texutil.exe}. In the \TETEX\ and \FPTEX\
+distributions, the installation programs will take care of most issues
+involved here. 
+
+Although \TEXEXEC\ tries hard to satisfy its hunger for additional
+information, sometimes you have to provide a little help. In the \CONTEXT\
+distribution there is a file called \type {texexec.rme}. This file should be
+copied into \type {texexec.ini}, unless of course such a file already exists.
+This file is self documented, so we only list some possible settings here: 
+
+\starttabulate[|Tl|l|Tl|]
+\HL
+\NC \bf variable \NC \bf meaning \NC \bf example settings \NC \NR
+\HL
+\NC UsedInterfaces \NC the formats generated/used \NC en,nl,de,uk \NC \NR
+\NC UserInterface  \NC the default user interface \NC en          \NC \NR
+\HL
+\NC TeXExecutable     \NC the TeX binary to use         \NC pdfetex \NC \NR
+\NC MpExecutable      \NC the MetaPost binary to use    \NC mpost   \NC \NR
+\NC MpToTeXExecutable \NC the MetaPost to TeX converter \NC mpto    \NC \NR
+\NC DviToMpExecutable \NC the DVI to MetaPost converter \NC dvitomp \NC \NR
+\HL
+\NC TeXFormatFlag \NC the format introducer         \NC \&   \NC \NR
+\NC TeXVirginFlag \NC the format generation switch  \NC -ini \NC \NR
+\HL
+\NC TeXFormatPath  \NC fmt files                 \NC texmf/...              \NC \NR
+\NC ConTeXtPath    \NC sources                   \NC texmf/tex/context/base \NC \NR
+\NC SetupPath      \NC cont-sys.tex cont-usr.tex \NC texmf/tex/base/user    \NC \NR
+\NC TeXScriptsPath \NC scripts                   \NC texmf/context/perltk   \NC \NR
+\HL
+\stoptabulate
+
+An example of a setting is: 
+
+\starttyping
+set  TeXExecutable  to  tex
+\stoptyping
+
+You can group settings, like
+
+\starttyping
+for  tetex  set  TeXExecutable  to  pdfetex
+\stoptyping
+
+Such grouped settings are only taken into account when the shell variable is
+set: 
+
+\starttyping
+set  TeXShell  to  tetex
+\stoptyping
+
+\subject {Switches}
+
+The most important switches are mentioned already, but there are some more.
+Next we will describe them all in more detail. All switches are mentioned in
+full, but when issued, you can stick to a representative first part. So,
+\type {--ver} is the same as \type {--verbose}. 
+
+\switch alone
+
+When issued, this switch makes sure that \TEXEXEC\ does as much on its own as
+possible. It can for instance be used to disable \type {fmtutil} being used 
+(which can be handy when tracing installation problems). 
+
+\switch arrange 
+
+When you specify in a file that the resulting output should be arranged,
+for instance in a booklet, you must make sure that this only happens in the
+last pass. This switch runs \CONTEXT\ as many times as needed to get the
+references right, and then applies the last, arranging, pass. 
+
+\switch batch 
+
+Process the file in batchmode, that is, don't pause at errors. More on
+batchmode can be found in the \TeX Book. 
+
+\switch color
+
+Turn on color mode. Color setting commands in the file being processed, take
+preference. 
+
+\switch convert=fileformat
+
+Convert the input file before processing. Normally the conversion results in
+a \TEX\ file. Currently supported input formats are \type {xml} and \type
+{sgml}. 
+
+\switch environment=listofnames
+
+Load environment before processing the file. This option can be handy in
+combination with input file conversion, where no environment and|/|or layout
+settings are present in the file. 
+
+\switch fast 
+
+Run as fast as reasonable and possible without for instance spoiling time on
+including graphic data. 
+
+\switch figures=alternative 
+
+This option can be used to generate a document with figures. The
+alternatives~\type {a}, \type {b}, and~\type {c} produce different output: 
+
+\startitemize[a,packed]
+\item  a proof/correction sheet with additional information 
+       about the figure
+\item  a compact, paper saving sheet of figures
+\item  one figure per page, with the page clipped to the 
+       boundingbox 
+\stopitemize
+
+The next example shows that you can also pass an offset to be added to the
+page (only important in alternative~\type {c}). 
+
+\starttyping 
+texexec  --figures=c  --paperoffset=.5cm  *.pdf *.png *.jpg 
+\stoptyping 
+
+In the process, \TEXEXEC\ uses \TEXUTIL\ to provide the list of figures. 
+
+\switch final
+
+Add a final run without skipping anything. This option is typically used with
+fast. 
+
+\switch format=formatfile
+
+Normally \TEXEXEC\ prepends the \type {cont-} prefix to the format filename.
+This switch can be used to specify the full name, like \type {plain}. 
+
+\starttyping
+texexec  --format=plain  --program=pdftex  somefile
+\stoptyping
+
+\switch interface=languagecode
+
+When a file is processed, you have to use the right interface version of
+\CONTEXT. This switch can be used to force \CONTEXT\ to use a certain
+interface, like \type {en} (English), \type {nl} (Dutch), \type {de}
+(German), \type {uk} (Brittish) etc. 
+
+\switch language=languagecode
+
+This switch sets the main hyphenation language, just in case this is not done
+in the file itself. 
+
+\switch listing 
+
+A maybe unexpected switch is the one that forces \TEXEXEC\ to produce a
+listing. When we have a file, say \type {readme.now}, we can typeset a
+listing by invoking: 
+
+\starttyping 
+texexec --listing --pdf readme.now 
+\stoptyping 
+
+In this case, the result is available in the file \type {texexec.pdf}, but
+without \type {--pdf}, you will get a \DVI\ file. 
+
+\switch make
+
+In order to typeset a file, \TEX\ needs a so called format file, a
+pre||compiled bunch of macros. Such a format is generated when this switch is
+passed. 
+
+\switch mode=modelist
+
+Why not typeset more than one version of one document source? The \PDFTEX\
+manuals are typeset by issuing the next few commands. Watch the renaming of
+the output. 
+
+\starttyping
+texexec  --pdf  --mode=A4      --result=pdftex-a  pdftex-t
+texexec  --pdf  --mode=letter  --result=pdftex-l  pdftex-t
+texexec  --pdf  --mode=screen  --result=pdftex-s  pdftex-t
+\stoptyping
+
+Here the \type {mode} switch tells \CONTEXT\ to obey the mode directives in
+the layout specifications. 
+
+\switch module
+
+Documentation of \CONTEXT\ modules and related \METAPOST\ and \PERL\ modules
+comes down to converting the file in a suitable format and typesetting this
+source. This switch does is all. 
+
+\switch mptex
+
+When \TEX\ code is embedded in a \METAPOST\ file, a sequence of pre- and
+postprocessing steps must take place. When set up correctly, \TEXEXEC\ does 
+this annoying job for you. 
+
+\switch noarrange 
+
+This switch suppresses the arrangement as set up in the source file. 
+
+\switch nomp 
+
+Embedding \METAPOST\ code and calling for \METAPOST\ to process these files
+run||time takes some time. This switch suppresses the \METAPOST\ runs. 
+
+\switch once
+
+Normally \TEXEXEC\ keeps on processing a file till all references are sorted
+out. It therefore analyzes the files produced by \TEXUTIL\ as well as
+\METAPOST\ source code generated by \CONTEXT. This option forces \TEXEXEC\ to
+process a file only once. 
+
+\switch output=driver 
+
+One of the reasons why \TEX\ can adapt itself so easily to new developments,
+is its channel to the outside world: the \type {\special} primitive. Because
+each \DVI\ and \PDF\ driver has its own set of specials, we have to tell
+\CONTEXT\ explicitly what specials to use. However, normally you will load
+the drivers needed in the local \type {cont-sys.tex} file. 
+
+Valid drivers directives are \type {pdftex} for native \PDFTEX\ code, \type
+{dvips} (the default), \type {dvipsone} and \type {dviwindo} (the oldest
+\CONTEXT\ drivers), \type {dviview} (an experimental driver) and some more. 
+
+\switch pages=pagenumberlist
+
+When \PDFTEX\ came around, postprocessing became \TEX's job. This switch
+tells \CONTEXT\ to output only the pages as specified. Instead of a list, you
+can use the keywords \type {odd} and \type {even}. 
+
+\switch passon=string 
+
+You can pass additional switches to the \TEX\ program used by using \type
+{--passon}, like for \MIKTEX: 
+
+\starttyping
+texexec  --passon="--src"  somefile 
+\stoptyping 
+
+This tells \MIKTEX\ that you want to enrich the \DVI\ file so that editors
+can relate their cursor position to a location in the \DVI\ file. Don't
+forget the \type {"}, because otherwise the \type {--src} will be seen as a
+switch to \TEXEXEC. 
+
+\switch paper=key
+
+Like the previous one, this switch is used in postprocessing. Valid keys
+\type {a4a3} for A4 printed on A3, and \type {a5a4} for A5 printed on A4. The
+pages are arranged as specified by the \type {print} switch. 
+
+\switch pdf 
+
+This is a shortcut for \type {--output=pdftex}. Because we like \PDFTEX\ and
+its output and use it quite often, we introduced this dedicated switch. 
+
+\switch pdfarrange 
+
+Although \CONTEXT\ is pretty well able to arrange pages itself |<|think of
+making A5 size booklets and those big 8~page composes pages meant for
+printing books|>| it is possible to let \CONTEXT\ rearrange pages in \PDF\
+files. 
+
+\starttyping
+texexec --pdfarrange --paper=a5a4 --print=up live.pdf
+\stoptyping
+
+This command makes an A5 booklet out of the famous \TEX\ live manual as
+produced by \LATEX. You have to set up \TEX\ rather large (a few meg's of
+memory) and the fonts should be present on the system in order to let
+\PDFTEX\ include them as efficient as possible. You can influence the page
+with the following keys: 
+
+\starttabulate[|l|l|]
+\NC \type{--paperoffset} \NC gap around the page     \NC \NR
+\NC \type{--backspace}   \NC inner margin            \NC \NR 
+\NC \type{--topspace}    \NC top/bottom margin       \NC \NR 
+\NC \type{--markings}    \NC add cutmarks            \NC \NR 
+\NC \type{--addempty}    \NC add empty pages after   \NC \NR 
+\NC \type{--textwidth}   \NC the original text width \NC \NR
+\stoptabulate
+
+The \type {--addempty} switch takes a list of page numbers after which to
+insert an empty page. This can be handy when a single sided document is
+processed and you want the backside of the title page to be empty. 
+
+When you manipulate a text that originally is typeset in single sided mode,
+passing the original text width will improve the appearance of the result a
+lot. 
+
+You can pass a list of files. All files are combined into one document. This
+enables the user to add for instance a title page. 
+
+Doing more complex things is also possible, like adding additional text to
+the page, when you set up a small file with layout definitions and an simple
+figure insertion loop. 
+
+You can also use this switch to combine \PDF\ files into one file: 
+
+\starttyping 
+texexec --pdfarrange --noduplex --paper=S6 file-a file-b
+\stoptyping 
+
+The result is available in the file \type {texexec.pdf}. 
+
+\switch pdfselect 
+
+This switch filters pages from a file. It can be used to generate a snapshot
+or summary, or to isolate a page. 
+
+\starttyping
+texexec  --pdfselect  --paper=S6  --selection=1,9,14  file-1
+\stoptyping 
+
+The result is collected in the file \type {texexec.pdf}. Setting the paper
+size is optional. Just like with the \type {--pdfarrange} option, you can
+influence a bit the layout. 
+
+\switch print=key
+
+Page imposition can be done by \CONTEXT, which is normally more robust that
+using a post processor, if only because \CONTEXT\ knows what (colorful)
+content it is dealing with. The \type {up} key results in 2 pages per sheet
+doublesided, and the \type {down} key in 2~rotated pages per sheet
+doublesided. Use this switch together with the \type {paper} switch. 
+
+\switch result=filename
+
+When producing several typeset alternatives of one file in batch, we don't
+want to overwrite the same file again and again. This switch specifies the
+name of the output file. 
+
+\switch runs=number 
+
+When you know in advance how many runs are needed, you can overrule the
+automatic number||of||runs||needed algorithm. 
+
+\switch silent 
+
+When you got tired of all the messages \CONTEXT\ sends you, you can silence
+it by issuing this switch. 
+
+\switch tex=programname
+
+Once a system is set up properly, you never have to use this switch. But
+occasionally, we want to run an experimental version, so here is the way to
+specify the binary. 
+
+\switch verbose 
+
+Some of the information that \TEXEXEC\ needs, is fetched from the \type
+{texexec.ini} file. This switch tells \TEXEXEC\ to write to the terminal what
+it found in there. 
+
+\switch help 
+
+This is a rather helpful switch. Try it. You can request more help, like: 
+
+\starttyping
+texexec  --help  paper
+\stoptyping
+
+\ColofonPage
+
+\stoptext

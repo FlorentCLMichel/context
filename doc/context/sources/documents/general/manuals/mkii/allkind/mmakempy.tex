@@ -1,0 +1,817 @@
+% output=pdftex
+
+\setupbodyfont[loc,ppl]
+
+\startbuffer[font]
+\startMPenvironment
+  \setupbodyfont[loc,ppl]
+\stopMPenvironment
+\stopbuffer
+
+\getbuffer[font]
+
+\def\compoundhyphen{-}
+
+\setuplayout
+  [backspace=1.5cm,
+   topspace=1.5cm,
+   width=middle,
+   height=middle]
+
+\setupwhitespace
+  [big]
+
+\setupcolors
+  [state=start]
+
+\setuptyping
+  [color=red]
+
+\setupheadertexts[makempy]
+\setupfootertexts[pagenumber]
+
+\usemodule[chart,abr-01]
+
+\startFLOWchart[makempy]
+  \setupFLOWcharts
+    [breedte=6\bodyfontsize,
+     hoogte=3\bodyfontsize,
+     dx=\bodyfontsize,
+     dy=\bodyfontsize]
+  \setupFLOWshapes
+    [framecolor=blue]
+  \setupFLOWlines
+    [color=red]
+  \startFLOWcell
+    \name       {metapost}
+    \location   {1,1}
+    \shape      {action}
+    \text       {\hbox{\MetaPost}}
+    \connection [bt] {mpo file}
+  \stopFLOWcell
+  \startFLOWcell
+    \name       {mpo file}
+    \location   {1,2}
+    \shape      {action}
+    \text       {\sl mpo file}
+    \connection [bt] {makempy}
+  \stopFLOWcell
+  \startFLOWcell
+    \name       {makempy}
+    \location   {1,3}
+    \shape      {action}
+    \text       {makempy}
+    \connection [bt] {mpy file}
+    \connection [rl] {pdftex}
+  \stopFLOWcell
+  \startFLOWcell
+    \name       {mpy file}
+    \location   {1,4}
+    \shape      {action}
+    \text       {\sl mpy file}
+    \connection [bl] {metapost}
+  \stopFLOWcell
+  \startFLOWcell
+    \name       {pdftex}
+    \location   {2,3}
+    \shape      {action}
+    \text       {pdf\TeX}
+    \connection [rl] {pdftops}
+  \stopFLOWcell
+  \startFLOWcell
+    \name       {pdftops}
+    \location   {3,3}
+    \shape      {action}
+    \text       {pdftops}
+    \connection [rl] {pstoedit}
+  \stopFLOWcell
+  \startFLOWcell
+    \name       {pstoedit}
+    \location   {4,3}
+    \shape      {action}
+    \text       {pstoedit}
+    \connection [rpb] {makempy}
+  \stopFLOWcell
+  \startFLOWcell
+    \name       {tex}
+    \location   {2,1}
+    \shape      {action}
+    \text       {\TeX}
+    \connection [bt] {pdftex}
+  \stopFLOWcell
+  \startFLOWcell
+    \name       {context}
+    \location   {3,1}
+    \shape      {action}
+    \text       {\ConTeXt}
+    \connection [bt] {pdftex}
+  \stopFLOWcell
+  \startFLOWcell
+    \name       {latex}
+    \location   {4,1}
+    \shape      {action}
+    \text       {\LaTeX}
+    \connection [bt] {pdftex}
+  \stopFLOWcell
+\stopFLOWchart
+
+\definecolor[gray] [s=.7]
+\definecolor[red]  [r=.7]
+\definecolor[green][g=.7]
+\definecolor[blue] [b=.7]
+
+\startbuffer[head]
+\startuseMPgraphic{text}
+  graphictext \MPstring{string} scaled 4
+    withdrawcolor \MPcolor{blue} withfillcolor \MPcolor{gray}
+    withpen pencircle scaled 2pt ;
+\stopuseMPgraphic
+
+\startuseMPgraphic{number}
+  graphictext \MPstring{string} scaled 10
+    withdrawcolor \MPcolor{red} withfillcolor \MPcolor{gray}
+    withpen pencircle scaled 2pt ;
+\stopuseMPgraphic
+
+\def\TextCommand#1%
+  {\setMPtext{string}{#1}%
+   \framed
+     [frame=off,offset=overlay,height=3cm,width=\hsize]
+     {\useMPgraphic{text}}}
+
+\def\NumberCommand#1%
+  {\expanded{\setMPtext{string}{\currentheadnumber}}%
+   \hsmash
+     {\framed
+        [frame=off,offset=overlay,height=3cm,width=\hsize]
+        {\useMPgraphic{number}}}}
+
+\setuphead
+  [section]
+  [distance=0pt,
+   textcommand=\TextCommand,
+   numbercommand=\NumberCommand]
+\stopbuffer
+
+\getbuffer[head]
+
+\starttext
+
+% \startuseMPgraphic{front make}
+%   graphictext
+%     "\bf MAKE"
+%     scaled 8
+%     zscaled (1,2)
+%     withdrawcolor \MPcolor{gray} % \MPcolor{blue}
+%     withfillcolor \MPcolor{blue} % \MPcolor{gray}
+%     withpen pencircle scaled 10pt ;
+% \stopuseMPgraphic
+% 
+% \startuseMPgraphic{front mpy}
+%   graphictext
+%     "\bf MPY"
+%     scaled 5
+%     zscaled (1,2)
+%     withdrawcolor \MPcolor{gray} % \MPcolor{red}
+%     withfillcolor \MPcolor{red}  % \MPcolor{gray}
+%     withpen pencircle scaled 6pt ;
+% \stopuseMPgraphic
+% 
+% \startuseMPgraphic{hans}
+%   graphictext
+%     "Hans"
+%     scaled 6
+%     withdrawcolor \MPcolor{gray} % \MPcolor{red}
+%     withfillcolor \MPcolor{red}  % \MPcolor{gray}
+%     withpen pencircle scaled 4pt ;
+% \stopuseMPgraphic
+% 
+% \startuseMPgraphic{hagen}
+%   graphictext
+%     "Hagen"
+%     scaled 6
+%     withdrawcolor \MPcolor{gray} % \MPcolor{red}
+%     withfillcolor \MPcolor{red}  % \MPcolor{gray}
+%     withpen pencircle scaled 4pt ;
+% \stopuseMPgraphic
+% 
+% \startuseMPgraphic{page}
+%   StartPage ;
+%     fill Page
+%       withcolor .5white ;
+%     draw Page enlarged -12pt
+%       withpen pencircle scaled 5pt
+%       withcolor \MPcolor{gray} ;
+%   StopPage ;
+% \stopuseMPgraphic
+% 
+% \defineoverlay[page] [\useMPgraphic{page}]
+% \defineoverlay[make] [\useMPgraphic{front make}]
+% 
+% \setupbackgrounds[page][background={page,make}]
+% 
+% \startstandardmakeup
+%   \hbox to \hsize{\useMPgraphic{front mpy}\hss}
+%   \vfill
+%   \hbox to \hsize{\hss\useMPgraphic{hans}}
+%   \vskip24pt
+%   \hbox to \hsize{\hss\useMPgraphic{hagen}}
+%   \vskip-24pt
+% \stopstandardmakeup
+% 
+% \setupbackgrounds[page][background=]
+
+\startuseMPgraphic{metapost}
+  graphictext
+    "\bf MetaPost"
+    scaled 8
+    withdrawcolor .5white 
+    withfillcolor .8blue 
+    withpen pencircle scaled 10pt ;
+\stopuseMPgraphic
+
+\startuseMPgraphic{creating}
+  graphictext
+    "\bf creating"
+    scaled 5
+    withdrawcolor .5white 
+    withfillcolor .8red 
+    withpen pencircle scaled 6pt ;
+\stopuseMPgraphic
+
+\startuseMPgraphic{outlines}
+  graphictext
+    "\bf outlines"
+    scaled 5
+    withdrawcolor .5white 
+    withfillcolor .8red 
+    withpen pencircle scaled 6pt ;
+\stopuseMPgraphic
+
+\startuseMPgraphic{makempy}
+  graphictext
+    "\bf makempy manual"
+    scaled 4
+    withdrawcolor .5white 
+    withfillcolor .8blue 
+    withpen pencircle scaled 4pt ;
+\stopuseMPgraphic
+
+\startuseMPgraphic{hans}
+  graphictext
+    "\bf\strut Hans Hagen"
+    scaled 4
+    withdrawcolor .5white 
+    withfillcolor .8red
+    withpen pencircle scaled 4pt ;
+\stopuseMPgraphic
+
+\startuseMPgraphic{page}
+  StartPage ;
+    numeric u ; 
+    pair p ; 
+    fill Page
+      withcolor .5white ;
+    for i=1 upto 512 : 
+      p := center Page randomized (PaperWidth-75pt,PaperHeight-75pt) ;
+      u := 10pt + uniformdeviate 40pt ; 
+      draw p withcolor .8white withpen pencircle scaled u ;
+      draw p withcolor yellow randomized (.5,.8) withpen pencircle scaled (u-5pt) ;
+    endfor ; 
+    draw Page enlarged -12pt
+      withpen pencircle scaled 5pt
+      withcolor .8white ;
+  StopPage ;
+\stopuseMPgraphic
+
+\defineoverlay[page] [\useMPgraphic{page}]
+
+\setupbackgrounds[page][background=page]
+
+\startstandardmakeup
+  \hbox to \hsize{\hss\useMPgraphic{creating}}
+  \hbox to \hsize{\hss\useMPgraphic{metapost}}
+  \vskip6pt
+  \hbox to \hsize{\hss\useMPgraphic{outlines}}
+  \vfill 
+  \hbox to \hsize{\hss\useMPgraphic{makempy}}
+  \vskip6pt
+  \hbox to \hsize{\hss\useMPgraphic{hans}}
+\stopstandardmakeup
+
+\setupbackgrounds[page][background=]
+
+\section{introduction}
+
+You can use \METAPOST\ to create graphics in a declarative
+manner. Although there are tools to create \METAPOST\
+graphics interactively, by nature the input is a script
+defining the graphic.
+
+Plain \METAPOST\ can handle text directly, as strings, or as
+pictures distilled from \TEX\ output. In both cases, the
+text is composed of individual characters, and these somehow
+will end up in the \POSTSCRIPT\ file generated by \METAPOST.
+
+Although one should not see \METAPOST\ as a full blown
+system for doing fancy graphic, its usage, especially in a
+dynamic document as created by \TEX, sometimes demands a
+more sophisticated way of handling text. The section titles
+in this document are an example of this.
+
+In this document I will discuss a way to import text (as
+typeset by \TEX) into a \METAPOST\ graphic. Although
+primarily written for usage with \CONTEXT, this method is
+quite generic and also works well with plain \TEX,
+\LATEX\ or others.
+
+\section{method}
+
+Including text as graphics is far from trivial. First it
+has to be typeset, and of course we want to use \TEX\ for
+that, and in our case \PDFTEX\ suits well. Next we need to
+convert the typeset text to graphics, or actually outlines.
+For that step we will use Wolfgang Glunz's \type
+{pstoedit}, which can produce \METAPOST\ code from
+\POSTSCRIPT\ code. This program falls back on \GHOSTSCRIPT\
+for creating the curves out of the fonts. Because (at least
+currently) handling \PDF\ directly is not working as
+expected, we convert the \PDF\ file to \POSTSCRIPT\ with
+Derek Noonburg's \type {pdftops} program. This process is
+illustrated in \in {figure} [fig:process].
+
+\placefigure
+  [here]
+  [fig:process]
+  {The process of conversion.}
+  {\FLOWchart[makempy]}
+
+\section{tools}
+
+During a \METAPOST\ run, the text to be processed is
+written to a file with the suffix \type {mpo}. This file,
+which only has \TEX\ directives, is converted to a file
+with suffix \type {mpy} which holds \METAPOST\ code. The
+conversion is taken care of by a \PERL\ script \type
+{makempy}. This script generates some intermediate files
+that are fed into the programs mentioned.
+
+In a next \METAPOST\ run, the \type {mpy} file is read in
+each time a graphic is needed, and the curves are processed
+in a special way that permits us to fill and|/|draw them.
+We can apply transformations and use colors and pens. The
+macros that take care of this are collected in the
+\METAPOST\ file \type {mp-grph.mp}, which is part of the
+\CONTEXT\ distribution, but in itself is an independent
+part of the \METAFUN\ suite.
+
+\section{usage}
+
+We will now demonstrate this mechanism using a typical \TEX\
+example.
+
+\startbuffer[einstein]
+input mp-grph ;
+
+beginfig(1) ;
+  graphictext
+    "$e=mc^2$"
+    scaled 10
+    dashed evenly
+    withdrawcolor .7blue
+    withfillcolor .7white
+    withpen pencircle scaled 2pt ;
+endfig ;
+\stopbuffer
+
+\typebuffer[einstein]
+
+This example introduces a \METAPOST\ macro \type
+{graphictext}. The first argument of this macro is a
+string. After this string you can specify transform
+operations like a scaling factor, a shift, a rotation or a
+combination of these. In addition to the normal color, pen
+and dash specifications, there are two special color
+operators. When \type {fillcolor} is provided, the graphic
+will be also be filled, otherwise it will be an outline.
+
+\startlinecorrection
+\hbox to \hsize \bgroup \hss \startMPcode
+  graphictext
+    "$e=mc^{\scriptscriptstyle2}$" % nicer
+    scaled 10
+    dashed evenly
+    withdrawcolor .7blue
+    withfillcolor .7white
+    withpen pencircle scaled 2pt ;
+\stopMPcode \hss \egroup
+\stoplinecorrection
+
+In this example, the string to be processed by \TEX\ is given
+between \type {""}. When using \METAPOST\ this way, you
+need to be aware of the fact that there can be no line feeds
+in a string, so a more complicated formula has to be specified
+as follows:
+
+\starttyping
+graphictext
+  ("$$\pmatrix{D_x&D_y&1\cr} =" &
+   "  \pmatrix{U_x&U_y&1\cr}  " &
+   "  \pmatrix{s_x&r_x&0\cr   " &
+   "           r_y&s_y&0\cr   " &
+   "           t_x&t_y&1\cr}$$")
+  ....
+\stoptyping
+
+So, we split the string into lines, which we paste with
+\type {&} and surround by \type {()}. However, when in
+\CONTEXT\ you want to include such more complicated \TEX\
+code in a graphic that is defined in the source, you need
+to be aware of unwanted expansion. This is why in \CONTEXT\
+we can best define the string separately, which also keeps
+the graphic more readable. There we have:
+
+\startbuffer[one]
+\setMPtext{formula}
+  {$$\pmatrix{D_x&D_y&1\cr} =
+     \pmatrix{U_x&U_y&1\cr}
+     \pmatrix{s_x&r_x&0\cr
+              r_y&s_y&0\cr
+              t_x&t_y&1\cr}$$}
+\stopbuffer
+
+\typebuffer[one]
+
+This string can be used as follows:
+
+\startbuffer[two]
+\startMPcode
+  graphictext
+    \MPstring{formula}
+    scaled 2
+    withfillcolor white
+    withdrawcolor .7blue
+    withpen pencircle scaled .75pt ;
+\stopMPcode
+\stopbuffer
+
+\typebuffer[two]
+
+As you can see from the graphic below, you need to adapt the
+size of the pen to the scale.
+
+\startlinecorrection
+\hbox to \hsize{\hss\getbuffer[one,two]\hss}
+\stoplinecorrection
+
+In some cases a glyph is composed of multiple outlines.
+Therefore, by default, the fill is applied after the draw.
+As a result, the perceived pen is smaller than the specified
+one. One can reverse drawing and filling by supplying the
+keyword \type {reversefill} as demonstrated in the next
+example.
+
+\startbuffer[two]
+\startMPcode
+  graphictext
+    \MPstring{formula}
+    scaled 2
+    reversefill
+    withcolor .7blue
+    withpen pencircle scaled .25pt ;
+\stopMPcode
+\stopbuffer
+
+\typebuffer[two]
+
+As you can see clearly here, big delimiters are composed of
+pieces.
+
+\startlinecorrection
+\hbox to \hsize{\hss\getbuffer[one,two]\hss}
+\stoplinecorrection
+
+\startbuffer[a]
+\startMPcode
+  graphictext "MP" scaled 8
+    withdrawcolor .7blue withfillcolor .7white
+    dashed evenly withpen pencircle scaled 2pt ;
+\stopMPcode
+\stopbuffer
+
+\startbuffer[b]
+\startMPcode
+  graphictext "MP" scaled 8 reversefill
+    withdrawcolor .7blue withfillcolor .7white
+    dashed evenly withpen pencircle scaled 1pt ;
+\stopMPcode
+\stopbuffer
+
+\startbuffer[c]
+\startMPcode
+  graphictext "MP" scaled 8 outlinefill
+    withdrawcolor .7blue withfillcolor .7white
+    dashed evenly withpen pencircle scaled 2pt ;
+\stopMPcode
+\stopbuffer
+
+In addition to the default method and the reversed fill, we
+also have an outline fill. The differences show up clearly
+if we use a dashed line:
+
+\typebuffer[a]
+
+In the reversed fill, we will get a thinner line, since the
+fill covers half the line.
+
+\typebuffer[b]
+
+The outline fill method will extend the fill to the line,
+which sometimes gives nicer results with dashed shapes.
+
+\typebuffer[c]
+
+These three definitions result in the following graphics.
+The third alternative is the least efficient because the
+paths are duplicated.
+
+\startlinecorrection
+\hbox to \hsize \bgroup \hss \startcombination[3*1]
+  {\getbuffer[one,a]} {default fill}
+  {\getbuffer[one,b]} {reverse fill}
+  {\getbuffer[one,c]} {outline fill}
+\stopcombination \hss \egroup
+\stoplinecorrection
+
+In the first example of this section, we use plain \TEX,
+while the second and following examples depend on \CONTEXT.
+You can specify a \TEX\ back||end using the following
+directive:
+
+\starttyping
+graphictextformat := "latex" ;
+\stoptyping
+
+In \CONTEXT\ you can specify environments in the normal way
+\footnote {For more information on what is normal, you can
+consult the \METAFUN\ manual.} like:
+
+\starttyping
+\startMPenvironment
+\setupbodyfont[pos,11pt]
+\stopMPenvironment
+\stoptyping
+
+In a stand||alone \METAPOST\ graphic, you can pass
+information to \TEX\ using \type {graphictextdirective}:
+
+\starttyping
+graphictextformat := "latex" ;
+graphixtextdirective "\documentclass[]{article}" ;
+\stoptyping
+
+You don't have to provide document structuring commands,
+since these are added by \type {makempy}.
+
+You can also use \type {pstoedit} independently, in which case
+each page becomes a figure. You can load such a figure using
+the \type {loadfigure} macro, as in:
+
+\starttyping
+loadfigure("filename.suffix", 4) ;
+\stoptyping
+
+This macro makes sure that the content of figure~4, when
+present, is added to \type {currentpicture}. You can also
+use this macro to include figures defined in other
+\METAPOST\ files, so that you can build libraries.
+
+\section{switches}
+
+The \PERL\ script \type {makempy} uses the following
+programs:
+
+\starttabulate
+\NC gs       \NC a general purpose \POSTSCRIPT\ processor \NC \NR
+\NC pdftops  \NC a \PDF\ to \POSTSCRIPT\ converter from
+                 the xpdf suite                           \NC \NR
+\NC pstoedit \NC a \POSTSCRIPT\ to whatever vector format
+                 converter (often comes with \GHOSTVIEW)  \NC \NR
+\stoptabulate
+
+When set, the environment variables \type {GS} and \type
+{GS_PROG} will be used to identify \GHOSTSCRIPT. Of course
+you need to have \PERL\ on your system to run \type
+{makempy} as well as \PDFTEX\ (which nowadays is part of
+most \TEX\ distributions). If needed, the names of the
+other programs that are used can be set with \type
+{PDFTOPS}, \type {ACROREAD} and \type {PSTOEDIT}. 
+
+The \type {makempy} script does its work without user
+intervention. When it deduces that there are no changes, it
+will not run at all, otherwise it will report its steps
+and|/|or encountered error. The script takes one argument:
+
+\starttyping
+makempy filename
+\stoptyping
+
+A suffix, when provided, is stripped. The following switches
+are recognized:
+
+\starttabulate[|Tl|p|]
+\NC --help        \NC returns some basic help information        \NC \NR
+\NC --silent      \NC don't report status messages               \NC \NR
+\NC --force       \NC always process the file (no checksum test) \NC \NR
+\NC --noclean     \NC don't remove temporary files when finished \NC \NR
+\NC --acrobat     \NC use \ACROBAT\ for conversion (only unix)   \NC \NR
+\NC --pdftops     \NC use \PDFTOPS\  for conversion              \NC \NR
+\NC --ghostscript \NC use \GHOSTSCRIPT\ for conversion           \NC \NR
+\stoptabulate
+
+The last few switches are handy when you encounter errors or
+get unexpected results. In that case you can do as follows:
+
+\starttyping
+mpost   yourfile
+makempy yourfile --force --noclean
+\stoptyping
+
+after that you can take a look at the files whose name
+start with \type {mpy-yourfile}.
+
+\starttyping
+mpy-yourfile.tex | .pdf | .log | .pos | .tmp
+\stoptyping
+
+When using \CONTEXT, keep in mind that \TEXEXEC\ uses files
+with names as \type {mpgraph} which can be prefixed by \type
+{yourfile}, so there we get:
+
+\starttyping
+mpy-yourfile-mpgraph.tex | .pdf | .log | .pos | .tmp
+\stoptyping
+
+At this moment we always use \PDFTEX\ combined with \type
+{pdftops} since it guarantees that we get everything we need
+in the file. Experiments with \type {dvips} and \type
+{dvipsone} were unsatisfying with respect to page
+dimensions and font conversion.
+
+\section{remarks}
+
+In order to achieve optimal results, a few tricks are used,
+some of which don't deserve a beauty price.
+
+Normally a typeset text will use font sizes between 10 and
+30 points, because that's the way \TEX\ systems are set up.
+When such small shapes as font glyphs are converted to
+curves, we loose quite some accuracy and the results will be
+quite awful. For this reason, behind the screens, we scale the
+graphic up and down by a factor 10.
+
+Because \type {pdftops} has problems with non standard paper
+sizes, we specify a pretty large working area when
+converting the \PDF\ file to \POSTSCRIPT. The \type
+{pstoedit} program generates tight code, so there we will
+loose unwanted white space.
+
+\section{example}
+
+In order to demonstrate how well \TEX\ and \METAPOST\ can
+work together, I will give an example that uses a typeset
+paragraph. This example uses \CONTEXT, but you can of
+course make an independent \METAPOST\ figure instead. First
+we define a graphic:
+
+\startbuffer
+\startuseMPgraphic{quotation}
+  graphictext
+    \MPstring{text}
+    scaled 2
+    withdrawcolor .7blue
+    withfillcolor .7white
+    withpen pencircle scaled 1pt ;
+  picture one ; one := currentpicture ; currentpicture := nullpicture ;
+  graphictext
+    \MPstring{author}
+    scaled 4
+    withdrawcolor .7red
+    withfillcolor .7white
+    withpen pencircle scaled 2pt ;
+  picture two ; two := currentpicture ; currentpicture := nullpicture ;
+  currentpicture := one ;
+  addto currentpicture also two
+    shifted  lrcorner one
+    shifted - 1.125 lrcorner two
+    shifted (0, - 1.250 * ypart urcorner two)  ;
+  setbounds currentpicture to boundingbox currentpicture enlarged 12pt ;
+\stopuseMPgraphic
+\stopbuffer
+
+\typebuffer \getbuffer
+
+In this graphic, we have two text fragments, the first one is
+a text, the second one the name of the author. We link the
+quotation and author into this graphic using the following
+definitions:
+
+\startbuffer
+\setMPtext{text}  {\vbox{\hsize 8.5cm \input zapf }}
+\setMPtext{author}{\hbox{\sl Hermann Zapf}}
+\stopbuffer
+
+\typebuffer \getbuffer
+
+These definitions assume that the file \type {zapf.tex} is
+present on the system. The graphic, which is shown on the
+last page, can now be typeset using the following call:
+
+\startbuffer
+\useMPgraphic{quotation}
+\stopbuffer
+
+\typebuffer
+
+For those not familiar with \CONTEXT: the graphic data is
+written to a file, and processed either directly or between
+\TEX\ runs. If you want to know more about the way \CONTEXT\
+can interact with \METAPOST, you may want to take a look at
+the \METAFUN\ manual (which also discusses \METAPOST\ in
+detail).
+
+Of course you can also process this quotation as stand alone
+graphic, in which case the \METAPOST\ code goes between
+\type {beginfig}||\type {endfig}.
+
+For \CONTEXT\ users who want to know how the section headers
+in this document are defined, I let their definition follow
+here.
+
+\typebuffer[head]
+
+There are two points worth noticing. We define two hooks
+into the section header command. In the macro that deals
+with the section number, we don't use the number as
+provided by the argument \type {#1}, but use the raw number
+instead. We do so, because the content of this argument
+contains label related macros, which don't operate that
+well when processed independently from this document. We
+need to expand the number, because the graphic is processed
+in an independent run.
+
+The second trick concerns the \type {hsmash}. Because the
+number and text are placed after each other, we explicitly
+have to set the distance to zero, as well as makes sure that
+the number does not consume space. By using the \type
+{\framed} macro, we get both text and number nicely
+centered.
+
+We use default font size but pass the colors (red, blue and
+gray) from this particular document. The bodyfont
+environment is passed on to \METAPOST's \TEX\ run by saying:
+
+\typebuffer[font]
+
+\section{resources}
+
+The \PERL\ script \type {makempy} as well as the \METAPOST\
+module \type {mp-grph.mp} are part of the \CONTEXT\
+distribution. You can find the latest version in the zipped
+archive that can be fetched from the download page at:
+
+\starttyping
+www.pragma-ade.com
+\stoptyping
+
+or one of the mirrors. You can also find \CONTEXT\ in the
+main stream \TEX\ distributions. If you encounter problems,
+you may contact:
+
+\startlines
+Hans Hagen
+PRAGMA-ADE, Hasselt, NL
+j.hagen@pragma-ade.com
+\stoplines
+
+But for support you can best go to the \CONTEXT\ mailing
+list:
+
+\starttyping
+ntg-context@ntg.nl
+\stoptyping
+
+This manual is typeset at \currentdate.
+
+\page
+
+\startlinecorrection
+\getbuffer
+\stoplinecorrection
+
+I sincerely hope that Hermann Zapf will forgive me for
+mis||using his quotation |<|from an article on {\sl
+HZ}||optimization|>| as well as for manipulating his
+Palatino font in this way.
+
+\stoptext

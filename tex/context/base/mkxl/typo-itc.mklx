@@ -48,10 +48,7 @@
 \aliased\let\setupitaliccorrection\setitaliccorrection
 
 \permanent\protected\def\italiccorrection
-  {\ifbitwiseand\glyphoptions\textcheckitalicglyphoptioncode\else
-     % This doesn't do anything due to the way we set up the callback ...
-     % \normalitaliccorrection
-     % ... so we do this instead:
+  {\ifbitwiseand\glyphoptions\textcheckitalicglyphoptioncode
      \forcedrightcorrection
    \fi}
 
@@ -59,6 +56,8 @@
     \aliased\let\/\italiccorrection % replaces the primitive
   % \aliased\let\explicititaliccorrection\italiccorrection % replaces the primitive
 \popoverloadmode
+
+\setitaliccorrection % default
 
 % only for manuals ... obsolete
 

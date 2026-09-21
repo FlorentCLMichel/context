@@ -1,0 +1,423 @@
+
+% language=us runpath=t:/texmf/doc/context/documents
+
+% This is a very old style, only adapted to the new xml handler. Nowdays articles
+% are collected in documents. We started with \TEX\ files, later moved to \XML\
+% with \MKII\ processing (using a streaming parser and save/reuse data model).
+%
+% In order to also discuss the \LMTX\ manuals we reorganized the \XML\ file a bit
+% the style is mostly unchanged. We did change the font to pennstander.
+%
+% We assume that this manual is processed here: texmf/doc/context/documents
+%
+% A local helper: t:\manuals\mkii\external\tempcopy.cmd
+
+% we can reuse some covers:
+%
+% (m)pstopdf
+% (m)texsync
+
+\environment show-env
+
+% \TransparencyHack
+
+\setuplayout
+  [topspace=30pt,
+   height=fit,
+   backspace=30pt,
+   width=300pt,
+   rightmargin=220pt,
+   margindistance=30pt,
+   header=0pt,
+   footer=0pt,
+   bottomdistance=15pt,
+   bottom=20pt]
+
+\defineoverlay
+  [MainBackground]
+  [\useMPgraphic{MainGraphic}]
+
+\setupbackgrounds
+  [page]
+  [background={content,MainBackground}]
+
+\setupcolors
+  [textcolor=white]
+
+\defineoverlay[content][\overlaybutton{content}]
+
+\startuseMPgraphic{MainGraphic}
+
+    % todo: adapt the shades, use the luametafun variant:
+
+    StartPage ;
+
+        path p ;
+
+        fill Page withcolor "shade-2" ;
+
+        p := llcorner Field[Text][Bottom] --
+             lrcorner Field[Text][Bottom] --
+             urcorner Field[Text][Text]   --
+             ulcorner Field[Text][Text]   -- cycle ;
+        p := p enlarged .5cm randomized .5cm ;
+
+        fill p
+            withshademethod "circular"
+            withshadecolors ("shade-1", "shade-2") ;
+
+        def bottom_menu_button (expr nn, rr, pp, xx, yy, ww, hh, dd) =
+            if (pp > 0) and (rr > 0) :
+                if     nn = 1 :
+                     p := fullsquare xysized (ww/2,hh) ;
+                     p := p shifted (xx+ww/4,yy+hh/2) ;
+                elseif nn = 3 :
+                     p := fulltriangle xysized (ww,hh) ;
+                     p := p shifted (xx+ww/2,yy+hh/2) ;
+                elseif nn = 2 :
+                     p := fulltriangle rotated 180 xysized (ww,hh) ;
+                     p := p shifted (xx+ww/2,yy+hh/2) ;
+                else :
+                     p := origin -- cycle ;
+                fi ;
+                 p := p randomizedcontrols (hh/4) ;
+                 fill p
+                    withshademethod "circular"
+                    withshaderadius (0,ww)
+                    withshadecolors ("shade-1", "shade-2") ;
+            fi ;
+        enddef ;
+
+        \MPmenubuttons{bottom}
+
+    StopPage ;
+
+\stopuseMPgraphic
+
+\setupinteractionmenu
+  [bottom]
+  [state=start,
+   frame=off,
+   left=\hfill,
+   middle=\hskip.5cm,
+   width=2\bottomheight,
+   position=yes]
+
+\startinteractionmenu[bottom]
+    \startbut [firstpage]    \stopbut
+    \hfilll
+    \startbut [previouspage] \stopbut
+    \startbut [nextpage]     \stopbut
+\stopinteractionmenu
+
+\newbox\samplebox
+
+\setupexternalfigures[compact=]
+
+\definelist
+  [manual]
+  [alternative=command]
+
+\starttexdefinition SomePlaceholder #1
+    \writestatus{NOT FOUND}{\ThePaper.pdf}
+    %
+    \edef\StyleWidth{\the\dimexpr(\textwidth-60pt)/6\relax}% 7
+    %
+    \framed [
+        offset=overlay,
+        frame=off,
+        background=color,
+        backgroundcolor=shade-2,
+        backgroundoffset=2.5pt,
+        width=\StyleWidth,
+        height=29.7\dimexpr\StyleWidth/21\relax
+    ] { \smallinfofont
+        \cldcontext{file.basename("#1")}
+    }
+\stoptexdefinition
+
+\globaldisablemode[continuation]
+
+\startxmlsetups xml:overview
+
+    \edef\StyleWidth{\the\dimexpr(\textwidth-60pt)/6\relax}% 7
+    \edef\ThePaper  {\xmlflush{#1}}% weird. why no xmltext
+
+    \dontleavehmode
+    \doifelsefile{\ThePaper.pdf} {
+        \button [
+            offset=overlay,
+            frame=off,
+            background=color,
+            backgroundcolor=shade-2,
+            backgroundoffset=2.5pt
+        ] {
+            \externalfigure [\ThePaper.pdf] [
+                background=color,
+                backgroundcolor=white,
+                page=1,
+                width=\StyleWidth,
+                height=29.7\dimexpr\StyleWidth/21\relax
+            ]
+        } [
+            \ThePaper
+        ]
+
+    } {
+        \SomePlaceholder{\ThePaper}
+    }
+    \hskip10pt plus 10pt\relax
+
+    \allowbreak
+
+\stopxmlsetups
+
+\startxmlsetups xml:margintext
+    \vbox to \textheight {
+        \hsize\rightmarginwidth
+        \setbox\samplebox\vbox {
+            \setupwhitespace[big]
+            \setupalign[flushleft,mathbookpasses]
+            \bgroup
+                \bfd
+                \setupinterlinespace
+                \xmlfirst{#1}{/title}
+                \par
+            \egroup
+            \blank
+            \bgroup
+                \bf
+                \setupinterlinespace
+                \xmlfirst{#1}{/summary}
+                \par
+                \doifmode {continuation} {
+                    (continued)
+                }
+            \egroup
+        }
+        \button
+            [frame=off,offset=overlay,style=,color=]
+            {\box\samplebox}
+            [forward]
+        \vfill
+    }
+
+    \globalenablemode[continuation]
+
+\stopxmlsetups
+
+\startxmlsetups xml:documents
+
+    % common
+
+    \globaldisablemode[continuation]
+
+    \definecolor[dark][s=.25]
+
+    \setuptexttexts[margin][][\pagereference[all]\xmlfilter{#1}{/introduction[@version=='all']/command(xml:margintext)}]
+
+    \start
+        \start
+            \setupbutton
+              [color=white,
+               contrastcolor=white,
+               width=1tw,
+               background=color,
+               frame=off,
+               backgroundcolor=dark,
+               style=\bfc]
+
+            \button{common manuals}[common] \blank
+            \button{\MKXL\ manuals}[mkxl]   \blank
+            \button{\MKIV\ manuals}[mkiv]   \blank
+            \button{\MKII\ manuals}[mkii]
+        \stop
+        \page
+    \stop
+
+    \globaldisablemode[continuation]
+
+    \setuptexttexts[margin][][\pagereference[common]\xmlfilter{#1}{/introduction[@version=='common']/command(xml:margintext)}]
+
+    \start
+        \setupalign[flushleft,mathbookpasses]
+        \lineskip10pt
+        \xmlfilter{#1}{/collection[@version=='common' and @classification!='old']/resources/manual[match()==1]/paper/command(xml:overview)}%
+        \page
+    \stop
+
+    % mkxl
+
+    \globaldisablemode[continuation]
+
+    \setuptexttexts[margin][][\pagereference[mkxl]\xmlfilter{#1}{/introduction[@version=='mkxl']/command(xml:margintext)}]
+
+    \start
+        \setupalign[flushleft,mathbookpasses]
+        \lineskip10pt
+        \xmlfilter{#1}{/collection[@version=='mkxl' and @classification!='old']/resources/manual[match()==1]/paper/command(xml:overview)}%
+        \page
+    \stop
+
+    % mkiv
+
+    \globaldisablemode[continuation]
+
+    \setuptexttexts[margin][][\pagereference[mkiv]\xmlfilter{#1}{/introduction[@version=='mkiv']/command(xml:margintext)}]
+
+    \start
+        \setupalign[flushleft,mathbookpasses]
+        \lineskip10pt
+        \xmlfilter{#1}{/collection[@version=='mkiv' and @classification!='old']/resources/manual[match()==1]/paper/command(xml:overview)}%
+        \page
+    \stop
+
+    % mkii
+
+    \globaldisablemode[continuation]
+
+    \setuptexttexts[margin][][\pagereference[mkii]\xmlfilter{#1}{/introduction[@version=='mkii']/command(xml:margintext)}]
+
+    \start
+        \setupalign[flushleft,mathbookpasses]
+        \lineskip10pt
+        \xmlfilter{#1}{/collection[@version=='mkii' and @classification!='old']/resources/manual[match()==1]/paper/command(xml:overview)}%
+        \page
+    \stop
+
+    % obsolete
+
+    \globaldisablemode[continuation]
+
+    \setuptexttexts[margin][][\xmlfilter{#1}{/introduction[@classification=='old']/command(xml:margintext)}]
+
+    \start
+        \setupalign[flushleft,mathbookpasses]
+        \lineskip10pt
+        \xmlfilter{#1}{/collection[@classification=='old']/resources/manual[match()==1]/paper/command(xml:overview)}%
+        \page
+    \stop
+
+    \setuptexttexts[margin][][]
+
+    \globaldisablemode[continuation]
+
+    % everything
+
+    \xmlall{#1}{/collection}
+
+\stopxmlsetups
+
+\startxmlsetups xml:sample
+
+    \edef\ThePaper {\xmlflush{#1}}
+    \edef\TheColor {\xmlatt{#1}{backgroundcolor}}
+    \edef\TheOffset{\xmlatt{#1}{offset}}
+
+    \doifelse {\TheOffset} {yes} {
+        \def\TheOffset{.25ex}
+    } {
+        \def\TheOffset{0pt}
+    }
+
+    \doifelsefile{\ThePaper.pdf} {
+        \gotobox {
+            \doifelsenothing {\TheColor}
+                {\externalfigure[\ThePaper.pdf][page=1,width=\StampWidth]}
+                {\externalfigure[\ThePaper.pdf][page=1,width=\StampWidth,background=color,backgroundcolor=\TheColor,backgroundoffset=\TheOffset]}
+        }
+        [file(\ThePaper)]
+    } {
+        \SomePlaceholder{\ThePaper}
+    }
+
+    \hskip\StampDelta
+
+\stopxmlsetups
+
+\startxmlsetups xml:collection
+
+    \edef\FirstRow {\xmlcount{#1}{resources/manual/paper}}
+    \edef\SecondRow{\xmlcount{#1}{resources/manual/screen}}
+
+    \setbox\samplebox=\vbox to \textheight {
+
+        \hsize\rightmarginwidth
+
+        \vbox \bgroup
+            \raggedright
+            \bgroup
+                \bfd
+                \setupinterlinespace
+                \xmlfirst{#1}{description/theme}
+                \par
+            \egroup
+            \blank
+            \bf
+            \xmlfirst{#1}{description/summary}
+            \blank
+
+                                \def\StampWidth{45pt} \def\StampDelta {10pt}
+            \ifnum  \FirstRow>4 \def\StampWidth{35pt} \def\StampDelta {10pt} \fi
+            \ifnum \SecondRow>4 \def\StampWidth{35pt} \def\StampDelta {10pt} \fi
+            \ifnum  \FirstRow>6 \def\StampWidth{25pt} \def\StampDelta {10pt} \fi
+            \ifnum \SecondRow>6 \def\StampWidth{25pt} \def\StampDelta {10pt} \fi
+
+            \ifnum  \FirstRow>1 \vskip10pt \hbox to \hsize{\hss\xmlfilter{#1}{resources/manual[position()>1]/paper/command(xml:sample)}\unskip} \fi
+            \ifnum \SecondRow>1 \vskip10pt \hbox to \hsize{\hss\xmlfilter{#1}{resources/manual/screen/command(xml:sample)}\unskip} \fi
+        \egroup
+
+        \vfill
+
+        \edef\TheScreen{\xmlfilter{#1}{resources/manual/screen[position()=1]/text()}}
+        \edef\TheColor {\xmlfilter{#1}{resources/manual/screen/attribute(backgroundcolor)}}
+
+        \doifsomething {\TheScreen} {
+            \hfill
+            \gotobox {
+                \doifelsenothing {\TheColor} {
+                    \externalfigure[\TheScreen.pdf][page=1,width=90pt]
+                } {
+                    \externalfigure[\TheScreen.pdf][page=1,width=90pt,background=color,backgroundcolor=\TheColor]
+                }
+            }
+            [\TheScreen::]
+        }
+
+        \vskip-\bottomheight
+        \vskip-\bottomdistance
+    }
+
+    \setuptexttexts[margin][][\box\samplebox]
+
+    \startstandardmakeup
+
+        \edef\ThePaper{\xmlfilter{#1}{resources/manual/paper[position()=1]/text()}}
+        \edef\TheColor{\xmlfilter{#1}{resources/manual/paper/attribute(backgroundcolor)}}
+
+        \centerbox {
+            \gotobox {
+                \doifelsenothing {\TheColor} {
+                    \externalfigure[\ThePaper.pdf][page=1,factor=max]
+                } {
+                    \externalfigure[\ThePaper.pdf][page=1,factor=max,background=color,backgroundcolor=\TheColor]
+                }
+            }
+            [\ThePaper::]
+        }
+
+        \pagereference[\ThePaper]
+
+    \stopstandardmakeup
+
+\stopxmlsetups
+
+\startxmlsetups xml:definitions
+    \xmlsetsetup{#1}{collection|documents|introduction}{xml:*}
+\stopxmlsetups
+
+\xmlregistersetup{xml:definitions}
+
+\starttext
+    \xmlprocess{main}{show-man.xml}{}
+\stoptext

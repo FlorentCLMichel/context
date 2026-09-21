@@ -1,0 +1,235 @@
+% language=us
+
+\environment context-2022-style
+
+\startdocument
+  [title={Stepping up \MetaPost},
+   banner={convenience and performance},
+   location={context\enspace {\bf 2022}\enspace meeting}]
+
+\starttitle[title=\METAPOST\ version 2 versus 3]
+
+\startitemize
+    \startitem
+        There is less need to adapt \METAPOST\ than \TEX\ to current
+        developments, most needed additional can be dealt with in the backend via
+        the generic pre- and postscript properties. These properties have been
+        added to some more data structures.
+    \stopitem
+    \startitem
+        Some features of \METAPOST\ are not needed or limited so these are
+        removed: fonts, backends. Only three number models are supported by
+        default: legacy scaled, double, and decimal. We default to double, which
+        also performs best.
+    \stopitem
+    \startitem
+        Most significate are the extensions in the \LUA\ interface where we
+        got powerful and fast scanners. This permits us to extend the
+        language.
+    \stopitem
+    \startitem
+        However, we also also added some primitive features, simply because it
+        removed some persistent bottlenecks. The internals didn't really change
+        much conceptually. There are numerous optimizations, so it runs faster
+        anyway.
+    \stopitem
+    \startitem
+        For Mikael and me this was a nice distraction from dealing with the messy
+        math fonts.
+    \stopitem
+\stopitemize
+
+\stoptitle
+
+\starttitle[title=Intersection]
+
+Getting all intersections of two paths is a bit difficult. It also involves
+repetitive restart and cutting before and after and hoping for the best. This is why
+we now have
+
+\starttyping
+<path> intersectiontimeslist <path>
+\stoptyping
+
+This operator returns a path made up of points that reflect the times on the
+paths.
+
+\starttyping
+intersections-001.tex
+\stoptyping
+
+\stoptitle
+
+\starttitle[title=Loops]
+
+\startitemize
+    \startitem
+        A path is a linked list which means that getting to a point (or between
+        points) is a linear lookup.
+    \stopitem
+    \startitem
+        We now have a double linked list and support for progressive loops over
+        paths.
+    \stopitem
+    \startitem
+        It is not pretty but works ok for what we need and often the dirty
+        details are hidden in macros.
+    \stopitem
+    \startitem
+        New primitives are: \type {deltapoint}, \type {deltaprecontrol}, \type
+        {deltapostcontrol}, \type {deltadirection}, \type {pathpoint}, \type
+        {pathprecontrol}, \type {pathpostcontrol}, \type {pathdirection}.
+    \stopitem
+\stopitemize
+
+\starttyping
+intersections-001.tex
+\stoptyping
+
+\stoptitle
+
+\starttitle[title=Arcs]
+
+The agitate article by Fabrice Larribe was a good reason to see if we could bring
+down many hours of rendering to minutes. For that we came up with \type
+{arcpoint}, \type {arcpointlist} and \type {subarclength}.
+
+\startbuffer
+path p ; p := arcpointlist 100 of (fullcircle xyscaled (10cm,2cm)) ;
+draw image ( for i within p :
+   draw pathpoint withpen pencircle scaled 2mm ;
+endfor ; ) withcolor "extracolor" ;
+\stopbuffer
+
+\typebuffer
+
+This gives equally spread points as path:
+
+\startlinecorrection
+\processMPbuffer
+\stoplinecorrection
+
+\starttyping
+agitate-002.tex
+ontarget-metapost.tex
+\stoptyping
+
+\stoptitle
+
+\starttitle[title=Drawing features]
+
+Instead of grouping with interims for line properties we can also use:
+
+\starttyping
+<path> withlinecap <numeric>
+<path> withlinejoin <numeric>
+<path> withlinemiterlimit <numeric>
+\stoptyping
+
+This gives less overhead and is more convenient in generated \METAPOST\ code.
+
+\stoptitle
+
+\starttitle[title=Paths]
+The macro \type {center} has two primitive companions:
+
+\starttyping
+centerof <path>
+centerofmass <path> (Mikael can explain that one)
+\stoptyping
+
+These avoid multiple calculations of corners of the bounding box we have:
+
+\starttyping
+corners <path|picture>
+boundingpath <pen> of <path>
+xrange <path|picture>
+yrange <path|picture>
+\stoptyping
+
+% \startMPcode
+% draw(centerofmass (fullcircle xysized(3cm,1cm))) withpen pencircle scaled 3mm withcolor white ;
+% draw(center origin withpen pencircle) scaled 3mm withcolor white ;
+% draw(centerofmass origin withpen pencircle) scaled 3mm withcolor white ;
+% draw(corners (fullcircle xysized(3cm,1cm))) withcolor white ;
+% draw(boundingpath pencircle scaled 3mm of (fullcircle xysized(3cm,1cm))) withcolor white;
+% \stopMPcode
+
+For generated code or less complex macros we have:
+
+\starttyping
+nocycle
+\stoptyping
+
+and we have \type {&&} for connecting no|-|continuous paths (as in fonts)
+but that is still experimental.
+
+\stoptitle
+
+\starttitle[title=Pens]
+
+Pens can be tricky: circular pens are native \POSTSCRIPT\ (and \PDF) but when
+transformed are handled by double paths. Transparency can uncover all kind of
+side effects that are normally hidden. The envelopes made by pens are
+approximations that assume that these inaccuracies end up inside the filled
+areas. Pens get convexed.
+
+\startbuffer
+fill convexed (fullcircle xysized (10cm,1cm))
+    withcolor "extracolor" withpen pencircle scaled 1mm ;
+\stopbuffer
+
+\typebuffer
+
+\startlinecorrection
+\processMPbuffer
+\stoplinecorrection
+
+The problem is that once we figure this out and apply it low level it's easy to
+forget all the details. This is not everyday code and it's hard to make examples.
+
+A good way out of inaccuracies is to rotate over eps which avoids some zero
+conditions. The \type {envelope} primitive has been improved and for special
+tracing \type {nep} and \type {makenep} are introduced to get around some
+heuristics.
+
+% \startMPcode
+% pen p ; p := makepen(starring(-1/3) rotated eps) ;
+% % nep p ; p := makenep(starring(-1/3) rotated eps) ;
+% draw
+%     envelope (p scaled 8mm) of (fullcircle xyscaled (.8TextWidth,2cm))
+%     withpen pencircle scaled 2mm
+%     withcolor darkgreen
+%     withtransparency (1,.5) ;
+% draw envelope (p scaled 8mm) of reverse (fullcircle xyscaled (.8TextWidth,2cm))
+%     withpen pencircle scaled 2mm
+%     withcolor darkblue
+%     withtransparency (1,.5) ;
+% \stopMPcode
+
+\starttyping
+ontarget-envelopes.tex
+\stoptyping
+
+\stoptitle
+
+\starttitle[title=Lua]
+
+There are plenty of new|/|improved scanners and injectors so that we can build
+interfaces that are very efficient. Given the performance of \METAPOST\ we can
+extend in \LUA. In \CONTEXT\ most interfaces between \TEX\ and \METAPOST\ are
+upgraded.
+
+\stoptitle
+
+\starttitle[title=Etcetera]
+
+We just mention \type {overload}, \type {stacking}, \type {uncontrolled} and
+\type {setgroup} and there are some performance related settings. And we're
+adding some more in the coming years, like additional support for envelopes.
+
+{\em Mikael Sundqvist made some beautiful, more detailed, overviews of features!}
+
+\stoptitle
+
+\stoptext

@@ -337,7 +337,6 @@ local function showtraceback(rep) -- from lua site / adapted
 end
 
 debugger.showtraceback = showtraceback
--- debug.showtraceback = showtraceback
 
 -- showtraceback()
 

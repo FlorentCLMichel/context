@@ -17,7 +17,7 @@ local concat = table.concat
 local write_nl = (logs and logs.writer) or (texio and texio.write_nl) or print
 
 local versions = {
-    otl = 3.153,
+    otl = 3.154,
     one = 1.541,
     afm = 1.541,
     pfb = 1.003,
@@ -115,42 +115,52 @@ local report = application.report
 
 if not fontloader then fontloader = fontforge end
 
-local function loadmodule(filename)
-    local fullname = resolvers.findfile(filename,"tex")
-    if fullname and fullname ~= "" then
-        dofile(fullname)
+local suffixes = { "lmt", "lua" }
+
+local function loadmodule(nameonly,s)
+    local s = s and { s } or suffixes
+    for i=1,#s do
+        local filename = file.addsuffix(nameonly,s [i])
+        local fullname = resolvers.findfile(filename,"tex")
+        if fullname and fullname ~= "" then
+            dofile(fullname)
+            return
+        end
     end
 end
 
--- loader code
+-- loader code (per 2026-09 we load the lmt files as they can be more advanced)
 
-loadmodule("char-def.lua")
+loadmodule("char-def","lua")
 
-loadmodule("font-ini.lua")
-loadmodule("font-log.lua")
-loadmodule("font-con.lua")
-loadmodule("font-cft.lua")
-loadmodule("font-enc.lua")
-loadmodule("font-agl.lua")
-loadmodule("font-cid.lua")
-loadmodule("font-map.lua")
-loadmodule("font-oti.lua")
+loadmodule("supp-ran")
 
-loadmodule("font-otr.lua")
-loadmodule("font-cff.lua")
-loadmodule("font-ttf.lua")
-loadmodule("font-tmp.lua")
-loadmodule("font-dsp.lua") -- autosuffix
-loadmodule("font-oup.lua")
+loadmodule("font-ini")
+loadmodule("font-log")
+loadmodule("font-con") -- we need to move some more to ini
+loadmodule("font-cft")
+loadmodule("font-enc")
+loadmodule("font-agl")
+loadmodule("font-cid")
+loadmodule("font-map")
+loadmodule("font-oti") -- needed ?
 
-loadmodule("font-otl.lua")
-loadmodule("font-onr.lua")
+loadmodule("font-otr")
+loadmodule("font-cff")
+loadmodule("font-ttf")
+loadmodule("font-tmp")
+loadmodule("font-dsp")
+loadmodule("font-oup")
+
+loadmodule("font-otl")
+loadmodule("font-onr")
+loadmodule("font-ott")
 
 -- extra code
 
-loadmodule("font-syn.lua")
-loadmodule("font-trt.lua")
-loadmodule("font-mis.lua")
+loadmodule("font-syn")
+loadmodule("font-trt")
+loadmodule("font-mis")
 
 scripts       = scripts       or { }
 scripts.fonts = scripts.fonts or { }
@@ -288,7 +298,7 @@ local function showfeatures(tag,specification)
         report()
         indeed("instances : % t",instancenames)
     end
-    local features, tables = fonts.helpers.getfeatures(specification.filename,not getargument("nosave")) -- nosave is obsolete
+    local features, tables, stylistics = fonts.helpers.getfeatures(specification.filename,not getargument("nosave")) -- nosave is obsolete
     if features then
         for what, v in table.sortedhash(features) do
             local data = features[what]
@@ -298,7 +308,7 @@ local function showfeatures(tag,specification)
                 report()
                 report("  feature  script   languages")
                 report()
-                for f,ff in table.sortedhash(data) do
+                for f, ff in table.sortedhash(data) do
                     local done = false
                     for s, ss in table.sortedhash(ff) do
                         local s = s == "*" and all or s
@@ -314,6 +324,21 @@ local function showfeatures(tag,specification)
                             name = f
                         end
                         report("  %-8s %-8s %-8s",name,s,concat(table.sortedkeys(ss), " ")) -- todo: padd 4
+                    end
+                end
+                if stylistics then
+                    done = false
+                    for f, ff in table.sortedhash(data) do
+                        local s = stylistics[f]
+                        if s then
+                            if not done then
+                                report()
+                                report("stylistics:")
+                                report()
+                                done = true
+                            end
+                            report("  %s : %s",f,s)
+                        end
                     end
                 end
             end

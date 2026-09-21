@@ -64,7 +64,7 @@ static int sqlitelib_initialize(lua_State * L)
     if (! sqlitelib_state.initialized) {
         const char *filename = lua_tostring(L, 1);
         if (filename) {
-            lmt_library lib = lmt_library_load(filename);
+            lmt_library lib = lmt_library_load(L, filename);
 
             sqlitelib_state.sqlite3_initialize = lmt_library_find(lib, "sqlite3_initialize");
             sqlitelib_state.sqlite3_open       = lmt_library_find(lib, "sqlite3_open");
@@ -86,7 +86,7 @@ static int sqlitelib_open(lua_State * L)
 {
     if (sqlitelib_state.initialized) {
         const char *filename = lua_tostring(L, 1);
-        if (filename != NULL) {
+        if (filename && lmt_valid_target(L, security_readable, filename, security_open_database)) {
             sqlitelib_data *data = lua_newuserdatauv(L, sizeof(*data), 0);
             if (! sqlitelib_state.sqlite3_open(filename, &(data->db))) {
                 luaL_getmetatable(L, SQLITELIB_METATABLE);
@@ -114,21 +114,21 @@ static int sqlitelib_callback(void *ud, int nofcolumns, char **values, char **fi
 {
     callback_context *ctx = (callback_context *) ud;
     lua_State        *L   = ctx->L;
-    /* Duplicate the function sitting at index 3 */
+    /* duplicate the function sitting at index 3 */
     lua_pushvalue(L, 3);
     if (nofcolumns > 0 && values != NULL) {
-        /* Values table */
+        /* values table */
         lua_createtable(L, nofcolumns, 0);
         for (int i = 0; i < nofcolumns; i++) {
             lua_pushstring(L, values[i]);
-            lua_rawseti(L, -2, (lua_Integer)i + 1);
+            lua_rawseti(L, -2, (lua_Integer) i + 1);
         }
-        /* Send header fields only on the first row */
+        /* header fields only on the first row */
         if (ctx->row_count == 0 && fields != NULL) {
             lua_createtable(L, nofcolumns, 0);
             for (int i = 0; i < nofcolumns; i++) {
                 lua_pushstring(L, fields[i]);
-                lua_rawseti(L, -2, (lua_Integer)i + 1);
+                lua_rawseti(L, -2, (lua_Integer) i + 1);
             }
             lua_call(L, 2, 0); /* callback(values, fields) */
         } else {

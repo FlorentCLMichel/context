@@ -3155,6 +3155,10 @@ function specials.section(var,actions)
     end
 end
 
+function specials.embedded(var,actions)
+    -- no checking now
+end
+
 -- experimental:
 
 -- We can cache lowercased titles which saves a lot of time, but then

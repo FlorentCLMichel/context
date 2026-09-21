@@ -1,0 +1,126 @@
+% language=us
+
+\environment context-2022-style
+
+\startdocument
+  [title={CTX Math},
+   banner={the updated engine},
+   location={context\enspace {\bf 2022}\enspace meeting}]
+
+\starttitle[title=A little history]
+
+\startitemize
+    \startitem
+        When we started with \LUATEX\ there was little known about
+        \UNICODE\ and \OPENTYPE\ math. References were \MSWORD\ and
+        Cambria.
+    \stopitem
+    \startitem
+        So we ended up with a hybrid math machinery that has to
+        support traditional and new math fonts.
+    \stopitem
+    \startitem
+        Later the mixed code paths were separated a bit more and some operating
+        modes were introduced. The biggest issue is in the way traditional \TEX\
+        fonts (ab)use italic correction and some of that (inconsistently) made it
+        into modern fonts.
+    \stopitem
+    \startitem
+        Once fonts started showing up it became clear that we could
+        never really do it well. In \CONTEXT\ we added support for
+        font specific runtime patching.
+    \stopitem
+    \startitem
+        In \LUAMETATEX\ we were free from existing assumptions and didn't need
+        to take other \quote {frozen in time assumptions} into account.
+    \stopitem
+    \startitem
+        So, after a lot of extra control was added in the engine, Mikael and I set
+        off to use it and add more.
+    \stopitem
+    \startitem
+        Once we were satisfied about the mix of engine features and runtime
+        font patching some control was removed from the engine.
+    \stopitem
+    \startitem
+        And while we were getting fonts under control we were also exploring
+        fundamental extension to the rendering (like spacing and positioning).
+    \stopitem
+    \startitem
+        This also permitted us to review the \CONTEXT\ math mechanisms, simplify some
+        of the implementation and extend them. Optional code paths were removed.
+    \stopitem
+    \startitem
+        So where are we after a few man|-|years of work?
+    \stopitem
+\stopitemize
+
+\stoptitle
+
+\starttitle[title=The process]
+
+\startitemize
+    \startitem
+        The math engine is mostly separated from the rest: the main function is
+        \type {mlist_to_hlist} which is also called recursively when a formula gets
+        done.
+    \stopitem
+    \startitem
+        We have yet unprocessed nodes, called noads: atoms, fractions, radicals,
+        fences and accents. Plus some style and choice related ones.
+    \stopitem
+    \startitem
+        All become regular glyph, list, glue, penalty nodes.
+    \stopitem
+    \startitem
+        We support boundaries and discretionaries in math and math in
+        discretionaries.
+    \stopitem
+    \startitem
+        Rendering, spacing, penalties, unrolling, etc.\ are all controlled
+        by classes and their related options.
+    \stopitem
+    \startitem
+        There are new concepts, like dictionaries, direct fences, generic
+        radicals, vertical stacking (for arrows), etc.
+    \stopitem
+    \startitem
+        There is also plenty of (old and upgraded) handling at the \CONTEXT\
+        end.
+    \stopitem
+    \startitem
+        Mikaels presentation gives a nice overview.
+    \stopitem
+\stopitemize
+
+\stoptitle
+
+\starttitle[title=Maybe]
+
+\startitemize
+    \startitem
+        Remove display math because it is basically inline math (in display
+        style) with some spacing around and a formula number attached.
+    \stopitem
+    \startitem
+        Remove old font related character definition primitives because we can
+        assume \OPENTYPE\ fonts to be used (once we have a proper Euler).
+    \stopitem
+    \startitem
+        Get rid of the \type {U} prefix.
+    \stopitem
+    \startitem
+        Use a generic parameter setter instead of the plenty ones (using symbolic
+        names for indices).
+    \stopitem
+\stopitemize
+
+{\em See Mikaels various math related presentations at various meetings about
+what we did. The \quote {Math in \CONTEXT} manual gives a complete overview.}
+
+\stoptitle
+
+% Mikaels talk and demos.
+% Our math-unicode document.
+
+\stopdocument

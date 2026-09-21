@@ -1694,63 +1694,65 @@ do
 
 end
 
-do
-
-    -- musical timestamp: June 2022, Porcupine Tree - Rats Return
-
-    -- we can actually share these and flag them as being tweaked
-
-    local function scale(t,width,total)
-        local r = { }
-        for i=1,#t do
-            local ti = t[i]
-            local kern   = ti.kern
-            local height = ti.height
-            if kern then
-                kern = width * kern
-            end
-            if height then
-                height = total * height
-            end
-            r[i] = {
-                kern   = kern or 0,
-                height = height or 0,
-            }
-        end
-        return r
-    end
-
-    function mathtweaks.staircase(target,original,parameters)
-        local kerns = parameters.list
-        if kerns then
-            local characters = target.characters
-            local function kernone(unicode,data)
-                local chardata = characters[mathgaps[unicode] or unicode]
-                local total = (chardata.height or 0) + (chardata.depth or 0)
-                local width = chardata.width or 0
-                if data then
-                    local tl = data.topleft     ; if tl then tl = scale(tl,width,total) end
-                    local tr = data.topright    ; if tr then tr = scale(tr,width,total) end
-                    local bl = data.bottomleft  ; if bl then bl = scale(bl,width,total) end
-                    local br = data.bottomright ; if br then br = scale(br,width,total) end
-                    chardata.mathkerns = {
-                        topleft     = tl,
-                        ropright    = tr,
-                        bottomleft  = bl,
-                        bottomright = br,
-                    }
-                else
-                    chardata.mathkerns = nil
-                end
-            end
-            for unicode, data in next, kerns do
-                kernone(unicode,data) -- withscriptcode(tfmdata,unicode,data,kernone)
-                -- also smaller
-            end
-        end
-    end
-
-end
+-- These kerns are rather useless so we avoid them.
+--
+-- do
+--
+--     -- musical timestamp: June 2022, Porcupine Tree - Rats Return
+--
+--     -- we can actually share these and flag them as being tweaked
+--
+--     local function scale(t,width,total)
+--         local r = { }
+--         for i=1,#t do
+--             local ti = t[i]
+--             local kern   = ti.kern
+--             local height = ti.height
+--             if kern then
+--                 kern = width * kern
+--             end
+--             if height then
+--                 height = total * height
+--             end
+--             r[i] = {
+--                 kern   = kern or 0,
+--                 height = height or 0,
+--             }
+--         end
+--         return r
+--     end
+--
+--     function mathtweaks.staircase(target,original,parameters)
+--         local kerns = parameters.list
+--         if kerns then
+--             local characters = target.characters
+--             local function kernone(unicode,data)
+--                 local chardata = characters[mathgaps[unicode] or unicode]
+--                 local total = (chardata.height or 0) + (chardata.depth or 0)
+--                 local width = chardata.width or 0
+--                 if data then
+--                     local tl = data.topleft     ; if tl then tl = scale(tl,width,total) end
+--                     local tr = data.topright    ; if tr then tr = scale(tr,width,total) end
+--                     local bl = data.bottomleft  ; if bl then bl = scale(bl,width,total) end
+--                     local br = data.bottomright ; if br then br = scale(br,width,total) end
+--                     chardata.mathkerns = {
+--                         topleft     = tl,
+--                         ropright    = tr,
+--                         bottomleft  = bl,
+--                         bottomright = br,
+--                     }
+--                 else
+--                     chardata.mathkerns = nil
+--                 end
+--             end
+--             for unicode, data in next, kerns do
+--                 kernone(unicode,data) -- withscriptcode(tfmdata,unicode,data,kernone)
+--                 -- also smaller
+--             end
+--         end
+--     end
+--
+-- end
 
 do
 

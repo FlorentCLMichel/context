@@ -1,0 +1,117 @@
+% language=us
+
+\environment context-2022-style
+
+\startdocument
+  [title={SQL in Metapost},
+   banner={combining technologies},
+   location={context\enspace {\bf 2022}\enspace meeting}]
+
+\starttitle[title=The reason]
+
+\startitemize
+
+\startitem
+    So far I had no real reason but there wat this question on the list about
+    saving values.
+\stopitem
+
+\startitem
+    A natural place to store values is in a \LUA\ table and one can easily save
+    and load these with helpers.
+\stopitem
+
+\startitem
+    Less obvious is to use a database, and a complication with for instance most
+    \SQL\ databases, is that one has to have a service running.
+\stopitem
+
+\startitem
+    A reasonable alternative is \SQLITE\ which uses a file and because it is part
+    of the process it has some overhead.
+\stopitem
+
+\startitem
+    Of course a database mostly makes sense with large quantities of data that
+    needs to be accessed randomly using different lookup criteria.
+\stopitem
+
+\startitem
+    The downside is that one needs to have the library available and but in this
+    case it is a stable one and it does not influence rendering.
+\stopitem
+
+\stopitemize
+
+\stoptitle
+
+\starttitle[title=Libraries]
+
+\startitemize
+
+    \startitem
+        When playing with this early in the \LUATEX\ project we started with
+        native libraries that came with \LUA, and in particular \MYSQL. A simple
+        command line client was used as a start.
+    \stopitem
+
+    \startitem
+        The \LUA\ related libraries were sort of unreliable (and not really
+        maintained) and not implemented that efficiently so I switched to just
+        the main one that came with the client.
+    \stopitem
+
+    \startitem
+        For a while we had \SWIGLIB\ which works okay but in order to use that an
+        infrastructure is needed and we don't see that as our responsibility so
+        that project sort of faded out.
+    \stopitem
+
+    \startitem
+        In the end in \CONTEXT\ we used a minimal \FFI\ interface in \LUATEX.
+    \stopitem
+
+    \startitem
+        In \LUAMETATEX\ we have a few so called optional libraries. These are
+        in fact very lightweight interfaces that assume most work to be done in
+        \LUA. We don't want dependencies and only these few are officially
+        supported in this way. The \SQLITE\ interface is one of them.
+    \stopitem
+
+    \startitem
+        With \CONTEXT\ we ship several \LUA\ support mechanisms for accessing
+        databases. These perform well and we use it for web driven typesetting
+        services (framework).
+    \stopitem
+
+\stopitemize
+
+\stoptitle
+
+\starttitle[title=Prerequisites]
+
+We assume that the \type {sqlite3.dll} is present. Don't forget to remake the
+file database after putting the file in place. On \MSWINDOWS\ the preferred
+location is here:
+
+\starttyping
+E:/tex-context/tex/texmf-win64/bin/lib/luametatex/sqlite/sqlite3.dll
+\stoptyping
+
+If at some point loading fails one can turn on trackers:
+
+\starttyping
+\enabletrackers[sql*]
+\enabletrackers[*lib*]
+\stoptyping
+
+As with any library, using one that comes from the system can be of any version
+and who knows what happened to the \API.
+
+\blank[3*big]
+
+{\em Walk through the demo: context-2022-demo-sql-mps.tex}
+
+\stoptitle
+
+\stopdocument

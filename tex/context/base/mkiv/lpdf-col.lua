@@ -783,7 +783,9 @@ do
 
     local c_cache = setmetatableindex(function(t,m)
         local v = setmetatableindex(function(t,c)
-            local p = { "pdf", "page", "q " .. pdfcolor(m,c) }
+-- fails with scaling .. see bachotex-2018-fonteffects
+--             local p = { "pdf", "page", "q " .. pdfcolor(m,c) }
+            local p = { "pdf", "text", "q " .. pdfcolor(m,c) }
             t[c] = p
             return p
         end)
@@ -811,7 +813,7 @@ do
     local function startcolor(k)
         local m, c = colortoattributes(k)
         local t = transparencytoattribute(k)
-        if t then
+        if t and t ~= unsetvalue then
             return t_cache[t][m][c]
         else
             return c_cache[m][c]

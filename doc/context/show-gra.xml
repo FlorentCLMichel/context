@@ -1,0 +1,545 @@
+<?xml version='1.0'?>
+
+<graphics prefix='show-gra' colorset='6'>
+
+<introduction>
+    <description>
+        <title><logo label="metapost"/> graphics</title>
+        <summary>
+            <p>Once upon a time we started using <logo label="metapost"/>, the graphic
+            companion to <logo label="tex"/>. Since then it has been our main tool for
+            making graphics. Welcome to our little showcase. You can click on the
+            graphic to show the real thing.</p>
+        </summary>
+      </description>
+</introduction>
+
+<graphic>
+    <description>
+        <title>Christmas 1998</title>
+        <summary>
+            <p>This is our 1998 christmas card graphic. It visualizes the count down to
+            the millenium. It's a real count down: there are <math> <apply> <times/>
+            <cn>12</cn> <cn>60</cn> </apply> </math> clocks.</p>
+        </summary>
+    </description>
+    <resources>
+        <snippet>../../metapost/graphics/finals/klokje</snippet>
+        <result>../../metapost/graphics/finals/1998</result>
+    </resources>
+</graphic>
+
+<graphic>
+    <description>
+        <title>Christmas 1999</title>
+        <summary>
+            <p>This candle is the basis for the 1999 christmas card. We let <logo
+            label="metapost"/> generate 100 different candles and let <logo
+            label="tex"/> treat each candle as a word. So, the core of the card
+            is just a typeset pararaph of graphics. Each card itself was different.</p>
+        </summary>
+    </description>
+    <resources>
+        <snippet>../../metapost/graphics/finals/kaarsje</snippet>
+        <result>../../metapost/graphics/finals/1999</result>
+    </resources>
+</graphic>
+
+<graphic>
+    <description>
+        <title>Christmas 2000</title>
+        <summary>
+            <p>Many of the graphics made at <logo label="pragma"/> have one thing in
+            common: randomness. This is also true for the 2000 christmas card, which
+            shows 2001 stars in our company's color.</p>
+        </summary>
+    </description>
+    <resources>
+        <snippet>../../metapost/graphics/finals/ster</snippet>
+        <result>../../metapost/graphics/finals/2000</result>
+    </resources>
+</graphic>
+
+<graphic>
+    <description>
+        <title>Christmas 2001</title>
+        <summary>
+            <p>This tree was the building block of one of the concepts for the 2000
+            christmas card, but the overall design was too inefficient for an inkjet
+            printer. In 2001 support for transparency was added to <logo
+            label="context"/>, so we gave this tree another chance. Instead of random
+            green colors, we now use the colors of the dutch flag.</p>
+        </summary>
+    </description>
+    <resources>
+        <snippet>../../metapost/graphics/finals/boompje</snippet>
+        <result>../../metapost/graphics/finals/2001</result>
+    </resources>
+</graphic>
+
+
+<graphic>
+    <description>
+        <title>Christmas 2002</title>
+        <summary>
+            <p>Here is another christmas tree. This time we randomize the trunk and body
+            out of needles. The randomization takes place within predefined shapes. The
+            composition is made out of three times 2003 needles, wood chips and snowflakes.
+            Of course each card is unique.</p>
+        </summary>
+    </description>
+    <resources>
+        <snippet>../../metapost/graphics/finals/spar</snippet>
+        <result>../../metapost/graphics/finals/2002</result>
+    </resources>
+</graphic>
+
+<graphic>
+    <description>
+        <title>Christmas 2003</title>
+        <summary>
+            <p>This time the main picture counts 2000 components with the triangular shape
+            familiar from Christmas trees. The 4<super>th</super> year of the millenium
+            is represented by the four shapes below the text; for them we used our
+            company colors. If you look for a long time to graphics like this, you
+            imagine seeing patterns in what actually is a random graphic.</p>
+        </summary>
+    </description>
+    <resources>
+        <snippet>../../metapost/graphics/finals/driehoekje</snippet>
+        <result>../../metapost/graphics/finals/2003</result>
+    </resources>
+</graphic>
+
+<graphic>
+    <description>
+        <title>Christmas 2004</title>
+        <summary>
+            <p>I started (as usual) with some random graphic, this time using
+            the Hermann Zapf's Optima Nova font. Lack of space for detail made
+            me drop that variant and stick to simple transformations. This font
+            is one of the most beautiful font design I know. Optima Nova also
+            translates well into a happy new year wish.</p>
+        </summary>
+    </description>
+    <resources>
+        <snippet>../../metapost/graphics/finals/optima</snippet>
+        <result>../../metapost/graphics/finals/2004</result>
+    </resources>
+</graphic>
+
+<graphic>
+    <description>
+        <title>New Year 2005</title>
+        <summary>
+            <p>This time we show all the roman numerals I-MMV as one long
+            sequence, typeset in a square paragraph with linebreaks chosen
+            in such a way that we get a full block of text. A typical <logo
+            label="tex"/> job. Here we show the version with Hermann Zapfs
+            brand new Palatino Nova, but the card itself was done in Optima
+            Nova with <em>HZ</em> optimization.</p>
+        </summary>
+    </description>
+    <resources>
+        <snippet>../../metapost/graphics/finals/mmvi</snippet>
+        <result>../../metapost/graphics/finals/2005</result>
+    </resources>
+</graphic>
+
+<graphic>
+    <description>
+        <title>New Year 2007</title>
+        <summary>
+            <p>Halfway 2006 the cowfont (koeieletters) was added to the
+            <logo label="context"/> distribution. This font is a combined
+            effort of Duane Bibby, Taco Hoekwater and Hans Hagen. In
+            addition to regular characters, it also provides cow-math and
+            bunch of logo's, accessible as ligatures. Apart from being
+            a nice font, it also provides a playground for (new) <logo
+            label="tex"/> features.</p>
+        </summary>
+    </description>
+    <resources>
+        <snippet>../../metapost/graphics/finals/onecow</snippet>
+        <result>../../metapost/graphics/finals/2006</result>
+    </resources>
+</graphic>
+
+<graphic>
+    <description>
+        <title>New Year 2008</title>
+        <summary>
+            <p>In 2007 Hermann Zapf, Taco Hoekwater, Volker Schaa en Hans Hagen
+            cooperated in a project that resulted in a reshaped design of the
+            familiar Euler typefaces which is dedicated to Don Knuth's 70th birthday.
+            Since it is a math font, in this card we used some number trickery.
+            In addition to the traditional Euler fonts, we used a special
+            text version.</p>
+        </summary>
+    </description>
+    <resources>
+        <snippet>../../metapost/graphics/finals/euler</snippet>
+        <result>../../metapost/graphics/finals/2007</result>
+    </resources>
+</graphic>
+
+<graphic>
+    <description>
+        <title>New Year 2009</title>
+        <summary>
+            <p>Sometime in 2008 the <logo label="metapost"/> library was added to <logo
+            label="luatex"/> and we celebrated that with implementing runtime
+            generation of Don Knuths punk font. The card is generated using
+            <logo label="tex"/>, <logo label="metapost"/> and <logo
+            label="lua"/>. A careful examiner can find several occurrences of
+            three words that were frequently heard in 2008.</p>
+        </summary>
+    </description>
+    <resources>
+        <snippet>../../metapost/graphics/finals/punk</snippet>
+        <result>../../metapost/graphics/finals/2008</result>
+    </resources>
+</graphic>
+
+<graphic>
+    <description>
+        <title>New Year 2010</title>
+        <summary>
+            <p>Around the time that the anual card was to be made, the Climate
+            Conference in Copenhagen turned out to be a failure. The CO\low{2}
+            concentration in the atmosphere is getting close to 400 ppm in 2009 and
+            it will get worse. Hopefully we will never see a concentration of 2010
+            ppm.</p>
+        </summary>
+    </description>
+    <resources>
+        <snippet>../../metapost/graphics/finals/co2</snippet>
+        <result>../../metapost/graphics/finals/2009</result>
+    </resources>
+</graphic>
+
+<graphic>
+    <description>
+        <title>New Year 2011</title>
+        <summary>
+            <p>As 1 plus 1 equals 2 and 1 minus 1 equals 0, on this card we create
+            the 20 out of ones. The basic shapes of the numbers are taken from the
+            punk font. The ones got a serif to make things look nicer and its
+            randomized path gives some spice to the whole.</p>
+        </summary>
+    </description>
+    <resources>
+        <snippet>../../metapost/graphics/finals/2-0-1-1</snippet>
+        <result>../../metapost/graphics/finals/2010</result>
+    </resources>
+</graphic>
+
+<graphic>
+    <description>
+        <title>New Year 2012</title>
+        <summary>
+            <p>The fact that 12 equals two times 6 brings us to dice. Each card that
+            we sent out had (as usual) a different look and shows a (random) series of dice
+            that accumulate to 2012. We end up with 24 times 24 dice on each card and it is
+            a nice excercise in statistics to figure out why there are so many islands
+            with similar dice.</p>
+        </summary>
+    </description>
+    <resources>
+        <snippet>../../metapost/graphics/finals/dices</snippet>
+        <result>../../metapost/graphics/finals/2011</result>
+    </resources>
+</graphic>
+
+<graphic>
+    <description>
+        <title>New Year 2013</title>
+        <summary>
+            <p>All this endless talk about crisis and disaster coming made me wonder if
+            it has been coded in the DNA of time. This years card is a concatination of
+            all year in zeros and ones from 1 till now. Indeed, hidden in this sequence
+            are several instances of <em>crisis</em> encoded in morse. Not much crisis
+            ahead.</p>
+        </summary>
+    </description>
+    <resources>
+        <snippet>../../metapost/graphics/finals/crisis</snippet>
+        <result>../../metapost/graphics/finals/2012</result>
+    </resources>
+</graphic>
+
+<graphic>
+    <description>
+        <title>New Year 2014</title>
+        <summary>
+            <p>This year we use the four digits that make up the number 2014 to get the
+            graphic, so we have 0-4 with 3 missing. They make four points on each side
+            of a square and we connect them into closed shapes, unless they are the same.
+            The combinations of four points also determine the colors. This gives the
+            visual effect of seeing triangles and these make stars. Each card is (as
+            usual) different, but only in the order in which the colors are assigned
+            differs.</p>
+        </summary>
+    </description>
+    <resources>
+        <snippet>../../metapost/graphics/finals/foursome</snippet>
+        <result>../../metapost/graphics/finals/2013</result>
+    </resources>
+</graphic>
+
+<graphic>
+    <description>
+        <title>New Year 2015</title>
+        <summary>
+            <p>The card is using the numbers 20 and 15 to create a horizontal and
+            vertical pattern. By alternating trough the numbers we get a spiked path
+            while by going back to the starting point we get an alternation due to
+            the way paths are rendered. This turns a rather simple graphic into a
+            more chaotic pattern mess.</p>
+        </summary>
+    </description>
+    <resources>
+        <snippet>../../metapost/graphics/finals/psfilltrick</snippet>
+        <result>../../metapost/graphics/finals/2014</result>
+    </resources>
+</graphic>
+
+<graphic>
+    <description>
+        <title>New Year 2016</title>
+        <summary>
+            <p>This year using the peace sign makes more than sense. And as peace
+            has a random property the 2016 signs are rotated randomly which
+            gives a random pattern. Of course each card we send out is different
+            too.</p>
+        </summary>
+    </description>
+    <resources>
+        <snippet>../../metapost/graphics/finals/peace</snippet>
+        <result>../../metapost/graphics/finals/2015</result>
+    </resources>
+</graphic>
+
+<graphic>
+    <description>
+        <title>New Year 2017</title>
+        <summary>
+            <p>We can only hope that 2017 is a better and more constructive year
+            for the European Union, which is why this years card draws the 2016
+            map of the union using the symbol that decorates its flag &#x2014;
+            times per randomized card. In a few years the contours might look
+            quite different. Imagine for a while your country being added to or
+            removed from the picture.</p>
+        </summary>
+    </description>
+    <resources>
+        <snippet>../../metapost/graphics/finals/euroster</snippet>
+        <result>../../metapost/graphics/finals/2016</result>
+    </resources>
+</graphic>
+
+<graphic>
+    <description>
+        <title>New Year 2018</title>
+        <summary>
+            <p>As we want a green world, this year uses the set of three emoji
+            that visualizes the world as we know it. We show 20 times 18 symbols
+            in sets of three, of course randomized a bit. The latest font
+            trickery is used: the emoji themselves have color palets that use
+            transparencies (we overload the normal colors as set in the font) and
+            the text font used is a so called variable font.</p>
+        </summary>
+    </description>
+    <resources>
+        <snippet>../../metapost/graphics/finals/globes</snippet>
+        <result>../../metapost/graphics/finals/2017</result>
+    </resources>
+</graphic>
+
+<graphic>
+    <description>
+        <title>New Year 2019</title>
+        <summary>
+            <p>Late 2018 I saw a nice spread in the paper of the universe as a
+            whole but very course. The colors were as in this card and as usual
+            artifical but nice. It reminded me of reading <quotation>Rare
+            Earth</quotation> by P.D.Ward and the fact that our fragile
+            planet is kind of unique and we're spoiling it. Let's hope that
+            sanity kicks in before climate change backfires on us. As usual each
+            card we send is unique (randomized) too.</p>
+        </summary>
+    </description>
+    <resources>
+        <snippet>../../metapost/graphics/finals/galaxy</snippet>
+        <result>../../metapost/graphics/finals/2018</result>
+    </resources>
+</graphic>
+
+<graphic>
+    <description>
+        <title>New Year 2020</title>
+        <summary>
+            <p>In 2019 an updated <logo label="metapost"/> library showed up in
+            <logo label="luametatex"/>, and, using the additional extension
+            interface, support for contour plots was added. This graphic was one
+            of the tests and it reminded me of a history teacher explaining that
+            it sometimes looks like idea that <quotation>l'histoire se
+            répète</quotation>. Let's just hope that errors from the past don't
+            get repeated in the years ahead.</p>
+        </summary>
+    </description>
+    <resources>
+        <snippet>../../metapost/graphics/finals/contour</snippet>
+        <result>../../metapost/graphics/finals/2019</result>
+    </resources>
+</graphic>
+
+<graphic>
+    <description>
+        <title>New Year 2022</title>
+        <summary>
+            <p>When tagging Covid variants the Greek alphabet is used and we're
+            currently a the Delta, so (one of the) the 2021 card plays with that.
+            Let's hope that we sorted out matters before we reach Omega and run
+            out of names.</p>
+        </summary>
+    </description>
+    <resources>
+        <snippet>../../metapost/graphics/finals/justdelta</snippet>
+        <result>../../metapost/graphics/finals/2021</result>
+    </resources>
+</graphic>
+
+<graphic>
+    <description>
+        <title>New Year 2023</title>
+        <summary>
+            <p>In 2022 we added some more (large) path magic to <logo
+            label="metapost"/> and here it gets applied: we basically have a
+            single path dashed with arrows. The slight randomness reflects the
+            fact that we can never predict the course history takes and 2022 is a
+            good example of that.</p>
+        </summary>
+    </description>
+    <resources>
+        <snippet>../../metapost/graphics/finals/onearrow</snippet>
+        <result>../../metapost/graphics/finals/2022</result>
+    </resources>
+</graphic>
+
+<graphic>
+    <description>
+        <title>New Year 2024</title>
+        <summary>
+            <p>In 2023, in the perspective of the <logo label="luametatex"/>
+            project, we glued <logo label="metapost"/>, <logo label="lua"/>,
+            <logo label="tex"/> and <logo label="potrace"/>. Because we also
+            improved the math machinery this years graphic reflects both efforts.
+            We also made a matching game of it and the small graphic is one of
+            the (possible) pieces.</p>
+        </summary>
+    </description>
+    <resources>
+        <snippet>../../metapost/graphics/finals/onepuzzlepiece</snippet>
+        <result>../../metapost/graphics/finals/2023</result>
+    </resources>
+</graphic>
+
+<graphic>
+    <description>
+        <title>New Year 2025</title>
+        <summary>
+            <p>The past years again made clear that one person surrounded by
+            similar mentalities can do a lot of harm to individuals, groups, a
+            country, the world.</p>
+        </summary>
+    </description>
+    <resources>
+        <snippet>../../metapost/graphics/finals/puppet</snippet>
+        <result>../../metapost/graphics/finals/2024</result>
+    </resources>
+</graphic>
+
+<graphic>
+    <description>
+        <title>New Year 2026</title>
+        <summary>
+            <p>In 2025 it had become clear that so called artificial intelligence
+            could dominate the world especially when abused by humans. So we had
+            to protect this years card to be less readable by bots.</p>
+        </summary>
+    </description>
+    <resources>
+        <snippet>../../metapost/graphics/finals/human</snippet>
+        <result>../../metapost/graphics/finals/2025</result>
+    </resources>
+</graphic>
+
+<graphic>
+    <description>
+        <title>CD Cover MAPS</title>
+        <summary>
+            <p>In 2001 the Dutch Speaking <logo label="tex"/> User group composed a
+            <logo label="cdrom"/> with all issues of their journal. The <logo
+            label="cdrom"/> comes with abstracts and an index in the form of an
+            interactive <logo label="pdf"/> document. Here you see how the <logo
+            label="cdrom"/> looked like.</p>
+        </summary>
+    </description>
+    <resources>
+        <snippet>../../metapost/graphics/finals/mapsje</snippet>
+        <result>../../metapost/graphics/finals/mapscd</result>
+    </resources>
+</graphic>
+
+<graphic>
+    <description>
+        <title>Invitation</title>
+        <summary>
+            <p>This counter was used in an invitation card for Volker
+            <subsentence>ambassador of Dante e.V.</subsentence> Schaa's
+            50<super>th</super> birthday party. The text was typeset in Palatino,
+            one of Zapfs fonts, Hermann Zapf being one of Volkers favorite
+            designers. Each invitation was unique due to <logo label="metapost"/>
+            random generator. The colors run from greenish to blueish if fifty
+            steps.</p>
+        </summary>
+    </description>
+    <resources>
+        <snippet>../../metapost/graphics/finals/five</snippet>
+        <result>../../metapost/graphics/finals/volker</result>
+    </resources>
+</graphic>
+
+<graphic>
+    <description>
+        <title>CD Cover PRAGMA (1)</title>
+        <summary>
+            <p>This is the first of a series of <logo label="cdrom"/> covers that we use
+            at <logo label="pragma"/>. A certain amount of simple manual labour is
+            compensated by the complicated graphic.</p>
+        </summary>
+    </description>
+    <resources>
+        <snippet>../../metapost/graphics/finals/morse</snippet>
+        <result>../../metapost/graphics/finals/hoesje-1</result>
+    </resources>
+</graphic>
+
+<graphic>
+    <description>
+        <title>CD Cover PRAGMA (2)</title>
+        <summary>
+            <p><logo label="context"/> comes from the Netherlands, and traditionally
+            this small country is associated with wind mills. These look like this.
+            We use quote some transparencies here so you can imagine that it takes
+            some time to render this picture on a printer.</p>
+        </summary>
+    </description>
+    <resources>
+        <snippet>../../metapost/graphics/finals/molen</snippet>
+        <result>../../metapost/graphics/finals/hoesje-2</result>
+    </resources>
+</graphic>
+
+</graphics>

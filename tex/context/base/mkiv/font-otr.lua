@@ -2242,8 +2242,9 @@ local function readdata(f,offset,specification)
     if variabledata then
         -- These have been used so we can wipe them. Actually it could be done
         -- right after we used them.
-        variabledata.gdef  = nil
-        variabledata.avar2 = nil
+        variabledata.gdef     = nil
+        variabledata.avar2    = nil
+     -- variabledata.features = nil % when okay
     end
 
     if specification.tableoffsets then
@@ -2364,7 +2365,12 @@ local function loadfont(specification,n,instance)
         specification.instance = specification.instance or instance
     end
     local function message(str)
-        report("fatal error in file %a: %s\n%s",specification.filename,str,debug and debug.traceback())
+        report("fatal error in file %a: %s",specification.filename,str)
+        local debugger      = utilities and utilities.debugger
+        local showtraceback = debugger  and debugger.showtraceback
+        if showtraceback then
+            showtraceback()
+        end
     end
     local ok, result = xpcall(loadfontdata,message,specification)
     if ok then
@@ -2485,6 +2491,7 @@ function readers.loadfont(filename,n,instance)
                 ligaturecarets   = fontdata.ligaturecarets,
                 variabledata     = fontdata.variabledata,
                 foundtables      = fontdata.foundtables,
+                stylistics       = fontdata.stylistics,
             },
         }
     end

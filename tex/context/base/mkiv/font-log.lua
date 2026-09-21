@@ -70,11 +70,11 @@ statistics.register("loaded fonts", function()
         for name, used in table.sortedhash(usedfonts) do
             n = n + 1
             local base = basename(name)
-            if complete then
-                t[n] = format("%s -> %s",used,base)
-            else
+         -- if complete then
+         --     t[n] = format("%s -> %s",used,base)
+         -- else
                 t[n] = base
-            end
+         -- end
             local treatment = treatmentdata[base]
             if treatment and treatment.comment then
                  t[n] = format("%s (%s)",t[n],treatment.comment)

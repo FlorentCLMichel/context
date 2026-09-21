@@ -139,18 +139,19 @@ local dwhatever = (double * whatever)^1
 
 -- see syst-aux.lua for historic variants
 
-local global    = nil
-local protected = nil
-local permanent = nil
-local expanded  = nil
-local mutable   = nil
-local immutable = nil
-local optional  = nil
-local tolerant  = nil
-local instance  = nil
-local frozen    = nil
-local csname    = nil
-local rest      = nil
+local isglobal      = nil
+local semiprotected = nil
+local protected     = nil
+local permanent     = nil
+local expanded      = nil
+local mutable       = nil
+local immutable     = nil
+local optional      = nil
+local tolerant      = nil
+local instance      = nil
+local frozen        = nil
+local csname        = nil
+local rest          = nil
 
 local function catcodes_s()
     setcatcode(32,10) -- space
@@ -185,19 +186,19 @@ local pattern = (
         spaces * (
             ( P("spaces")        * space / catcodes_s )
           + ( P("nospaces")      * space / catcodes_n )
-          + ( P("global")        * space / function()  global    = true end)
-          + ( P("protected")     * space / function()  protected = 1    end)
-          + ( P("semiprotected") * space / function()  protected = 2    end)
-          + ( P("permanent")     * space / function()  permanent = true end)
-          + ( P("expanded")      * space / function()  expanded  = true end)
-          + ( P("tolerant")      * space / function()  tolerant  = true end)
-          + ( P("instance")      * space / function()  instance  = true end)
-          + ( P("frozen")        * space / function()  frozen    = true end)
-          + ( P("mutable")       * space / function()  mutable   = true end)
-          + ( P("immutable")     * space / function()  immutable = true end)
-          + ( P("unexpanded")    * space / function()  protected = 1    end)
-          + ( option             * space / function(s) tolerant  = true
-                                                       optional  = s    end)
+          + ( P("global")        * space / function()  isglobal      = true end)
+          + ( P("protected")     * space / function()  protected     = true end)
+          + ( P("semiprotected") * space / function()  semiprotected = true end)
+          + ( P("permanent")     * space / function()  permanent     = true end)
+          + ( P("expanded")      * space / function()  expanded      = true end)
+          + ( P("tolerant")      * space / function()  tolerant      = true end)
+          + ( P("instance")      * space / function()  instance      = true end)
+          + ( P("frozen")        * space / function()  frozen        = true end)
+          + ( P("mutable")       * space / function()  mutable       = true end)
+          + ( P("immutable")     * space / function()  immutable     = true end)
+          + ( P("unexpanded")    * space / function()  protected     = true end)
+          + ( option             * space / function(s) tolerant      = true
+                                                       optional      = s    end)
         )
     )^0
   * spaces * ( C((1-S(" #["))^1) )
@@ -211,37 +212,40 @@ local pattern = (
 local ctx_dostarttexdefinition = context.dostarttexdefinition
 
 local function texdefinition_one(str)
-    global    = false
-    protected = false
-    permanent = false
-    expanded  = false
-    mutable   = false
-    immutable = false
-    optional  = 0
-    tolerant  = false
-    instance  = false
-    frozen    = false
-    csname, rest = lpegmatch(pattern,str)
--- print("str  : " .. str)
--- print("cs   : " .. csname)
--- print("rest : " .. rest)
+    isglobal      = false
+    protected     = false
+    semiprotected = false
+    permanent     = false
+    expanded      = false
+    mutable       = false
+    immutable     = false
+    optional      = 0
+    tolerant      = false
+    instance      = false
+    frozen        = false
+    csname, rest  = lpegmatch(pattern,str)
+ -- print("str  : " .. str)
+ -- print("cs   : " .. csname)
+ -- print("rest : " .. rest)
     ctx_dostarttexdefinition()
 end
 
+-- todo: table approach
+
 local function texdefinition_two()
     context (
-        (tolerant  and [[\tolerant]]  or "") ..
-        (frozen    and [[\frozen]]    or "") ..
-        (protected and (protected == 1 and [[\protected]] or [[\semiprotected]]) or "") ..
-        (permanent and [[\permanent]] or "") ..
-        (instance  and [[\instance]]  or "") ..
-        (mutable   and [[\mutable]]   or "") ..
-        (immutable and [[\immutable]] or "") ..
---         [[\expandafter]] .. (global and (expanded and [[\xdef]] or [[\gdef]]) or (expanded and [[\edef]] or [[\def]])) ..
---         [[\csname ]] .. csname .. [[\endcsname ]] ..
-        (global and (expanded and [[\xdefcsname ]] or [[\gdefcsname ]]) or (expanded and [[\edefcsname ]] or [[\defcsname ]])) ..
-        csname .. [[\endcsname ]] ..
-        rest
+        (tolerant      and [[\tolerant]]      or "")
+     .. (frozen        and [[\frozen]]        or "")
+     .. (protected     and [[\protected]]     or "")
+     .. (semiprotected and [[\semiprotected]] or "")
+     .. (permanent     and [[\permanent]]     or "")
+     .. (instance      and [[\instance]]      or "")
+     .. (mutable       and [[\mutable]]       or "")
+     .. (immutable     and [[\immutable]]     or "")
+     .. (isglobal      and (expanded and [[\xdefcsname ]] or [[\gdefcsname ]])
+                        or (expanded and [[\edefcsname ]] or [[\defcsname ]]))
+     .. csname .. [[\endcsname ]]
+     .. rest
     )
 end
 

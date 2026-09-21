@@ -1,0 +1,236 @@
+\setupencoding[default=ec] % needed for fourier
+
+% \setupfontsynonym[Serif][handling=quality]
+% \setupalign[hanging]
+
+\setuplayout
+  [width=middle,
+   height=middle,
+   header=2cm,
+   footer=2cm,
+   topspace=1.5cm,
+   backspace=2cm]
+
+\usetypescript
+  [fourier][ec]
+
+\setupbodyfont
+  [fourier,12pt]
+
+\setupcolors
+  [state=start]
+
+\setupwhitespace
+  [big]
+
+\definelayer[page][width=\paperwidth,height=\paperheight]
+
+\definecolor[darkblue]  [c=1,m=1,y=.3]
+\definecolor[darkred]   [c=.3,m=1,y=0]
+\definecolor[darkyellow][c=0,m=0,y=.7]
+
+\dostepwiserecurse091{\definecolor[xtag:\recurselevel][black]}
+
+\setupfooter
+  [style=\bfa,
+   color=darkblue]
+
+\setupheader
+  [style=\bfa,
+   color=darkblue]
+
+\setupheadertexts
+  [pagenumber]
+
+\setupfootertexts
+  [XML DIR]
+
+\starttext
+
+\startTEXpage
+
+  \setlayerframed
+    [page]
+    [preset=middle]
+    [frame=off,
+     width=\paperwidth,
+     height=\paperheight,
+     backgroundoffset=10pt,
+     background=color,
+     backgroundcolor=darkyellow]
+    {}
+
+  \setlayer
+    [page]
+    [preset=righttop,offset=.02\paperheight]
+    {\rotate[rotation=270]{\scale[height=.25\paperheight]{\darkblue\bf X{\kern.075em}M{\kern0em}L}}}
+
+  \setlayer
+    [page]
+    [preset=leftbottom,offset=.02\paperheight]
+    {\rotate[rotation=270]{\scale[height=.25\paperheight]{\darkblue\bf D{\kern-0.02em}I{\kern-0.005em}R}}}
+
+  \setlayer
+    [page]
+    [preset=middle]
+    {\rotate[rotation=270]{\scale[height=.05\paperheight]{\darkred\bf Hans Hagen -- Pragma ADE}}}
+
+  \tightlayer[page]
+
+\stopTEXpage
+
+This document discusses a (simple) interface from \CONTEXT\ to the
+underlying file system. For the moment this discription is limited to
+simple  calls to utilities, the schema, and the modules. A directory
+listing is generated as follows:
+
+\starttyping
+xmltools --dir --pattern=x*.tex --output=xmldir.xml
+\stoptyping
+
+You can do that before/between runs, but also from within \CONTEXT:
+
+\startbuffer
+\executesystemcommand
+  {xmltools --dir --pattern=x*.tex --output=xmldir.xml}
+\stopbuffer
+
+\typebuffer
+
+or when that fails:
+
+\startbuffer
+\executesystemcommand
+  {texmfstart xmltools --dir --pat=x*.tex --out=xmldir.xml}
+\stopbuffer
+
+\typebuffer
+
+or more efficient, only in the first run:
+
+\startbuffer
+\startmode[*first]
+  \executesystemcommand
+    {xmltools --dir --pattern=x*.tex --output=xmldir-1.xml}
+\stopmode
+\stopbuffer
+
+\typebuffer \getbuffer
+
+This produces a file that (on my system) looks as follows:
+
+\typefile{xmldir-1.xml}
+
+Such a file conforms to the following (relax-ng) specification:
+
+\showRNGcomponent [xmldir.rng] [grammar]
+
+The parent element is defined as follows:
+
+\showRNGcomponent [xmldir.rng] [files]
+
+This element has zero or more children:
+
+\showRNGcomponent [xmldir.rng] [directory]
+
+A directory describes files:
+
+\showRNGcomponent [xmldir.rng] [file]
+
+A file element provides the following information:
+
+\showRNGcomponent [xmldir.rng] [descriptors]
+
+As you can see, we kept things simple. You can influence the data
+set with the following options to \type {textools}:
+
+\starttabulate[|Tlf{\tt}|p|]
+\NC recurse   \NC recurse into subdirectories \NC \NR
+\NC pattern   \NC the files to list           \NC \NR
+\NC output    \NC the output file             \NC \NR
+\NC url       \NC an url to add to the file   \NC \NR
+\NC stripname \NC strip basename from pattern \NC \NR
+\NC root      \NC the path to run on          \NC \NR
+\stoptabulate
+
+Juts for fun, we will now process that file:
+
+\startmode[*first]
+  \executesystemcommand
+    {xmltools --dir --pattern=x*.tex --output=xmldir-1.xml}
+  \executesystemcommand
+    {texexec --use=dir-01 --pdf xmldir-1.xml}
+\stopmode
+
+\starttyping
+texexec --use=dir-01 --pdf xmldir-1.xml
+\stoptyping
+
+This produces \in {figure} [fig:xmldir-1]. As you may expect, the
+entries are hyperlinks to the files. This also explains the \type
+{--url} option to  \type {xmltools} and the \type {url} attribute. We
+use this module to provide controlled access to files (graphics) on
+a server.
+
+\placefigure
+  [here]
+  [fig:xmldir-1]
+  {The output of module \type {x-dir-01}.}
+  {\externalfigure[xmldir-1.pdf][width=\textwidth]}
+
+\startmode[*first]
+  \executesystemcommand
+    {xmltools --dir --pattern=../allkind/m*.pdf --output=xmldir-2.xml}
+  \executesystemcommand
+    {texexec --use=dir-02 --pdf xmldir-2.xml}
+\stopmode
+
+\starttyping
+texexec --use=dir-02 --pdf xmldir-2.xml
+\stoptyping
+
+\startbuffer
+\startcombination[2*2]
+  {\externalfigure[xmldir-2.pdf][background=color,backgroundcolor=gray,width=.45\textwidth,page=1]} {}
+  {\externalfigure[xmldir-2.pdf][background=color,backgroundcolor=gray,width=.45\textwidth,page=2]} {}
+  {\externalfigure[xmldir-2.pdf][background=color,backgroundcolor=gray,width=.45\textwidth,page=3]} {}
+  {\externalfigure[xmldir-2.pdf][background=color,backgroundcolor=gray,width=.45\textwidth,page=4]} {}
+\stopcombination
+\stopbuffer
+
+\placefigure
+  [here]
+  [fig:xmldir-2]
+  {The output of module \type {x-dir-02}.}
+  {\getbuffer}
+
+If you want information about a file you can use the following
+module:
+
+\startbuffer
+\usemodule[dir-05]
+\stopbuffer
+
+\typebuffer \getbuffer
+
+\startbuffer
+\getfilestate{xxmldir.tex}
+
+\starttabulate[|||]
+\HL
+\NC name \NC \getvariable{filestate}{name} \NC \NR
+\NC base \NC \getvariable{filestate}{base} \NC \NR
+\NC type \NC \getvariable{filestate}{type} \NC \NR
+\NC size \NC \getvariable{filestate}{size} \NC \NR
+\NC date \NC \getvariable{filestate}{date} \NC \NR
+\HL
+\stoptabulate
+\stopbuffer
+
+\typebuffer
+
+This will produce:
+
+\getbuffer
+
+\stoptext

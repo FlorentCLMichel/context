@@ -449,6 +449,7 @@ local flush_character, flush_space  do
                         -- can be a space injected instead of glue
                     elseif width == true or height == true or depth == true then
                         wd, ht, dp = getwhd(current,true)
+-- wd, ht, dp = getglyphdimensions(current) -- factor, sx, sy, slant, weight =
                     end
                     if width == true then
                         width = wd or 0
@@ -485,9 +486,12 @@ local flush_character, flush_space  do
                             if color then
                                 vfinjectors.startcolor(pos_h,pos_v,color) -- takes packet or string
                             end
-                            width  = width  * sx
-                            height = height * sy
-                            depth  = depth  * sy
+--
+-- testcase: \definefontfeature[bbox][boundingbox=frame]
+--
+--                             width  = width  * sx
+--                             height = height * sy
+--                             depth  = depth  * sy
                             flushspecialrule(pos_h,pos_v,pos_r,width,height,depth,line,outline,baseline)
                             if color then
                                 vfinjectors.stopcolor()

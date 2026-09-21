@@ -460,26 +460,3 @@ do -- png | jpg | profiles
     end
 
 end
-
-if CONTEXTLMTXMODE > 0 then
-
-    -- This might also work ok in mkiv but is yet untested. Anyway, it's experimental as we
-    -- go through TeX which is is inefficient. I'll improve the buffer trick.
-
-    local function remap(specification)
-        local fullname = specification.fullname
-        if fullname then
-            local only  = file.nameonly(fullname)
-            local cache = specification.cache or ""
-            local name  = formatters["svg-%s-inclusion"](only)
-            local code  = formatters["\\includesvgfile[%s][cache=%s]\\resetbuffer[%s]"](fullname,cache,name)
-            buffers.assign(name,code)
-            specification.format   = "buffer"
-            specification.fullname = name
-        end
-        return specification
-    end
-
-    figures.remappers.svg = { mp = remap }
-
-end

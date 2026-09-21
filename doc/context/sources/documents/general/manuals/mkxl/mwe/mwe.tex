@@ -1,0 +1,71 @@
+
+% language=us runpath=texruns:manuals/mwe
+
+\usemodule[scite]
+
+\setuplayout
+  [middle]
+
+\setupbodyfont[pagella,12pt]
+
+\setupwhitespace
+  [big]
+
+\setupalign
+  [verytolerant,stretch]
+
+\setupdocument
+  [title=No Title,
+   before=\setups{titlepage}]
+
+\startsetups[titlepage]
+\startMPpage
+    picture p ; p := image (
+        draw textext("\tt\bf\darkyellow M{\darkred N}WE")   xysized (PaperWidth,PaperHeight/3) shifted (0,3PaperHeight/3);
+        draw textext("\tt\bf\darkyellow {\darkgreen N}WME") xysized (PaperWidth,PaperHeight/3) shifted (0,2PaperHeight/3);
+        draw textext("\tt\bf\darkyellow ME{\darkblue N}W")  xysized (PaperWidth,PaperHeight/3) shifted (0,1PaperHeight/3);
+    ) ;
+    fill boundingbox p withcolor .8 white;
+    draw p xysized (PaperWidth-10mm,PaperHeight-10mm) shifted (0,5mm) ;
+\stopMPpage
+\stopsetups
+
+\noheaderandfooterlines
+
+\startdocument
+
+This is how a minimal (non) working example looks like. The more minimal it is,
+the more likely you will get an answer. Remove everything from your examples
+which isn't necessary to show the problem:
+
+\startitemize[packed]
+    \startitem the page layout \stopitem
+    \startitem the font settings \stopitem
+    \startitem the title page \stopitem
+    \startitem settings than don't matter \stopitem
+\stopitemize
+
+Just a simple:
+
+\starttyping[option=TEX]
+\starttext
+    a dozen lines at most
+\stoptext
+\stoptyping
+
+Like this:
+
+\starttyping[option=TEX]
+\starttext
+    an example
+\stoptext
+\stoptyping
+
+where the question is \quotation {example question}.
+
+If you have a complex workflow, and more files are needed, make a zip and put it
+somewhere to download.
+
+Wolfgang & Hans
+
+\stopdocument

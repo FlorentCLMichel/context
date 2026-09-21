@@ -1,0 +1,172 @@
+% language=us
+
+\environment context-2024-style
+
+\startdocument
+  [title={improvements},
+   banner={recent and upcoming}, %{what has been done last year},
+   location={context\enspace {\bf 2024}\enspace meeting}]
+
+\starttitle[title=Development]
+
+\startitemize
+\startitem The \LUAMETATEX\ engine converges, we do a lot of experiments that can lead to extensions. \stopitem
+\startitem The code base gets cleaner and we keep optimizing rendering and fixing issues. \stopitem
+\startitem No (for the user) visible fundamental changes are expected but never say never. \stopitem
+\startitem Stepwise more documentation gets added and existing manuals get extended. \stopitem
+\startitem We try to report as much as possible on developments (ontarget, musings, articles). \stopitem
+\startitem Quite some time goes in accommodating what is out of our sphere of influence. \stopitem
+\stopitemize
+
+\stoptitle
+
+\starttitle[title=Interfacing]
+
+\startitemize
+\startitem We support nested brackets in parameters. \stopitem
+\startitem We have some new (user) units, for example (see low level manuals):
+    \startitemize[packed]
+        \startitem columns : \type {cw} and \type {cd} \stopitem
+        \startitem page    : \type {ph} and \type {pw} \stopitem
+        \startitem text    : \type {th} and \type {tw} \stopitem
+        \startitem size    : \type {hs} and \type {vs} \stopitem
+        \startitem fonts   : \type {fs} (bodyfont), \type {fa} (asc), \type {fd} (desc) and \type {fc} (cap) \stopitem
+    \stopitemize
+\stopitem
+\stopitemize
+
+\stoptitle
+
+\starttitle[title=Typesetting]
+
+We (Mikael and Hans) show some recent additions and experiments (small demo files):
+
+\startitemize[columns,two]
+\startitem rivers \stopitem
+\startitem skylining \stopitem
+\startitem vz (vertical hz) \stopitem
+\startitem limiting stretch \stopitem
+\startitem fixing box stretch \stopitem
+\startitem rule options (like dashes) \stopitem
+\startitem stacking \stopitem
+\startitem hanging left & right verbatim \stopitem
+\startitem fitness, twins \stopitem
+\startitem excepts \stopitem
+\startitem more widow & club control \stopitem
+\stopitemize
+
+\vfill
+
+{\em Note: there were accompanying talks by Mikael and Keith that went into more detail about the par builder.}
+
+\stoptitle
+
+\starttitle[title=Languages]
+
+\startitemize
+\startitem Team Tomas has added and will add support for more languages (labels etc). \stopitem
+\stopitemize
+
+\stoptitle
+
+\starttitle[title=Data]
+
+\startitemize
+\startitem The character database (\type {char-def.lua}) gets better over time (as side effect of Mikael and Hans working on math). \stopitem
+\startitem Wolfgang updated and interface setups and did some quality control in the process. \stopitem
+\stopitemize
+
+\stoptitle
+
+\starttitle[title=Fonts]
+
+\startitemize
+\startitem We try to handle the more obscure \CFF\ (older \TYPEONE\ fonts). \stopitem
+\startitem We have cleaner support for (two sided) italic correction. \stopitem
+\startitem We added control over punctuation spacing (think uppercase in names) \stopitem
+\startitem We have some extra checks for messy (math) fonts. \stopitem
+\stopitemize
+
+\stoptitle
+
+\starttitle[title=\LUA]
+
+\startitemize
+\startitem We went from 5.4 to (upcoming) 5.5 (beta). \stopitem
+\startitem Intermediate changes in the bytecode can be an update challenge. \stopitem
+\stopitemize
+
+\stoptitle
+
+\starttitle[title=\PDF]
+
+\startitemize
+\startitem In \LMTX\ we have basic signing. \stopitem
+\startitem We try to accommodate validating but validators change. \stopitem
+\startitem We upgrade(d) tagging but within reasonable bounds. \stopitem
+\stopitemize
+
+\stoptitle
+
+\starttitle[title=\METAPOST]
+
+\startitemize
+\startitem There are various new mechanisms, primitives, and helpers. \stopitem
+\startitem We improve (also performance wise) existing features. \stopitem
+\startitem Support for \SVG\ has been upgraded, like nasty shading; triggered and tested by Hraban. \stopitem
+\startitem We finally moved from \CWEB\ to \CCODE\ only. \stopitem
+\startitem More in Mikeals \LUAMETAFUN\ update talk. \stopitem
+\stopitemize
+
+\stoptitle
+
+\starttitle[title=Math]
+
+\startitemize
+\startitem All useful mechanisms have been checked (with Mikael). \stopitem
+\startitem We're confident that we did a pretty good job. \stopitem
+\startitem We have better rendering, linebreaks, fonts, etc. \stopitem
+\startitem Ton and Wolfgang have updated the math setups. \stopitem
+\startitem There is a quite extensive manual (everyone present gets a \quote {first} print). \stopitem
+\stopitemize
+
+\stoptitle
+
+\starttitle[title=Manuals]
+
+\startitemize
+\startitem The low level manuals get extended in sync with development. \stopitem
+\startitem Experiments and outcomes get reported in ontargets and musings \stopitem
+\startitem An engine specifications, e.g. primitives, is in the making. \stopitem
+\startitem We have and will come with manuals on tagging and export. \stopitem
+\startitem There is a \PDF\ embedding manuals. \stopitem
+\stopitemize
+
+{\bf From discussion:}
+
+We need to have a better distinction between the different versions of \CONTEXT\
+but the \WIKI\ has a good section on that. However, the \MKII\ examples on the
+wiki need to move.
+
+\stoptitle
+
+\starttitle[title=Todo]
+
+\startitemize
+    \startitem semi protected macros \stopitem
+    \startitem decide on some defaults, like overload protection \stopitem
+    \startitem decide on lowering maximum number of registers \stopitem
+    \startitem maybe drop old school delimiters \stopitem
+    \startitem maybe stop sharing with \MKIV\ code (not sure) \stopitem
+    \startitem (we keep italic based math for articles on the matter) \stopitem
+    \startitem columnsets, columns, floats in relation to page builder \stopitem
+\stopitemize
+
+And in the pipeline are the chemistry manual, basic \CSL\ support, some more
+tagging support. We might also port \TEXUTIL\ (\MKII) to \LUA. And how about
+\LUAJITTEX ?
+
+\stoptitle
+
+\stopdocument
+

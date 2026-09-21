@@ -1,0 +1,461 @@
+% output=pdftex
+
+% jafoe foXet
+
+\usemodule[abr-01]
+
+\definetypesetting[fo][--foxet][frame=on]
+
+\usetypescript[palatino][texnansi]
+\setupbodyfont[palatino,10pt]
+
+% \definecolor[red]  [darkred]
+% \definecolor[green][darkgreen]
+% \definecolor[blue] [darkblue]
+
+\setuplayout
+  [backspace=2cm,topspace=2cm,
+   width=middle,height=middle]
+
+\setupwhitespace
+  [big]
+
+\setupcolors
+  [state=start]
+
+\setuphead
+  [chapter]
+  [style=\bfc]
+
+\setuphead
+  [section]
+  [style=\bfb]
+
+\setuphead
+  [subsection]
+  [style=\bfa]
+
+\definefont[BigFont][RegularBold at 75pt]
+\definefont[MedFont][RegularBold at 45pt]
+
+% \definecolor[pagebgcolor][s=.85]
+% \definecolor[pagefgcolor][s=.15]
+
+\definecolor[pagebgcolor][s=.15]
+\definecolor[pagefgcolor][s=.85]
+
+\startuseMPgraphic{page}
+  StartPage ;
+  picture p, q ;
+
+  numeric alternative ; alternative = 2 ;
+
+  fill Page withcolor \MPcolor{pagebgcolor} ;
+
+  if alternative = 1 :
+    p := textext("\tttf XMLFOE") rotated 90 ;
+  elseif alternative = 2 :
+    p := textext("\chardef\foxetcolormode=0 \foXet") rotated 90 ;
+  elseif alternative = 3 :
+    p := textext("\tttf foXet") rotated 90 ;
+  fi ;
+  p := p shifted -llcorner p ;
+  p := p xysized(bbwidth(Page),bbheight(Page)) ;
+  q := p reflectedabout(llcorner p,ulcorner p) shifted (bbwidth(p),0);
+  draw p withcolor transparent(1,0.25,red) ;
+  draw q withcolor transparent(1,0.25,green) ;
+  p := p rotatedaround(center p, 180) ;
+  q := p reflectedabout(llcorner p,ulcorner p) shifted (bbwidth(p),0);
+  draw p withcolor transparent(1,0.25,blue) ;
+  draw q withcolor transparent(1,0.25,yellow) ;
+
+  if alternative = 1 :
+    p := textext("\tttf XMLFOE") ;
+  elseif alternative = 2 :
+    p := textext("\chardef\foxetcolormode=0 \foXet") ;
+  elseif alternative = 3 :
+    p := textext("\tttf foXet");
+  fi ;
+  p := p shifted -llcorner p ;
+  p := p xysized(bbwidth(Page),bbheight(Page)) ;
+  q := p reflectedabout(llcorner p,lrcorner p) shifted (bbheight(p),0);
+  draw p withcolor transparent(1,0.25,red) ;
+  draw q withcolor transparent(1,0.25,green) ;
+  p := p rotatedaround(center p, 180) ;
+  q := p reflectedabout(llcorner p,urcorner p) shifted (bbheight(p),0);
+  draw p withcolor transparent(1,0.25,blue) ;
+  draw q withcolor transparent(1,0.25,yellow) ;
+
+  StopPage ;
+  setbounds currentpicture to Page ;
+\stopuseMPgraphic
+
+\defineoverlay[page][\useMPgraphic{page}]
+
+\starttext
+
+\setupbackgrounds[page][background=page]
+
+\startstandardmakeup[headerstate=none,footerstate=none]
+  \hfill \BigFont \pagefgcolor\setstrut \strut just an
+  \vskip0pt
+  \hfill \BigFont \pagefgcolor \setstrut \strut XML FO
+  \vskip-15pt
+  \hfill \BigFont \pagefgcolor \setstrut \strut engine
+  \vfill
+  \hfill \MedFont \pagefgcolor Hans Hagen
+  \vskip 30pt
+  \hfill \MedFont \pagefgcolor PRAGMA ADE
+\stopstandardmakeup
+
+% \setuphead[chapter][numbercommand=\FOxETc]
+% \setuphead[section][numbercommand=\FOxETs]
+
+\setupbackgrounds[page][background=]
+
+% \noheaderandfooterlines Coming soon! \stoptext
+
+\chapter{Introduction}
+
+\section{Implementation}
+
+When reading the following sections, you need to be aware of the fact
+that \FOXET\ is capable of more that just processing formatting
+objects. Actually, in many cases, directly mapping \XML\ structure
+onto \CONTEXT\ feature is more efficient, and if you want to do more
+complex things, it may be a far better alternative.
+
+As a (potential) user you probably want to know how conformant the
+implementation is to the specs. Our aim is to implement most of the
+features that make sense for printing and screen based interactive
+documents.
+
+We will not discuss all features in detail since there are enough
+documents around that sort of explain formatting objects. As usual the
+formal specification leaves some room for interpretation. While
+writing \FOXET\ I was reminded of the process of implementing \MATHML:
+using specs that were written with no implementation around to show
+the intentions. This also automatically leads to the feeling that we
+may need to provide alternative solutions and that is something we
+will certainly do.
+
+When looking around for additional resources I noticed that these are
+mostly written from the perspective of programming than from the point
+of view of design and high end typesetting. In addition to the
+specification I used Neil Bradley's XSL companion (first print). I
+also occasionally looked into Sebastian Rahtz list of attributes
+supported by his \type {passivetex}'s in order to get an idea of what
+needed to be supported.
+
+\section{Conformance}
+
+I will not fall into the trap of filling hundreds of pages with boring
+lists of attributes but for the moment stick to the remark that most
+of what makes sense is somehow provided. You should keep in mind that
+formatting objects are somewhat related to cascading style sheets and
+so to web publishing and not so much to typography. Formatting objects
+describe the page in a sequence of content blocks, fonts and spacing
+on a sequence of pages. How exactly things end up on paper is left to
+a typesetting engine, and the result therefore depends on the
+algorithms used to typeset text and characteristics of fonts.
+
+Although formatting objects are supposedly not to rely too much on any
+intelligent from the side of a typesetting engine, there are a few
+areas where it has to leave things to the engine, for instance in
+handling footnotes and floats. When you are familiar with the kind of
+typesetting that I have to deal with in my daily work, you can imagine
+a few more aspects of going from \XML\ to print that are outside the
+scope of formatting objects. But the majority of documents don't need
+anything fancy and presumably can be handles by formatting objects,
+given that the attributes are used properly. As said, many of those
+document can probably be handled more efficiently (and with better
+results) by direct mappings, if only because in that case the
+typesetting engine knows what it is dealing with and can act properly
+in border cases.
+
+One of the aspects of conformance is the ability to deal with
+shortcuts. For some obscure reason the rather verbose formatting
+objects source files may be (neclectably) reduced in size by packing
+attributes in shortcuts. Apart from the fact that this posses some
+limitations on extensibility (due to clashing keywords in such a
+packed sequence) it complicates an implementation. One is supposed to
+generate those files by means of for instance \XSLT, so there is no
+real urging need to pack attributes this way.
+
+Much of the work in writing \FOXET\ went into deciphering the specs,
+getting an idea of what was needed when and keying all those
+properties.  Most of the machinery needed to implement the specs was
+already present in the underlying typesetting engine \CONTEXT\
+although often with a different usage in mind. In due time I may
+replace some of the current mappings to simplified versions of the
+underlying mechanism which may speed up processing. On the other hand,
+using more clever mechanisms below the surface gives room for
+experiments and extensions.
+
+(Remark: the inheritance model is rather messy.)
+
+\section {Extensions}
+
+The core functionality is provided in the \type {fo} namespace.
+
+\starttabulate
+\NC fo \NC basic formatting objects    \NC \NR
+\NC fe \NC basic formatting extensions \NC \NR
+\NC fx \NC extra formatting objects    \NC \NR
+\NC ft \NC user  formatting objects    \NC \NR
+\NC fd \NC setup (definitions)         \NC \NR
+\stoptabulate
+
+
+\section {MathML}
+
+\section {Graphics}
+
+\section {Processing}
+
+...
+
+
+% \stoptext
+
+
+\chapter{Declarations and pagination and layout formatting objects}
+
+\section{Introduction}
+
+\section{fo:root} % 6.4.2
+
+This object is provides the normal document wrapper. The \type {media-usage}
+attribute is not supported since it does not make sense for paper documents.
+
+\showXMLfile{fo-0101.fo}
+
+\section{fo:declarations} % 6.4.3
+
+This object encapsulates definitions meant for the engine. Although it makes
+more sense to do this in configuration files, the following is possible:
+
+\showXMLfile{fo-0102.fo}
+
+Those familiar with \CONTEXT\ may recognize these definitions. And yes, you
+may specify colors the way you like: \RGB, \CMYK, spotcolors, transparencies,
+and of course grayscales.
+
+\section{fo:color-profile} % 6.4.4
+
+\showXMLfile{fo-0103.fo}
+
+\section{fo:page-sequence} % 6.4.5
+
+The page sequence object holds together (part of) the content, for instance
+a chapter. The way the pages in this sequence are set up is determined by
+the masters.
+
+\showXMLfile{fo-0201.fo}
+
+\section{fo:layout-master-set} % 6.4.6
+
+This is just a wrapper for the page dimensions and sequence
+specification.
+
+\section{fo:page-sequence-master} % 6.4.7
+\section{fo:single-page-master-reference} % 6.4.8
+\section{fo:repeatable-page-master-reference} % 6.4.9
+\section{fo:repeatable-page-master-alternatives} % 6.4.10
+\section{fo:conditional-page-master-reference} % 6.4.11
+\section{fo:simple-page-master} % 6.4.12
+
+\section{fo:region-body} % 6.4.13
+
+The main document content ends up in this region, which may spread
+over multiple pages.
+
+\showXMLfile{fo-0613.fo}
+
+Normally a text in multiple columns will have small margins. \in
+{Figure} [fig:columns] shows a few examples.
+
+\placefigure
+  [here]
+  [fig:columns]
+  {Using the \type {precedence} attribute in regions.}
+  {\startcombination[3*1]
+     {\typesetfile[fo][fo-0611.fo][width=.2\textwidth]} {no columns}
+     {\typesetfile[fo][fo-0612.fo][width=.2\textwidth]} {two column}
+     {\typesetfile[fo][fo-0613.fo][width=.2\textwidth]} {three columns}
+   \stopcombination}
+
+You can add graphics to a region. \in {Figure} [fig:backgroundimage]
+demonstrates how you can position the graphic.
+
+\placefigure
+  [here]
+  [fig:backgroundimage]
+  {Using the \type {background-image} attribute in regions.}
+  {\startcombination[4*1]
+     {\typesetfile[fo][fo-0641.fo][width=.2\textwidth]} {repeat}
+     {\typesetfile[fo][fo-0642.fo][width=.2\textwidth]} {no-repeat/percentage}
+     {\typesetfile[fo][fo-0643.fo][width=.2\textwidth]} {no-repeat/keyword}
+     {\typesetfile[fo][fo-0643.fo][width=.2\textwidth]} {no-repeat/dimension}
+   \stopcombination}
+
+\section{fo:region-before} % 6.4.14
+
+This region determines what in most cases is considered to be the
+header. This area can have backgrounds and frames. The main thing here
+is not to mix up the  page and region dimensions and to keep in mind
+that the body sort of overlaps with  the regions, unless the margins
+are set large enough.
+
+\showXMLfile{fo-0601.fo}
+
+The objects \type {region-before} and \type {region-after} may extend
+into the margins depending on the \type {precedence} attribute.
+
+\showXMLfile{fo-0604.fo}
+
+\in {Figure} [fig:precedence] demonstrates the consequences of setting the
+\type {precedence} attribute.
+
+\placefigure
+  [here]
+  [fig:precedence]
+  {Using the \type {precedence} attribute in regions.}
+  {\startcombination[4*1]
+     {\typesetfile[fo][fo-0601.fo][width=.2\textwidth]} {false false}
+     {\typesetfile[fo][fo-0602.fo][width=.2\textwidth]} {false true}
+     {\typesetfile[fo][fo-0603.fo][width=.2\textwidth]} {true  false}
+     {\typesetfile[fo][fo-0604.fo][width=.2\textwidth]} {true  true}
+   \stopcombination}
+
+\section{fo:region-after} % 6.4.15
+
+This region is the counterpart of the previously discussed one, and is
+often called the footer. For more details, see \type {fo:region-before}.
+
+\section{fo:region-start} % 6.4.16
+
+This region is also known as the left margin (in left to right typesetting).
+It has the same properties as \type {fo:region-before}.
+
+\section{fo:region-end} % 6.4.17
+
+This region is also known as the right margin (in left to right typesetting).
+It has the same properties as \type {fo:region-before}.
+
+\section{fo:flow} % 6.4.18
+
+\section{fo:static-context} % 6.4.19
+
+This is just a container for content that will end up in a region, for
+instance in \type {xsl-region-before}.
+
+\section{fo:title} % 6.4.20
+
+This object does not make sense in paper documents. If users see an application
+for it, I will implement a suitable visualization.
+
+\chapter{Block-level formatting objects}
+
+\section{Introduction} % 6.5.1
+\section{fo:block} % 6.5.2
+\section{fo:block-container} % 6.5.3
+
+\chapter{Inline-level formatting objects}
+
+\section{Introduction} % 6.6.1
+\section{fo:bidi-override} % 6.6.2
+\section{fo:character} % 6.6.3
+
+The character object can be used for special purposes. You should keep
+in mind that the settings are local (which is good).
+
+\showXMLfile{fo-0301.fo}
+
+\in {Figure} [fig:character] demonstrates the results. Forget about the
+extra \type {foe} attributes. We need them to get a nice picture.
+
+\placefigure
+  [here]
+  [fig:character]
+  {Some examples of playing with character properties.}
+  {\typesetfile[fo][fo-0301.fo][width=.8\textwidth]}
+
+\section{fo:initial-property-set} % 6.6.4
+\section{fo:external-graphic} % 6.6.5
+\section{fo:instream-foreign-object} % 6.6.6
+\section{fo:inline} % 6.6.7
+\section{fo:inline-container} % 6.6.8
+\section{fo:leader} % 6.6.9
+\section{fo:page-number} % 6.6.10
+
+\showXMLfile{fo-0801.fo}
+
+\placefigure
+  [here]
+  [fig:pagenumber]
+  {Some examples of page number formatting and referencing.}
+  {\startcombination[2*1]
+     {\typesetfile[fo][fo-0601.fo][page=1,width=.4\textwidth]} {Page 123}
+     {\typesetfile[fo][fo-0602.fo][page=2,width=.4\textwidth]} {Page 124}
+   \stopcombination}
+
+\section{fo:page-number-citation} % 6.6.11
+
+See previous section.
+
+\chapter{Formatting objects for tables}
+
+\section{Introduction} % 6.7.1
+\section{fo:table-and-caption} % 6.7.2
+\section{fo:table} % 6.7.3
+\section{fo:table-column} % 6.7.4
+\section{fo:table-caption} % 6.7.5
+\section{fo:table-header} % 6.7.6
+\section{fo:table-footer} % 6.7.7
+\section{fo:table-body} % 6.7.8
+\section{fo:table-row} % 6.7.9
+\section{fo:table-cell} % 6.7.10
+
+\chapter{Formatting objects for lists}
+
+\section{Introduction} % 6.8.1
+\section{fo:list-block} % 6.8.2
+\section{fo:list-item} % 6.8.3
+\section{fo:list-item-body} % 6.8.4
+\section{fo:list-item-label} % 6.8.5
+
+\chapter{Dynamic effects: link and multi formatting objects}
+
+\section{Introduction} % 6.9.1
+\section{fo:basic-link} % 6.9.2
+\section{fo:multi-switch} % 6.9.3
+\section{fo:multi-case} % 6.9.4
+\section{fo:multi-toggle} % 6.9.5
+\section{fo:multi-properties} % 6.9.6
+\section{fo:multi-property-set} % 6.9.7
+
+\chapter{Out-of-line formatting objects}
+
+\section{Introduction} % 6.10.1
+\section{fo:float} % 6.10.2
+\section{fo:footnote} % 6.10.3
+\section{fo:footnote-body} % 6.11.4
+
+\chapter{Other formatting objects}
+
+\section{Introduction} % 6.11.1
+\section{fo:wrapper} % 6.11.2
+\section{fo:marker} % 6.11.3
+\section{fo:retrieve-marker} % 6.11.4
+
+\section{Remarks}
+
+For the moment we don't support functions. Actually, they are a kind
+of  contradiction to the fact that formatting objects are sort of
+expanded  and don't have any intelligence built in. Functions like
+\type  {label-end()} could as well have been replaced by a keyword.
+
+\section {Extensions}
+
+\stoptext

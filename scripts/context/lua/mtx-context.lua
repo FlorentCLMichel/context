@@ -125,16 +125,6 @@ local function restart(engine_old,engine_new)
     os.exit(result == 0 and 0 or 1)
 end
 
--- if getargument("redirected") then
---     setargument("engine",engine_old) -- later on we need this
--- elseif engine_new == engine_old then
---     setargument("engine",engine_new) -- later on we need this
--- elseif environment.validengines[engine_new] and engine_new ~= environment.basicengines[engine_old] then
---     restart(engine_old,engine_new)
--- else
---     setargument("engine",engine_new) -- later on we need this
--- end
-
 if environment.validengines[engine_new] and engine_new ~= environment.basicengines[engine_old] then
     restart(engine_old,engine_new)
 end

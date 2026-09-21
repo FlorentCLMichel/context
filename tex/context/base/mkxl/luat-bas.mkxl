@@ -13,10 +13,10 @@
 
 \writestatus{loading}{ConTeXt Lua Macros / Basic Lua Libraries}
 
-\registerctxluafile{l-bit32}   {autosuffix} % before sandbox
-\registerctxluafile{l-lua}     {autosuffix} % before sandbox
+\registerctxluafile{l-bit32}   {autosuffix}
+\registerctxluafile{l-lua}     {autosuffix} % before sandbox (still ?)
 %registerctxluafile{l-macro}   {}
-\registerctxluafile{l-sandbox} {}
+%registerctxluafile{l-sandbox} {autosuffix} % done differently
 \registerctxluafile{l-package} {}
 \registerctxluafile{l-lpeg}    {}
 \registerctxluafile{l-function}{}

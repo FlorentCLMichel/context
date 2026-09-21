@@ -9,7 +9,9 @@ if not modules then modules = { } end modules ['font-oti'] = {
 local lower = string.lower
 
 local fonts              = fonts
-local constructors       = fonts.constructors
+
+local constructors       = fonts.constructors or { }
+fonts.constructors       = constructors
 
 local otf                = constructors.handlers.otf
 local otffeatures        = constructors.features.otf

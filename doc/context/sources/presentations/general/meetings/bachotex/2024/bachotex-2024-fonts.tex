@@ -1,0 +1,312 @@
+% language=us
+
+% \setupbackend[format=pdf/ua-2]
+% \setuptagging[state=start]
+% \enabledirectives[math.extensibles=both] % todo, when tagging !
+
+% \nopdfcompression
+
+% \enabletrackers[structures.tags.blobs]
+% \enabletrackers[structures.tags]
+% \enabletrackers[structures.tags.internals]
+% \enabletrackers[structures.tags.showtree]
+
+\usemodule[present-boring,abbreviations-logos]
+
+% \definelayer
+%   [extratext]
+%   [preset=rightbottom,
+%    height=\textheight,
+%    width=\textwidth]
+
+% \setupbackgrounds
+%   [text]
+%   [background=extratext]
+
+% \definehighlight[notabene][style=bf]
+% \definehighlight[notabene][style=\glyphweight100\underbar]
+
+% \setuptyping
+%   [align=hangright,
+%    numbering=]
+
+\startdocument
+  [title={Fonts},
+   banner={another year of playing},
+   location={bachotex\enspace {\bf 2024}\enspace meeting}]
+
+\starttitle[title=How does \TEX\ see them]
+
+\startitemize
+\startitem
+    The typesetting engine sees nodes: glyphs, rules, boxes, glues, kerns,
+    penalties and some more. Only the first three have width, height and depth.
+\stopitem
+\startitem
+    There are also discretionaries that can have various sublists with nodes.
+    When the engine looks are the list is has to do into these sub lists: pre,
+    post and replace.
+\stopitem
+\startitem
+    The engine itself (we're spreaking \LUAMETATEX\ here) does little with fonts:
+    it only needs these dimensions.
+\stopitem
+\startitem
+    Glyphs (coming from characters) can have more properties (italic correction,
+    anchors, kerning, math properties). But we might need to fix them, just as
+    we might want to add additional features.
+\stopitem
+\startitem
+    We delegate combining glyphs into other glyphs to \LUA, but still we need to
+    pass these dimensions to the engine.
+\stopitem
+\startitem
+    So called variable fonts are not that dynamic as we use instances so in
+    practice then are not different from regular fonts but we need to assembled
+    them.
+\stopitem
+\startitem
+    We can initialize and apply font features beforehand, or we can delay it till
+    needed (aka dynamic fonts in context) which ads a bit of overhead but we can
+    gain back.
+\stopitem
+\stopitemize
+
+\stoptitle
+
+\starttitle[title=What does the backend]
+
+\startitemize
+\startitem
+    The (\PDF) backend turns references to glyphs in fonts into (in our case)
+    \PDF\ page stream commands that refer to indices.
+\stopitem
+\startitem
+    It only embeds the subset of glyphs from a font that are really used.
+\stopitem
+\startitem
+    It has to deal with so called virtual glyphs that can refer to the same font
+    but also to other fonts.
+\stopitem
+\startitem
+    The backend has to apply properties like slant, scales, weights, expansion,
+    rotation etc and also track drift.
+\stopitem
+\startitem
+    It has to support \TYPEONE, \OPENTYPE, \TRUETYPE, \TYPETHREE, and inline
+    graphic fonts (although these can be \TYPETHREE).
+\stopitem
+\startitem
+    Color fonts are a special case and can be done with runtime generated
+    \TYPETHREE\ fonts.
+\stopitem
+\startitem
+    When needed font resources have to be fixed (like turning \TYPEONE\ \CFF1\
+    into \OPENTYPE\ \CFF2).
+\stopitem
+\stopitemize
+
+\stoptitle
+
+\starttitle[title=Compact font mode]
+
+\startitemize
+\startitem
+    The engine can scale glyphs on demands (\typ {\glyphscale}, \typ
+    {\glyphxscale}, \typ {\glyphyscale}), make them oblique (\typ {\glyphslant})
+    and make them bolder (\typ {\glyphweight}).
+\stopitem
+\startitem
+    This permits more lightweight system of definitions (\type {\fontspecdef},
+    kind of like glyph spec) which needs less loading but on the other hand more
+    processing.
+\stopitem
+\startitem
+    The same is true for math fonts where, as script and script script is built in,
+    we can stick to one font and select on the fly. Here we have additional scale
+    factors.
+\stopitem
+\startitem
+    It makes \CONTEXT\ runs a little faster, depending on the job, and use less
+    memory, especially on huge fonts.
+\stopitem
+\stopitemize
+
+\startbuffer
+test {\glyphxscale 2500 test} \quad {\glyphyscale 2500 test} \quad
+{\glyphscale 2500 test} \quad {\glyphscale 2000 \glyphweight 100
+\glyphslant 200 test} \quad $x=2$ \quad {\glyphscale 1500 $x=2$}
+\stopbuffer
+
+\blank[2*big] \typebuffer
+
+\blank[2*big] \start \getbuffer \stop
+
+\stoptitle
+
+\starttitle[title=Math fonts]
+
+\startitemize
+\startitem
+    After many experiments we made some decisions with respect to math fonts
+    because we assume that what we have now will not change; if so we will
+    use the version to discriminate tweaks.
+\stopitem
+\startitem
+    We fix and enhance the font at runtime using so called tweaks, an \MKIV\
+    mechanism that has been extended in \LMTX.
+\stopitem
+\startitem
+    We drop italic correction and add it to the width. At the same time we add
+    right bottom corner kerns (not to be confused with staircase kerns).
+\stopitem
+\startitem
+    We overload top anchors and also add bottom ones when applicable. They can be
+    wrong anyway.
+\stopitem
+\startitem
+    We use companion fonts that have consistent dimensions etc. of fence characters
+    like parenthesis and vertical rules. These are shipped with \CONTEXT\ installations.
+\stopitem
+\startitem
+    We fix and extensibles, radicals, integrals etc. We also can fix accents.
+\stopitem
+\startitem
+    We introduce additional alphabets and fine tune problematic characters. What we
+    really do can differ per font.
+\stopitem
+\startitem
+    The enhanced math engine handles spacing based on classes so we don't need
+    glyphs to have spacing artifacts.
+\stopitem
+\stopitemize
+
+\starttitle[title=Compact math]
+
+\startitemize
+\startitem
+    We can use one font instance and select script and script-script alternates
+    when needed and then apply a related scale.
+\stopitem
+\startitem
+    As with glyphs we can scale horizontal, vertical, and both. So, we have the
+    main scale, three extra scales, and the math scales.
+\stopitem
+\startitem
+    Font parameters are scale on the fly too. It all means more overhead but the
+    number of math characters used in a formula is not large.
+\stopitem
+\startitem
+    Boldening can be handled in a dedicated instance, after all tweaks might
+    adapt on it.
+\stopitem
+\startitem
+    Glyphs can have offsets, alternate dimensions etc either via virtual copies
+    or via glyph parameters for the backend.
+\stopitem
+\startitem
+    In \CONTEXT\ we support bidirectional math directly by borrowing and|/|or
+    mirroring shapes.
+\stopitem
+\stopitemize
+
+\stoptitle
+
+\starttitle[title=How about bitmaps]
+
+\startitemize
+\startitem
+    In \TEX\ backends bitmap fonts were supported by using \TYPETHREE\ fonts.
+\stopitem
+\startitem
+    We also use \TYPETHREE\ for e.g. color fonts, composed math glyphs etc. That way we
+    stay in the \UNICODE\ domain.
+\stopitem
+\startitem
+    The way bitmaps are handles in \TEX\ distributions is somewhat complex and it has
+    some hard coded assumptions (related to mode files).
+\stopitem
+\startitem
+    We can revive bitmap fonts and even auto convert them in proper outlines.
+\stopitem
+\stopitemize
+
+\stoptitle
+
+\starttitle[title=Messing with \PDF\ files ]
+
+\startitemize
+\startitem
+    The last years several somewhat special \PDF\ features were added to
+    \CONTEXT\ like signing and encryption.
+\stopitem
+\startitem
+    Winter 2024 manipulating and fixing \PDF\ files was added to this: we have a
+    framework for doing this.
+\stopitem
+\startitem
+    This also concerned adding missing fonts, fixing bad inclusion, adapting the
+    page stream, removing rubish and recoloring.
+\stopitem
+\startitem
+    Around that time inclusion of \PDF\ pages was extended to also merge fonts
+    when possible. (We already had support for hyperlinks, layers, etc. so it
+    fits in the repertoire.)
+\stopitem
+\stopitemize
+
+\starttitle[title=Merging fonts]
+
+\startitemize
+\startitem
+    When embedding pages from other files we can try to share fonts with the parent document.
+\stopitem
+\startitem
+    This is possible to some extend but it depends on what is known about the other font.
+\stopitem
+\startitem
+    We can do it more reliable in a \CONTEXT\ only workflow because we can add information
+    to the child document. (For instance we also need to handle variable fonts.)
+\stopitem
+\startitem
+    This permits efficient sub run examples in for instance manuals.
+\stopitem
+\startitem
+    Merging \TYPEONE\ (or related bitmaps) depends on the availability of fonts
+    on the system and encoding vectors in the \PDF\ file.
+\stopitem
+\startitem
+    Merging \OPENTYPE\ and \TRUETYPE\ depends on the indexing method but for
+    simple documents \UNICODE\ information can be used.
+\stopitem
+\startitem
+    These methods will be refined as we go.
+\stopitem
+\stopitemize
+
+\stoptitle
+
+\stoptitle
+
+\starttitle[title=Goodie files]
+
+What are these math companion fonts.
+
+Maybe we show a lfg file (aka font goodie or math tweaks) .
+
+\stoptitle
+
+% \starttitle[title=Fixing \TYPEONE\ fonts]
+
+% \startitemize
+% \startitem
+% \stopitem
+% \startitem
+% \stopitem
+% \startitem
+% \stopitem
+% \stopitemize
+
+% \stoptitle
+
+\stopdocument

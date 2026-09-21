@@ -35,7 +35,6 @@ local P, C, R, S, C, Cs, Ct = lpeg.P, lpeg.C, lpeg.R, lpeg.S, lpeg.C, lpeg.Cs, l
 local lpegmatch = lpeg.match
 local formatters = string.formatters
 local bytetable = string.bytetable
------ rshift, band, extract = bit32.rshift, bit32.band, bit32.extract
 
 local readers           = fonts.handlers.otf.readers
 local streamreader      = readers.streamreader

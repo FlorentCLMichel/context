@@ -1,0 +1,24 @@
+<?xml version='1.0' ?>
+
+<!--
+
+    This file is not used because we leave uit to users to browse the files.
+
+-->
+
+<documents prefix='show-his' colorset='9'>
+
+<introduction version="all">
+    <title>Some history</title>
+    <summary>
+        <p>In this area we collected some presentations and articles from around
+        the turn of the century. Nowadays we integrate this in the documentation,
+        either as manuals, presentations, development wrapups, musings and
+        alike.</p>
+        <p>The main reason for adding this here is that it gives some insight in
+        how we ended up with what we have now: <logo label="luametatex"/> with
+        <logo label="mkxl"/>.</p>
+    </summary>
+</introduction>
+
+</documents>

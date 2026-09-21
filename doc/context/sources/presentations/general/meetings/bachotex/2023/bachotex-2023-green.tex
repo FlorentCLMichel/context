@@ -1,0 +1,175 @@
+% language=us
+
+\environment bachotex-presentations-2023
+
+\startdocument
+  [title={how green is tex},
+   banner={some thoughts},
+   author={Hans Hagen},
+   location={bachotex\enspace {\bf 2023}\enspace meeting}]
+
+\starttitle[title=Introduction]
+
+\startitemize[packed]
+    \startitem tex can sometimes be demanding \stopitem
+    \startitem this means that users want fast machines \stopitem
+    \startitem powerful computers often have a higher baseline usage \stopitem
+    \startitem tex services / compile farms spend much time idling \stopitem
+    \startitem server rooms often need to be cooled \stopitem
+    \startitem usage has to compete with background media usage (music, web, zoom) \stopitem
+    \startitem energy prices went through the roof in 2022 \stopitem
+    \startitem green energy is not always available (at night, hopefully idling) \stopitem
+    \startitem we an use solar power during the day (but need some margin) \stopitem
+    \startitem we have to take very long term usage into account \stopitem
+\stopitemize
+
+\starttyping
+servers
+farm
+solar
+\stoptyping
+
+\stoptitle
+
+\starttitle[title=Engines]
+
+\startitemize[packed]
+    \startitem the size of the code base \stopitem
+    \startitem dependencies on other systems (libraries)\stopitem
+    \startitem compilation by experts or users (dependency) \stopitem
+\stopitemize
+
+\starttyping
+luatex code base
+luametatex code base
+texlive installation
+context installation
+\stoptyping
+
+\stoptitle
+
+\starttitle[title=Deployment]
+
+\startitemize[packed]
+    \startitem archives (many copies) \stopitem
+    \startitem installation (bandwidth, 5-10GB vs 0.3GB) \stopitem
+    \startitem updating (deltas) \stopitem
+    \startitem maintenance (teamwork) \stopitem
+\stopitemize
+
+\stoptitle
+
+\starttitle[title=Hardware]
+
+\startitemize[packed]
+    \startitem costs (future machines) \stopitem
+    \startitem lifetime (compare to cars) \stopitem
+    \startitem processor, disk, memory \stopitem
+    \startitem runtime (not faster) \stopitem
+\stopitemize
+
+\stoptitle
+
+\starttitle[title=Running]
+
+\startitemize[packed]
+    \startitem format files (concept) \stopitem
+    \startitem initialization (initial, successive) \stopitem
+    \startitem resources (fonts, patterns, styles, sources, images) \stopitem
+    \startitem local vs remote access (file servers) \stopitem
+    \startitem change in usage (web, local, often, occasional) \stopitem
+\stopitemize
+
+\stoptitle
+
+\starttitle[title=A recent engine]
+
+\startitemize[packed]
+    \startitem independent code base \stopitem
+    \startitem optimizing memory access \stopitem
+    \startitem accept single core \stopitem
+    \startitem assume caching in memory \stopitem
+    \startitem optimize critical scanning  \stopitem
+    \startitem identify bottlenecks \stopitem
+    \startitem prevent push back \stopitem
+    \startitem etc \stopitem
+\stopitemize
+
+\stoptitle
+
+\starttitle[title=Infrastructure]
+
+\startitemize[packed]
+    \startitem reuse hardware \stopitem
+    \startitem accept less redundancy \stopitem
+    \startitem aim for low power \stopitem
+    \startitem energy neutral \stopitem
+\stopitemize
+
+\stoptitle
+
+\starttitle[title=Calculation]
+
+\start \small
+
+\startluacode
+
+    local price = .50
+
+    local function report(t)
+        local usage = t.usage
+        local total = usage == nil and t.days * t.runs * t.cycles * (t.seconds/3600) * (t.watts/1000) + 365 * 24 * (t.idling/1000)
+        context.NC() context(t.days)
+        context.NC() context(t.pages)
+        context.NC() context(t.runs)
+        context.NC() context(t.cycles)
+        context.NC() context(t.seconds)
+        context.NC()
+        if t.pps then
+            context(t.pps)
+        else
+            context("%0.1f",t.pages/t.seconds)
+        end
+        context.NC() context(t.watt)
+        context.NC() context(t.idling)
+        context.NC()
+        if usage then
+            context(usage)
+            context.NC()
+            context(t.price)
+        else
+            context("%0.3f",total)
+            context.NC()
+            context("%0.2f",total*price)
+        end
+        context.NC() context(t.comment)
+        context.NC() context.NR()
+    end
+
+    context.starttabulate { "|r|r|r|r|r|r|r|r|r|r|l|" }
+        context.HL()
+        report {
+            days = "days", runs = "runs", cycles = "cycles", seconds = "seconds", watts = "watts",
+            usage = "kwh", idling = "idling", price = "euros", pages = "pages", pps ="pps", comment = "comment"
+        }
+        context.HL()
+            report { days = 300, pages = 350, runs =    10, cycles = 2, seconds =  10, watts = 50, idling =   0, comment = "luametatex manual" }
+            report { days = 300, pages = 200, runs =    50, cycles = 3, seconds =  15, watts = 50, idling =   0, comment = "m4all maintenance" }
+            report { days = 100, pages = 400, runs =    20, cycles = 4, seconds =  30, watts = 50, idling = 200, comment = "m4all server" }
+            report { days = 100, pages = 400, runs =    20, cycles = 4, seconds =  30, watts = 50, idling =  20, comment = "idem laptop" }
+            report { days = 365, pages =  80, runs = 15000, cycles = 2, seconds =   5, watts = 50, idling = 200, comment = "nightly reports" }
+            report { days = 365, pages =  80, runs = 15000, cycles = 2, seconds =   5, watts = 50, idling =  20, comment = "idem laptop" }
+        context.HL()
+    context.stoptabulate()
+
+    context.blank()
+
+    context("price per kwh: %0.2f",price)
+\stopluacode
+
+\stop
+
+\stoptitle
+
+\stopdocument
+

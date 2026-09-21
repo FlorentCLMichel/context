@@ -1,0 +1,845 @@
+% output=pdftex
+
+\usemodule[abr-02]
+
+\setupcolors
+  [state=start]
+
+\setuplayout
+  [width=middle,height=middle,
+   backspace=2cm,topspace=2cm,
+   footer=0pt,
+   bottomspace=2cm]
+
+\setupwhitespace[big]
+
+\usetypescriptfile[type-buy]
+
+\definetypeface [mainface] [rm] [serif] [palatino] [default]
+\definetypeface [mainface] [ss] [sans]  [univers]  [default]
+\definetypeface [mainface] [tt] [mono]  [modern]   [default]
+
+\setupbodyfont[mainface]
+
+\startbuffer[colors]
+\definecolor [cyan]    [c=1,m=.25,y=.25,k=.25]
+\definecolor [magenta] [c=.25,m=1,y=.25,k=.25]
+\definecolor [yellow]  [c=.25,m=.5,y=1,k=.25]
+\definecolor [black]   [c=.25,m=.5,y=.25,k=1]
+\stopbuffer
+
+\getbuffer[colors]
+
+\startuseMPgraphic{page}
+  StartPage ;
+    def DrawShape (expr p, c) =
+      fill p withcolor c ;
+    enddef ;
+    numeric ca, cb ; ca := 1 ; cb := .25 ;
+    path pa, pb, pc, pd ;
+    pa := boundingbox (center Page -- llcorner Page) ;
+    pb := boundingbox (center Page -- lrcorner Page) ;
+    pc := boundingbox (center Page -- urcorner Page) ;
+    pd := boundingbox (center Page -- ulcorner Page) ;
+    path pe, pf ;
+    pe := .5[llcorner Page,lrcorner Page] --
+          center pd randomized (.5*bbwidth(pd),.5*bbheight(pd)) --
+          center pb randomized (.5*bbwidth(pb),.5*bbheight(pb)) --
+          .5[ulcorner Page,urcorner Page] ;
+    pf := .5[llcorner Page,ulcorner Page] --
+          center pa randomized (.5*bbwidth(pa),.5*bbheight(pa)) --
+          center pc randomized (.5*bbwidth(pc),.5*bbheight(pc)) --
+          .5[lrcorner Page,urcorner Page] ;
+    pa := llcorner Page -- pe -- ulcorner Page -- cycle ;
+    pb := llcorner Page -- pf -- lrcorner Page -- cycle ;
+    pc := urcorner Page -- reverse pe -- lrcorner Page -- cycle ;
+    pd := ulcorner Page -- pf -- urcorner Page -- cycle ;
+    DrawShape(pa,transparent(1,.5,\MPcolor{cyan})) ;
+    DrawShape(pb,transparent(1,.5,\MPcolor{magenta})) ;
+    DrawShape(pc,transparent(1,.5,\MPcolor{yellow})) ;
+    DrawShape(pd,transparent(1,.5,\MPcolor{black})) ;
+    interim linecap  := butt ;
+    interim linejoin := mitered ;
+    draw pe withpen pencircle scaled .5cm withcolor white ;
+    draw pf withpen pencircle scaled .5cm withcolor white ;
+    draw Page withpen pencircle scaled .5cm withcolor white ;
+  StopPage ;
+\stopuseMPgraphic
+
+\setuphead
+  [section]
+  [style=\ss\bfb]
+
+\startsetups [titlepage] 
+
+  \definelayer
+    [fullpage]
+    [width=\paperwidth,
+     height=\paperheight]
+  
+  \setlayer
+    [fullpage]
+    {\useMPgraphic{page}}
+  
+  \setlayerframed
+    [fullpage]
+    [corner={right,bottom},
+     location={left,top},
+     hoffset=2cm,
+     voffset=1cm]
+    [offset=overlay,
+     frame=off,
+     foregroundcolor=white]
+    {\definedfont[SansBold at 2.5cm]%
+     Color}
+  
+  \setlayerframed
+    [fullpage]
+    [corner={right,bottom},
+     location={left,top},
+     hoffset=1cm,
+     voffset=1cm]
+    [offset=overlay,
+     frame=off,
+     foregroundcolor=white]
+    {\definedfont[SansBold at 1cm]%
+     \rotate{\vbox{\hbox{Separation}\par\removedepth}}}
+  
+  \setlayerframed
+    [fullpage]
+    [corner={right,top},
+     location={left,bottom},
+     hoffset=1cm,
+     voffset=1cm]
+    [offset=overlay,
+     frame=off,
+     foregroundcolor=white]
+    {\definedfont[SansBold at 1cm]%
+     \rotate{\vbox{\hbox{Hans Hagen}\par\removedepth}}}
+  
+    \placelayer[fullpage] 
+  
+\stopsetups 
+
+% \startuseMPgraphic{strip}{color}
+%   linear_shade (unitsquare xyscaled(TextWidth/2,1cm),
+%     5, \MPvariable{color}, white) ;
+%   linear_shade (unitsquare xyscaled(TextWidth/2,1cm) 
+%     shifted(TextWidth/2,0), 7, \MPvariable{color}, white) ;
+% \stopuseMPgraphic
+
+\startuseMPgraphic{strip}{color}
+  linear_shade (unitsquare xyscaled(TextWidth,1cm), 5, 
+    \MPvariable{color}, white) ;
+\stopuseMPgraphic
+
+\startuseMPgraphic{bar}{color}
+  fill unitsquare xyscaled(TextWidth,1cm) withcolor \MPvariable{color} ;
+\stopuseMPgraphic
+
+\starttext 
+
+\setuplayout[page] 
+
+\startstandardmakeup \setups[titlepage] \stopstandardmakeup
+
+\setuplayout[reset]
+
+\section{Color spaces}
+
+Currently \CONTEXT\ supports four color spaces: gray, \RGB,
+\CMYK, and spot colors. The first three are defined rather
+straightforward. The subtractive colors in \CMYK\ color
+space are defined as follows:
+
+\startbuffer
+\definecolor[my-cyan]    [c=1]
+\definecolor[my-magenta] [m=1]
+\definecolor[my-yellow]  [y=1]
+\definecolor[my-black]   [k=1]
+\stopbuffer
+
+\typebuffer \getbuffer
+
+These colors (also known as process colors) show up as follows:
+
+\startlinecorrection
+  \useMPgraphic{strip}{color=my-cyan}
+\stoplinecorrection
+
+\startlinecorrection
+  \useMPgraphic{strip}{color=my-magenta}
+\stoplinecorrection
+
+\startlinecorrection
+  \useMPgraphic{strip}{color=my-yellow}
+\stoplinecorrection
+
+\startlinecorrection
+  \useMPgraphic{strip}{color=my-black}
+\stoplinecorrection
+
+In the \RGB\ color space, we use additive colors:
+
+\startbuffer
+\definecolor[my-red]   [r=1]
+\definecolor[my-green] [g=1]
+\definecolor[my-blue]  [b=1]
+\stopbuffer
+
+\typebuffer \getbuffer
+
+This time we get:
+
+\startlinecorrection
+\useMPgraphic{strip}{color=my-red}
+\stoplinecorrection
+\startlinecorrection
+\useMPgraphic{strip}{color=my-green}
+\stoplinecorrection
+\startlinecorrection
+\useMPgraphic{strip}{color=my-blue}
+\stoplinecorrection
+
+Gray colors are defined with:
+
+\startbuffer
+\definecolor[my-black] [s=0]
+\stopbuffer
+
+\typebuffer \getbuffer
+
+Watch how this time we start at zero!
+
+\startlinecorrection
+\useMPgraphic{strip}{color=my-black}
+\stoplinecorrection
+
+When defining a color in \CMYK\ color space, you can mix
+\type {c}, \type {m}, \type {y} and \type {k} components. 
+On the cover you see four colors defines as:
+
+\typebuffer[colors]
+
+This leaves us spot colors. These are defined in two steps.
+First you define the spot color itself:
+
+\startbuffer
+\definecolor[my-spot][c=.7,m=.5,y=.3,k=.1]
+\stopbuffer
+
+\typebuffer \getbuffer
+
+As any other primary color, this color covers a range:
+
+\startlinecorrection
+\useMPgraphic{strip}{color=my-spot}
+\stoplinecorrection
+
+You can now define colors in this range:
+
+\startbuffer
+\definecolor[bright][my-spot][p=1]
+\definecolor[dark]  [my-spot][p=.5]
+\stopbuffer
+
+\typebuffer \getbuffer
+
+\startlinecorrection
+\useMPgraphic{bar}{color=bright}
+\stoplinecorrection
+\startlinecorrection
+\useMPgraphic{bar}{color=dark}
+\stoplinecorrection
+
+The chained definition is needed because devices, like
+screen devices, that cannot handle spot colors and need to
+have a fall back. 
+
+\section{Special effects}
+
+Those familiar with \METAFUN\ will know that it supports
+shading. Actually the previous shades were produced with
+code like:
+
+\starttyping
+\startMPcode
+linear_shade (unitsquare xyscaled (TextWidth, 1cm), 5,
+  \MPcolor {my-spot}, white) ;
+\stopMPcode
+\stoptyping
+
+As you see here, we use \type {\MPcolor} to tell \METAPOST\
+what color to use. Because \CONTEXT\ will handle the color
+definitions when including the graphic in the document, the
+proper transformations will take place and the required
+(\PDF) resources will be embedded.
+
+Both \CONTEXT\ and \METAFUN\ support transparent colors. As
+you may expect, transparency works for all color spaces.
+However, the place where you define them differs:
+
+\startbuffer
+\definecolor[redish] [r=.5,t=.5,a=1]
+\definecolor[cyanish][c=.5,t=.5,a=1]
+\definecolor[grayish][s=.5,t=.5,a=1]
+\stopbuffer
+
+\typebuffer \getbuffer
+
+but:
+
+\startbuffer
+\definecolor[spottish][c=.3,m=.5,y=.7,k=.1]
+\stopbuffer
+
+\typebuffer \getbuffer
+
+with:
+
+\startbuffer
+\definecolor[brightish][spottish][p=1,t=.5,a=1]
+\definecolor[darkish]  [spottish][p=.5,t=.5,a=1]
+\stopbuffer
+
+\typebuffer \getbuffer
+
+The following graphic demonstrates that these colors indeed
+are transparent.
+
+\startlinecorrection
+\startMPcode
+  path p ; p := unitsquare xyscaled (4.5cm,5mm) ;
+  fill p shifted (0,0cm) withcolor \MPcolor{redish} ;
+  fill p shifted (0,1cm) withcolor \MPcolor{cyanish} ;
+  fill p shifted (0,2cm) withcolor \MPcolor{grayish} ;
+  fill p shifted (0,3cm) withcolor \MPcolor{brightish} ;
+  fill p shifted (0,4cm) withcolor \MPcolor{darkish} ;
+  path p ; p := unitsquare xyscaled (5mm,4.5cm) ;
+  fill p shifted (0cm,0) withcolor \MPcolor{redish} ;
+  fill p shifted (1cm,0) withcolor \MPcolor{cyanish} ;
+  fill p shifted (2cm,0) withcolor \MPcolor{grayish} ;
+  fill p shifted (3cm,0) withcolor \MPcolor{brightish} ;
+  fill p shifted (4cm,0) withcolor \MPcolor{darkish} ;
+  currentpicture := currentpicture xysized (CurrentWidth,3cm) ;
+\stopMPcode
+\stoplinecorrection
+
+\section{Options}
+
+You can mix color spaces in one document. However, what
+color space you use, depends on the medium on which the
+document will be read. 
+
+For screen documents, \RGB\ is often best, if only because
+screen devices use these three color channels themselves.
+All channels zero gives you black, and all channels one
+produces white.
+
+Printing houses often prefer \CMYK\ and|/|or spot colors.
+They will split the document into the colors used for
+printing, so in case of \CMYK\ only, there will be four
+variants, one for each process color. If a document has only
+one or two colors, spot colors will give good results, if
+only because no screen has to be used. Also, the less
+channels, the cheaper the print.
+
+One danger luring with \CMYK\ is that some applications
+produce output depending on the medium that will be used:
+plain paper, glossy paper, colored paper etc. It's best to
+let this kind of fine||tuning to the raster image processor
+that will produce the plates, since that device knows best
+what it is (in|)|capable off and what compensations are
+needed.
+
+You can control \CONTEXT's color mechanism in several ways
+using the \type {\setupcolors} command. First of all, you
+need to enable colors:
+
+\starttyping
+\setupcolors[state=start]
+\stoptyping
+
+By default all four methods are supported, but you can
+change this behaviour:
+
+\starttyping
+\setupcolors[rgb=no,spot=no]
+\stoptyping
+
+This will force \CONTEXT\ to use \CMYK\ and gray scales
+only (gray scale takes less code and will remap on the
+black process color).
+
+As long as you use \type {\MPcolor} in your \METAPOST\
+graphics, you can be sure that those graphics will obey the
+color settings. In the background, \CONTEXT\ will convert
+colors defined in the disabled color spaces into those
+enabled.
+
+Although it can be tempting to use names for colors like
+{\em red} or {\em blue}, it makes sense to use more
+meaningful names, like {\em important} or {\em dangerous}.
+
+\starttyping
+\definecolor[dangerous][r=1]
+\stoptyping
+
+Even better is to define colors in an indirect way:
+
+\starttyping
+\definecolor[red][r=1]
+\definecolor[dangerous][red]
+\stoptyping
+
+This means that when we map more colors on red, we only have
+one definition of red to maintain. At the time of definition
+of {\em dangerous}, only the name is mapped, which means
+that we can change the definition of red afterwards. If you
+want to freeze colors at definition time, say:
+
+\starttyping
+\setupcolors[expansion=yes]
+\stoptyping
+
+You can specify colors in your preferred color space, but 
+your preferences may not match those of your printer or 
+printing house. For that reason, \CONTEXT\ provides color 
+conversion. You can for instance force \CMYK\ output by 
+saying: 
+
+\starttyping 
+\setupcolors[rgb=no,spot=no,cmyk=yes]
+\stoptyping 
+
+If you also turn off \CMYK\ support, you will get weighted 
+gray scales. You can also demand reduced \CMYK\ color, where
+the black component is avoided, by setting \type {reduction}
+to \type {yes}. \in {Table} [tab:values] shows what happens 
+when such conversions are asked for. We use the previously 
+defined colors.  
+
+\startbuffer
+\def\M#1{\setupcolors[rgb=yes,cmyk=yes,spot=yes]\showcolormodes\color[#1]{}}
+\def\R#1{\setupcolors[rgb=yes,cmyk=no, spot=no]\showcolormodes\color[#1]{}}
+\def\C#1{\setupcolors[rgb=no, cmyk=yes,spot=no]\showcolormodes\color[#1]{}}
+\def\X#1{\setupcolors[rgb=no, cmyk=yes,spot=no,reduction=yes]\showcolormodes\color[#1]{}}
+\def\G#1{\setupcolors[rgb=no, cmyk=no, spot=no]\showcolormodes\color[#1]{}}
+\switchtobodyfont[small]
+\starttabulate[|B||||||]
+\HL
+\NC color    \NC \bf mixed      \NC \bf rgb        \NC \bf cmy (reduced)
+             \NC \bf cmyk       \NC \bf gray       \NC \NR
+\HL
+\NC red      \NC \M{my-red}     \NC \R{my-red}     \NC \X{my-red}
+             \NC \C{my-red}     \NC \G{my-red}     \NC \NR
+\NC green    \NC \M{my-green}   \NC \R{my-green}   \NC \X{my-green}
+             \NC \C{my-green}   \NC \G{my-green}   \NC \NR
+\NC blue     \NC \M{my-blue}    \NC \R{my-blue}    \NC \X{my-blue}
+             \NC \C{my-blue}    \NC \G{my-blue}    \NC \NR
+\NC cyan     \NC \M{my-cyan}    \NC \R{my-cyan}    \NC \X{my-cyan}
+             \NC \C{my-cyan}    \NC \G{my-cyan}    \NC \NR
+\NC magenta  \NC \M{my-magenta} \NC \R{my-magenta} \NC \X{my-magenta}
+             \NC \C{my-magenta} \NC \G{my-magenta} \NC \NR
+\NC yellow   \NC \M{my-yellow}  \NC \R{my-yellow}  \NC \X{my-yellow}
+             \NC \C{my-yellow}  \NC \G{my-yellow}  \NC \NR
+%\NC black   \NC \M{my-black}   \NC \R{my-black}   \NC \X{my-black}
+%            \NC \C{my-black}   \NC \G{my-black}   \NC \NR
+\NC spot     \NC \M{my-spot}    \NC \R{my-spot}    \NC \X{my-spot}
+             \NC \C{my-spot}    \NC \G{my-spot}    \NC \NR
+\NC bright   \NC \M{bright}     \NC \R{bright}     \NC \X{bright}
+             \NC \C{bright}     \NC \G{bright}     \NC \NR
+\NC dark     \NC \M{dark}       \NC \R{dark}       \NC \X{dark}
+             \NC \C{dark}       \NC \G{dark}       \NC \NR
+\HL
+\stoptabulate
+\stopbuffer
+
+\placetable
+  [here]
+  [tab:values]
+  {This table show what values end up in the output files 
+   when conversion takes place.}
+  {\getbuffer}
+
+Due to the nature of \TEX\ and the control needed for
+output devices, you need to be aware of interference of color
+switches and typesetting. The low level color control
+commands (for instance literal \PDF\ code) ends up in the
+page stream. We will demonstrate this with an example (here 
+we use the same cyan variant as on the cover): 
+
+\startnarrower \showlowlevelstream \bgroup 
+We start with no color, \color [cyan] {but now we have
+switched to \currentcolor, \color [bright] {and now we're
+typesetting in \currentcolor,} and some \currentcolor, and
+\color [redish] {after a bit of \currentcolor}, we're back
+at \currentcolor\ again.} 
+\egroup \stopnarrower
+
+The output (\DVI\ converted to \POSTSCRIPT, or \PDF) is
+made up of so called independent pages. This means that,
+apart from resources like fonts, printing a page should not
+demand processing of previous pages. So, when we use
+special features, like color, we have no knowledge about
+the current color at a page break. Therefore, we need to
+synchronize colors after a page break. 
+
+\TEX\ invokes the output routine (page builder) after a
+paragraph is processed. If the paragraph is typeset in a
+color, the color is already reset to its orginal. However,
+when \TEX\ decides that it should break in the middle of
+that particular paragraph, we have to make sure that we add
+codes like shown in the previous example at the top of the
+next page. \CONTEXT\ keeps track of colors and tries to
+synchronize the current state and the output state as good
+as possible. 
+
+Starting and ending a color obeys \TEX's grouping mechanism.
+This means that when you want to typeset a document as a 
+whole in a color, you need to group the whole document. This
+can interfere with the final page break, and as a result, 
+low level data streams like the ones shown before may end up
+on a page of their own, which results in an empty page. In 
+order to prevent such problems, you can set the document 
+color with: 
+
+\starttyping
+\setupcolors[textcolor=somecolor]  
+\stoptyping 
+
+Similar complications can occur when you use colors in the
+\type {\framed} command, which is also used extensively in
+core macros. The \type {\color} command expects an argument,
+and therefore exactly knows where to end coloring. Commands 
+like \type {\red} on the other hand, hook themselves into 
+the grouping mechanism. As a result, their behaviour may 
+interfere with other mechanism, like automatic strut 
+placement. Take the following text (here we use the same 
+magenta variant as on the cover):
+
+\startbuffer
+The small bars shown here are called struts. Normally they
+are invisible, but they play an important role in ensuring
+consistent vertical spacing. You can {\magenta visualize} 
+them with \type {\showstruts}.
+\stopbuffer
+
+\typebuffer
+
+If we frame this text with:
+
+\starttyping
+\framed[align=middle]{\cyan...} 
+\stoptyping
+
+we get:
+
+\startbaselinecorrection
+\framed[align=middle]{\cyan\getbuffer}
+\stopbaselinecorrection
+
+At first sight the result looks ok, but let's visualize the 
+struts:
+
+\startbaselinecorrection \showstruts 
+\framed[align=middle]{\cyan\getbuffer}
+\stopbaselinecorrection
+
+As you can see, there is some white space before the strut. 
+Normally such a strut tries to get rid of it, so how come 
+that it fails here? Let's also visualize the low level 
+streams: 
+
+\startbaselinecorrection \showstruts \showlowlevelstream 
+\framed[align=middle]{\cyan\getbuffer}
+\stopbaselinecorrection
+
+It now becomes clear that the color commands end up before 
+the strut, and as a result there is no way to go back. This 
+is why in such situations it's better to apply the colors in
+a different way: 
+
+\starttyping 
+\framed[align=middle,foregroundcolor=cyan]{...}
+\stoptyping 
+
+This results in:
+
+\startbaselinecorrection \showstruts \showlowlevelstream 
+\framed[align=middle,foregroundcolor=cyan]{\getbuffer}
+\stopbaselinecorrection
+
+Now, when we turn off the visualization, we get the properly
+aligned text: 
+
+\startbaselinecorrection 
+\framed[align=middle,foregroundcolor=cyan]{\getbuffer}
+\stopbaselinecorrection
+
+The main message here is that, when you apply color, you 
+need to be aware of the fact that this introduces (normally)
+invisible content. Therefore, in case of doubt, use the 
+\type {\color} or \type {\startcolor} command. 
+
+\section{Groups and palets}
+
+The reference manual describes in detail how you can group 
+colors and how you can define color palets. Since we're 
+dealing with color based workflows here, we only want to 
+stress that using color palets may ease your task when one 
+style has to serve multiple documents with different color 
+settings. You define a palet as follows: 
+
+\startbuffer
+\definepalet[first] [maincolor=cyan,subcolor=yellow,extracolor=magenta]
+\definepalet[second][maincolor=magenta,subcolor=cyan,extracolor=yellow]
+\stopbuffer
+
+\getbuffer \typebuffer
+
+You can inherit them as well: 
+
+\starttyping 
+\definepalet [default] [first]
+\stoptyping 
+
+This means that you can isolate color definitions pretty 
+well. Such a palet is enabled by: 
+
+\starttyping 
+\setuppalet[first]
+\stoptyping
+
+Because in the end, we still deal with colors, all the
+color manipulations mentioned in this document apply to
+palets as well. You can inspect a palet by \type
+{\showpalet}, as demonstrated in \in {figure} [fig:palet].
+The gray bars are the weighted gray alternatives. 
+
+\placefigure
+  [here] [fig:palet]
+  {Two color palets visualized.}
+  {\startcombination
+     {\showpalet[first] [number]} {first} 
+     {\showpalet[second][number]} {second}
+   \stopcombination}
+
+\section{Separation}
+
+We now come to the main topic of this manual: color
+separation. An \RGB\ color has three color components,
+while an \CMYK\ color has four. Although modern printing
+devices should be able to deal with both, in print the
+\CMYK\ color space is preferred. 
+
+When printing in full color, the four colors are printed 
+separately, which comes down to printing four instances of 
+the same document in succession. The separation needed for 
+this can best be dealt with in the engine itself, but there 
+may be occasions where you need to provide the separations 
+yourself. 
+
+You get the cyan channel version of a document when you 
+say:
+
+\starttyping 
+\setupcolors[split=c]
+\stoptyping 
+
+In a similar way, you can ask for a magenta (\type {m}),
+yellow \type {y}, red (\type {r}), green (\type {g}), blue
+(\type{b)}, or black (\type {s}) version. If you want a spot
+color, you set \type {split} to the desired color: 
+
+\starttyping
+\setupcolors[split=yourspot]
+\stoptyping 
+
+A more convenient way to do this, is to use \TEXEXEC: 
+
+\starttyping
+texexec --separation=c 
+\stoptyping 
+
+There is a preliminary script \type {texsplit} that
+automatically splits the document, using information stored
+in the auxiliary file \type {jobname.tuo}.  
+
+Graphics are a complication in this process. For
+black||and||white graphics, you can specify in which
+channel they have to end up:  
+
+\starttyping
+\externalfigure[graphic][split=c]
+\stoptyping 
+
+Color graphics need to be separated independent of the 
+document and we assume that this has been done. We discuss  
+three ways to deal with including them. 
+
+A convenient way to assign the (separated) graphics to a 
+channel is the following:
+
+\starttyping
+\externalfigure[graphic\colorsplitsuffix]
+\stoptyping 
+
+In this case, the original graphic is called \type
+{graphic}, while the cyan one is called \type {graphic-c},
+and the rest accordingly. 
+
+An alternative is to collect the graphics in a figure 
+database and just switch databases. This saves you the 
+effort of specifying the suffix each time. 
+
+\starttyping
+\usefigurebase[graphics\colorsplitsuffix]
+\stoptyping
+
+Instead of a suffix, you can apply a prefix (which is 
+sometimes handier when you want to list files): 
+
+\starttyping
+\usefigurebase[\colorsplitprefix graphics]
+\stoptyping
+
+Alternatively, you can use a different path for the split 
+graphics: 
+
+\starttyping
+\setupexternalfigures[directory={./figures\colorsplitsuffix}]
+\stoptyping
+
+A third alternative is to use modes. You can of course 
+introduce special modes, like:
+
+\starttyping
+\startmode[cyan]
+  \setupcolors[split=c]
+  \usefigurebase[cyan]
+\stopmode
+\stoptyping
+
+Here you need to enable a mode or run \TEXEXEC\ with \type
+{--mode=cyan}. However, \CONTEXT\ provides channel specific
+system modes. A system mode is prefixed by a \type {*}. 
+
+\starttyping
+\startmode[*color-c]
+  all kind of channel specific settings 
+\stopmode
+\stoptyping 
+
+All this may sound complicated, but color separation is a
+complex matter anyway, so you'd better know what you're
+doing. This is especially true when you set \type
+{criterium}, which by default is set to \type {all}. This
+means that when a 100\% spot color is used, it is assumed
+to completely knock out its background. On the other hand,
+for instance a 50\% spot color is painted on a white
+background. 
+
+\starttyping
+\setupcolors[criterium=none] 
+\stoptyping 
+
+When \type {criterium} is set this way, the background is
+always painted in white. This assumes a rather precise
+printing workflow. 
+
+For external figures, you can specify a background color 
+with \type {splitcolor}. By default this color is set to 
+white. 
+
+\starttyping 
+\setupexternalfigures[splitcolor=white]
+\stoptyping 
+
+\section{Bonus example}
+
+When color separation was added \CONTEXT, some experiments 
+were conducted with coloring bitmap graphics. One of the 
+poor||mans colorizations is presented here. 
+
+\startbuffer
+\definecolor [p-one]   [c=1,y=.3,k=.3]
+\definecolor [p-two]   [c=.25,y=.8]
+\definecolor [p-three] [c=.9,y=.15]
+
+\definecolor [one-1]   [p-one]   [p=1,t=1,a=overlay]
+\definecolor [one-2]   [p-one]   [p=1,t=1,a=softlight]
+
+\definecolor [two-1]   [p-two]   [p=1,t=1,a=overlay]
+\definecolor [two-2]   [p-two]   [p=1,t=1,a=softlight]
+
+\definecolor [three-1] [p-three] [p=1,t=1,a=overlay]
+\definecolor [three-2] [p-three] [p=1,t=1,a=softlight]
+\stopbuffer
+
+First we define a few transparent colors. Out of the 
+alternatives, we choose \type {overlay} and \type 
+{softlight}. (More about transparency can be found in the 
+\METAFUN\ manual.) 
+
+\getbuffer \typebuffer
+
+\startbuffer[mill]
+\startcombination[6*1]
+  {\externalfigure[mill.png][width=.125\textwidth,
+     split=p-two,foregroundcolor=two-1]}     {\white overlay}
+  {\externalfigure[mill.png][width=.125\textwidth,
+     split=p-two,foregroundcolor=two-2]}     {\white softlight}
+  {\externalfigure[mill.png][width=.125\textwidth,
+     split=p-one,foregroundcolor=one-1]}     {\white overlay}
+  {\externalfigure[mill.png][width=.125\textwidth,
+     split=p-one,foregroundcolor=one-2]}     {\white softlight}
+  {\externalfigure[mill.png][width=.125\textwidth,
+     split=p-three,foregroundcolor=three-1]} {\white overlay}
+  {\externalfigure[mill.png][width=.125\textwidth,
+     split=p-three,foregroundcolor=three-2]} {\white softlight}
+\stopcombination
+\stopbuffer
+
+\typebuffer
+
+\startbuffer[back]
+\definecolor[darkgray][s=.3]
+
+\defineframedcontent
+  [mill]
+  [background=color,
+   backgroundcolor=darkgray,
+   frame=off,
+   offset=1ex]
+\stopbuffer
+
+\getbuffer[back]
+
+This cheap trick leads to: 
+
+\startbaselinecorrection
+\startframedcontent[mill] \getbuffer[mill] \stopframedcontent
+\stopbaselinecorrection
+
+In this example, the gray background was accomplished with: 
+
+\typebuffer[back]
+
+and: 
+
+\starttyping 
+\startframedcontent[mill] ... \stopframedcontent
+\stoptyping 
+
+This example was part of a test document with three
+spot colors and black, which demands four splits. The
+original and its four splits are shown on the next pages. 
+
+\placefigure
+  {A test document with three spot colors \& black.} 
+  {\externalfigure[septest.pdf][frame=on,page=1,height=.9\textheight]}
+
+\page \combinepages[septest.pdf][nx=2,ny=2,start=2,stop=5,frame=on]
+
+\stoptext

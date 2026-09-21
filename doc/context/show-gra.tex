@@ -1,0 +1,148 @@
+% pragma logoS
+% kaarten checken
+% logo's website
+% web graphics
+% cdrom examens
+
+% \enabletrackers[resolvers.*]
+
+% \nopdfcompression
+
+\environment show-env
+
+\setupbodyfont[12pt]
+
+\definecolor[shade-8][s=1,t=.8,a=1]
+\definecolor[shade-9][r=.4,t=.5,a=1]
+
+\startuseMPgraphic{page}
+    w := OverlayWidth /10 ;
+    h := OverlayHeight/10 ;
+    set_grid(10,10,1,1) ;
+    forever :
+        if new_on_grid(uniformdeviate 10, uniformdeviate 10) :
+            fill (fullsquare xyscaled (w,h) shifted (w*round(dx),h*round(dy)))
+                enlarged 5pt randomized 10pt
+                withcolor transparent (1,.5,white randomized (.5,.8)) ;
+        fi ;
+        exitif grid_full ;
+    endfor ;
+\stopuseMPgraphic
+
+\startuseMPgraphic{text}
+    fill (fullsquare xyscaled (OverlayWidth,OverlayHeight))
+        enlarged 5pt randomized 10pt
+        withcolor transparent (1,.5, red randomized (.3,.5)) ;
+\stopuseMPgraphic
+
+\startuseMPgraphic{back}
+    fill (fullsquare xyscaled (OverlayWidth,OverlayHeight))
+        enlarged 10pt randomized 10pt
+        withcolor \MPcolor{shade-8} ;
+\stopuseMPgraphic
+
+\useMPlibrary[txt]
+
+\setuplayout
+  [backspace=250pt,cutspace=40pt,width=middle,
+   topspace=300pt,bottomspace=40pt,height=middle,
+   header=0pt,footer=0pt]
+
+\defineoverlay[page][\useMPgraphic{page}]
+\defineoverlay[text][\useMPgraphic{text}]
+\defineoverlay[back][\useMPgraphic{back}]
+
+\definelayer [graphic]
+
+\setupframedtexts
+  [width=\textwidth,
+   style=bold,
+   frame=off,
+   before=,after=,
+   background=text,
+   align=flushleft,
+   foregroundcolor=white]
+
+\setlayer [graphic] [x=50pt,y=50pt]
+  {\definedfont[RegularBold*default at 100pt]\color[shade-9]{Metapost}}
+
+\setlayer [graphic] [x=150pt,y=150pt]
+  {\definedfont[RegularBold*default at 100pt]\color[shade-9]{Graphics}}
+
+\setupbackgrounds[paper][background=]
+\setupbackgrounds[text] [background=]
+\setupbackgrounds[page] [background={page,forward,graphic}]
+
+\usemodule[mathml]
+
+\startxmlsetups xml:graphics
+    \xmlfilter{#1}{/introduction/command(xml:introduction)}
+    \xmlfilter{#1}{/graphic/command(xml:graphic)}
+    \setupbackgrounds[page][background=]
+    \xmlfilter{#1}{/graphic/command(xml:biggraphic)}
+\stopxmlsetups
+
+\startxmlsetups xml:introduction
+    \startstandardmakeup
+    \vfill
+    \startframedtext[none]
+        \ignorespaces
+        \xmlfirst{#1}{/description/summary}
+        \removeunwantedspaces
+    \stopframedtext
+    \stopstandardmakeup
+\stopxmlsetups
+
+\startxmlsetups xml:graphic
+    \startstandardmakeup
+    \vfill
+    \writestatus{graphic}{1 : \xmltext{#1}{/resources/snippet}}
+    \setlayer
+        [graphic]
+        [x=40pt,y=40pt,location=rb]
+        {
+            \pagereference[\xmltext{#1}{/resources/result}:text]
+            \gotobox {
+                \externalfigure
+                    [\xmltext{#1}{/resources/snippet}.pdf]
+                    [background=back,
+                     factor=auto,
+                     compact=no,
+                     maxwidth=.7\paperwidth,
+                     maxheight=.7\paperheight]
+            }
+            [\xmltext{#1}{/resources/result}:page]
+        }
+    \startframedtext[none]
+        \ignorespaces
+        \xmlfirst{#1}{/description/summary}
+        \removeunwantedspaces
+    \stopframedtext
+    \stopstandardmakeup
+\stopxmlsetups
+
+\startxmlsetups xml:biggraphic
+    \startTEXpage[align=]% hm, needed, as we get wrong dimensions otherwise ... bug?
+        \writestatus{graphic}{2 : \xmltext{#1}{/resources/snippet}}
+        \dontcomplain
+        \dontleavehmode\pagereference[\xmltext{#1}{/resources/result}:page]%
+        \gotobox {
+            \externalfigure
+              [\xmltext{#1}{/resources/result}.pdf]
+              [compact=no]
+          }
+          [\xmltext{#1}{/resources/result}:text]%
+    \stopTEXpage
+\stopxmlsetups
+
+\startxmlsetups xml:mysetups
+    \xmlsetsetup{#1}{graphics}{xml:*}
+\stopxmlsetups
+
+\xmlregistersetup{xml:mysetups}
+
+\starttext
+
+  \xmlprocess{main}{show-gra.xml}{}
+
+\stoptext

@@ -21,7 +21,7 @@ local readers  = otf.readers
 
 if readers then
 
-    otf.version = otf.version or 3.153
+    otf.version = otf.version or 3.154
     otf.cache   = otf.cache   or containers.define("fonts", "otl", otf.version, true)
 
     function fonts.helpers.getfeatures(name,save)
@@ -54,7 +54,11 @@ if readers then
             local data = otf.load(filename)
             local resources = data and data.resources
             if resources then
-                return data.resources.features, data.resources.foundtables, data
+                return
+                    data.resources.features,
+                    data.resources.foundtables,
+                    data.resources.stylistics,
+                    data
             end
         end
     end

@@ -24,7 +24,7 @@
 \registerctxluafile{grph-inc}{autosuffix}
 \registerctxluafile{grph-bmp}{autosuffix}
 \registerctxluafile{grph-chk}{}
-\registerctxluafile{grph-con}{}
+\registerctxluafile{grph-con}{autosuffix}
 \registerctxluafile{grph-fil}{}
 %registerctxluafile{grph-mem}{} % obsolete
 \registerctxluafile{grph-u3d}{} % this will become a module

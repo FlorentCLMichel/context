@@ -1,0 +1,644 @@
+% output=pdftex
+
+\starttext
+
+\usemodule[abr-02]
+
+\environment corrlogo % also defines color
+
+\defineoverlay [page] [\reuseMPgraphic{page}]
+
+\definefilesynonym [correspondence] [x-corres.rng]
+
+\startsetups rng:contact
+  \showXMLwrd[ref]
+  \showXMLlin[optional]
+\stopsetups
+
+\startsetups rng:fields
+  \showXMLtxt[contact,contactgroup]
+  \showXMLlin[initials,formalname,informalname,title,prefix,p,member]
+\stopsetups
+
+\setuplayout
+  [height=middle,
+   width=middle,
+   header=2cm,
+   footer=2cm,
+   topspace=.05\paperheight,
+   bottomspace=.05\paperheight,
+   backspace=.1\paperwidth,
+   cutspace=.1\paperwidth]
+
+\setuptyping
+  [option=color]
+
+\usetypescriptfile[type-fsf]
+
+\definetypeface [mainface] [ss] [sans]  [opus]     [default] [encoding=texnansi]
+\definetypeface [mainface] [rm] [serif] [palatino] [default] [encoding=texnansi]
+\definetypeface [mainface] [mm] [math]  [palatino] [default]
+\definetypeface [mainface] [tt] [mono]  [modern]   [default] [rscale=1.1]
+
+\setupbodyfont [mainface,ss]
+
+\definefontsynonym [MainNormal] [Sans]
+\definefontsynonym [MainBold]   [SansBold]
+
+\setuphead[chapter][style=\bfc,color=DarkGray]
+\setuphead[section][style=\bfa,color=DarkGray]
+
+\setupwhitespace[big]
+
+\setupbackgrounds [page] [background=page]
+
+\startstandardmakeup[color=LightGray]
+
+  \vfill
+
+  \WidthSpanningText
+    {correspondence\setstrut\strut}
+    {\textwidth}
+    {SansBoldCaps}
+
+  \midaligned{\WidthSpanningText{Hans Hagen}{.5\textwidth}{MainBold}}
+
+\stopstandardmakeup
+
+\setupbackgrounds [page] [background=]
+
+\setuphead[chapter][page=,before={\blank[6*medium]},after={\blank[2*medium]}]
+
+\chapter{Introduction}
+
+This manual describes how to handle correspondence with
+\CONTEXT. The core components are a simple \XML\ database
+(the successor of a \TEX\ based format), a few styles, and
+a graphical user interface. It is a nice example of combined
+technologies.
+
+\chapter{The Database}
+
+One can argue about the structure of this database, but
+since it suits our purpose, we will not spend much words
+about how it ended up this way. You can happily use your own
+database and let it produce this kind of \XML\ code, which
+is then happily accepted by \CONTEXT.
+
+As said, the structure is quite similar to the \TEX\
+counterpart that we have been using for years to typeset
+our letters, envelopes, mailings and alike. This is
+typically the kind of code that remains unchanged for
+years, but the advance of \XML\ and evolution of the
+\EXAMPLE\ framework triggered a rewrite.
+
+The root element is defined as follows (we use \RELAXNG\ as
+definition format).
+
+\showRNGcomponent[correspondence][contacts]
+
+Each contact is a collection of data fields which may come
+in any order.
+
+\start
+  \setups[rng:contact]
+  \showRNGcomponent[correspondence][contact]
+\stop
+
+A contact group is a collection of references to contacts:
+
+\showRNGcomponent[correspondence][contactgroup]
+
+A contact file is just a reference to a to be included file:
+
+\showRNGcomponent[correspondence][contactfile]
+
+The fields that make up a contact are normally just text.
+The address needs to be preformatted with \type {<p>}
+elements (more details can be found in the file \type
+{x-corres.rng}).
+
+A simple database will look like this:
+
+\startbuffer
+<contacts>
+
+<contact label='hagen.j'>
+  <initials>J.</initials>
+  <formalname>Hagen</formalname>
+  <informalname>Hans</informalname>
+  <title>Drs.</title>
+  <prefix>Heer</prefix>
+  <address>
+    <p>J. Hagen</p>
+    <p>PRAGMA ADE</p>
+    <p>Ridderstraat 27</p>
+    <p>8061GH Hasselt NL</p>
+  </address>
+</contact>
+
+<contact label='otten.a.f'>
+  <initials>J.</initials>
+  <formalname>Otten</formalname>
+  <informalname>Ton</informalname>
+  <title>Drs.</title>
+  <prefix>Heer</prefix>
+  <address>
+    <p>A.F. Otten</p>
+    <p>PRAGMA ADE</p>
+    <p>Ridderstraat 27</p>
+    <p>8061GH Hasselt NL</p>
+  </address>
+</contact>
+
+<contact label='marle.k.van'>
+  <initials>K. van</initials>
+  <formalname>Marle</formalname>
+  <informalname>Kees</informalname>
+  <title>Ir.</title>
+  <prefix>Heer van</prefix>
+  <address>
+    <p>K. van Marle</p>
+    <p>PRAGMA POD</p>
+    <p>Ridderstraat 27</p>
+    <p>8061GH Hasselt NL</p>
+  </address>
+</contact>
+
+<contactgroup label='pragma-ade'>
+  <member>hagen.j</member>
+  <member>otten.a.f</member>
+</contactgroup>
+
+<contactgroup label='pragma-pod'>
+  <member>hagen.j</member>
+  <member>otten.a.f</member>
+  <member>marle.k.van</member>
+</contactgroup>
+
+</contacts>
+\stopbuffer
+
+\start
+  \setups[rng:fields]
+  \showXMLbuffer
+\stop
+
+The labels plays an important role later on, when we will
+filter data from the database, so they should be unique and
+consistent.
+
+\chapter{The Interface}
+
+You can use the database from within \CONTEXT\ after you've
+loaded the file \type {x-corres.tex}:
+
+\starttyping
+\usemodule[corres]
+\stoptyping
+
+The macro that deals with processing is:
+
+\starttyping
+\XMLprocesscontacts[filename]
+\stoptyping
+
+The argument is optional, in which case the selection needs
+to be set up with the following command:
+
+\starttyping
+\setvariables
+  [contacts]
+  [selection=,
+   file=]
+\stoptyping
+
+This command is also used for specifying the data file.
+
+The fields of a contact are stored and can be used in the
+typesetting process. This process is hooked into the \XML\
+engine and style by the following setup (here we show the
+default definition):
+
+\starttyping
+\startsetups[contact:handle]
+
+  \XMLflush{address}
+
+\stopsetups
+\stoptyping
+
+And so we have arrived at the main process, which may look
+like something:
+
+\starttyping
+\setvariables [contacts] [selection=pragma-ade,file=pragma.xml]
+
+\startsetups [contact:handle]
+  \XMLflush{initials} \XMLflush{formalname} \endgraf
+\stopsetups
+
+\XMLprocesscontacts
+\stoptyping
+
+A selection can be a comma separated list of labels and|/|or
+groups. In a first pass, the list is resolved into a list of
+valid contacts, while the second pass typesets the result
+based on the handle.
+
+\chapter{The Style}
+
+In the previous chapters we presented the \XML\ database
+and its interface, here will will spend some words on
+typesetting a (series of) letter(s). The style is quite
+independent of the database but uses the same fields and is
+called \type {m-letter.tex}.
+
+It does not make sense to discuss all the details of the
+style because you need to look into the file anyway, so we
+stick to discussing the methodology used. There is an
+\EXAMPLE\ interface that permits you to play with the
+settings.
+
+The layout setup is rather simple and uses standard
+\CONTEXT\ setup commands. The individual components that
+make up the letter are defined in so called setups, like:
+
+\starttyping
+\startsetups [letter:place:address]
+  ...
+\stopsetups
+\stoptyping
+
+We use the layering mechanism to collect and place the
+components. Inside such a setup, variables are used to
+control the behaviour. For instance, the location of the
+address on the page grid is determined by:
+
+\starttyping
+\setvariables
+  [letter:address]
+  [line=3]
+\stoptyping
+
+The address itself again a setup:
+
+\starttyping
+\setsetups[letter:address]
+  ...
+\stopsetups
+\stoptyping
+
+and although a definition like:
+
+\starttyping
+\startsetups[letter:address]
+  A Fancy Name \endgraf
+  A Nice Address \endgraf
+  The Place To Go
+\stopsetups
+\stoptyping
+
+is okay, it makes more sense to use variables again, like
+in:
+
+\starttyping
+\startsetups[letter:address]
+  \def\\{\endgraf}\getvariable{letter:data}{address}
+\stopsetups
+\stoptyping
+
+Of course you need to define the adress:
+
+\starttyping
+\setvariables
+  [letter:data]
+  [address={Name\\Address\\City}]
+\stoptyping
+
+This chaining of settings may look overly complicated, but
+the advantage is that by using setups we can easily
+overload components.
+
+For the same reason, we have isolated the labels for
+instance:
+
+\starttyping
+\setuplabeltext
+  [en]
+  [letter:opening:formal=Dear,
+   letter:opening:informal=Dear,
+   letter:opening:unknown=LS]
+\stoptyping
+
+Labels are defined per language, so that the style
+automatically adapts itself.
+
+Now, when you load the style, and optionally overload setups,
+and definitely set the data variables typesetting the letter
+only takes a few lines of code.
+
+\starttyping
+\starttext
+\setups [letter:place]
+\stoptext
+\stoptyping
+
+Interfacing to the \XML\ database takes the following steps:
+
+\starttyping
+\setvariables
+  [letter:data]
+  [   address=\XMLflush{address},
+       prefix=\XMLflush{prefix},
+       suffix=\XMLflush{suffix},
+     initials=\XMLflush{initials},
+   formalname=\XMLflush{formalname},
+ informalname=\XMLflush{informalname}]
+      content=\getbuffer]
+\stoptyping
+
+Here we assume that the content goes into a buffer. Of
+course we need to set the selection and filename for the
+contacts handler:
+
+\starttyping
+\setvariables
+  [contacts]
+  [selection=...,
+   file=...]
+\stoptyping
+
+Next we hook the letter style into the contacts handler:
+
+\starttyping
+\startsetups[contact:handle]
+  \setups[letter:place]
+\stopsetups
+\stoptyping
+
+And now we're ready to process the database and turn the
+addresses that match our selection criterium into a
+personalized letter.
+
+\starttyping
+\XMLprocesscontacts
+\stoptyping
+
+An example of this integration can be found in the \EXAMPLE\
+module \type {x-e-0302.tex}.
+
+\chapter{Examples}
+
+On the following pages we will show a few examples of generating
+letters.
+
+\startbuffer[demo]
+
+\startfiguretext
+  {none}
+  {\externalfigure
+     [\getvariable{xcorresp}{demo}]
+     [frame=on,
+      width=.65\textwidth]}
+
+  \switchtobodyfont[small]
+
+  \typefile{\getvariable{xcorresp}{demo}}
+
+\stopfiguretext
+
+\stopbuffer
+
+\page \setvariables[xcorresp][demo=letter-0] \getbuffer[demo]
+
+In this example we choose a font and typeset a simple test
+letter. We use a test setup to initialize the different
+elements that make up a letter.
+
+\page \setvariables[xcorresp][demo=letter-1] \getbuffer[demo]
+
+One of the first things you will like to do is to add a logo
+or other personal mark. There are several ways to do this.
+Here we put a graphic in the background.
+
+This option makes sense if your logo is placed on a paper
+format similar to the one of your letter.
+
+\page \setvariables[xcorresp][demo=letter-2] \getbuffer[demo]
+
+There is a special layer \type {letterhead} that you can use
+to position a graphic (or any content you want). You can
+place multiple graphic (or text) elements.
+
+\page \setvariables[xcorresp][demo=letter-3] \getbuffer[demo]
+
+Layers permits you to finetune the position, for instance
+with the \type {(v|h)offset} keys. The offsets are relative
+to the corner. More information about layers can be found
+in the \quote {details} manual.
+
+\page \setvariables[xcorresp][demo=letter-4] \getbuffer[demo]
+
+The adress and reference elements are also positioned in
+layers, but this time they are not in the background but
+flushed in the normal text stream. Their content tries to
+honor the grid. Instead of manipulating the layers directly,
+we use intermediate variables.
+
+\page \setvariables[xcorresp][demo=letter-5] \getbuffer[demo]
+
+The previous page showed some placement options but without
+cues this is not that easy to do. Therefore we have turned
+on some tracing options here.
+
+\page \setvariables[xcorresp][demo=letter-9] \getbuffer[demo]
+
+In addition to some style manipulation variables, we also
+use variables for setting the actual content of the letter.
+
+\page \setvariables[xcorresp][demo=letter-10] \getbuffer[demo]
+
+This style is identical to the previous one, apart from one
+setting:
+
+\starttyping
+\setvariables [letter:style] [alternative=ade]
+\stoptyping
+
+How are such alternatives implemented? When the module \type
+{letter} (or file \type {m-letter.tex}) is loaded, this module
+itself will start with loading \type {b-letter.tex} (before),
+and end with loading \type {a-letter.tex} (after). Especially
+the last one can overload and extend the style with local
+preferences.
+
+\page \setvariables[xcorresp][demo=letter-11] \getbuffer[demo]
+
+In \type {a-letter.tex} there are sections marked as:
+
+\starttyping
+\startsetups[letter:alternative:ade]
+  \setups[letter:ade:init,letter:common:style,letter:common:makeup]
+\stopsetups
+\stoptyping
+
+These setups are expanded when a letter is generated. The next page
+demonstrates that we have three such sections, which means that we
+have three alternative choices.
+
+\page \setvariables[xcorresp][demo=letter-12] \getbuffer[demo]
+
+So, the magic is in defining a setup related to the alternative. The
+last alternative (\type {cts}) is roughly defined as follows. The whole
+patch of the basic style is encapsulated in a setup:
+
+\starttyping
+\startsetups[letter:alternative:cts]
+  ....
+\stopsetups
+\stoptyping
+
+Between these commands we first define the graphic. In this case, the
+logo is taken from a company specific \METAPOST\ file:
+
+\starttyping
+\startreusableMPgraphic{common:graphic}
+  loadfigure "mp-prag" number 501 xsized 4cm ;
+\stopreusableMPgraphic
+\stoptyping
+
+We use the Computer Modern Mono Variable as main body font; this is
+set up with:
+
+\starttyping
+  \usetypescript[modernvariable][\defaultencoding]
+  \setupbodyfont[modernvariable,14.4pt]
+\stoptyping
+
+We also use hanging punctuation and are quite tolerant with respect
+to paragraph building. We use whitespace between the paragraphs.
+
+\starttyping
+\setupalign
+  [hanging]
+
+\setuptolerance
+  [verytolerant,stretch]
+
+\setupwhitespace
+  [big]
+\stoptyping
+
+Next we change the layout a bit:
+
+\starttyping
+\setuplayout
+  [color=dark,
+   width=middle,
+   height=middle,
+   topspace=.5cm,
+   header=3cm,
+   headerdistance=.5cm,
+   bottomspace=1.5cm,
+   footer=0pt,
+   backspace=4.5cm,
+   cutspace=1.5cm,
+   leftmargin=3cm,
+   margindistance=1cm]
+\stoptyping
+
+We start the first page pretty high:
+
+\starttyping
+\setupheader
+  [state=high]
+\stoptyping
+
+We also (re)define a few colors:
+
+\starttyping
+\definecolor [dark] [s=0.3]
+\definecolor [gray] [s=0.7]
+\stoptyping
+
+The logo (graphic) is put in its the main letter layer. Because we
+want to repeat it, we change its state:
+
+\starttyping
+\setuplayer
+  [lettermain]
+  [state=repeat,
+   hoffset=.5cm]
+
+\setlayer
+  [lettermain]
+  [y=0cm,x=-.5cm]
+  {\reuseMPgraphic{common:graphic}}
+
+\setlayer
+  [lettermain]
+  [y=4cm]
+  {\gray \scale
+     [width=3cm,height=\dimexpr(\paperheight-7cm)]
+     {\rotate{\tt CONTEXT TYPESETTING SERVICES}}}
+
+\setlayer
+  [lettermain]
+  [preset=leftbottom,
+   y=.5cm]
+  {\dark \scale[width=3cm,height=2cm]{\tt\framed
+     [offset=overlay,align=normal,frame=off]
+     {\tt Ridderstraat 27-29\\
+      8061 GH Hasselt NL\\
+      +31(0)38 477 53 69\\
+      www.pragma-cts.com}}}
+\stoptyping
+
+There ar etwo layers available: \type {lettermain} and \type
+{letternext}. By default, the main layer is placed once, and
+the next layer is places on following pages.
+
+The following settings change some defaults of the letter style.
+
+\starttyping
+\setvariables
+  [letter:reference]
+  [line=1,
+   noflines-min=2,
+   noflines-max=5]
+
+\setvariables
+  [letter:address]
+  [line=2,
+   noflines=7]
+\stoptyping
+
+The sequence of placing content is as follows (in most cases there the
+default sequence will do). Watch how we use local setups here.
+
+\starttyping
+\startlocalsetups [letter:sequence]
+
+  \setups [letter:place:reference]  \endgraf
+  \setups [letter:place:address]    \endgraf
+  \setups [letter:place:opening]    \endgraf
+  \setups [letter:place:content]    \page[no]
+  \setups [letter:place:closing]    \endgraf
+  \setups [letter:place:appendices] \endgraf
+
+\stoplocalsetups
+\stoptyping
+
+\chapter{The GUI}
+
+{\em to do}
+
+\chapter{The Tools}
+
+We are in the process of writing an associated tool for
+sorting, cleaning up, and manipulating the correspondence
+database. This tool will be part of the \CONTEXT\
+distribution as soon as it's stable and documented.
+
+\stoptext

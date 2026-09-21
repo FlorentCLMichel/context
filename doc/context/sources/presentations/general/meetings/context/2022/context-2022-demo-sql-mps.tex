@@ -1,0 +1,268 @@
+% \enabletrackers[sql*]
+% \enabletrackers[*lib*]
+
+% E:\tex-context\tex\texmf-win64\bin\lib\luametatex\sqlite\sqlite3.dll
+
+% with sqlite we have only single access (unless we check for locks and
+% wait a while .. todo)
+%
+% with a mysql server one can access in parallel and make a
+% high performance parallel processor: fetch what is needed
+
+% \registerctxluafile{libs-imp-sqlite}{autosuffix}
+
+\usemodule[sql][method=sqlite]
+
+\startluacode
+
+    local sql = require("util-sql")
+
+    document.sqlconverter = sql.makeconverter {
+        { name = "index", type = "number" },
+        { name = "x",     type = "number" },
+        { name = "y",     type = "number" },
+    }
+
+ -- sql.setmethod("sqlite") -- mysql
+
+    document.sqlpresets = {
+        host      = "localhost",
+        username  = "root",
+        password  = "secret",
+        database  = "test",
+        id        = "test"
+    }
+
+    local sqlite_template = [[
+        CREATE TABLE IF NOT EXISTS `test` (
+            `index`  INTEGER PRIMARY KEY,
+            `x`      INTEGER,
+            `y`      INTEGER
+        )
+    ]]
+
+    local results, rest = utilities.sql.execute {
+        presets   = document.sqlpresets,
+        template  = sqlite_template,
+    }
+
+ -- inspect(results)
+ -- inspect(rest)
+
+\stopluacode
+
+\startluacode
+    local template = [[
+        INSERT INTO `test` (
+            `index`,
+            `x`,
+            `y`
+        ) VALUES (
+            %[index]%,
+            %[x]%,
+            %[y]%
+        ) ;
+    ]]
+
+    local function add(t)
+        local results = utilities.sql.execute {
+            presets   = document.sqlpresets,
+            template  = template,
+         -- variables = {
+         --     index = t.index,
+         --     x     = t.x,
+         --     y     = t.y,
+         -- },
+            variables = t,
+        }
+        if results then
+--            inspect(results)
+        end
+    end
+
+--  add { index = 1, x = 10, y = 30 }
+--  add { index = 2, x = 20, y = 20 }
+--  add { index = 3, x = 30, y = 10 }
+
+    function mp.AddPoint(index, x, y)
+        add { index = index, x = x, y = y }
+    end
+
+\stopluacode
+
+\startluacode
+    local template = [[
+        UPDATE `test`
+        SET
+            `x` = %[x]%,
+            `y` = %[y]%
+        WHERE
+            `index` = %[index]%
+        ;
+    ]]
+
+    local function update(t)
+        local results, x, y = utilities.sql.execute {
+            presets   = document.sqlpresets,
+            template  = template,
+            variables = t,
+        }
+        if results then
+--            inspect(results)
+        end
+    end
+
+--  update { index = 2, x = 22.22, y = 2.2 }
+
+    function mp.UpdatePoint(index, x, y)
+        update { index = index, x = x, y = y }
+    end
+\stopluacode
+
+\startluacode
+
+    local template = [[
+        SELECT * from `test`
+        WHERE
+            `index` = %[index]%
+        ;
+    ]]
+
+    local function fetch(index)
+        local results = utilities.sql.execute {
+            presets   = document.sqlpresets,
+            template  = template,
+            variables = { index = index },
+            converter = document.sqlconverter,
+        }
+        local point = results and results[1]
+        if point then
+            return { point.x or 0, point.y or 0 }
+        else
+            return { 0, 0 }
+        end
+    end
+
+    function mp.FetchPoint(index)
+        mp.inject(fetch(index))
+    end
+
+\stopluacode
+
+\usemodule[article-basic]
+
+\startluacode
+
+    metapost.registerdirect("FetchPoint", function()
+        return mp.FetchPoint(
+            mp.scan.integer()
+        )
+    end)
+    metapost.registerdirect("AddPoint", function()
+        return mp.AddPoint(
+            mp.scan.integer(),
+            mp.scan.integer(),
+            mp.scan.integer()
+        )
+    end)
+    metapost.registerdirect("UpdatePoint", function()
+        return mp.UpdatePoint(
+            mp.scan.integer(),
+            mp.scan.integer(),
+            mp.scan.integer()
+        )
+    end)
+
+\stopluacode
+
+\startMPdefinitions
+    newscriptindex mfid_FetchPoint  ; mfid_FetchPoint  := scriptindex "FetchPoint"  ;
+    newscriptindex mfid_AddPoint    ; mfid_AddPoint    := scriptindex "AddPoint"    ;
+    newscriptindex mfid_UpdatePoint ; mfid_UpdatePoint := scriptindex "UpdatePoint" ;
+
+    vardef FetchPoint(expr n) =
+        runscript mfid_FetchPoint n
+    enddef ;
+    vardef AddPoint(expr n, x, y) =
+        runscript mfid_AddPoint n x y
+    enddef ;
+    vardef UpdatePoint(expr n, x, y) =
+        runscript mfid_UpdatePoint n x y
+    enddef ;
+\stopMPdefinitions
+
+\starttext
+
+\startMPpage
+    pair ThePosition[];
+    ThePosition[1] := lua.mp.FetchPoint(10) ;
+    ThePosition[2] := lua.mp.FetchPoint(15) ;
+    draw (ThePosition[1] -- ThePosition[2]) scaled 20 ;
+    % first time
+lua.mp.AddPoint(10,2,3) ;
+lua.mp.AddPoint(15,5,6) ;
+    % after that
+    lua.mp.UpdatePoint(10,2,3.3) ;
+    lua.mp.UpdatePoint(15,5,6) ;
+\stopMPpage
+
+% \startMPpage
+%     pair ThePosition[];
+%     ThePosition[1] := FetchPoint(10) ;
+%     ThePosition[2] := FetchPoint(15) ;
+%     draw (ThePosition[1] -- ThePosition[2]) scaled 20 ;
+% %     % first time
+% % AddPoint(10,2,3) ;
+% % AddPoint(15,5,6) ;
+%     UpdatePoint(10,2,3.3) ;
+%     UpdatePoint(15,5,6) ;
+% %     % after that
+% \stopMPpage
+
+\startluacode
+
+    context.starttitle { title = "Points" }
+
+    local results = utilities.sql.execute {
+        presets   = document.sqlpresets,
+        template  = "select * from `test` ;",
+        variables = { },
+        converter = document.sqlconverter,
+    }
+
+ -- inspect(results)
+
+    context.starttabulate { "|c|r|r|" }
+    context.HL()
+    context.NC() context.bold("index")
+    context.NC() context.bold("x")
+    context.NC() context.bold("y")
+    context.NC() context.NR()
+    context.HL()
+    for i=1,#results do
+        local result = results[i]
+        context.NC() context(result.index)
+        context.NC() context(result.x)
+        context.NC() context(result.y)
+        context.NC() context.NR()
+    end
+    context.HL()
+    context.stoptabulate()
+
+    context.stoptitle()
+
+\stopluacode
+
+\stoptext
+
+% just for the fun of it
+%
+% store (database,listname,value)
+%
+% numeric -> native
+% boolean -> native
+% pair    -> native
+% pair    -> native
+% path    -> serialized lua
+%
+% bump performance with by using indexed runscript

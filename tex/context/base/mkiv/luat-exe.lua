@@ -95,7 +95,7 @@ sandbox.finalizer {
 
 -- A bit of file system protection.
 
-sandbox.initializer{
+sandbox.initializer {
     category = "files",
     action   = function ()
         if type(root_list) == "string" then
@@ -110,6 +110,8 @@ sandbox.initializer{
 }
 
 -- Let's prevent abuse of these libraries (built-in support still works).
+--
+-- Todo: add some more here.
 
 sandbox.finalizer {
     category = "functions",

@@ -34,9 +34,7 @@
 
 */
 
-# include "../lua/lmtinterface.h"
-# include "../utilities/auxmemory.h"
-# include "../utilities/auxfile.h"
+# include "luametatex.h"
 
 /* Standard access mode constants */
 
@@ -131,7 +129,7 @@
         LPWSTR w = aux_utf8_to_wide(s);
         int r = _wstati64(w, i);
         lmt_memory_free(w);
-        return r;
+        return r == 0;
     }
 
     static inline int mk_dir(const char *s)
@@ -139,7 +137,7 @@
         LPWSTR w = aux_utf8_to_wide(s);
         int r = _wmkdir(w);
         lmt_memory_free(w);
-        return r;
+        return r == 0;
     }
 
     static inline int ch_dir(const char *s)
@@ -147,7 +145,7 @@
         LPWSTR w = aux_utf8_to_wide(s);
         int r = _wchdir(w);
         lmt_memory_free(w);
-        return r;
+        return r == 0;
     }
 
     static inline int rm_dir(const char *s)
@@ -155,7 +153,7 @@
         LPWSTR w = aux_utf8_to_wide(s);
         int r = _wrmdir(w);
         lmt_memory_free(w);
-        return r;
+        return r == 0;
     }
 
     /* POSIX symlink(target, linkpath) -> Symbolic Link */
@@ -169,7 +167,7 @@
         int r = CreateSymbolicLinkW(wf, wt, 0x2) != 0;
         lmt_memory_free(wt);
         lmt_memory_free(wf);
-        return r;
+        return r == 0;
     }
 
     /* POSIX link(target, linkpath) -> Hard Link */
@@ -182,7 +180,7 @@
         int r = CreateHardLinkW(wf, wt, NULL) != 0;
         lmt_memory_free(wt);
         lmt_memory_free(wf);
-        return r;
+        return r == 0;
     }
 
     static inline int ch_to_exec(const char *s, mode_t n)
@@ -190,15 +188,23 @@
         LPWSTR w = aux_utf8_to_wide(s);
         int r = _wchmod(w, n);
         lmt_memory_free(w);
-        return r;
+        return r == 0;
     }
 
     static inline int set_utime(const char *s, utime_struct *b)
     {
         LPWSTR w = aux_utf8_to_wide(s);
         int r = _wutime64(w, b);
+        /* if the file doesn't exist, we create an empty file and retry updating timestamps */
+        if (r != 0 && errno == ENOENT) {
+            FILE *f = _wfopen(w, L"ab");
+            if (f) {
+                fclose(f);
+                r = _wutime64(w, b);
+            }
+        }
         lmt_memory_free(w);
-        return r;
+        return r == 0;
     }
 
 # else
@@ -219,42 +225,42 @@
 
     static inline int get_stat(const char *s, info_struct *i)
     {
-        return stat(s, i);
+        return stat(s, i) == 0;
     }
 
     static inline int mk_dir(const char *s)
     {
-        return mkdir(s, S_IRUSR | S_IWUSR | S_IXUSR | S_IRGRP | S_IWGRP | S_IXGRP | S_IROTH | S_IXOTH);
+        return mkdir(s, S_IRUSR | S_IWUSR | S_IXUSR | S_IRGRP | S_IWGRP | S_IXGRP | S_IROTH | S_IXOTH) == 0;
     }
 
     static inline int ch_dir(const char *s)
     {
-        return chdir(s);
+        return chdir(s) == 0;
     }
 
     static inline int rm_dir(const char *s)
     {
-        return rmdir(s);
+        return rmdir(s) == 0;
     }
 
     static inline int mk_symlink(const char *target, const char *linkpath)
     {
-        return symlink(target, linkpath) != -1;
+        return symlink(target, linkpath) == 0;
     }
 
     static inline int mk_link(const char *target, const char *linkpath)
     {
-        return link(target, linkpath) != -1;
+        return link(target, linkpath) == 0;
     }
 
     static inline int ch_to_exec(const char *s, mode_t mode)
     {
-        return chmod(s, mode);
+        return chmod(s, mode) == 0;
     }
 
     static inline int set_utime(const char *s, utime_struct *b)
     {
-        return utime(s, b);
+        return utime(s, b) == 0;
     }
 
 # endif
@@ -269,12 +275,14 @@
     success = chdir(name)
 */
 
-static int filelib_chdir(lua_State *L) {
+static int filelib_chdir(lua_State *L)
+{
+    int okay = 0;
     if (lua_type(L, 1) == LUA_TSTRING) {
-        lua_pushboolean(L, ! ch_dir(luaL_checkstring(L, 1)));
-    } else {
-        lua_pushboolean(L, 0);
+        const char * name = lua_tostring(L, 1);
+        okay = (name && lmt_valid_target(L, security_readable, name, security_change_directory)) ? ch_dir(name) : 0;
     }
+    lua_pushboolean(L, okay);
     return 1;
 }
 
@@ -355,25 +363,29 @@ static int filelib_chdir(lua_State *L) {
 
 static int filelib_link(lua_State *L)
 {
+    int okay = 0;
     if (lua_type(L, 1) == LUA_TSTRING && lua_type(L, 2) == LUA_TSTRING) {
         const char *oldpath = lua_tostring(L, 1);
         const char *newpath = lua_tostring(L, 2);
-        lua_pushboolean(L, lua_toboolean(L, 3) ? mk_symlink(oldpath, newpath) : mk_link(oldpath, newpath));
-    } else {
-        lua_pushboolean(L, 0);
+        if (oldpath && newpath && lmt_valid_target(L, security_writeable, newpath, security_link_object)) {
+            okay = lua_toboolean(L, 3) ? mk_symlink(oldpath, newpath) : mk_link(oldpath, newpath);
+        }
     }
+    lua_pushboolean(L, okay);
     return 1;
 }
 
 static int filelib_symlink(lua_State *L)
 {
+    int okay = 0;
     if (lua_type(L, 1) == LUA_TSTRING && lua_type(L, 2) == LUA_TSTRING) {
         const char *oldpath = lua_tostring(L, 1);
         const char *newpath = lua_tostring(L, 2);
-        lua_pushboolean(L, mk_symlink(oldpath, newpath));
-    } else {
-        lua_pushboolean(L, 0);
+        if (oldpath && newpath && lmt_valid_target(L, security_writeable, newpath, security_link_object)) {
+            okay = mk_symlink(oldpath, newpath);
+        }
     }
+    lua_pushboolean(L, okay);
     return 1;
 }
 
@@ -385,11 +397,12 @@ static int filelib_symlink(lua_State *L)
 
 static int filelib_mkdir(lua_State *L)
 {
+    int okay = 0;
     if (lua_type(L, 1) == LUA_TSTRING) {
-        lua_pushboolean(L, mk_dir(lua_tostring(L, 1)) != -1);
-    } else {
-        lua_pushboolean(L, 0);
+        const char * name = lua_tostring(L, 1);
+        okay = (name && lmt_valid_target(L, security_writeable, name, security_create_directory)) ? mk_dir(name) : 0;
     }
+    lua_pushboolean(L, okay);
     return 1;
 }
 
@@ -401,11 +414,12 @@ static int filelib_mkdir(lua_State *L)
 
 static int filelib_rmdir(lua_State *L)
 {
+    int okay = 0;
     if (lua_type(L, 1) == LUA_TSTRING) {
-        lua_pushboolean(L, rm_dir(luaL_checkstring(L, 1)) != -1);
-    } else {
-        lua_pushboolean(L, 0);
+        const char * name = lua_tostring(L, 1);
+        okay = (name && lmt_valid_target(L, security_writeable, name, security_remove_directory)) ? rm_dir(name) : 0;
     }
+    lua_pushboolean(L, okay);
     return 1;
 }
 
@@ -876,20 +890,20 @@ static inline const char *mode2string(mode_t mode)
 
 static int filelib_touch(lua_State *L)
 {
+    int okay = 0;
     if (lua_type(L, 1) == LUA_TSTRING) {
-        const char *file = luaL_checkstring(L, 1);
+        const char *name = luaL_checkstring(L, 1);
         utime_struct utb, *buf;
         if (lua_gettop(L) == 1) {
             buf = NULL;
         } else {
-            utb.actime = (time_t) luaL_optinteger(L, 2, 0);
+            utb.actime  = (time_t) luaL_optinteger(L, 2, 0);
             utb.modtime = (time_t) luaL_optinteger(L, 3, utb.actime);
             buf = &utb;
         }
-        lua_pushboolean(L, set_utime(file, buf) != -1);
-    } else {
-        lua_pushboolean(L, 0);
+        okay = (name && lmt_valid_target(L, security_writeable, name, security_touch_object)) ? set_utime(name, buf) : 0;
     }
+    lua_pushboolean(L, okay);
     return 1;
 }
 
@@ -928,7 +942,7 @@ static int filelib_attributes(lua_State *L)
     if (lua_type(L, 1) == LUA_TSTRING) {
         info_struct info;
         const char *file = luaL_checkstring(L, 1);
-        if (get_stat(file, &info)) {
+        if (! get_stat(file, &info)) {
             /* bad news */
         } else if (lua_isstring(L, 2)) {
             const char *member = lua_tostring(L, 2);
@@ -955,21 +969,55 @@ static int filelib_attributes(lua_State *L)
     return 1;
 }
 
-static inline int filelib_check_path_type(lua_State *L, int access_mode, int check_dir)
-{
-    if (lua_type(L, 1) == LUA_TSTRING) {
-        info_struct info;
-        const char *name = lua_tostring(L, 1);
-        if (get_stat(name, &info) == 0) {
-            int match = check_dir ? S_ISDIR(info.st_mode)
-                                  : (S_ISREG(info.st_mode) || S_ISLNK(info.st_mode));
-            lua_pushboolean(L, match && (access(name, access_mode) == 0));
-            return 1;
+# ifdef _WIN32
+
+    static inline int filelib_check_path_type(lua_State *L, int access_mode, int check_dir)
+    {
+        int okay = 0;
+        if (lua_type(L, 1) == LUA_TSTRING) {
+            const char *name = lua_tostring(L, 1);
+            LPWSTR w = aux_utf8_to_wide(name);
+            if (w) {
+                info_struct info;
+                /* perform a single stat call on the wide path */
+                if (_wstati64(w, &info) == 0) {
+                    int match = check_dir ? win_S_ISDIR(info.st_mode) : (win_S_ISREG(info.st_mode) || win_S_ISLNK(info.st_mode));
+                    if (match) {
+                        /* derive permission checks directly from st_mode or run _waccess on the existing wide string */
+                        if (access_mode == F_OK) {
+                            okay = 1;
+                        } else if (access_mode == R_OK) {
+                            okay = (info.st_mode & _S_IREAD) != 0;
+                        } else if (access_mode == W_OK) {
+                            okay = (info.st_mode & _S_IWRITE) != 0;
+                        }
+                    }
+                }
+                lmt_memory_free(w);
+            }
         }
+        lua_pushboolean(L, okay);
+        return 1;
     }
-    lua_pushboolean(L, 0);
-    return 1;
-}
+
+# else
+
+    static inline int filelib_check_path_type(lua_State *L, int access_mode, int check_dir)
+    {
+        int okay = 0;
+        if (lua_type(L, 1) == LUA_TSTRING) {
+            info_struct info;
+            const char *name = lua_tostring(L, 1);
+            if (get_stat(name, &info)) {
+                int match = check_dir ? S_ISDIR(info.st_mode) : (S_ISREG(info.st_mode) || S_ISLNK(info.st_mode));
+                okay = match && (access(name, access_mode) == 0);
+            }
+        }
+        lua_pushboolean(L, okay);
+        return 1;
+    }
+
+# endif
 
 static int filelib_isdir          (lua_State *L) { return filelib_check_path_type(L, F_OK, 1); }
 static int filelib_isreadabledir  (lua_State *L) { return filelib_check_path_type(L, R_OK, 1); }
@@ -981,21 +1029,17 @@ static int filelib_iswriteablefile(lua_State *L) { return filelib_check_path_typ
 
 static int filelib_setexecutable(lua_State *L)
 {
-    int ok = 0;
+    int okay = 0;
     if (lua_type(L, 1) == LUA_TSTRING) {
-        info_struct info;
         const char *name = lua_tostring(L, 1);
-        if (! get_stat(name, &info) && S_ISREG(info.st_mode)) {
-            if (ch_to_exec(name, info.st_mode | exec_mode_flag)) {
-                /* the setting failed */
-            } else {
-                ok = 1;
+        if (name && lmt_valid_target(L, security_writeable, name, security_set_executable)) {
+            info_struct info;
+            if (get_stat(name, &info) && S_ISREG(info.st_mode)) {
+                okay = ch_to_exec(name, info.st_mode | exec_mode_flag);
             }
-        } else {
-            /* not a valid file */
         }
     }
-    lua_pushboolean(L, ok);
+    lua_pushboolean(L, okay);
     return 1;
 }
 
@@ -1032,37 +1076,285 @@ static int filelib_canonicalize(lua_State *L)
     return 1;
 }
 
+/*tex
+
+    We also need to overload |loadfile| and |dofile|. We could do this only for windows but we
+    might add something here so let's just always do it. We also need to handle the package
+    loader. So, here are variants on the \LUA\ functions.
+
+    We can actually decide to plug in our own error message handler. Of course we use the helpers
+    we already made before (proven wide name handling in windows). We have to deal with the bom
+    (okay) as well as the shebang line (unix specific so we might drop that). Contrary to Lua
+    here we do that in the buffer. Because not all helpers in the original are public the error
+    handling is inline.
+
+    We deliberately don't implement stdin support but we need to handle the shebang line even if
+    it makes makes little sense because otherwise some tikz files can't be loaded. The reason why
+    we offer the option to block it (|--blockshebang| and/or a setter) us that it permits us to
+    identify these issues.
+
+*/
+
+int filelib_loadfilex(
+    lua_State  *L,
+    const char *filename,
+    const char *mode
+)
+{
+    FILE *f = NULL;
+    if (filename == NULL) {
+        lua_pushliteral(L, "invalid filename (null)");
+        return LUA_ERRFILE;
+    }
+    if (! lmt_valid_target(L, security_loadable, filename, security_load_script_file)) {
+        lua_pushfstring(L, "file '%s' is not accessible", filename);
+        return LUA_ERRFILE;
+    }
+# if defined (_WIN32)
+    wchar_t *wfilename = aux_utf8_to_wide(filename);
+    if (wfilename) {
+        f = _wfopen(wfilename, L"rb");
+        lmt_memory_free(wfilename);
+    }
+# else
+    f = fopen(filename, "rb");
+# endif
+    if (f == NULL) {
+        lua_pushfstring(L, "file '%s' is not found or unreadable", filename);
+        return LUA_ERRFILE;
+    }
+    char *buffer = NULL;
+    size_t bytes = 0;
+    /* we need to get the size */
+    long size = 0;
+    if (fseek(f, 0, SEEK_END) == 0) {
+        size = ftell(f);
+        fseek(f, 0, SEEK_SET);
+    }
+    if (size < 0) {
+        fclose(f);
+        lua_pushfstring(L, "file '%s' can't be accessed (seek)", filename);
+        return LUA_ERRFILE;
+    }
+    buffer = lmt_memory_malloc(size > 0 ? size : 1);
+    if (! buffer) {
+        fclose(f);
+        lua_pushfstring(L, "there is not enough memory to load file '%s'", filename);
+        return LUA_ERRMEM;
+    }
+    if (size > 0) {
+        bytes = fread(buffer, 1, size, f);
+    }
+    fclose(f);
+    char *chunkname = NULL;
+    if (filename[0] == '=' || filename[0] == '@') {
+        chunkname = lmt_memory_strdup(filename);
+    } else {
+        chunkname = lmt_memory_malloc(strlen(filename) + 2);
+        sprintf(chunkname, "@%s", filename);
+    }
+    /* deal with the BOM and shebang as in skipcomment in lauxlib.c */
+    const char *data = buffer;
+    /* kind of skipBOM lauxlib.c, here in the buffer */
+    if (bytes >= 3 && (unsigned char) data[0] == 0xEF && (unsigned char) data[1] == 0xBB && (unsigned char) data[2] == 0xBF) {
+        data += 3;
+        bytes -= 3;
+    }
+    /* kind of skipcomment in lauxlib.c, here in the buffer */
+    int status = LUA_ERRFILE;
+    if (bytes > 0 && data[0] == '#') {
+        if (lmt_engine_state.permit_shebang == load_shebang_enabled) {
+            /* we need to retain the '\n' for proper line numbering */
+            while (bytes > 0 && data[0] != '\n') {
+                data++;
+                bytes--;
+            }
+        } else {
+            lua_pushfstring(L, "unexpected shebang line found in file '%s'", filename);
+            goto DONE;
+        }
+    }
+    /* */
+    status = luaL_loadbufferx(L, data, bytes, chunkname, mode);
+  DONE:
+    lmt_memory_free(buffer);
+    lmt_memory_free(chunkname);
+    return status;
+}
+
+static int filelib_setloadshebang(lua_State *L)
+{
+    if (lmt_engine_state.permit_shebang != load_shebang_blocked) {
+        int permission = lua_tointeger(L, 1);
+        switch (permission) {
+            case load_shebang_disabled:
+            case load_shebang_enabled:
+            case load_shebang_blocked:
+                lmt_engine_state.permit_shebang = permission;
+                break;
+            default:
+                /* error, silently recover */
+                break;
+        }
+    }
+    return 0;
+}
+
+static int filelib_loadfile(lua_State *L)
+{
+    const char *filename = luaL_optstring(L, 1, NULL);
+    const char *mode     = luaL_optstring(L, 2, NULL);
+    int status = filelib_loadfilex(L, filename, mode);
+    if (status == LUA_OK) {
+        return 1; /* function */
+    } else {
+        lua_pushnil(L);
+        lua_insert(L, -2); /* nil, error_message */
+        return 2;
+    }
+}
+
+static int filelib_dofile(lua_State *L)
+{
+    const char *filename = luaL_optstring(L, 1, NULL);
+    if (lmt_unlikely(filelib_loadfilex(L, filename, "bt") != LUA_OK)) {
+        return lua_error(L);
+    } else {
+        lua_replace(L, 1);
+        lua_settop(L, 1);
+        lua_call(L, 0, LUA_MULTRET);
+        return lua_gettop(L);
+    }
+}
+
+static const char *filelib_searchpath(
+    lua_State  *L,
+    const char *name,
+    const char *path,
+    const char *sep,
+    const char *dirsep
+)
+{
+    luaL_Buffer b;
+    luaL_buffinit(L, &b);
+    if (*sep != '\0' && strchr(name, *sep) != NULL) {
+        name = luaL_gsub(L, name, sep, dirsep);
+    }
+    while (*path != '\0') {
+        const char *sub = strchr(path, '?');
+        if (sub != NULL) {
+            luaL_addlstring(&b, path, sub - path);
+            luaL_addstring(&b, name);
+            path = sub + 1;
+        }
+        const char *next = strchr(path, ';');
+        if (next == NULL) {
+            luaL_addstring(&b, path);
+            path = ""; /* ends the loop on the next iteration */
+        } else {
+            luaL_addlstring(&b, path, next - path);
+            path = next + 1; /* jumps past the semicolon */
+        }
+        luaL_pushresult(&b);
+        const char *filename = lua_tostring(L, -1);
+# if defined(_WIN32)
+        wchar_t *wfilename = aux_utf8_to_wide(filename);
+        if (wfilename) {
+            FILE *f = _wfopen(wfilename, L"r");
+            lmt_memory_free(wfilename);
+            if (f) {
+                fclose(f);
+                return filename; /* file path left at top of stack */
+            }
+        }
+# else
+        FILE *f = fopen(filename, "r");
+        if (f) {
+            fclose(f);
+            return filename;
+        }
+# endif
+        lua_pop(L, 1); /* next path */
+        luaL_buffinit(L, &b);
+    }
+    lua_pushfstring(L, "no file '%s'", name);
+    return NULL;
+}
+
+static int filelib_package_searcher_file(lua_State *L)
+{
+    const char *name = luaL_checkstring(L, 1);
+    lua_getfield(L, lua_upvalueindex(1), "path");
+    if (! lua_isstring(L, -1)) {
+        lua_pushfstring(L, "no 'package.path'");
+        return 1;
+    } else {
+        const char *filename = filelib_searchpath(L, name, lua_tostring(L, -1), "-", "/");
+        if (filename == NULL) {
+            return 1; /* error message */
+        } else if (filelib_loadfilex(L, filename, "bt") == LUA_OK) {
+            lua_pushstring(L, filename);
+            return 2; /* chunk and filename */
+        } else {
+            return luaL_error(L, "error loading module '%s' from file '%s':\n\t%s", name, filename, lua_tostring(L, -1));
+        }
+    }
+}
+
+/* */
+
 static const struct luaL_Reg filelib_function_list[] = {
     { "attributes",      filelib_attributes        },
-    { "chdir",           filelib_chdir             },
     { "currentdir",      filelib_currentdir        },
     { "dir",             filelib_dir               },
-    { "mkdir",           filelib_mkdir             },
-    { "rmdir",           filelib_rmdir             },
-    { "touch",           filelib_touch             },
+    { "chdir",           filelib_chdir             }, /* security : readable */
+    { "mkdir",           filelib_mkdir             }, /* security : writeable */
+    { "rmdir",           filelib_rmdir             }, /* security : writeable */
+    { "touch",           filelib_touch             }, /* security : writeable */
     { "expandpath",      filelib_expandpath        },
     { "canonicalize",    filelib_canonicalize      },
     /* */
-    { "link",            filelib_link              },
-    { "symlink",         filelib_symlink           },
-    { "setexecutable",   filelib_setexecutable     },
+    { "link",            filelib_link              }, /* security : writeable */
+    { "symlink",         filelib_symlink           }, /* security : writeable */
+    { "setexecutable",   filelib_setexecutable     }, /* security : writeable */
     { "symlinktarget",   filelib_symlinktarget     },
     /* */
     { "isdir",           filelib_isdir             },
     { "isfile",          filelib_isfile            },
-    { "iswriteabledir",  filelib_iswriteabledir    },
-    { "iswriteablefile", filelib_iswriteablefile   },
-    { "isreadabledir",   filelib_isreadabledir     },
-    { "isreadablefile",  filelib_isreadablefile    },
+    { "iswriteabledir",  filelib_iswriteabledir    }, /* security */
+    { "iswriteablefile", filelib_iswriteablefile   }, /* security */
+    { "isreadabledir",   filelib_isreadabledir     }, /* security */
+    { "isreadablefile",  filelib_isreadablefile    }, /* security */
     /* */
     { "lessweird",       filelib_lessweird         },
     { "moreweird",       filelib_moreweird         },
+    /* */
+    { "setloadshebang",  filelib_setloadshebang    },
     /* */
     { NULL,              NULL                      },
 };
 
 int luaopen_filelib(lua_State *L)
 {
+    /* */
+    lua_pushcfunction(L, filelib_loadfile);
+    lua_setglobal(L, "loadfile");                     /* security: loadable */
+    /* */
+    lua_pushcfunction(L, filelib_dofile);
+    lua_setglobal(L, "dofile");                       /* security: loadable */
+    /* */
+    lua_getglobal(L, "package");
+    if (lua_istable(L, -1)) {
+        lua_getfield(L, -1, "searchers");             /* security: loadable */
+        if (lua_istable(L, -1)) {
+            lua_pushvalue(L, -2);
+            lua_pushcclosure(L, filelib_package_searcher_file, 1);
+            lua_rawseti(L, -2, 2);
+        }
+        lua_pop(L, 1); // searchers
+    }
+    lua_pop(L, 1); // package
+    /* */
     dir_create_meta(L);
     luaL_newlib(L, filelib_function_list);
     return 1;

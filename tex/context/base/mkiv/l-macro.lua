@@ -1,4 +1,4 @@
-if not modules then modules = { } end modules ['l-macros'] = {
+if not modules then modules = { } end modules ['l-macro'] = {
     version   = 1.001,
     comment   = "companion to luat-lib.mkiv",
     author    = "Hans Hagen, PRAGMA-ADE, Hasselt NL",

@@ -1,0 +1,169 @@
+% language=us
+
+\environment context-2024-style
+
+\logo [XEON]    {XEON}
+\logo [OPENSUSE]{OpenSUSE}
+\logo [QEMU]    {QEMU}
+
+\startdocument
+  [title={\TeX},
+   banner={into the current landscape},
+   location={context\enspace {\bf 2024}\enspace meeting}]
+
+
+\starttitle[title=Over 30 years of \TEX]
+
+The 1995 4all\TEX\ \DVD\ shipped with \CONTEXT\ and (last week) installing it on
+the old \IBM\ 380 Laptop was still possible. A simple \quotation {hello world} document
+processed surprisingly fast (a few seconds). We're talking of 223 pages with
+standard layout and fonts.
+
+This is huge Em\TeX, some \DVI\ bitmap output turned \POSTSCRIPT, viewed with
+\GHOSTSCRIPT. Around that time we used \DVIPSONE\ and outline \POSTSCRIPT\ fonts
+already with \DVIWINDO\ and \ACROBAT\ on \MSDOS. Replicating that nowadays is non
+trivial. A 386 \CPU, 640 KB memory and a 512 MB disk.
+
+\stoptitle
+
+\starttitle[title=Some 10 years later]
+
+A 2005 version of \CONTEXT\ on an old Dell Inspiron 8000 laptop processes 1000
+\quote {tufte in a macro} samples in 7.5 seconds. We're talking \PDFTEX,
+\TEXEXEC\ and \TEXUTIL.
+
+\starttyping
+\def\Tufte{We live ...}
+
+\starttext \dorecurse{1000}{\Tufte\par} \stoptext
+\stoptyping
+
+\stoptitle
+
+\starttitle[title=Again about 20 years later]
+
+The same test on my Dell 7520 laptop (Xeon 1505M v6) takes:
+
+\starttabulate[|l|l|l|l|]
+\NC 1.2 seconds \NC \PDFTEX     \NC \MKII \NC           \NC \NR
+\NC 5.7 seconds \NC \XETEX      \NC \MKII \NC           \NC \NR
+\NC 3.3 seconds \NC \LUATEX     \NC \MKIV \NC           \NC \NR
+\NC 2.9 seconds \NC \LUAMETATEX \NC \MKXL \NC aka \LMTX \NC \NR
+\stoptabulate
+
+On a slightly newer Dell 7540 laptop (i7 9750H) it takes 2.2 seconds with
+an August 2024 \LMTX.
+
+\stoptitle
+
+\starttitle[title=Today 2024]
+
+Feel free to benchmark:
+
+\starttyping
+\starttext
+    \dorecurse{1000}{\samplefile{tufte}\par}
+\stoptext
+\stoptyping
+
+Run it a few times in order to populate the OS file cache. It runs the same
+speed on a similar \LINUX\ laptop (also a 7520 with Xeon).
+
+It can't be worse than on a \QEMU\ \RISCV\ emulator which takes 46.1 seconds on that
+same 7520 laptop (15 times slower).
+
+\stoptitle
+
+\starttitle[title=Some things stay]
+
+\startitemize
+    \startitem A fifteen year old car is just as comfortable as a modern one. \stopitem
+    \startitem Next years mobile phone is not substantially better than last years. \stopitem
+    \startitem My more than 5 year old laptop feels quite okay in 2024. \stopitem
+    \startitem Books evolved into perfection and are still valued. \stopitem
+  % \startitem Bad things also stay, take dictators, warlords and injustice. \stopitem
+    \startitem Decent \EPUB\ devices will eventually arrive, real digital paper. \stopitem
+\stopitemize
+
+\stoptitle
+
+\starttitle[title=Some things change purpose]
+
+\startitemize
+    \startitem Wood and brick windmills are monuments but still occasionally used. \stopitem
+    \startitem Church towers still are landmarks. \stopitem
+    \startitem Water towers are obsolete although on top of buildings \unknown\ (USA). \stopitem
+    \startitem Castles are obsolete but still impress tourists and serve history. \stopitem
+\stopitemize
+
+\stoptitle
+
+\starttitle[title=Some things disappear]
+
+\startitemize
+    \startitem Huge companies seldom age well. \stopitem
+    \startitem Semaphores populated the landscape for a while but disappeared fast. \stopitem
+    \startitem Programming languages become obsolete. \stopitem
+    \startitem Programs disappear, technology is ditched. \stopitem
+    \startitem Ice cellars and stores are solidly replaced by refrigerators. \stopitem
+    \startitem Fossil fuel cars will be replaced by battery powered ones. \stopitem
+\stopitemize
+
+\stoptitle
+
+\starttitle[title=Some things remain or adapt]
+
+\startitemize
+    \startitem Horizontal windmills for electricity become obsolete for vertical ones. \stopitem
+    \startitem Tomorrows batteries will make today's batteries look ridiculous. \stopitem
+    \startitem The last few years \TEX\ hasn't changed that much and has demonstrated adaptation. \stopitem
+    \startitem Usage of \TEX\ behind the scenes is definitely usage. \stopitem
+    \startitem This also depends on long term commitment, dedication to quality, and a wish for control. \stopitem
+    \startitem (And let's not forget the fun part.) \stopitem
+\stopitemize
+
+\stoptitle
+
+\starttitle[title=Some observations]
+
+\startitemize
+    \startitem In the meantime \TEX\ and installations are quite stable and usable. \stopitem
+    \startitem What was once large is now small. System demands are rather low. \stopitem
+    \startitem There are plenty of examples around to get one going. \stopitem
+    \startitem There are enough alternatives to keep those who dislike it happy. \stopitem
+    \startitem We don't need to catch up with every temporary web driven \quote {innovation}. \stopitem
+    \startitem The users of \CONTEXT\ are dedicated to quality and flexibility. \stopitem
+    \startitem Instead \quote {making \TEX\ great again} we can focus on \quote {keeping \TEX\ little}. \stopitem
+\stopitemize
+
+\stoptitle
+
+\starttitle[title=Example]
+
+If we have time: The hidden change in fundamentals from \MKII\ to \MKIV\ to
+\MKXL: parameters, performance, etc. Did anyone (except the few involved in
+dealing with it) notice it?
+
+\stoptitle
+
+\starttitle[title=The roadmap]
+
+\startitemize
+    \startitem We now have the extended \TEX\ engine that we always wanted. \stopitem
+    \startitem There is not much that needs to be added and it's opened up anyway. \stopitem
+    \startitem The (now) third major \CONTEXT\ upgrade is probably as good as we can make it. \stopitem
+    \startitem We can and will play with the builders in the engine to see where we can improve and add. \stopitem
+    \startitem We can however focus on the tricky bits of automated rendering. \stopitem
+    \startitem We can try to squeeze out some performance but we also want to keep the design. \stopitem
+\stopitemize
+
+But:
+
+\startitemize
+    \startitem It are the users who have to come up with demands. We anyway have some. \stopitem
+\stopitemize
+
+\stoptitle
+
+\stopdocument
+

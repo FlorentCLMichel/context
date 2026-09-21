@@ -1,0 +1,263 @@
+% language=us
+
+\environment context-2025-style
+
+% \setuptyping
+%   [style=\switchtobodyfont[7pt,tt]]
+
+\definelayer
+  [extratext]
+  [preset=rightbottom,
+   height=\textheight,
+   width=\textwidth]
+
+\setupbackgrounds
+  [text]
+  [background=extratext]
+
+% \definehighlight[notabene][style=bf]
+\definehighlight[notabene][style=\glyphweight100\underbar]
+
+\setuptyping
+  [align=hangright,
+   keeptogether=paragraph,
+   numbering=]
+
+\startdocument
+  [title={overload protection},
+   banner={what is it and why is it needed},
+   location={context\enspace{\bf 2025}\enspace meeting}]
+
+\starttitle[title=What is it]
+
+\startitemize
+\startitem
+In principle a user can any moment change the way \TEX works.
+\stopitem
+\startitem
+This can be intentional or by accident.
+\stopitem
+\startitem
+In doing so side effects can get unnoticed.
+\stopitem
+\startitem
+Candidates for change are \TEX\ macros and registers but also \LUA\
+and \METAPOST\ code.
+\stopitem
+\startitem
+So how can we prevent harm being done.
+\stopitem
+\stopitemize
+
+\stoptitle
+
+\starttitle[title=How does it work: macros]
+
+Users can define macros:
+
+\starttyping
+\def\MyMacro{do something}
+\stoptyping
+
+But what if that one is also a system one?
+
+\starttyping
+\permanent\def\MyMacro{do something}
+\stoptyping
+
+This tags a macro as one that can't be changed.
+
+\starttyping
+\overloadmode=4 % warning
+\overloadmode=5 % error
+\stoptyping
+
+\stoptitle
+
+\starttitle[title=How does it work: variables]
+
+Users can define variables:
+
+\starttyping
+\integerdef\MyInteger 123
+\stoptyping
+
+These definitions can also be protected:
+
+\starttyping
+\permanent\integerdef\MyInteger 0
+\stoptyping
+
+But values can still be changed unless we say:
+
+\starttyping
+\immutable\MyInteger 123
+\stoptyping
+
+From then on they can't be changed. The same applies to for instance \type
+{\countdef}.
+
+The \type {\newinteger} and \type {\newcount} definition macros already
+make the target permanent.
+
+\stoptitle
+
+\starttitle[title=Impact on engine]
+
+\startitemize
+\startitem
+    We need to relate states to all entries in the so called table of
+    equivalents.
+\stopitem
+\startitem
+    Quite some properties are set by prefixes; we can group them.
+\stopitem
+\startitem
+    Obsolete: \typ {\long}, \typ {\outer}.
+\stopitem
+\startitem
+    Backend:  \typ {\deferred}, \typ {\immediate}.
+\stopitem
+\startitem
+    Scope: \typ {\global}.
+\stopitem
+\startitem
+    Expansion: \typ {\protected}, \typ {\semiprotected}.
+\stopitem
+\startitem
+    Kind of special: \typ {\noaligned}, \typ {\untraced}, \typ {\constrained},
+    \typ {\retained}, \typ {\tolerant}, \typ{\constant}.
+\stopitem
+\startitem
+    Protection: \typ {\aliased}, (\typ {\always}), (\typ {\enforced}), \typ
+    {\frozen}, \typ {\immutable}, \typ {\inherited}, \typ {\instance}, \typ
+    {\mutable}, \typ {\overloaded}, \typ {\permanent}.
+\stopitem
+
+\stopitemize
+
+\stoptitle
+
+\starttitle[title=Candidates for protection]
+
+\startcolumns \small \setupinterlinespace
+\starttabulate[|||]
+\BC arithmic              \NC \type {\advance}         \NC \NR
+\BC internal integer      \NC \type {\hangafter}       \NC \NR
+\BC register integer      \NC \type {\countdef}        \NC \NR
+\BC internal attribute    \NC \type {(none)}           \NC \NR
+\BC register attribute    \NC \type {\attributedef}    \NC \NR
+\BC internal posit        \NC \type {(none)}           \NC \NR
+\BC register posit        \NC \type {\floatdef}        \NC \NR
+\BC internal dimension    \NC \type {\hangindent}      \NC \NR
+\BC register dimension    \NC \type {\dimendef}        \NC \NR
+\BC font property         \NC \type {\efcode}          \NC \NR
+\BC internal glue         \NC \type {\baselineskip}    \NC \NR
+\BC register glue         \NC \type {\skipdef}         \NC \NR
+\BC internal muglue       \NC \type {\medmuskip}       \NC \NR
+\BC register muglue       \NC \type {\muskipdef}       \NC \NR
+\BC internal toks         \NC \type {\everypar}        \NC \NR
+\BC register toks         \NC \type {\toksdef}         \NC \NR
+\BC define char code      \NC \type {\catcode}         \NC \NR
+\BC def                   \NC \type {\def}             \NC \NR
+\BC define family         \NC \type {\scriptfont}      \NC \NR
+\BC define font           \NC \type {\font}            \NC \NR
+\BC hyphenation           \NC \type {\hjcode}          \NC \NR
+\BC let                   \NC \type {\let}             \NC \NR
+\BC prefix                \NC \type {\global}          \NC \NR
+\BC register              \NC \type {\count}           \NC \NR
+\BC auxiliary             \NC \type {\prevgraf}        \NC \NR
+\BC set box               \NC \type {\setbox}          \NC \NR
+\BC box property          \NC \type {\wd}              \NC \NR
+\BC set font              \NC \type {\nullfont}        \NC \NR
+\BC interaction           \NC \type {\batchmode}       \NC \NR
+\BC math parameter        \NC \type {\setmathatomrule} \NC \NR
+\BC page property         \NC \type {\pagegoal}        \NC \NR
+\BC specification         \NC \type {\parshape}        \NC \NR
+\BC shorthand def         \NC \type {\chardef}         \NC \NR
+\BC association           \NC \type {\associateunit}   \NC \NR
+\BC lua value             \NC \type {(in lua)}         \NC \NR
+\BC integer               \NC \type {\integerdef}      \NC \NR
+\BC posit                 \NC \type {\positdef}        \NC \NR
+\BC dimension             \NC \type {\dimensiondef}    \NC \NR
+\BC gluespec              \NC \type {\gluespecdef}     \NC \NR
+\BC mugluespec            \NC \type {\mugluespecdef}   \NC \NR
+\BC index                 \NC \type {\parameterdef}    \NC \NR
+\BC combine toks          \NC \type {\toksapp}         \NC \NR
+\stoptabulate
+\stopcolumns
+
+\blank[2*big]
+
+We need to deal with protection at the \TEX\ end as well as at the \LUA\
+end.
+
+In \LUA\ we can to some extend discourage overloading of functionality and
+local binding is also an option.
+
+In \METAPOST\ we also have some mechanism but for now we don't error there
+(conceptually different grouping model).
+
+% \def\foo#1{\parameterdef\FirstFoo\plusone \FirstFoo}
+
+\stoptitle
+
+\starttitle[title=Virus protection]
+
+Can \TEX\ ever be really secured?
+
+\startitemize
+\startitem
+    Because \TEX\ reads and writes files, much depends on trust.
+\stopitem
+\startitem
+    It can never be made complete safe but to some extend we can at least try and
+    give the user a good feeling.
+\stopitem
+\startitem
+    Can we be sure that  \TEX ies are the \quote {good guys}?
+\stopitem
+\startitem
+    In \CONTEXT\ we can sandbox, that is, all tricky mechanisms have intercepts and
+    can be controlled from the configuration. No one ever does that.
+\stopitem
+\startitem
+    The community can impose some restrictions and/or guard integrity of
+    macro packages. As it contradicts open source there is no such policy.
+\stopitem
+\startitem
+    Can we intercept injection of potential harmful code? Because one can
+    adapt the source early on there is little we can do. So it depends.
+\stopitem
+\startitem
+    To some extend overload protection can help but bad (also \TEX) actors
+    can always get around it. Unless we take more drastic measures.
+\stopitem
+\startitem
+    In that respect it is like virus scanners (operating system, browsers,
+    apps on phones, etc): the best you can do is observe and adapt.
+\stopitem
+\stopitemize
+
+\stoptitle
+
+\stopdocument
+
+A \CONTEXT\ meeting is a good moment to consider and discuss how to move on. What
+features are needed, which could be improved, and/or should we drop something
+that is never used at all? What additional infra structure is needed (helpers,
+scripts) and to what extend are users really programming in \TEX.
+
+The \LUAMETATEX\ engine brings quite some new features. Think of more capable
+macro arguments, more conditionals, native loops, expressions etc. Of course
+there is plenty added in the typesetting department too. One important new
+feature, one that already has been present for a while, is overload protection:
+ways to prevent users or third party code to mess up the working of \CONTEXT.
+
+Currently we already enable warnings but we can consider defaulting to error
+mode. Why is it needed and how does this impact users? I'll explain some
+principles and mention ideas for improvement. We can then discuss and identify
+areas that need attention.
+
+And, of course we need to consider how \TEX\ will survive, florish and keep its
+niche. Feel free to ask questions, make suggestions and bring in proposals.

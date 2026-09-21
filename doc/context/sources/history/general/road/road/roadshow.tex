@@ -1,0 +1,302 @@
+% When this file was made we used \PDFTEX, indeed it is that old. This \quote
+% {update} (an extra page added) was processed with \LUAMETATEX. The small module
+% we need was changed to use Pagella instead of some \TYPEONE\ clone and renamed to
+% \type {s-present-road.mkiv}.
+
+\usemodule[present-road,chart]
+
+\startinteractionmenu[right]
+  \but [changes]       changes       \\
+  \but [publishing]    publishing    \\
+  \but [challenges]    challenges    \\
+  \but [engine]        engine        \\
+  \but [process flows] process flows \\
+  \but [data flows]    data flows    \\
+  \but [in retrospect] in retrospect \\
+\stopinteractionmenu
+
+\input chrt-xml
+
+\setupFLOWcharts
+  [offset=none,
+   height=24pt,
+   width=72pt]
+
+\setupFLOWshapes
+  [framecolor=blue]
+
+\setupFLOWlines
+  [color=red]
+
+\setupbodyfont
+  [13pt]
+
+\definefont [QuiteBig]   [Regular sa 2.50] [line=2.8ex]
+\definefont [QuiteSmall] [Regular sa 1.25] [line=2.8ex]
+
+\defineframedtext
+  [quarter]
+  [frame=off,
+   strut=no,
+   width=.5\dimexpr\textwidth-6pt\relax,
+   height=.5\dimexpr\textheight-6pt\relax,
+   background=color,
+   backgroundcolor=darkgray,
+   foregroundcolor=white,
+   style=QuiteBig,
+   align={middle,lohi}]
+
+\definelayer
+  [contribution]
+  [state=repeat,
+  %option=test,
+   width=\textwidth,
+   height=\textheight]
+
+\setupbackgrounds
+  [text]
+  [background=contribution]
+
+\defineframedtext
+  [horizontal]
+  [frame=off,
+   strut=no,
+   width=\textwidth,
+   height=fit,
+   background=color,
+   backgroundcolor=darkgray,
+   foregroundcolor=white,
+   style=QuiteSmall,
+   align={right,lohi}]
+
+\definecollector
+  [contribution]
+  [state=repeat,
+   voffset=-3pt,
+   corner={left,bottom},
+   location={right,bottom}]
+
+\starttext
+
+\setlayer[contribution][corner=middle,location=middle]
+  {\startquarter[none][backgroundcolor=yellow]
+     the state of \\ \CONTEXT
+   \stopquarter}
+
+\pagereference[changes]\page[empty] \resetlayer[contribution]
+
+\setlayer[contribution][corner={left,top},location={right,bottom}]
+  {\startquarter[none]
+     changes in editing and coding
+   \stopquarter}
+
+\page[empty]
+
+\setlayer[contribution][corner={right,top},location={left,bottom}]
+  {\startquarter[none]
+     changes in typesetting
+   \stopquarter}
+
+\page[empty]
+
+\setlayer[contribution][corner={right,bottom},location={left,top}]
+  {\startquarter[none]
+     changes in designing
+   \stopquarter}
+
+\page[empty]
+
+\setlayer[contribution][corner={left,bottom},location={right,top}]
+  {\startquarter[none]
+     changes in \TeX
+   \stopquarter}
+
+\page[empty]
+
+\setlayer[contribution][corner=middle,location=middle]
+  {\startquarter[none][backgroundcolor=yellow]
+     changes in \ConTeXt
+   \stopquarter}
+
+\page[empty] \resetlayer[contribution]
+
+\setcollector
+  [contribution]
+  {\starthorizontal[none][backgroundcolor=yellow,style=QuiteBig]
+     educational publishing:
+   \stophorizontal}
+
+\pagereference[publishing]\flushcollector[contribution] \page
+
+\setcollector
+  [contribution]
+  {\starthorizontal[none]
+     authors want to control the results
+   \stophorizontal}
+
+\flushcollector[contribution] \page
+
+\setcollector
+  [contribution]
+  {\starthorizontal[none]
+     publisher wants to control the process
+   \stophorizontal}
+
+\flushcollector[contribution] \page
+
+\setcollector
+  [contribution]
+  {\starthorizontal[none]
+     we want to control quality
+   \stophorizontal}
+
+\flushcollector[contribution] \page \resetcollector[contribution]
+
+\setcollector
+  [contribution]
+  {\starthorizontal[none][backgroundcolor=yellow,style=QuiteBig]
+     publishing challenges:
+   \stophorizontal}
+
+\pagereference[challenges]\flushcollector[contribution] \page
+
+\setcollector
+  [contribution]
+  {\starthorizontal[none]
+     rapid content change cycles
+   \stophorizontal}
+
+\flushcollector[contribution] \page
+
+\setcollector
+  [contribution]
+  {\starthorizontal[none]
+     multiple output from one source
+   \stophorizontal}
+
+\flushcollector[contribution] \page
+
+\setcollector
+  [contribution]
+  {\starthorizontal[none]
+     more self paced learning
+   \stophorizontal}
+
+\flushcollector[contribution] \page
+
+\setcollector
+  [contribution]
+  {\starthorizontal[none]
+     demand driven document production
+   \stophorizontal}
+
+\flushcollector[contribution] \page
+
+\setcollector
+  [contribution]
+  {\starthorizontal[none]
+     market demands designed documents
+   \stophorizontal}
+
+\flushcollector[contribution] \page \resetcollector[contribution]
+
+\setcollector
+  [contribution]
+  {\starthorizontal[none]
+     \ConTeXt\ engine interfaces:
+   \stophorizontal}
+
+\pagereference[engine]\flushcollector[contribution] \page
+
+\setcollector
+  [contribution]
+  {\starthorizontal[none][style=,foregroundcolor=]
+     \FLOWchart[conversion 7]
+   \stophorizontal}
+
+\flushcollector[contribution] \page
+
+\setcollector
+  [contribution]
+  {\starthorizontal[none]
+     Any \TeX: pdf\TeX, NTS, Omega, \unknown
+   \stophorizontal}
+
+\flushcollector[contribution] \page \resetcollector[contribution]
+
+\setcollector
+  [contribution]
+  {\starthorizontal[none]
+     \ConTeXt\ process flows:
+   \stophorizontal}
+
+\pagereference[process flows]\flushcollector[contribution] \page
+
+\setcollector
+  [contribution]
+  {\starthorizontal[none][style=,foregroundcolor=]
+     \setupFLOWcharts[width=108pt]
+     \FLOWchart[conversion 9]
+   \stophorizontal}
+
+\flushcollector[contribution] \page \resetcollector[contribution]
+
+\setcollector
+  [contribution]
+  {\starthorizontal[none]
+     \ConTeXt\ data flows:
+   \stophorizontal}
+
+\pagereference[data flows]\flushcollector[contribution] \page
+
+\setcollector
+  [contribution]
+  {\starthorizontal[none][style=,foregroundcolor=]
+     \setupFLOWcharts[width=108pt]
+     \FLOWchart[conversion 8]
+   \stophorizontal}
+
+\flushcollector[contribution] \page \resetcollector[contribution]
+
+
+\setcollector
+  [contribution]
+  {\starthorizontal[none]
+     2026: in retrospect :
+   \stophorizontal}
+
+\pagereference[in retrospect]\flushcollector[contribution] \page
+
+\setcollector
+  [contribution]
+  {\starthorizontal[none]
+     we could forget about formatting objects
+   \stophorizontal}
+
+\flushcollector[contribution] \page
+
+\setcollector
+  [contribution]
+  {\starthorizontal[none]
+     because we ended up with \LuaTeX
+   \stophorizontal}
+
+\flushcollector[contribution] \page
+
+\setcollector
+  [contribution]
+  {\starthorizontal[none]
+     then moved on to \LMTX
+   \stophorizontal}
+
+\flushcollector[contribution] \page
+
+\setcollector
+  [contribution]
+  {\starthorizontal[none]
+     and never looked back
+   \stophorizontal}
+
+\flushcollector[contribution] \page
+
+\stoptext

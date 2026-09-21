@@ -114,14 +114,14 @@ local function execute(specification)
             end
             if converter then
                 local convert = converter.sqlite
-                callback = function(nofcolumns,values,fields)
+                callback = function(values,fields)
                     nofrows = nofrows + 1
                     result[nofrows] = convert(values)
                 end
             else
-                callback = function(nofcolumns,values,fields)
+                callback = function(values,fields)
                     local column = { }
-                    for i=1,nofcolumns do
+                    for i=1,#values do
                         local field
                         if fields then
                             field = fields[i]
@@ -167,6 +167,9 @@ local booleanstring = string.booleanstring
 return function(cells)
     -- %s (not needed)
     -- %s (not needed)
+    if not cells then
+        cells = { }
+    end
     return {
         %s
     }

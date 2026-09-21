@@ -1,0 +1,243 @@
+\usemodule[present-prompting]
+
+\starttext
+
+\startstandardmakeup[bottom=]
+    \starttitle[title=playful math][sequence=123456,colors=121212]
+        \startalign[flushright]
+            \start
+                \bfa \setupinterlinespace
+                pl > bachotex 2026\crlf
+                de > context 2026
+                \blank[halfline]
+              % sv > tove sundqvist\crlf
+                us > julius ross\crlf
+                sv > mikael sundqvist\crlf
+                nl > hans hagen\crlf
+            \stop
+            \vfilll
+            \start
+                \bfx \setupinterlinespace
+                prompting you
+                \blank
+            \stop
+        \stopalign
+    \stoptitle
+\stopstandardmakeup
+
+\setupmakeup[standard][bottom=\vfill]
+
+\startstandardmakeup
+    \starttitle[title=pennstander][sequence=123456,colors=123456]
+        \startitemize
+            \startitem
+                derived from grandstander by Tyler Finck
+            \stopitem
+            \startitem
+                enhanced with math and more by Julius Ross
+            \stopitem
+            \startitem
+                tested and applied by Mikael and Hans
+            \stopitem
+            \startitem
+                presented to you by Tove Sundqvist
+            \stopitem
+        \stopitemize
+    \stoptitle
+\stopstandardmakeup
+
+\startstandardmakeup
+    \starttitle[title=pennstander][sequence=234561,colors=123456]
+        quiz by Tove @ bachotex
+    \stoptitle
+\stopstandardmakeup
+
+\startstandardmakeup
+    \starttitle[title=pennstander][sequence=345612,colors=123456]
+        \startitemize
+            \startitem
+                comes in several weights
+            \stopitem
+            \startitem
+                each weight has a math companion
+            \stopitem
+            \startitem
+                they have been tested in context
+            \stopitem
+            \startitem
+                they have been made a bit less extreme
+            \stopitem
+            \startitem
+                so that they could be enhanced with random
+            \stopitem
+        \stopitemize
+    \stoptitle
+\stopstandardmakeup
+
+\startstandardmakeup
+    \starttitle[title=pennstander][sequence=456123,colors=123456]
+        \startitemize
+            \startitem
+                random math has some challenges
+            \stopitem
+            \startitem
+                fences need to match
+            \stopitem
+            \startitem
+                sizes need to be consistent
+            \stopitem
+            \startitem
+                characters should be distinctive
+            \stopitem
+            \startitem
+                radicals etc should just work
+            \stopitem
+            \startitem
+                script (script) sizes need to follow
+            \stopitem
+        \stopitemize
+    \stoptitle
+\stopstandardmakeup
+
+\startstandardmakeup
+    \starttitle[title=pennstander][sequence=652143,colors=123456]
+        \dm {
+            a _ m
+                = \lim _ {\varepsilon \to 0}
+                  \frac {f(\varepsilon)-\sum _ {k=0} ^ {m-1} a _ k \phi _ k(\varepsilon)}
+                        {\phi _ m(\varepsilon)}
+        }
+        \par
+        \hfill \dm {
+            \abs {
+              \int _ {\interval {\alpha,\beta}\setminus U} \ee ^ {\lambda \phi(x)} a(x) \dd x
+            }
+            \leq
+            C \ee ^ {\lambda (M-\eta)}
+        }
+        \par
+        \dm {
+            \Gamma(\lambda + 1)
+            \sim
+            \sqrt {2\pi \lambda}
+            \left(
+                \frac{\lambda}{\ee}
+            \right) ^ \lambda
+            },
+        \m {\lambda \to +\infty}
+        \par
+        \hfill \dm {
+            A(\varepsilon)
+            =
+            \startnamedmatrix[matrix:brackets]
+                \NC 1 \NC 0 \NC 0 \NR
+                \NC 0 \NC 1 \NC 0 \NR
+                \NC 0 \NC 0 \NC 3 \NR
+            \stopnamedmatrix
+            +
+            \varepsilon
+            \startnamedmatrix[matrix:brackets]
+                \NC 0 \NC 1 \NC 1 \NR
+                \NC 1 \NC 2 \NC 0 \NR
+                \NC 1 \NC 0 \NC 0 \NR
+            \stopnamedmatrix
+      }
+    \stoptitle
+\stopstandardmakeup
+
+\startstandardmakeup
+    \starttitle[title=pennstander][sequence=432165,colors=123456]
+  % \setupmathematics[default=normal,stylealternative=random]
+    \setupmathematics
+      [default=normal,
+       stylealternative={%
+         randomletters,%
+         randomnumerals,%
+         randomfences,%
+         randomintegrals%
+     }]
+   \framed
+        [frame=off,
+         align=normal,
+         backgroundoffset=2mm,
+         background=color,
+         backgroundcolor=white]
+    \bgroup
+        \scale [width=.75tw] \bgroup
+            \startoverlay
+                {\colored[r=1,t=.5,a=1]{\im{\frac{\sin(\alpha)+{1/z}}{\int{(o+x-1)}} = \sqrt{a}}}}
+                {\colored[g=1,t=.5,a=1]{\im{\frac{\sin(\alpha)+{1/z}}{\int{(o+x-1)}} = \sqrt{a}}}}
+                {\colored[b=1,t=.5,a=1]{\im{\frac{\sin(\alpha)+{1/z}}{\int{(o+x-1)}} = \sqrt{a}}}}
+                {\colored[c=1,t=.5,a=1]{\im{\frac{\sin(\alpha)+{1/z}}{\int{(o+x-1)}} = \sqrt{a}}}}
+                {\colored[m=1,t=.5,a=1]{\im{\frac{\sin(\alpha)+{1/z}}{\int{(o+x-1)}} = \sqrt{a}}}}
+                {\colored[y=1,t=.5,a=1]{\im{\frac{\sin(\alpha)+{1/z}}{\int{(o+x-1)}} = \sqrt{a}}}}
+                {\colored[k=1,t=.5,a=1]{\im{\frac{\sin(\alpha)+{1/z}}{\int{(o+x-1)}} = \sqrt{a}}}}
+            \stopoverlay
+        \egroup
+    \egroup
+    \blank[line]
+    \hfill \framed
+        [frame=off,
+         align=normal,
+         backgroundoffset=2mm,
+         background=color,
+         backgroundcolor=white]
+    \bgroup
+        \scale [width=.75tw] \bgroup
+            \im { \darkgray
+                    {\darkred(} a +
+                        {\darkgreen(} b +
+                            {\darkblue(} c + 1
+                            {\darkblue)} +
+                            {\darkblue(} d + 1
+                            {\darkblue)}
+                        {\darkgreen)}
+                    {\darkred)}
+                }
+        \egroup
+    \egroup
+    \blank[line]
+    \hfill \framed
+        [frame=off,
+         align=normal,
+         backgroundoffset=2mm,
+         background=color,
+         backgroundcolor=white]
+    \bgroup
+        \scale [width=.75tw] \bgroup
+            \im { \darkgray
+                    {\darkred(} a +
+                        {\darkgreen(} b +
+                            {\darkblue(} c + 1
+                            {\darkblue)} +
+                            {\darkblue(} d + 1
+                            {\darkblue)}
+                        {\darkgreen)}
+                    {\darkred)}
+                }
+        \egroup
+    \egroup
+    \vfill
+    \stoptitle
+\stopstandardmakeup
+
+% \startstandardmakeup
+%     \starttitle[title=pennstander][sequence=612345,colors=123456]
+%         \startitemize
+%             \startitem
+%                 part of the default font set in the distribution
+%             \stopitem
+%             \startitem
+%                 around the ctx meeting we expect a release
+%             \stopitem
+%             \startitem
+%                 then some more details will be revealed
+%             \stopitem
+%             \startitem
+%                 and of course we'll write an article
+%             \stopitem
+%         \stopitemize
+%     \stoptitle
+% \stopstandardmakeup
+
+\stopdocument

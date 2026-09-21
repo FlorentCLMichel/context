@@ -1,0 +1,178 @@
+if not modules then modules = { } end modules ['luat-sbx'] = {
+    version   = 1.001,
+    comment   = "companion to luat-lib.mkiv",
+    author    = "Hans Hagen, PRAGMA-ADE, Hasselt NL",
+    copyright = "PRAGMA ADE / ConTeXt Development Team",
+    license   = "see context related readme files"
+}
+
+local type = type
+
+local targets    = security.gettargets()
+local actions    = security.getactions()
+local setchecker = security.setchecker
+
+local trace  = trackers.enable("sandbox.trace",function(v) trace = v end)
+local report = logs.reporter("security")
+
+local execution_mode  directives.register("system.executionmode", function(v) execution_mode = v end)
+local execution_list  directives.register("system.executionlist", function(v) execution_list = v end)
+local root_list       directives.register("system.rootlist",      function(v) root_list      = v end)
+local library_mode    directives.register("system.librarymode",   function(v) library_mode   = v end)
+local library_list    directives.register("system.librarylist",   function(v) library_list   = v end)
+
+local lpegmatch       = lpeg.match
+local topattern       = lpeg.utfchartabletopattern
+local settingstoarray = utilities.parsers.settingstoarray
+
+sandbox = sandbox or { }
+
+local initializers = { }
+
+do
+
+    local cleanedpathlist = resolvers.cleanedpathlist
+    local expandname      = dir.expandname
+    local pathpart        = file.pathpart
+
+    local readable  = { }
+    local writeable = { }
+
+    function initializers.files()
+
+        local function register(str,target)
+            local trees = cleanedpathlist(str)
+            for i=1,#trees do
+                target[#target+1] = expandname(trees[i])
+            end
+        end
+
+        local selfdir = expandname(".")
+        readable [1] = selfdir
+        writeable[1] = selfdir
+
+        register("TEXINPUTS", readable)
+        register("MPINPUTS",  readable)
+        register("TEXMF",     readable)
+     -- register("TEXMFCACHE",writeable)
+
+        local rp = topattern(readable)
+        local wp = topattern(writeable)
+
+        setchecker(1,function(s,action) -- readable
+            local path = pathpart(s)
+            local okay = path == "" or lpegmatch(rp,path)
+            if trace then
+                report("%s %s : %s",okay and "+" or "-",actions[action],s)
+            elseif not okay then
+                report("%s : rejecting %a",actions[action],s)
+            end
+            return okay
+        end)
+
+        setchecker(2,function(s,action) -- writeable
+            local path = pathpart(s)
+            local okay = path == "" or lpegmatch(wp,path)
+            if trace then
+                report("%s %s : %s",okay and "+" or "-",actions[action],s)
+            elseif not okay then
+                report("%s : rejecting %a",actions[action],s)
+            end
+            return okay
+        end)
+
+        setchecker(5,function(s,action) -- loadable
+            local path = pathpart(s)
+            local okay = path == "" or lpegmatch(rp,path)
+            if trace then
+                report("%s %s : %s",okay and "+" or "-",actions[action],s)
+            elseif not okay then
+                report("%s : rejecting %a",actions[action],s)
+            end
+            return okay
+        end)
+
+    end
+
+end
+
+do
+
+    local disablerunners   = sandbox.disablerunners
+    local disablelibraries = sandbox.disablelibraries
+
+    function initializers.binaries()
+        if execution_mode == "none" then
+            setchecker(3,function(s,action) -- binary
+                return false
+            end)
+disablerunners()
+        elseif execution_mode == "list" then
+            if type(execution_list) == "string" then
+                execution_list = settingstoarray(execution_list)
+            end
+            if type(execution_list) == "table" then
+                local ep = topattern(execution_list)
+                setchecker(3,function(s,action) -- binary
+                    local okay = lpegmatch(ep,s)
+                    if trace then
+                        report("%s %s : %s",okay and "+" or "-",actions[action],s)
+                    elseif not okay then
+                        report("%s : rejecting %a",actions[action],s)
+                    end
+                    return okay
+                end)
+            end
+        end
+
+    end
+
+    function initializers.libraries()
+
+        if library_mode == "none" then
+            setchecker(4,function(s,action) -- library
+                return false
+            end)
+disablelibraries()
+        elseif library_mode == "list" then
+            if type(library_list) == "string" then
+                library_list = settingstoarray(library_list)
+            end
+            if type(library_list) == "table" then
+                local ep = topattern(library_list)
+                setchecker(4,function(s,action) -- library
+                    local okay = lpegmatch(ep,s)
+                    if trace then
+                        report("%s %s : %s",okay and "+" or "-",actions[action],s)
+                    elseif not okay then
+                        report("%s : rejecting %a",actions[action],s)
+                    end
+                    return okay
+                end)
+            end
+        end
+
+    end
+
+    function initializers.graphics()
+        sandbox.registerrunner(false)
+    end
+
+end
+
+function sandbox.enable()
+    if initializers then
+        for k, v in table.sortedhash(initializers) do
+         -- report("installing sandbox %a",k)
+            v()
+        end
+        initializers = nil
+    end
+end
+
+-- old timestamp (luat-exe & luat-iop):
+--
+-- Ok, as usual, after finishing some code, I rewarded myself with searching youtube for
+-- new music ... this time I ran into the swedisch group 'wintergatan' (search for: marble
+-- machine) ... mechanical computers are so much more fun than the ones needed for running
+-- the code below. Nice videos (and shows) too ...

@@ -7,6 +7,8 @@ if not modules then modules = { } end modules ['mtx-tools'] = {
 }
 
 local find, format, sub, rep, gsub, lower = string.find, string.format, string.sub, string.rep, string.gsub, string.lower
+local formatters = string.formatters
+local sortedhash = table.sortedhash
 
 local helpinfo = [[
 <?xml version="1.0"?>
@@ -32,6 +34,8 @@ local helpinfo = [[
     <flag name="stripname"><short>take pathpart of given pattern</short></flag>
     <flag name="longname"><short>set name attributes to full path name</short></flag>
     <flag name="downcase"><short>lowercase names</short></flag>
+    <flag name="sparse"><short>omit attributes and time</short></flag>
+    <flag name="compact"><short>use less spacing</short></flag>
    </subcategory>
    <subcategory>
     <flag name="showstring"><short>show unicode characters in given string</short></flag>
@@ -42,8 +46,10 @@ local helpinfo = [[
     <flag name="recurse"><short>recurse into subdirecories</short></flag>
     <flag name="force"><short>downcase indeed</short></flag>
    </subcategory>
+   <subcategory>
+    <example><command>mtxrun --script tool mtxrun --script tools --dirtoxml --root=t:/texmf/doc/context --pattern=* --recurse --sparse --output=files.xml</flags></command></example>
+   </subcategory>
   </category>
- </flags>
 </application>
 ]]
 
@@ -143,24 +149,39 @@ function scripts.tools.dirtoxml()
     local recurse    = environment.argument('recurse') or false
     local stripname  = environment.argument('stripname')
     local longname   = environment.argument('longname')
+    local sparse     = environment.argument('sparse')
+    local compact    = environment.argument('compact')
 
     local function flush(list,result,n,path)
-        n, result = n or 1, result or { }
-        local d = rep("  ",n)
-        for name, attr in table.sortedhash(list) do
+        n = n or 1
+        local d1 = compact and n or 2 * n
+        local d2 = d1 + (compact and 1 or 2)
+        for name, attr in sortedhash(list) do
             local mode = attr.mode
             if mode == "file" then
-                result[#result+1] = format("%s<file name='%s'>",d,(longname and path and join(path,name)) or name)
-                result[#result+1] = format("%s  <base>%s</base>",d,removesuffix(name))
-                result[#result+1] = format("%s  <type>%s</type>",d,suffixonly(name))
-                result[#result+1] = format("%s  <size>%s</size>",d,attr.size)
-                result[#result+1] = format("%s  <permissions>%s</permissions>",d,sub(attr.permissions,7,9))
-                result[#result+1] = format("%s  <date>%s</date>",d,date(timestamp,attr.modification))
-                result[#result+1] = format("%s</file>",d)
+                if sparse then
+                    result[#result+1] = formatters["%w<file>"](d1)
+                else
+                    result[#result+1] = formatters["%w<file name='%s'>"](d1,(longname and path and join(path,name)) or name)
+                end
+                result[#result+1] = formatters["%w<base>%s</base>"](d2,removesuffix(name))
+                result[#result+1] = formatters["%w<type>%s</type>"](d2,suffixonly(name))
+                result[#result+1] = formatters["%w<size>%s</size>"](d2,attr.size)
+                if not sparse then
+                    result[#result+1] = formatters["%w  <permissions>%s</permissions>"](d1,sub(attr.permissions,7,9))
+                    result[#result+1] = formatters["%w  <date>%s</date>"](d1,date(timestamp,attr.modification))
+                end
+                result[#result+1] = formatters["%w</file>"](d1)
             elseif mode == "directory" then
-                result[#result+1] = format("%s<directory name='%s'>",d,name)
+                -- inefficient empty check but not that critical here
+                local dirty = #result + 2
+                result[#result+1] = formatters["%w<directory name='%s'>"](d1,name)
                 flush(attr.list,result,n+1,(path and join(path,name)) or name)
-                result[#result+1] = format("%s</directory>",d)
+                result[#result+1] = formatters["%w</directory>"](d1)
+                if dirty == #result then
+                    result[#result] = nil
+                    result[#result] = nil
+                end
             end
         end
     end
@@ -178,14 +199,20 @@ function scripts.tools.dirtoxml()
 
     lfs.chdir(root)
 
-    local list = dir.collectpattern(root,luapattern,recurse)
+    local list = dir.collectpattern(root,luapattern,recurse) --or just glob
 
     if list[outputfile] then
         list[outputfile] = nil
     end
 
     local result = { "<?xml version='1.0'?>" }
-    result[#result+1] = format("<files url=%q root=%q pattern=%q luapattern=%q xmlns='%s' timestamp='%s'>",url,root,pattern,luapattern,xmlns,date(timestamp))
+    result[#result+1] = format("<files url=%q root=%q pattern=%q luapattern=%q xmlns='%s' timestamp='%s' sparse=%q compact=%q>",
+        url,root,pattern,luapattern,
+        xmlns,
+        date(timestamp),
+        sparse and "yes" or "no",
+        compact and "yes" or "no"
+    )
     flush(list,result)
     result[#result+1] = "</files>"
 
@@ -199,12 +226,54 @@ function scripts.tools.dirtoxml()
 
 end
 
+function scripts.tools.dirtotxt()
+
+    local pattern    = environment.argument('pattern') or "**"
+    local outputfile = environment.argument('output')
+
+    if not pattern or pattern == ""  then
+        report('provide --pattern=')
+        return
+    end
+
+    local files  = dir.glob(pattern)
+    local length = 0
+
+    for i=1,#files do
+        local name = files[i]
+        local base = file.basename(name)
+        if base ~= outputfile then
+            if #base > length then length = #base end
+        end
+    end
+
+    local f = formatters["%-" .. length .. "s  %s"]
+
+    for i=1,#files do
+        local name = files[i]
+        local base = file.basename(name)
+        if base ~= outputfile then
+            name = gsub(name,"^./","")
+            files[i] = f(base,name)
+        end
+    end
+
+    files = table.concat(files,"\n")
+
+    if not outputfile or outputfile == "" then
+        writeln(files)
+    else
+        io.savedata(outputfile,files,"")
+    end
+
+end
+
 local function showstring(s)
     if not characters or not characters.data then
         require("char-def")
     end
     local d = characters.data
-    local f = string.formatters["%U  %s  %-30s  %c"]
+    local f = formatters["%U  %s  %-30s  %c"]
     for c in string.utfvalues(s) do
         local cs = d[c]
         print(f(c,cs.category or "",cs.description or "",c))
@@ -238,6 +307,8 @@ elseif environment.argument("libraries") then
     scripts.tools.libraries()
 elseif environment.argument("dirtoxml") then
     scripts.tools.dirtoxml()
+elseif environment.argument("dirtotxt") then
+    scripts.tools.dirtotxt()
 elseif environment.argument("downcase") then
     scripts.tools.downcase()
 elseif environment.argument("exporthelp") then

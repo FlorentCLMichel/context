@@ -1409,14 +1409,14 @@ do  -- else too many locals
                 local parameters = tfmdata.parameters
                 local properties = tfmdata.properties
                 if characters then
-if compact then
-    properties.compacteffect = {
-        extend  = round(extend *1000),
-        squeeze = round(squeeze*1000),
-        slant   = round(slant  *1000),
-        weight  = round(weight *1000),
-    }
-end
+                    if compact then
+                        properties.compacteffect = {
+                            extend  = round(extend *1000),
+                            squeeze = round(squeeze*1000),
+                            slant   = round(slant  *1000),
+                            weight  = round(weight *1000),
+                        }
+                    end
                     -- we use char0 as signal; cf the spec pdf can handle this (no char in slot)
                     characters[0] = nil
                     tfmdata.original = specification.specification
@@ -1747,6 +1747,11 @@ function constructors.hashinstance(specification,force,compact)
     local extend, squeeze, slant, weight, auto
     if normal then
         local effect = normal.effect
+--         if type(effect) == "number" then
+--             -- This is not official, but only provided so that we can
+--             -- process older mkiv files!
+--             effect = { width = effect }
+--         end
         if effect then
             extend  = effect.extend  or 1
             squeeze = effect.squeeze or 1

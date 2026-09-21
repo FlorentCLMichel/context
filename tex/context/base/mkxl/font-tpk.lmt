@@ -13,8 +13,6 @@ if not modules then modules = { } end modules ['font-tpk'] = {
 -- luatex. All do things a bit more luaish and errors are of course mine.
 
 local next = next
------ extract, band, lshift, rshift = bit32.extract, bit32.band, bit32.lshift, bit32.rshift
------ idiv = number.idiv
 local char = string.char
 local concat, insert, remove, copy = table.concat, table.insert, table.remove, table.copy
 local tobitstring = number.tobitstring

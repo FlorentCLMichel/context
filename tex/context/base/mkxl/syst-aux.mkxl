@@ -3137,7 +3137,7 @@
 
 \permanent\protected\glettonothing\stoptexdefinition
 
-\permanent\gdef\dostarttexdefinition#1\stoptexdefinition%
+\permanent\gdef\dostarttexdefinition#+\stoptexdefinition%
   {\egroup%
    \clf_texdefinition_two{#1}%
    \catcode\hashasciicode\c_syst_parameter_catcode}

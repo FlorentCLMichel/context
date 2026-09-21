@@ -1,0 +1,241 @@
+% interface=en output=pdftex
+
+\environment mstyle 
+
+\starttext 
+
+\TitlePage{507}{0}{\TeX WORK\\explained}{}{1}
+
+\subject {Introduction}
+
+The \TEXWORK\ environment is primary meant for use within 
+\PRAGMA, but can be of use to others too. When we started 
+using Personal computers back in the 80's, there were not so 
+many text editors around. Therefore we wrote our own editing 
+environment, which could handle very large documents, even 
+on small machines. Also, we favored a systematic key binding
+over cryptic control and alt key based bindings, especially
+for frequent actions. 
+
+When we started using \TEX, we extended this editor with 
+some basic features, like syntax highlighting, use of 
+symmetry and fast directory browsing. As \CONTEXT\ grow, we 
+also added template support, real time spell checking, 
+\CONTEXT\ project support, and help information. Apart from 
+some additional features, \TEXWORK, is based on this editor, 
+called \TEXEDIT. 
+
+Where \TEXEDIT\ was written in Modula~2, and all screen 
+handling was taken care of by the program itself, \TEXWORK\ 
+uses \PERLTK. This enabled us to migrate from the \MSDOS\ 
+operating system to \LINUX\ while maintaining our methods of 
+working. 
+
+\subject {General Structure}
+
+Because \TEXWORK\ is modelled after \TEXEDIT, is has the
+same largely symmetrical keybindings. The most common
+editing actions are one||key ones. When in character mode,
+the \type {delete} key deletes the next character, and
+\type{insert} inserts the last deleted one. The \type
+{delete}, \type {insert}, \type{begin} and \type {end}. 
+
+\subject {Key bindings}
+
+The function keys are used for setting the current mode. The 
+first three modes speak for themselves. The page mode is 
+limited to the formfeed character, represented by \type 
+{\f} in many programming languages. We sometimes use this
+character as a visual page separator, but for \CONTEXT\ this
+character is just equal to \type{\par} (an empty line). 
+
+\starttabulate
+\NC F1  \NC enable character mode   \NC \NR             
+\NC F2  \NC enable word mode        \NC \NR
+\NC F3  \NC enable line mode        \NC \NR       
+\NC F4  \NC enable page mode        \NC \NR
+\NC F5  \NC enable paragraph mode   \NC \NR
+\NC F6  \NC enable TeX/MP mode      \NC \NR
+\stoptabulate      
+
+The fifth mode concerns paragraphs, and here \type {delete} 
+and \type {insert} are disabled. It is not really funny to 
+see the paragraphs disappear rappidly when we keep the \type 
+{delete} key pressed.
+
+Mode~6, duplicated in~12 because this key is conveniently 
+positioned at the edge of the row, concerns \TEX. Apart from
+the menu actions, the keys are bound like in word mode. 
+
+\starttabulate
+\NC F7  \NC enable buffer mode      \NC \NR
+\NC F8  \NC enable text mode        \NC \NR
+\NC F9  \NC toggle select mode      \NC \NR
+\stoptabulate      
+
+Buffer mode is there when we want to manipulate a selected 
+area. By clicking the bottom left area of the screen, right 
+below the line numbers, you can change the line based buffer
+(and selection) mode into a blockwise alternative. Text mode
+concerns the whole text. 
+
+You can select text with either the mouse, or with the 
+cursor keys and the \type{begin} and \type{end} keys. A 
+selection can be deleted with \type {delete}, in which case 
+the content is moved into the selection buffer. When \type 
+{insert} is pressed, the content is only copied. When 
+nothing is selected, and buffermode is on, \type {insert} 
+copies the buffer into the text. When the \type {control} 
+key is pressed too, the clipboard is used instead of the 
+buffer. 
+
+Each mode has its own actions, shown at the bottom of the 
+screen. You can walk though the actions with the tenth 
+function key. An action is applied or repeated with \type 
+{F11}. 
+
+\starttabulate
+\NC F10 \NC set (next) menu action  \NC \NR  
+\NC F11 \NC repeat last menu action \NC \NR  
+\stoptabulate      
+
+As said, the twelfths key act just like number six. 
+
+\starttabulate
+\NC F12 \NC TeX/MP mode             \NC \NR
+\stoptabulate      
+
+The meaning of the keypad keys will be no surprise: 
+             
+\starttabulate
+\NC Delete \NC delete current object    \NC \NR 
+\NC Insert \NC re-insert current object \NC \NR 
+\NC Home   \NC goto begin of object     \NC \NR 
+\NC End    \NC goto end of object       \NC \NR 
+\NC Prior  \NC half a screen backwards  \NC \NR 
+\NC Next   \NC half a screen forward    \NC \NR 
+\stoptabulate
+
+Normally all actions work top||down, but you can revert
+that direction with:
+
+\starttabulate
+\NC Control-Prior \NC work backwards \NC \NR 
+\NC Control-Next  \NC work forward   \NC \NR 
+\stoptabulate
+
+The tab keys are not inserting tabs, but skip to the next
+column, as derived from the previous of next non empty line. 
+
+\starttabulate
+\NC Tab       \NC align to next word in previous line \NC \NR 
+\NC Shift-Tab \NC align to next word in next line     \NC \NR 
+\stoptabulate
+
+The next few bindings influence the size of the working area
+and the size of the font. 
+
+\starttabulate
+\NC Alt-Left  \NC use a smaller text font \NC \NR 
+\NC Alt-Right \NC use a larger text font  \NC \NR 
+\NC Alt-Up    \NC minimize screen         \NC \NR 
+\NC Alt-Down  \NC maximize screen         \NC \NR 
+\stoptabulate
+
+You can change the focus between the log, search and text 
+windows by means of:
+
+\starttabulate
+\NC Shift-Left  \NC cycle screens backward \NC \NR 
+\NC Shift-Right \NC cycle screens forward  \NC \NR 
+\stoptabulate
+
+For power users who do a lot of editing, the next keys can
+be of help. If you forget those, it does not harm. 
+
+\starttabulate
+\NC Control-Up    \NC previous file in menu  \NC \NR 
+\NC Control-Down  \NC next file in menu      \NC \NR 
+\NC Control-Left  \NC cycle file menus left  \NC \NR 
+\NC Control-Right \NC cycle file menus right \NC \NR 
+\stoptabulate
+
+When error checking is done (in \TEX/\METAPOST\ mode) or when all 
+files are searched, you can follow the results with: 
+
+\starttabulate
+\NC Control-Home \NC goto end of next/prev error/found   \NC \NR 
+\NC Control-End  \NC goto begin of next/prev error/found \NC \NR 
+\stoptabulate
+
+Swhitching to block selection mode can be accomplished by
+clicking on the bottom left rectangle, but \type {Control-b}
+will do too. Another control key concerns dislexis mode (one
+of the oldest \TEXEDIT\ functions).  
+
+\starttabulate
+\NC Control-b \NC toggle block select mode (big white/green button) \NC \NR 
+\NC Control-w \NC swap characters                                   \NC \NR 
+\stoptabulate
+
+We already mentioned that selected content can be moved to 
+the buffer or clipboard. The clipboard is a system wide 
+buffer, and can be used to move data between applications. 
+
+\starttabulate
+\NC Control-Insert \NC clipboard to text/selection to clipboard \NC \NR 
+\NC Control-Delete \NC selection to clipboard                   \NC \NR 
+\stoptabulate
+
+When you know the menu items and their locations, you can
+use the control key to quicky select the item. 
+
+\starttabulate
+\NC Control-<n> \NC menu item <n> \NC \NR 
+\stoptabulate
+
+The \type {escape} key is indeed an escape. 
+
+\starttabulate
+\NC Escape       \NC goto file menus  \NC \NR 
+\NC Shift-Escape \NC goto parent file \NC \NR 
+\stoptabulate
+
+The next few bindings are related to \TEX\ specific editing
+and running \TEX\ and \METAPOST. The help key pops up the \type
+{showtex} window. There you can see what the command asked
+for, i.e. where the cursor is located.
+
+In \TEX\ mode, you can run a whole file or juts the
+selection. In the latter case, all commands preceding the
+start of the text, are included too. In \METAPOST\ mode, the whole
+file is processed, but the figure that has the focus is
+displayed. 
+
+When you include a file, and this file is present, you can goto that 
+file by clicking (in the text) on the name of the file.
+Filenames are shown in black and underlined. 
+
+\starttabulate
+\NC Control-h \NC provide help         \NC \NR 
+\NC Control-r \NC run program          \NC \NR 
+\NC Control-o \NC open file            \NC \NR 
+\NC Control-f \NC global find (search) \NC \NR 
+\stoptabulate
+
+\subject {Menus}
+
+
+\subject {Installation} 
+
+environment files 
+
+log window
+
+trace mode 
+
+texstep for testing 
+
+\ColofonPage
+
+\stoptext 

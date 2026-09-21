@@ -24,9 +24,7 @@ local next, type, tonumber, rawset = next, type, tonumber, rawset
 local match, lower, gsub, strip, find = string.match, string.lower, string.gsub, string.strip, string.find
 local char, byte, sub = string.char, string.byte, string.sub
 local abs = math.abs
------ bxor, rshift = bit32.bxor, bit32.rshift
 local P, S, R, V, Cmt, C, Ct, Cs, Carg, Cc = lpeg.P, lpeg.S, lpeg.R, lpeg.V, lpeg.Cmt, lpeg.C, lpeg.Ct, lpeg.Cs, lpeg.Carg, lpeg.Cc
------ Cf, Cg = lpeg.Cf, lpeg.Cg
 local lpegmatch, patterns = lpeg.match, lpeg.patterns
 
 local trace_indexing     = false  trackers.register("afm.indexing",   function(v) trace_indexing = v end)

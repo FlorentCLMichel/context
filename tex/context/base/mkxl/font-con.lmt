@@ -27,8 +27,10 @@ local report_defining = logs.reporter("fonts","defining")
 -- few helper functions.
 
 local fonts                  = fonts
+
 local constructors           = fonts.constructors or { }
 fonts.constructors           = constructors
+
 local handlers               = fonts.handlers or { } -- can have preloaded tables
 fonts.handlers               = handlers
 
@@ -268,10 +270,17 @@ local function scaleparts(parts,delta)
     return t
 end
 
-local abovebaseline_tag <const> = tex.charactertagcodes.abovebaseline
-local belowbaseline_tag <const> = tex.charactertagcodes.belowbaseline
+local tex = tex or {
+    -- we're in mtx-fonts
+    charactertagcodes = setmetatableindex({ },function() return -1 end),
+    textcontrolcodes  = setmetatableindex({ },function() return -1 end),
+}
 
-local textcontrolcodes  = tex.textcontrolcodes
+local charactertagcodes         = tex.charactertagcodes
+local abovebaseline_tag <const> = charactertagcodes.abovebaseline
+local belowbaseline_tag <const> = charactertagcodes.belowbaseline
+
+local textcontrolcodes          = tex.textcontrolcodes
 local collapse_hyphens  <const> = textcontrolcodes.collapsehyphens
 local base_ligaturing   <const> = textcontrolcodes.baseligaturing
 local base_kerning      <const> = textcontrolcodes.basekerning

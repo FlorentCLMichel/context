@@ -1,0 +1,82 @@
+\environment show-env
+
+\setuplayout
+  [topspace=10pt,
+   bottomspace=10pt,
+   backspace=30pt,
+   height=middle,
+   width=middle,
+   header=0pt,
+   footerdistance=0pt,
+   footer=20pt]
+
+% \showmakeup
+
+\setupinteraction
+  [color=,
+   contrastcolor=]
+
+\setupcolors
+  [textcolor=white]
+
+% idem external files
+
+\startreusableMPgraphic{MainGraphic}
+    StartPage ;
+        fill Page withcolor \MPcolor{shade-2} ;
+    StopPage ;
+\stopreusableMPgraphic
+
+\defineoverlay [MainGraphic] [\reuseMPgraphic{MainGraphic}]
+
+\setupbackgrounds
+  [paper]
+  [background=color,
+   backgroundcolor=black]
+
+\setupbackgrounds
+  [page]
+  [background=MainGraphic]
+
+\setupbackgrounds
+  [text]
+  [background=Text]
+
+\setupfooter
+  [style=\bfc]
+
+\dontcomplain
+
+\setuphead
+  [chapter]
+  [style=\bfc,
+   page=yes]
+
+\setuphead
+  [subject]
+  [style=\bfb]
+
+\setupfootertexts
+  []
+
+\starttext
+
+    \starttitle[title={History}]
+
+        \start \hsize .6\textwidth
+
+        We've always published about \CONTEXT, \TEX\ engines, \METAPOST, and
+        various related topics in user group journals and held presentations at
+        meetings. In this section we collect some of the older (early) stuff.
+
+        At this moment you can find some about \PDFTEX, some articles that give
+        an impression how \CONTEXT\ evolved in those days, and why some features
+        are there. We used to describe some of that in more detail here but no
+        longer do that. You can just browse and decide yourself if it's still
+        useful.
+
+        \stop
+
+    \stoptitle
+
+\stoptext

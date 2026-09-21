@@ -140,7 +140,7 @@ local erroraction   = false
 local busy          = false
 local errorvalues   = false
 
-local function processerror(errortype)
+local function processerror(errortype,detail)
     local readstate      = status.getreadstate()
     local filename       = readstate.filename
     local linenumber     = readstate.linenumber
@@ -153,6 +153,9 @@ local function processerror(errortype)
     local lastmpserror   = match(lasttexerror,[[^.-mp%serror:%s*(.*)$]])
     resetmessages()
     lastluaerror = gsub(lastluaerror,"%[\\directlua%]","[ctxlua]")
+    if detail then
+        lasttexerror = detail
+    end
     local specification = {
         filename       = filename,
         linenumber     = linenumber,
@@ -334,7 +337,7 @@ callbacks.register {
     end
 }
 
--- tracers.processerror = processerror
+tracers.processerror = processerror
 
 -- Let's no longer do this in lmtx .. it was actually a proof of concept. There is no
 -- reliable way to pop up a browser anyway. We keep the code around becuae if really

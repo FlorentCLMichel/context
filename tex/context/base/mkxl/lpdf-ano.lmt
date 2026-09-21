@@ -112,6 +112,7 @@ local pdfregisterannotation
 ----- pdf_annot               = pdfconstant("Annot")
 local pdf_uri                 = pdfconstant("URI")
 local pdf_gotor               = pdfconstant("GoToR")
+local pdf_gotoe               = pdfconstant("GoToE")
 local pdf_goto                = pdfconstant("GoTo")
 local pdf_launch              = pdfconstant("Launch")
 local pdf_javascript          = pdfconstant("JavaScript")
@@ -942,6 +943,32 @@ local pdffilelink  do
         }
     end
 
+    pdfembeddedlink = function(filename,destination,page,actions)
+        if not filename or filename == "" then
+            return false
+        end
+        local files  = settings_to_array(filename)
+        local child  = pdfdictionary()
+        local parent = child
+        local count  = #files
+        for i=1,count do
+            child.N = files[i]
+            child.R = pdfconstant("C")
+            if i < count then
+                local c = pdfdictionary()
+                child.T = c
+                child   = c
+            end
+        end
+        return pdfdictionary {
+            S         = pdf_gotoe,
+         -- F         = filename,
+            D         = defaultdestination,
+            NewWindow = actions.newwindow and true or nil,
+            T         = parent,
+        }
+    end
+
 end
 
 local untex = references.urls.untex
@@ -1751,6 +1778,15 @@ function specials.section(var,actions)
         return specials.internal(var,actions)
     end
 end
+
+function specials.embedded(var,actions)
+    local e = var.operation
+    if e then
+        -- for now unchecked
+        return pdfembeddedlink(e,nil,nil,actions)
+    end
+end
+
 
 -- todo, do this in references namespace ordered instead (this is an experiment)
 

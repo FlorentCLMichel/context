@@ -12,8 +12,10 @@ if not modules then modules = { } end modules ['data-tld'] = {
 function resolvers.checktexlive(texlive)
     local hashes = resolvers.gethashes()
     if not texlive then
+        local find = string.find
         for i=1,#hashes do
-            if string.find(hashes[i].name,"texmf%-dist") then
+            local name = hashes[i].name
+            if find(name,"texmf%-dist") or find(name,"/share/texmf") then
                 texlive = true
                 break
             end
@@ -49,7 +51,8 @@ function resolvers.checktexlive(texlive)
             local hashpath = caches.getfirstreadablefile(hashfile,"trees")
             local hashtime = hashpath and lfs.attributes(hashpath,"modification")
             if hashtime then
-                local delta = math.abs(os.difftime(lsrtime,hashtime))
+             -- local delta = math.abs(os.difftime(lsrtime,hashtime))
+                local delta = os.difftime(lsrtime,hashtime)
                 if delta < window then
                     -- Let's assume we're okay, we don't want some redundant generation
                     -- of files do we?

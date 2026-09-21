@@ -76,46 +76,50 @@ local getmapentry = fonts.mappings.getentry
 
 -- todo: use streams.tocardinal4 etc
 
-local tocardinal1 = char
+-- local tocardinal1 = char
+--
+-- local function tocardinal2(n)
+--     return char((n>>8)&0xFF,(n>>0)&0xFF)
+-- end
+--
+-- local function tocardinal3(n)
+--     return char((n>>16)&0xFF,(n>>8)&0xFF,(n>>0)&0xFF)
+-- end
+--
+-- local function tocardinal4(n)
+--     return char((n>>24)&0xFF,(n>>16)&0xFF,(n>>8)&0xFF,(n>>0)&0xFF)
+-- end
+--
+-- local function tointeger2(n)
+--     return char((n>>8)&0xFF,(n>>0)&0xFF)
+-- end
+--
+-- local function tointeger3(n)
+--     return char((n>>16)&0xFF,(n>>8)&0xFF,(n>>0)&0xFF)
+-- end
+--
+-- local function tointeger4(n)
+--     return char((n>>24)&0xFF,(n>>16)&0xFF,(n>>8)&0xFF,(n>>0)&0xFF)
+-- end
+--
+-- local function tocardinal8(n)
+--     local l = n // 0x100000000
+--     local r = n % 0x100000000
+--     return char((l>>24)&0xFF,(l>>16)&0xFF,(l>>8)&0xFF,(l>>0)&0xFF,
+--                 (r>>24)&0xFF,(r>>16)&0xFF,(r>>8)&0xFF,(r>>0)&0xFF)
+-- end
 
-local function tocardinal2(n)
- -- return char(extract8(n,8),extract8(n,0))
-    return char((n>>8)&0xFF,(n>>0)&0xFF)
-end
+local tocardinal1 = sio.tocardinal1
+local tocardinal2 = sio.tocardinal2
+local tocardinal3 = sio.tocardinal3
+local tocardinal4 = sio.tocardinal4
+local tocardinal8 = sio.tocardinal8
 
-local function tocardinal3(n)
- -- return char(extract8(n,16),extract8(n,8),extract8(n,0))
-    return char((n>>16)&0xFF,(n>>8)&0xFF,(n>>0)&0xFF)
-end
-
-local function tocardinal4(n)
- -- return char(extract8(n,24),extract8(n,16),extract8(n,8),extract8(n,0))
-    return char((n>>24)&0xFF,(n>>16)&0xFF,(n>>8)&0xFF,(n>>0)&0xFF)
-end
-
-local function tointeger2(n)
- -- return char(extract8(n,8),extract8(n,0))
-    return char((n>>8)&0xFF,(n>>0)&0xFF)
-end
-
-local function tointeger3(n)
- -- return char(extract8(n,16),extract8(n,8),extract8(n,0))
-    return char((n>>16)&0xFF,(n>>8)&0xFF,(n>>0)&0xFF)
-end
-
-local function tointeger4(n)
- -- return char(extract8(n,24),extract8(n,16),extract8(n,8),extract8(n,0))
-    return char((n>>24)&0xFF,(n>>16)&0xFF,(n>>8)&0xFF,(n>>0)&0xFF)
-end
-
-local function tocardinal8(n)
-    local l = n // 0x100000000
-    local r = n % 0x100000000
- -- return char(extract8(l,24) & 0xFF,extract8(l,16) & 0xFF,extract8(l,8) & 0xFF,extract8(l,0) & 0xFF,
- --             extract8(r,24) & 0xFF,extract8(r,16) & 0xFF,extract8(r,8) & 0xFF,extract8(r,0) & 0xFF)
-    return char((l>>24)&0xFF,(l>>16)&0xFF,(l>>8)&0xFF,(l>>0)&0xFF,
-                (r>>24)&0xFF,(r>>16)&0xFF,(r>>8)&0xFF,(r>>0)&0xFF)
-end
+local tointeger1  = tocardinal1
+local tointeger2  = tocardinal2
+local tointeger3  = tocardinal3
+local tointeger4  = tocardinal4
+local tointeger8  = tocardinal8
 
 -- A couple of shared helpers.
 
@@ -935,7 +939,7 @@ do
                     if vertical then
                         v = v + 1 ; verticals[v] = zero4
                     end
-                    report_fonts("missing blob for index %i in font %a",index,basefontname)
+                 -- report_fonts("missing blob for index %i in font %a",index,basefontname)
                 end
             else
                 h = h + 1 ; horizontals[h] = zero4
@@ -2607,6 +2611,7 @@ end)
 function lpdf.flushfonts()
 
     local mainfonts = { }
+    local namefonts = { }
 
     statistics.starttiming(objects)
 
@@ -2648,6 +2653,7 @@ function lpdf.flushfonts()
                     end
                 end
              -- if rawdata then -- we don't have these when we nest vf's (as in antykwa)
+                    local hashname = names[hash] -- keys area a mix of numbers and names
                     parent = {
                         hash         = hash,
                         fontdata     = fontdata,
@@ -2661,9 +2667,12 @@ function lpdf.flushfonts()
                         streams      = { },
                         objectnumber = objects[hash],
                         basefontname = subsetname(properties.psname or properties.name or "unset"),
-                        name         = names[hash],
+                        name         = hashname,
                     }
                     mainfonts[hash] = parent
+                    if hashname then
+                        namefonts[hashname] = parent
+                    end
                     noffonts = noffonts + 1
              -- end
             end
@@ -2676,6 +2685,14 @@ function lpdf.flushfonts()
             end
         end
     end
+
+    -- probbaly not yet ok:    --
+
+    logs.startfilelogging(report_fonts,"embedded fonts")
+    for k, v in sortedhash(namefonts) do
+        report_fonts("%5i : file %a, base %a, instance %a",k,file.basename(v.filename),v.basefontname,v.hash)
+    end
+    logs.stopfilelogging()
 
 --     local function identifywriter(details)
 --         local filename = details.filename

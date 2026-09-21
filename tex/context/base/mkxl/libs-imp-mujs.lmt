@@ -35,14 +35,16 @@ local mujs_reset   = mujslib.reset
 
 local function okay()
     if resolvers.libraries.optionalloaded(libname,libfile) then
-        mujs_execute(
-            "var catcodes = { " ..
-                "'tex': " .. tex.texcatcodes .. "," ..
-                "'ctx': " .. tex.ctxcatcodes .. "," ..
-                "'prt': " .. tex.prtcatcodes .. "," ..
-                "'vrb': " .. tex.vrbcatcodes .. "," ..
-            "};"
-        )
+        if tex then
+            mujs_execute(
+                "var catcodes = { " ..
+                    "'tex': " .. tex.texcatcodes .. "," ..
+                    "'ctx': " .. tex.ctxcatcodes .. "," ..
+                    "'prt': " .. tex.prtcatcodes .. "," ..
+                    "'vrb': " .. tex.vrbcatcodes .. "," ..
+                "};"
+            )
+        end
         okay = function() return true end
     else
         okay = function() return false end
@@ -78,7 +80,7 @@ end)
 mujslib.setreadfile(function(id,how)
     local f = files[id]
     if f then
-        return (f:read(how or "*l"))
+        return (f:read(how or "*a")) -- *l
     end
 end)
 
@@ -99,9 +101,9 @@ mujslib.setconsole(function(category,name)
 end)
 
 local mujs = {
-    ["execute"] = function(c,s) if okay() then mujs_execute(c,s) end end,
-    ["dofile"]  = function(n)   if okay() then mujs_dofile(n)    end end,
-    ["reset"]   = function(n)   if okay() then mujs_reset(n)     end end,
+    ["execute"] = function(s) if okay() then mujs_execute(s) end end,
+    ["dofile"]  = function(s) if okay() then mujs_dofile (s) end end,
+    ["reset"]   = function( ) if okay() then mujs_reset  ( ) end end,
 }
 
 package.loaded[libname] = mujs

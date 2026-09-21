@@ -8,7 +8,7 @@ if not modules then modules = { } end modules ['l-sandbox'] = {
 
 -- We use string instead of function variables, so 'io.open' instead of io.open. That
 -- way we can still intercept repetetive overloads. One complication is that when we use
--- sandboxed functions in helpers in the sanbox checkers, we can get a recursion loop
+-- sandboxed functions in helpers in the sandbox checkers, we can get a recursion loop
 -- so for that reason we need to keep originals around till we enable the sandbox.
 
 -- if sandbox then return end

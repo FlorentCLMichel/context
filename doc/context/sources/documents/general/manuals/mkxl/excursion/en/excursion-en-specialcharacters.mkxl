@@ -1,0 +1,192 @@
+% signal=squid
+
+\startcomponent excursion-en-specialcharacters
+
+\enablemode[**en-us]
+
+\project excursion
+
+\startchapter[title=Special characters,reference={special chars}]
+
+\index{special characters}
+
+You have seen that \CONTEXT\ commands are preceded by a \tex{} (backslash). This
+means that \tex{} has a special meaning to \CONTEXT. Aside from \tex{} there are
+other characters that need special attention when you want them to appear in
+verbatim mode or in text mode. \in{Table}[tab:special-chars-1] and
+\in{}[tab:special-chars-2] gives an overview of these special characters and what
+you have to type to produce them.
+
+\startplacetable
+    [location={here,force},
+     reference=tab:special-chars-1,
+     title={Special characters (1)}]
+    \switchtobodyfont[9pt]
+    \bTABLE
+        \bTR[style=bold]
+            \bTD[nx=2,align=flushleft] Special character \eTD
+            \bTD[nx=2] Verbatim \eTD
+            \bTD[nx=2] Text \eTD
+        \eTR
+        \bTR[style=bold]
+            \bTD Character \eTD
+            \bTD Name \eTD
+            \bTD Type \eTD
+            \bTD Generates \eTD
+            \bTD Type \eTD
+            \bTD Generates \eTD
+        \eTR
+        \bTR
+            \bTD \letterhash \eTD
+            \bTD hashtag \eTD
+            \bTD \Type{\letterbackslash type\letterleftbrace\letterhash\letterrightbrace} \eTD
+            \bTD \mono{\letterhash} \eTD
+            \bTD \Type{\letterbackslash letterhash} \eTD
+            \bTD \letterhash \eTD
+        \eTR
+        \bTR
+            \bTD \letterdollar \eTD
+            \bTD dollar \eTD
+            \bTD \Type{\letterbackslash type\letterleftbrace\letterdollar\letterrightbrace} \eTD
+            \bTD \mono{\letterdollar} \eTD
+            \bTD \Type{\letterbackslash letterdollar} \eTD
+            \bTD \letterdollar \eTD
+        \eTR
+        \bTR
+            \bTD \letterampersand \eTD
+            \bTD ampersand \eTD
+            \bTD \Type{\letterbackslash type\letterleftbrace\letterampersand\letterrightbrace} \eTD
+            \bTD \mono{\letterampersand} \eTD
+            \bTD \Type{\letterbackslash letterampersand} \eTD
+            \bTD \letterampersand \eTD
+        \eTR
+        \bTR
+            \bTD \letterpercent \eTD
+            \bTD percent \eTD
+            \bTD \Type{\letterbackslash type\letterleftbrace\letterpercent\letterrightbrace} \eTD
+            \bTD \mono{\letterpercent} \eTD
+            \bTD \Type{\letterbackslash letterpercent} \eTD
+            \bTD \letterpercent \eTD
+        \eTR
+        \bTR
+            \bTD \letterbackslash \eTD
+            \bTD backslash \eTD
+            \bTD \Type{\letterbackslash type\letterleftbrace\letterbackslash\letterrightbrace} \eTD
+            \bTD \mono{\letterbackslash} \eTD
+            \bTD \Type{\letterbackslash letterbackslash} \eTD
+            \bTD \letterbackslash \eTD
+        \eTR
+        \bTR
+            \bTD \letterrightbrace \eTD
+            \bTD right curly brace \eTD
+            \bTD \Type{\letterbackslash type+\letterrightbrace+}\eTD
+            \bTD \mono{\letterrightbrace} \eTD
+            \bTD \Type{\letterbackslash letterrightbrace} \eTD
+            \bTD \letterrightbrace \eTD
+        \eTR
+        \bTR
+            \bTD \letterleftbrace \eTD
+            \bTD left curly brace \eTD
+            \bTD \Type{\letterbackslash type+\letterleftbrace+} \eTD
+            \bTD \mono{\letterleftbrace} \eTD
+            \bTD \Type{\letterbackslash letterleftbrace} \eTD
+            \bTD \letterleftbrace \eTD
+        \eTR
+        \bTR
+            \bTD \mono{\letterbar} \eTD
+            \bTD vertical bar \eTD
+            \bTD \Type{\letterbackslash type\letterleftbrace\letterbar\letterrightbrace} \eTD
+            \bTD \mono{\letterbar} \eTD
+            \bTD \Type{\letterbackslash letterbar} \eTD
+            \bTD \letterbar \eTD
+        \eTR
+        \bTR
+            \bTD \mono{\letterunderscore} \eTD
+            \bTD underscore \eTD
+            \bTD \Type{\letterbackslash type\letterleftbrace\letterunderscore\letterrightbrace} \eTD
+            \bTD \mono{\letterunderscore} \eTD
+            \bTD \Type{\letterbackslash letterunderscore} \eTD
+            \bTD \letterunderscore \eTD
+        \eTR
+        \bTR
+            \bTD \mono{\lettertilde} \eTD
+            \bTD tilde \eTD
+            \bTD \Type{\letterbackslash type\letterleftbrace\lettertilde\letterrightbrace} \eTD
+            \bTD \mono{\lettertilde} \eTD
+            \bTD \Type{\letterbackslash lettertilde} \eTD
+            \bTD \lettertilde \eTD
+        \eTR
+        \bTR
+            \bTD \mono{\letterhat} \eTD
+            \bTD caret \eTD
+            \bTD \Type{\letterbackslash type\letterleftbrace\letterhat\letterrightbrace} \eTD
+            \bTD \mono{\letterhat} \eTD
+            \bTD \Type{\letterbackslash letterhat} \eTD
+            \bTD \letterhat \eTD
+        \eTR
+    \eTABLE
+\stopplacetable
+
+\startplacetable
+    [location={here,force},
+     reference=tab:special-chars-2,
+     title={Special characters (2)}]
+    \switchtobodyfont[9pt]
+    \setupTABLE[c][1][width=0.2\textwidth]
+    \bTABLE
+        \bTR[style=bold]
+            \bTD[align=flushleft] Special character \eTD
+            \bTD[nx=2] Verbatim \eTD
+            \bTD[nx=2] Text \eTD
+        \eTR
+        \bTR[style=bold]
+            \bTD Character \eTD
+            \bTD Type \eTD
+            \bTD Generates \eTD
+            \bTD Type \eTD
+            \bTD Generates \eTD
+        \eTR
+        \bTR
+            \bTD \mono{+} \eTD
+            \bTD \type{\type{+}} \eTD
+            \bTD \type{+} \eTD
+            \bTD \type{\m{+}} \eTD
+            \bTD \m{+} \eTD
+        \eTR
+        \bTR
+            \bTD \mono{-} \eTD
+            \bTD \type{\type{-}} \eTD
+            \bTD \type{-} \eTD
+            \bTD \type{\m{-}} \eTD
+            \bTD \m{-} \eTD
+        \eTR
+        \bTR
+            \bTD \mono{=} \eTD
+            \bTD \type{\type{=}} \eTD
+            \bTD \type{=} \eTD
+            \bTD \type{\m{=}} \eTD
+            \bTD \m{=} \eTD
+        \eTR
+        \bTR
+            \bTD \mono{<} \eTD
+            \bTD \type{\type{<}} \eTD
+            \bTD \type{<} \eTD
+            \bTD \type{\m{<}} \eTD
+            \bTD \m{<} \eTD
+        \eTR
+        \bTR
+            \bTD \mono{>} \eTD
+            \bTD \type{\type{>}} \eTD
+            \bTD \type{>} \eTD
+            \bTD \type{\m{>}} \eTD
+            \bTD \m{>} \eTD
+        \eTR
+    \eTABLE
+\stopplacetable
+
+\stopchapter
+
+\doifmode{Book}
+  {\page[yes]}
+
+\stopcomponent

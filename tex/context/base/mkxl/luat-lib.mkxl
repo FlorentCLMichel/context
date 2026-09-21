@@ -87,8 +87,7 @@
 \registerctxluafile{luat-ini}{autosuffix}
 \registerctxluafile{util-env}{}
 \registerctxluafile{luat-env}{}
-\registerctxluafile{luat-exe}{} % simplified
-\registerctxluafile{luat-iop}{} % simplified
+\registerctxluafile{luat-sbx}{autosuffix}
 %registerctxluafile{luat-bwc}{}
 \registerctxluafile{trac-lmx}{} % might become l-lmx or luat-lmx
 \registerctxluafile{luat-mac}{}

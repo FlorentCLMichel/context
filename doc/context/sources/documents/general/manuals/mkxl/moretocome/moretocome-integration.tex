@@ -1,0 +1,314 @@
+% language=us runpath=texruns:manuals/moretocome
+
+\startcomponent moretocome-integration
+
+\environment moretocome-style
+
+\startchapter[title={Integration}]
+
+When you put text on a curve there are (at least) two variants to
+consider:
+
+\startitemize
+    \startitem
+        You typeset the text and put glyphs along the shape, rotating the glyph
+        following the curve. Rotation happens around the the center of the
+        baseline of the glyph.
+    \stopitem
+    \startitem
+        You typeset the text and transform the outline according to the position
+        on the shape. So, when the shape is a circle the glyphs become wider at
+        their top.
+    \stopitem
+\stopitemize
+
+The first variant uses the original glyph path and therefore we can use the
+regular font resource, while the second variant has to fetch the outline from the
+font resource and work with the path. Here we discuss the second case.
+
+\startbuffer[1]
+\startMPcode
+    path shape ; shape := reverse fullcircle
+        xyscaled (50,40)
+    ;
+    draw lmt_followtext [
+        text = "\bf Do you see the difference? ",
+        path = shape,
+    ] ysized 5cm withcolor "middleblue" ;
+\stopMPcode
+\stopbuffer
+
+\startbuffer[2]
+\startMPcode
+    path shape ;
+    shape := reverse fullcircle
+        xyscaled (500,400)
+    ;
+    path p ; p := lmt_oscillated [
+        text = "\bf Do you see the difference? ",
+        path = shape,
+    ] ;
+    fill p withcolor "middleblue" ;
+\stopMPcode
+\stopbuffer
+
+\startplacefigure[reference=fig:integration:0]
+    \startcombination
+        {\scale[width=.4tw]{\getbuffer[1]}} {first variant}
+        {\scale[width=.4tw]{\getbuffer[2]}} {second variant}
+    \stopcombination
+\stopplacefigure
+
+Because we gradually translate points we cannot simply take the existing points
+that define the glyph. For instance, the topmost line of the \type {T} normally
+has two points and just translating these two ignores the fact that in the middle
+we move up. As demonstrated in \in {figure} [fig:integration:1] we have to add
+points.
+
+\startbuffer
+\startMPcode
+    path shape ;
+    shape := reverse subpath(1,3) of fullcircle
+        xyscaled (500,400)
+    ;
+    draw shape
+        withpen pencircle scaled 2
+        withcolor "middlegray"
+    ;
+    path p ; p := lmt_oscillated [
+        text       = "\bf T T T T ",
+        path       = shape,
+        resolution = 5,
+    ] ;
+    fill       p withcolor "middleyellow" ;
+    drawpoints p withcolor "middlered" ;
+\stopMPcode
+\stopbuffer
+
+\startplacefigure[reference=fig:integration:1]
+    \scale[width=tw]{\getbuffer}
+\stopplacefigure
+
+In \CONTEXT\ speak, this example is generated with:
+
+\typebuffer[option=TEX]
+
+This feature is a good example of the way we integrate \TEX, \LUA\ and \METAPOST\
+so let's see what happens here. We start at the \TEX\ end, where we ask for some
+\METAPOST\ graphic. The code between \typ {\startMPcode} and \typ {\stopMPcode}
+is picked up at the \LUA\ end and passed to a \METAPOST\ instance. When processed
+the result is picked up by \LUA, and the graphic operations become \PDF\ code.
+
+When we are in \METAPOST, we need the outline of the text. So there \METAPOST\
+picks up the text and (via \LUA) passes it to \TEX\ where it gets typeset and
+ends up in a box. Processing the text uses the (set) font and font features are
+applied, think of ligature building and kerning. The resulting node list contains
+references to glyphs in a font as well as kerns (and maybe rules). Because we
+want the outlines, we trigger a dedicated so called \quote {shipout} routine, one
+that assembles a picture from those outlines. That picture is then passed back to
+\METAPOST, where successive paths get positioned along the shape whereby points
+are added and relocated. Some glyphs are made from multiple paths, for instance
+an \type {O} has two paths and a \type {B} has three.
+
+Getting the outline from the font means that we need to collect the so called
+\CFF\ or \TTF\ glyph path descriptions and translate them to \METAPOST\
+operations. Reading a font and parsing these path descriptions is again a task
+for \LUA. We actually need these (original) path descriptions when we subset a
+font for embedding and have to manipulate them when we are dealing with a
+variable font. The export to a \METAPOST\ variant was written at the time we
+wrote the \LUA\ code, if only because we love tracing such properties and
+features.
+
+It will be clear that we call \LUA\ from \TEX\ as well as \METAPOST\ various
+times. In this case \typ {lmt_oscillated} is rather simple, most code involves
+calculating the (additional) points from given points, the rest was just there.
+This macro actually calls out to \LUA\ where we pick up the parameters. Only when
+we are done typesetting and collecting glyph paths we return to \METAPOST. We use
+scanners to get data and injectors to push data at the \TEX\ and \METAPOST\ end.
+These mechanism are quite efficient. We basically extend both languages with new
+features. We can summarize the process as:
+
+\startlinecorrection
+\TEX      \low{1} \rightarrow
+\LUA      \low{1} \rightarrow
+\METAPOST \low{1} \rightarrow
+\LUA      \low{2} \rightarrow
+\TEX      \low{2} \rightarrow
+\LUA      \low{3} \rightarrow
+\LUA      \low{4} \rightarrow
+\METAPOST \low{2} \rightarrow
+\LUA      \low{5} \rightarrow
+\PDF      \low{1} \rightarrow
+\TEX      \low{3}%
+\stoplinecorrection
+
+The various steps shown here are:
+
+\starttabulate
+\NC \TEX      \low{1} \NC ask for graphic with macro \NC \NR
+\NC \LUA      \low{1} \NC prepare graphic data and pass to instance \NC \NR
+\NC \METAPOST \low{1} \NC process graphic and call macro \NC \NR
+\NC \LUA      \low{2} \NC pick up arguments \NC \NR
+\NC \TEX      \low{2} \NC typeset text \NC \NR
+\NC \LUA      \low{3} \NC pickup outlines \NC \NR
+\NC \LUA      \low{4} \NC convert result to \METAPOST\ shape \NC \NR
+\NC \METAPOST \low{2} \NC position transformed glyphs \NC \NR
+\NC \LUA      \low{5} \NC pickup result from run and convert \NC \NR
+\NC \PDF      \low{1} \NC graphic description \NC \NR
+\NC \TEX      \low{3} \NC position and scale result in document \NC \NR
+\stoptabulate
+
+We understand that writing this solution from scratch without any code being
+present takes some effort. However, as were already using \LUATEX\ and
+\LUAMETATEX\ for a while, so in the end we only had to spend time on step \METAPOST
+\low{2}. Mikael Sundqvist and I started our explorations with a more complex
+approach, which actually exposed some complications so eventually we decided on a
+slightly more demanding variant in terms of runtime, and the final code actually
+has less lines. \in {Figure} [fig:integration:6] demonstrates that ligatures are
+handled well.
+
+\startbuffer
+\startMPcode
+    path shape ;
+    shape := reverse subpath(1,3) of fullcircle
+        xyscaled (500,400)
+    ;
+    path p ; p := lmt_oscillated [
+        text       = "\bf effe flink fietsen",
+        path       = shape,
+        resolution = 20,
+    ] ;
+    fill p withcolor "middleyellow" ;
+    draw p withcolor "middleblue" withpen pencircle scaled 1 ;
+\stopMPcode
+\stopbuffer
+
+\startplacefigure[reference=fig:integration:6]
+    \scale[width=tw]{\getbuffer}
+\stopplacefigure
+
+Of course we can combine this with other integrated features, for instance with
+so called \quote {Perlin Noise} which generates patterns that look random but
+where distortions are related (think for instance clouds):
+
+\startbuffer
+\definecharacterkerning
+  [mine]
+  [factor=0.05]
+
+\startMPcode
+    draw lmt_noise [
+        bytemap     = 4,
+        nx          = 1000,
+        ny          = 1000,
+        nz          = 1,
+        iterations  = 2,
+        frequency   = 0.1,
+        amplitude   = 1,
+        persistence = 0.5,
+        lacunarity  = 2.0,
+        minimum     = 0,
+        maximum     = 255,
+        method      = "angle",
+    ] xysized (4cm,4cm) shifted (-2cm,-2cm) ;
+    fill lmt_oscillated [
+        text = "\setcharacterkerning[mine1]\bf\CONTEXT\ LMTX is FUN! "
+        path = reverse fullcircle xyscaled (25mm,25mm) ,
+    ] withtransparency (1,.75) withcolor white ;
+\stopMPcode
+\stopbuffer
+
+\typebuffer[option=TEX]
+
+Here we first create a background: again we parse the specification from \LUA\
+using \METAPOST\ scanning routines, then we generate a byte map with noise using
+a small \CCODE\ library that we access from \LUA. When done we tell \METAPOST\
+the dimensions so that it can make a picture that refers to the byte map (in this
+case 4) which it can scale, rotate, whatever. The backend gets told that it has
+to include that byte map instead of the picture (path) so again \LUA\ kicks in
+and we get \in {figure} [fig:integration:2].
+
+\startplacefigure[reference=fig:integration:2]
+    \scale[width=.5tw]{\getbuffer}
+\stopplacefigure
+
+Especially in the \LUAMETAFUN\ manual there are various examples of the tight
+integration of the three languages, with occasional help from a \CCODE\ library.
+We wrap up with two examples where we use a small library that generates
+a \QRCODE.
+
+\startbuffer[1]
+\startluacode
+    context.dontleavehmode()
+    figures.qrcode(
+        "To use LUA or METAPOST, that's the question.",
+        tex.sp("5cm")
+    )
+\stopluacode
+\stopbuffer
+
+\startbuffer[2]
+\startluacode
+local colors = {
+    string.char(200,  0,  0),
+    string.char(  0,200,  0),
+    string.char(  0,  0,200),
+    string.char(  0,200,200),
+    string.char(200,  0,200),
+    string.char(200,200,  0),
+}
+
+local white = string.char(255,255,255)
+local black = string.char(  0)
+
+function MP.Test(index,str)
+     local data, size = qrcodegen.generate(str)
+     data = string.gsub(data,"(.)",function(c)
+        if c == black then
+            return colors[math.random(6)]
+        else
+            return white
+        end
+     end)
+     mp.newbytemap(index,size,size,3,data)
+end
+\stopluacode
+\stopbuffer
+
+\startbuffer[3]
+\startMPcode
+    lua.MP.Test(3, "To use LUA or METAPOST, that's the question.") ;
+    draw bytemap 3 xsized 5cm ;
+\stopMPcode
+\stopbuffer
+
+The first variant used a \LUA\ helper in the \CONTEXT\ graphic library. Here
+\METAPOST\ is not involved:
+
+\typebuffer[1][option=TEX]
+
+The second example calls a \LUA\ function from the \METAPOST\ end where we
+replace the black rectangles with colorful ones. My phone can handle it.
+
+\typebuffer[2][option=TEX]
+\typebuffer[3][option=TEX]
+
+The reason why we added this library is that you can configure \CONTEXT\ to pop
+up an error message in \QRCODE\ speak. We also used these codes on the \CONTEXT\
+2025 meeting poster and for ear tags with familiar \TEX\ error messages at
+\BACHOTEX. Anyway, we show both examples side by side in \in {figure}
+[fig:integration:3]. I hope that we made clear that the possibilities of
+combining techniques are endless.
+
+\startplacefigure[reference=fig:integration:3]
+    \startcombination
+        {\getbuffer[1]}   {Just \LUA.}
+        {\getbuffer[2,3]} {\LUA\ and \METAPOST.}
+    \stopcombination
+\stopplacefigure
+
+\stopchapter
+
+\stopcomponent
+
+% This time's musical timestamp: Leprous Live in Tilburg Bluray (2025)

@@ -1,0 +1,191 @@
+% language=us
+
+\environment context-2022-style
+
+\startdocument
+  [title={The LMTX distribution},
+   banner={keep it simple},
+   location={context\enspace {\bf 2022}\enspace meeting}]
+
+\starttitle[title=The challenge]
+
+\startitemize
+    \startitem
+        How can we provide users with a long term stable \LUAMETATEX\ engine that
+        doesn't get messed up by uncontrolled patches?
+    \stopitem
+    \startitem
+        How can we ensure a stable current \CONTEXT\ distribution that works with the
+        engine as it is when that current was published?
+    \stopitem
+    \startitem
+        How can users get independence of changes in hardware and the operating
+        system out of their control?
+    \stopitem
+    \startitem
+        How can we make sure that the right additional resources that we expect to
+        be present (with a given version) are kept with the engine and distribution?
+    \stopitem
+    \startitem
+        How can we make installing and running the lot mainly a matter of running the
+        single independent binary in a well defined \TEX\ tree?
+    \stopitem
+    \startitem
+        How can we stay stable and stay free from these ever changing fashions,
+        pseudo standards, software politics, etc.?
+    \stopitem
+    \startitem
+        In other words how can we best distribute \CONTEXT\ \LMTX\ best?
+    \stopitem
+\stopitemize
+
+\stoptitle
+
+\starttitle[title=Running]
+
+\startitemize
+    \startitem
+        We only need one binary: \type {luametatex}.
+    \stopitem
+    \startitem
+        We run \CONTEXT\ with \type {context} which is a link to the binary.
+    \stopitem
+    \startitem
+        We run other scripts with \type {mtxrun} which is a link to the binary.
+    \stopitem
+    \startitem
+        These runners have \type {context.lua} and \type {mtxrun.lua} (with
+        suffix) in the same (binary) path.
+    \stopitem
+    \startitem
+        So three files and two links is all what is needed.
+    \stopitem
+    \startitem
+        We assume a standardized setup. One can divert but we're not going to
+        waste time on alternatives.
+    \stopitem
+    \startitem
+        Here the resources are all located relative to the binary. This is a
+        proven setup (minimals).
+    \stopitem
+\stopitemize
+
+\stoptitle
+
+\starttitle[title=Directory structure]
+
+This is how one can install it:
+
+\starttabulate[|l|Tl|]
+    \NC \notabene {always} \NC /data/context/tex/texmf/ \NC \NR
+    \NC \notabene {always} \NC /data/context/tex/texmf-<platform>/bin/ \NC \NR
+    \NC \notabene {always} \NC /data/context/tex/texmf-context/ \NC \NR
+    \TB
+    \NC optional           \NC /data/context/tex/texmf-local/ \NC \NR
+    \NC optional           \NC /data/context/tex/texmf-fonts/ \NC \NR
+    \NC optional           \NC /data/context/tex/texmf-project/ \NC \NR
+\stoptabulate
+
+After running:
+
+\starttyping
+mtxrun --generate
+mtxrun --script font --reload
+\stoptyping
+
+This should work:
+
+\starttyping
+context [--autopdf] --global welcome-to-context
+\stoptyping
+
+It picks up a file from the tree and runs it on the local path.
+
+\stoptitle
+
+
+\starttitle[title=A solution]
+
+\startitemize
+    \startitem
+        Already years ago (and also recently when we met) Mojca and I discussed
+        this but we never came to implement it. Of course we blame COVID.
+    \stopitem
+    \startitem
+        It boils down to having several \notabene {repositories} from which we install:
+        \startitem
+            The \notabene {\CONTEXT\ distribution}, including the source of
+            \LUAMETATEX. Basically this is the already present mirror.
+        \stopitem
+        \startitem
+            A repository that has (mostly) \notabene {reliable fonts} that we
+            know work as we expect and don't get replaced without them being
+            tested.
+        \stopitem
+        \startitem
+            A repository with stable and quality assured \notabene {reliable
+            third party modules}.
+        \stopitem
+        \startitem
+            A repository with \notabene {binaries} that match the latest version.
+            Users can always generate their own if needed.
+        \stopitem
+        \startitem
+            \notabene {Snapshots} of working combination of these that can get
+            installed manually or via an installer.
+        \stopitem
+    \stopitem
+    \startitem
+        Basically we're talking of what is (and has always) been the minimals
+        but maintained by some more people. New is that we provide the means
+        to compile the engine, which is the only program needed.
+    \stopitem
+    \startitem
+        We stay far from dependencies so we have an independent source tree.
+        There is the possibility to load libraries, but we provide only very few
+        small optional interfaces. Additional ones can be made outside the source
+        tree but will not be distributed.
+    \stopitem
+    \startitem
+        For the engine as well as the optional libraries we can set up the
+        compile farm but for the later we will not enter a frequent update
+        mode: we need little.
+    \stopitem
+\stopitemize
+
+\stoptitle
+
+\starttitle[title=Compiling]
+
+\startitemize
+    \startitem
+        Are we ready to distribute the source? Last year we didn't release
+        because one important condition was not met. But now we can decide to
+        release version 1.00!
+    \stopitem
+    \startitem
+        Although there are plenty of places where I want to go a bit further,
+        most is done.
+    \stopitem
+    \startitem
+        Can we expect users to compile binaries? The answer for a complete
+        \TEXLIVE\ setup is \quote {no} but for what we have here is can work
+        well.
+    \stopitem
+    \startitem
+        In due time we can have recipes on the garden but it should work more
+        or less out of the box: \LINUX\ and \MSWINDOWS\ demo.
+    \stopitem
+    \startitem
+        Michal Vlasák made a prototype of setup for compiling some libraries.
+    \stopitem
+    \startitem
+        We need to get \LMTX\ into the next \TEXLIVE. Because we don't rely on
+        the build infrastructure Mojca probably has to provide the binaries from
+        the farm.
+    \stopitem
+\stopitemize
+
+\stoptitle
+
+\stoptext

@@ -1,0 +1,150 @@
+\environment show-env
+
+\setuplayout
+  [topspace=10pt,
+   bottomspace=10pt,
+   backspace=30pt,
+   height=middle,
+   width=middle,
+   header=0pt,
+   footerdistance=0pt,
+   footer=20pt]
+
+% \showmakeup
+
+\setupinteraction
+  [color=,
+   contrastcolor=]
+
+\setupcolors
+  [textcolor=white]
+
+% idem external files
+
+\startreusableMPgraphic{MainGraphic}
+    StartPage ;
+        fill Page withcolor \MPcolor{shade-2} ;
+    StopPage ;
+\stopreusableMPgraphic
+
+\defineoverlay [MainGraphic] [\reuseMPgraphic{MainGraphic}]
+
+\setupbackgrounds
+  [paper]
+  [background=color,
+   backgroundcolor=black]
+
+\setupbackgrounds
+  [page]
+  [background={MainGraphic,Button}]
+
+\setupbackgrounds
+  [text]
+  [background=Text]
+
+\setupfooter
+  [style=\bfc]
+
+\dontcomplain
+
+% intro
+
+\setuphead
+  [chapter]
+  [style=\bfc,
+   page=yes]
+
+\setuphead
+  [subject]
+  [style=\bfb]
+
+\setupfootertexts
+  []
+
+\setupbackgrounds
+  [page]
+  [background=firstpage]
+
+\setupbackgrounds
+  [text] [text]
+  [background=nextpage]
+
+\defineoverlay[firstpage][\overlaybutton{firstpage}]
+\defineoverlay[nextpage] [\overlaybutton{nextpage}]
+
+\starttext
+
+    \starttexdefinition ShowFigure #1#2#3
+        \subject{#2}
+        \startlinecorrection
+            \hbox to \hsize \bgroup
+                \externalfigure[#3][page=1,width=.2\textwidth,background=color,backgroundcolor=white,backgroundoffset=2pt]
+                \quad
+                \externalfigure[#3][page=2,width=.2\textwidth,background=color,backgroundcolor=white,backgroundoffset=2pt]
+                \quad
+                \externalfigure[#3][page=3,width=.2\textwidth,background=color,backgroundcolor=white,backgroundoffset=2pt]
+                \quad
+                \externalfigure[#3][page=4,width=.2\textwidth,background=color,backgroundcolor=white,backgroundoffset=2pt]
+                \hss
+            \egroup
+        \stoplinecorrection
+    \stoptexdefinition
+
+    \starttexdefinition StartShowFigures #1
+        \page
+        \setupfootertexts[][{#1}]
+    \stoptexdefinition
+
+    \starttexdefinition StopShowFigures
+        \page
+        \setupfootertexts[][]
+    \stoptexdefinition
+
+    \starttitle[title={Presentations}]
+
+        \start \hsize .6\textwidth
+
+        This is a selection of three sets of presentations at meetings and a
+        bunch of examples for some styles that come with \CONTEXT. In \MKIV\ some
+        of the older styles have been dropped. There are more presentations,
+        starting mid 1990's: some are lost, others make no sense showing (or have
+        articles instead) and I have no time anyway to collect all of them.
+
+        \blank
+
+        We show the first four pages but you can find the complete files in the
+        \CONTEXT\ distribution. This file is generated automatically so it's also
+        a snapshot. Maybe some day I find the time to add some more.
+
+        There are more files in the source tree because it doesn't make sense to
+        provide all \PDF\ files. Some files are to be generated with \LUATEX\
+        because they discuss something (\MKIV) that in the meantime has been
+        superseded. Keep in mind that these talk are snapshots and might have
+        presenting the state at that time, some experiments, or just have been
+        teasers.
+
+        \stop
+
+    \stoptitle
+
+    \startluacode
+
+        local function show(where,pattern)
+            context.StartShowFigures(where)
+                local files = resolvers.findfiles(pattern)
+                for i=1,#files do
+                    local filename = files[i]
+                    context.writestatus("presentation",filename)
+                    context.ShowFigure(where,file.nameonly(filename),filename)
+                end
+            context.StopShowFigures()
+        end
+
+        show("Bacho\\TeX",          "presentations/bachotex/**/bachotex-*.pdf")
+        show("\\ConTeXt\\ Meeting", "presentations/context/**/context-*.pdf")
+        show("TUG",                 "presentations/tug/**/tug-*.pdf")
+        show("Examples",            "presentations/examples/present-*.pdf")
+
+    \stopluacode
+
+\stoptext

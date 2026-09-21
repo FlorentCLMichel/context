@@ -1,0 +1,357 @@
+% content=tex
+%
+% copyright=pragma-ade readme=readme.pdf licence=cc-by-nc-sa
+
+\environment mstyle
+
+\definecolor[red]   [r=.5]
+\definecolor[green] [g=.5]
+\definecolor[blue]  [b=.5]
+\definecolor[yellow][r=.5,g=.5]
+
+\definecolor [NopColor] [red]
+\definecolor [AltColor] [blue]
+\definecolor [TheColor] [yellow]
+\definecolor [TmpColor] [green]
+
+\starttext
+
+\setuplayout[page]
+
+\setupbackgrounds
+  [page]
+  [background={color,page},
+   backgroundcolor=blue]
+
+\defineoverlay
+  [page]
+  [\useMPgraphic{page}]
+
+\startuseMPgraphic{page}
+
+    StartPage ;
+    draw Page ;
+        pickup pencircle scaled .225PaperWidth ;
+        path p  ; p := ulcorner Page -- lrcorner Page ;
+        draw p withcolor \MPcolor{yellow} ;
+        draw p rotatedaround(point .25 along p, 60) withcolor \MPcolor{yellow} ;
+        draw p rotatedaround(point .25 along p,-60) withcolor \MPcolor{yellow} ;
+    StopPage ;
+
+\stopuseMPgraphic
+
+\starttextmakeup
+
+\NormalizeFontWidth \MyFontA {MODES} {.15\paperwidth} {SansBold}
+\NormalizeFontWidth \MyFontB {MODES} {.70\paperwidth} {SansBold}
+
+\vskip.025\paperwidth
+\hfill \MyFontA \color[yellow]{Hans Hagen}\kern.025\paperwidth
+\vfill
+\hskip.05\paperwidth \MyFontB \color[yellow]{Modes} \hfill
+\vskip.05\paperwidth
+
+\stoptextmakeup
+
+\setupbackgrounds
+  [page]
+  [background=]
+
+\setuplayout
+  [reset]
+
+Every user will at one moment run into modes. Modes are used for
+conditional processing. You enable or disable modes:
+
+\starttyping
+\enablemode[screen]
+\disablemode[proof]
+\stoptyping
+
+as well as prevent modes being set:
+
+\starttyping
+\preventmode[doublesided]
+\stoptyping
+
+Later on you can act upon this mode using:
+
+\starttyping
+\startmode[screen]
+  \setupinteraction[state=start]
+\stopmode
+\stoptyping
+
+The counterpart of this command is:
+
+\starttyping
+\startnotmode[screen]
+  \setupinteraction[state=start]
+\stopnotmode
+\stoptyping
+
+You can set modes in your document or in styles, but you can
+also do that at runtime:
+
+\starttyping
+texexec --pdf --mode=screen --result=myfile-s myfile
+texexec --pdf --mode=A4     --result=myfile-a myfile
+texexec --pdf --mode=letter --result=myfile-l myfile
+\stoptyping
+
+You can test for more modes at the same time:
+
+\starttyping
+\startmode[color,colour]
+  \setupcolors[state=start]
+\stopmode
+\stoptyping
+
+If you want to satisfy a combination of modes, you use:
+
+\starttyping
+\startmode[final]
+  \setuplayout[markings=on]
+\stopmode
+\startallmodes[final,color]
+  \setuplayout[markings=color]
+\stopallmodes
+\stoptyping
+
+The counterpart is
+
+\starttyping
+\startnotallmodes[print,proof]
+  \setuplayout[markings=off]
+\stopnotallmodes
+\stoptyping
+
+Instead of the \type {start}||\type {stop} variants, you can use
+the \type {\doif} alternatives. These have the advantage that they
+can be nested.
+
+\starttyping
+\doifmodeelse     {modes} {action} {alternative}
+\doifmode         {modes} {action}
+\doifnotmode      {modes} {action}
+\doifallmodeselse {modes} {action} {alternative}
+\doifallmodes     {modes} {action}
+\doifnotallmodes  {modes} {action}
+\stoptyping
+
+Mode can be combined with variables:
+
+\starttyping
+\setupvariables[document][alternative=print]
+
+\enablemode[document:\getvariable{document}{alternative}]
+
+\startmode[document:print]
+  ...
+\stopmode
+
+\startmode[document:screen]
+  ...
+\stopmode
+\stoptyping
+
+An alternative for such an selective approach is to use setups:
+
+\starttyping
+\setupvariables[document][alternative=print]
+
+\startsetups[document:print]
+  ...
+\stopsetups
+
+\startsetups[document:screen]
+  ...
+\stopsetups
+
+\setups[document:\getvariable{document}{alternative}]
+\stoptyping
+
+The difference is that mode blocks are processed in the order that
+the document (or style) is loaded, while setups are stored and
+recalled later.
+
+In addition to your own modes, \CONTEXT\ provides a couple
+of system modes. These are preceded by a \type {*}, as in:
+
+\starttyping
+\startmode[*first]
+  % this is the first run
+\stopmode
+\stoptyping
+ The following system modes are available (more will implemented):
+
+% \start \setuptype[color=]
+
+\startswitch
+{\type{color-c},\type{color-m},\type{color-y},\type{color-k}}
+
+These are rather special modes related to color separation. They are
+only set when channels are split off.
+
+\stopswitch
+
+\startswitch {\type{figure}}
+
+This mode is set when a graphic is found. You can use this mode in
+for instance figure postprocessing actions.
+
+\stopswitch
+
+\startswitch {\type{text}, \type{project}, \type{product},
+\type{component}, \type{environment}}
+
+These modes are set when one enters one of the associated
+structuring environments. Nesting is supported.
+
+\stopswitch
+
+\startswitch {\type{list}}
+
+After using \type {\determinelistcharacteristics} this mode reflects
+if list entries were found.
+
+\stopswitch
+
+\startswitch {\type{pairedbox}} This mode is enabled when a paired
+box (legenda and such) is constructed. \stopswitch
+
+\startswitch {\type{combination}} This mode is enabled when a
+combination (often used for graphics) is constructed. \stopswitch
+
+\startswitch {\type{interaction}}
+
+When interaction is enabled, this mode is true. You can for instance
+use this mode to add different content to for instance screen and
+paper versions.
+
+\stopswitch
+
+\startswitch {\type{register}}
+
+After using \type {\determineregistercharacteristics} this mode
+reflects if register entries were found.
+
+\stopswitch
+
+\startswitch {\type{sectionnumber}}
+
+This mode is enabled when a section head is numbered. You can access
+the mode while building the section head, which is true when you have
+your own commands hooked into the head mechanism.
+
+\stopswitch
+
+\startswitch {\type{frontpart}, \type{bodypart}, \type{backpart},
+\type{appendix}}
+
+The state of main sections in a document as well as user defined
+ones, are reflected in system modes.
+
+\stopswitch
+
+\startswitch {\type{suffix-\jobfilesuffix}}
+
+You can use this mode to differentiate between input file types. We
+use this for instance to distinguish between different XML content
+variants when pretty|-|printing (given that they can be recognized
+on their suffix).
+
+\stopswitch
+
+\startswitch {\type{first}}
+
+Often multiple runs are needed to get a document right. Think of
+cross references, object references, tables of contents, indices,
+etc. You can use this mode to determine if the first run is taking
+place. For instance, when you do real time graphic conversions, it
+makes sense to do that only once.
+
+\stopswitch
+
+\startswitch {\type{last}}
+
+This mode is set if the last run in a session is taking place.
+Normally this is not known in advance, unless one has asked for an
+additional imposition pass.
+
+\stopswitch
+
+\startswitch {\type{background}}
+
+This mode is set when there is a (new) background defined.
+
+\stopswitch
+
+\startswitch {\type{postponing}}
+
+While postponing some content using the postpone mechanism this mode
+is enabled.
+
+\stopswitch
+
+\startswitch {\type{grid}}
+
+When you are typesetting on a grid, special care has to be taken not
+spoil grid snapping. You can use this mode to test if you are in
+grid typesetting mode.
+
+\stopswitch
+
+\startswitch {\type{header}}
+
+This mode is enabled when there is a page header, i.e.\ the header
+has non|-|zero dimensions.
+
+\stopswitch
+
+\startswitch {\type{footer}}
+
+This mode is enabled when there is a page footer, i.e.\ the header
+has non|-|zero dimensions.
+
+\stopswitch
+
+\startswitch {\type{makeup}}
+
+The makeup mechanisms are used to build single pages like title
+pages. This mode is set during construction.
+
+\stopswitch
+
+\startswitch {\type{pdf}, \type{dvi}}
+
+One of these modes is set, which one depends on the output driver
+that is loaded.
+
+\stopswitch
+
+\startswitch {\type{*language-id}, \type{language-id}}
+
+When a language is chosen, its id is set as mode. For example, when the main
+language is English, and the current language Dutch, we can test for the
+modes \type {**en} and \type {*nl} (watch the extra \type {*}).
+
+\stopswitch
+
+\startswitch {\type{marking}}
+
+This flag is set when a marking (e.g.\ in a header or footer) is
+being typeset (processed).
+
+\stopswitch
+
+\startswitch {\type{mkiv}}
+
+This flag is set when we use \MKIV, i.e.\ when \LUATEX\ is used. When not set
+you may assume that \PDFTEX\ or \XETEX\ is used.
+
+\stopswitch
+
+% \stop
+
+\stoptext

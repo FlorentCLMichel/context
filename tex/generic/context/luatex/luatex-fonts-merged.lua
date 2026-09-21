@@ -1,6 +1,6 @@
 -- merged file : c:/data/develop/context/sources/luatex-fonts-merged.lua
 -- parent file : c:/data/develop/context/sources/luatex-fonts.lua
--- merge date  : 2026-09-10 09:53
+-- merge date  : 2026-09-21 20:00
 
 do -- begin closure to overcome local limits and interference
 
@@ -1075,7 +1075,7 @@ if not modules then modules={} end modules ['l-table']={
 local type,next,tostring,tonumber,select,rawget=type,next,tostring,tonumber,select,rawget
 local table,string=table,string
 local concat,sort=table.concat,table.sort
-local format,lower,dump,find=string.format,string.lower,string.dump,string.find
+local format,lower,find=string.format,string.lower,string.find
 local getmetatable,setmetatable=getmetatable,setmetatable
 local lpegmatch,patterns=lpeg.match,lpeg.patterns
 local floor=math.floor
@@ -1455,7 +1455,7 @@ function table.fromhash(t)
  end
  return hsh
 end
-local noquotes,hexify,handle,compact,inline,functions,metacheck,accurate
+local noquotes,hexify,handle,compact,inline,metacheck,accurate
 local reserved=table.tohash { 
  'and','break','do','else','elseif','end','false','for','function','if',
  'in','local','nil','not','or','repeat','return','then','true','until','while',
@@ -1598,11 +1598,6 @@ local function do_serialize(root,name,depth,level,indexed)
     elseif tv=="boolean" then
      handle(format("%s %s,",depth,v and "true" or "false"))
     elseif tv=="function" then
-     if functions then
-      handle(format('%s load(%q),',depth,dump(v))) 
-     else
-      handle(format('%s "function",',depth))
-     end
     else
      handle(format("%s %q,",depth,tostring(v)))
     end
@@ -1739,45 +1734,21 @@ local function do_serialize(root,name,depth,level,indexed)
      handle(format("%s [%q]=%s,",depth,k,v and "true" or "false"))
     end
    elseif tv=="function" then
-    if functions then
-     local getinfo=debug and debug.getinfo
-     if getinfo then
-      local f=getinfo(v).what=="C" and dump(dummy) or dump(v)
-      if tk=="number" then
-       if hexify then
-        handle(format("%s [0x%X]=load(%q),",depth,k,f))
-       elseif accurate then
-        handle(format("%s [%q]=load(%q),",depth,k,f))
-       else
-        handle(format("%s [%s]=load(%q),",depth,k,f))
-       end
-      elseif tk=="boolean" then
-       handle(format("%s [%s]=load(%q),",depth,k and "true" or "false",f))
-      elseif tk~="string" then
-      elseif noquotes and not reserved[k] and lpegmatch(propername,k) then
-       handle(format("%s %s=load(%q),",depth,k,f))
-      else
-       handle(format("%s [%q]=load(%q),",depth,k,f))
-      end
-     end
-    end
-   else
-    if tk=="number" then
-     if hexify then
-      handle(format("%s [0x%X]=%q,",depth,k,tostring(v)))
-     elseif accurate then
-      handle(format("%s [%q]=%q,",depth,k,tostring(v)))
-     else
-      handle(format("%s [%s]=%q,",depth,k,tostring(v)))
-     end
-    elseif tk=="boolean" then
-     handle(format("%s [%s]=%q,",depth,k and "true" or "false",tostring(v)))
-    elseif tk~="string" then
-    elseif noquotes and not reserved[k] and lpegmatch(propername,k) then
-     handle(format("%s %s=%q,",depth,k,tostring(v)))
-    else
+   elseif tk=="number" then
+    if hexify then
+     handle(format("%s [0x%X]=%q,",depth,k,tostring(v)))
+    elseif accurate then
      handle(format("%s [%q]=%q,",depth,k,tostring(v)))
+    else
+     handle(format("%s [%s]=%q,",depth,k,tostring(v)))
     end
+   elseif tk=="boolean" then
+    handle(format("%s [%s]=%q,",depth,k and "true" or "false",tostring(v)))
+   elseif tk~="string" then
+   elseif noquotes and not reserved[k] and lpegmatch(propername,k) then
+    handle(format("%s %s=%q,",depth,k,tostring(v)))
+   else
+    handle(format("%s [%q]=%q,",depth,k,tostring(v)))
    end
   end
  end
@@ -1792,13 +1763,9 @@ local function serialize(_handle,root,name,specification)
   hexify=specification.hexify
   accurate=specification.accurate
   handle=_handle or specification.handle or print
-  functions=specification.functions
   compact=specification.compact
   inline=specification.inline and compact
   metacheck=specification.metacheck
-  if functions==nil then
-   functions=true
-  end
   if compact==nil then
    compact=true
   end
@@ -1814,7 +1781,6 @@ local function serialize(_handle,root,name,specification)
   handle=_handle or print
   compact=true
   inline=true
-  functions=true
   metacheck=true
  end
  if tname=="string" then
@@ -13148,7 +13114,12 @@ local function loadfont(specification,n,instance)
   specification.instance=specification.instance or instance
  end
  local function message(str)
-  report("fatal error in file %a: %s\n%s",specification.filename,str,debug and debug.traceback())
+  report("fatal error in file %a: %s",specification.filename,str)
+  local debugger=utilities and utilities.debugger
+  local showtraceback=debugger  and debugger.showtraceback
+  if showtraceback then
+   showtraceback()
+  end
  end
  local ok,result=xpcall(loadfontdata,message,specification)
  if ok then
@@ -13258,6 +13229,7 @@ function readers.loadfont(filename,n,instance)
     ligaturecarets=fontdata.ligaturecarets,
     variabledata=fontdata.variabledata,
     foundtables=fontdata.foundtables,
+    stylistics=fontdata.stylistics,
    },
   }
  end
@@ -20243,7 +20215,8 @@ if not modules then modules={} end modules ['font-oti']={
 }
 local lower=string.lower
 local fonts=fonts
-local constructors=fonts.constructors
+local constructors=fonts.constructors or {}
+fonts.constructors=constructors
 local otf=constructors.handlers.otf
 local otffeatures=constructors.features.otf
 local registerotffeature=otffeatures.register
@@ -21630,7 +21603,7 @@ local trace_defining=false  registertracker("fonts.defining",function(v) trace_d
 local report_otf=logs.reporter("fonts","otf loading")
 local fonts=fonts
 local otf=fonts.handlers.otf
-otf.version=3.153 
+otf.version=3.154 
 otf.cache=containers.define("fonts","otl",otf.version,true)
 otf.svgcache=containers.define("fonts","svg",otf.version,true)
 otf.pngcache=containers.define("fonts","png",otf.version,true)

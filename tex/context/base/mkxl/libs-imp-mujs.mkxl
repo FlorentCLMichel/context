@@ -47,7 +47,8 @@
 
 \startbuffer
 \startluacode
-    local mujs = require("libs-imp-mujs")
+--    local mujs = require("libs-imp-mujs")
+    local mujs = optional.loaded.mujs
 
     mujs.execute [[
         var MyMax = 1000;

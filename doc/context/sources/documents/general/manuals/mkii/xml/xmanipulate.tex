@@ -1,0 +1,551 @@
+% language=uk
+%
+% copyright=pragma-ade readme=readme.pdf licence=cc-by-nc-sa
+
+\setupcolors[state=start]
+
+\definecolor[blue]  [b=.5]
+\definecolor[red]   [r=.5]
+\definecolor[yellow][r=.75,g=.75]
+\definecolor[gray]  [s=.75]
+
+%definetypeface[mainface][ss][sans] [iwona]            [default][encoding=texnansi]
+\definetypeface[mainface][ss][sans] [iwona]            [default][encoding=ec]
+\definetypeface[mainface][rm][serif][latin-modern]     [default][encoding=texnansi,rscale=1.05]
+\definetypeface[mainface][tt][mono] [latin-modern]     [default][encoding=texnansi,rscale=1.1]
+\definetypeface[mainface][mm][math] [times]            [default][encoding=default, rscale=1.05]
+
+%definetypeface[heavyss] [ss][sans]  [iwona-heavy]      [default][encoding=texnansi]
+\definetypeface[narrowtt][tt][mono]  [latin-modern-cond][default][encoding=texnansi,rscale=1.1]
+
+\setupbodyfont[mainface,ss,11pt]
+
+% \bgroup
+% ss: \ss \quoteleft ` \char145 \endgraf % bugged
+% rm: \rm \quoteleft ` \char145 \endgraf
+% tt: \tt \quoteleft ` \char145 \endgraf
+% \egroup
+%
+% \showfont[Sans]
+
+\definefont[TitleFont][SansBold at 24pt]
+
+\setupwhitespace[big]
+
+\usemodule[abr-01]
+
+\definelayer
+  [page]
+  [width=\paperwidth,
+   height=\paperheight]
+
+\setuptyping
+  [style=\narrowtt,
+   color=blue]
+
+\setuptype
+  [style=\narrowtt,
+   color=blue]
+
+\setuphead
+  [chapter]
+  [style=\TitleFont,
+   color=blue,
+   header=high]
+
+% \def\MyChapterCommand#1#2%
+%   {\hbox to \textwidth \bgroup
+%      \def\betweenisolatedwords{\break}%
+%      \hfill
+%      \framed[frame=off,width=fit,align={lohi,middle}]{\processisolatedwords{#2}\hbox}%
+%    \egroup}
+
+\def\justwords#1%
+  {\bgroup
+   \let\betweenisolatedwords\break
+   \processisolatedwords{#1}\hbox
+   \egroup}
+
+\def\MyChapterCommand#1#2%
+  {\hbox to \textwidth \bgroup
+     \hfill
+     \framed[frame=off,width=fit,align={lohi,middle}]{\justwords{#2}}%
+     \hskip.1\textwidth
+   \egroup}
+
+\setuphead
+  [chapter]
+  [after=\vskip.1\textwidth,
+   command=\MyChapterCommand]
+
+\starttext
+
+\setuplayout[page]
+
+\startstandardmakeup
+
+    \setlayerframed
+      [page]
+      [width=\paperwidth,height=\paperheight,background=color,backgroundcolor=blue]
+      {}
+
+    \startsetups[arrow]
+      \setlayer
+        [page]
+        [preset=righttop,voffset=.0125\paperwidth,y=\getvariable{page}{fraction}\paperheight]
+        {\scale[height=.3\paperwidth]{\color[red]{\tttf\setstrut\strut <{}-{}-}}}
+    \stopsetups
+
+    \startsetups[arrows]
+      \setvariables[page][fraction=-0.175] \setups[arrow]
+      \setvariables[page][fraction=+0.025] \setups[arrow]
+      \setvariables[page][fraction=+0.225] \setups[arrow]
+      \setvariables[page][fraction=+0.425] \setups[arrow]
+      \setvariables[page][fraction=+0.625] \setups[arrow]
+      \setvariables[page][fraction=+0.825] \setups[arrow]
+      \setvariables[page][fraction=+1.025] \setups[arrow]
+    \stopsetups
+
+    \setups[arrows]
+
+    \startsetups[arrow]
+      \setlayer
+        [page]
+        [preset=leftbottom,voffset=-.0125\paperwidth,y=\getvariable{page}{fraction}\paperheight]
+        {\scale[height=.3\paperwidth]{\color[yellow]{\tttf\setstrut\strut -{}-{}>}}}
+    \stopsetups
+
+    \setups[arrows]
+
+    \setlayer
+      [page]
+      [preset=leftbottom,offset=.035\paperwidth]
+      {\TitleFont\setstrut
+       \framed
+         [width=.3\paperwidth,frame=off,align=middle,foregroundcolor=gray]
+         {Hans Hagen\\Pragma ADE\\June 2005}}
+
+    \setlayer
+      [page]
+      [preset=righttop,offset=.035\paperwidth]
+      {\TitleFont\setstrut
+       \framed
+         [width=.3\paperwidth,frame=off,align=middle,foregroundcolor=gray]
+         {Preprocessing\\Source\\Files}}
+
+    \setlayer
+      [page]
+      [preset=righttop,offset=.035\paperwidth,y=.1875\paperheight]
+      {\TitleFont\setstrut
+       \framed
+         [width=.3\paperwidth,frame=off,align=middle,foregroundcolor=gray]
+         {Manipulating\\Graphic\\Resources}}
+
+    \tightlayer[page]
+
+\stopstandardmakeup
+
+\setuplayout[middle]
+
+\title{Preprocessing Source Files}
+
+This manual describes two mechanisms of (semi) run-time processing
+or (re)source files. Let's start with source files.
+
+Although in principle it is possible to process files during a \TEX\ run,
+in practice this proved to be rather error prone. The main reason is that
+there is no robust way of determining which files need preprocessing. In
+\TEX\ mode, only real source files may need a treatment, and styles and
+auxiliary files need to remain untouched. In \XML\ mode, again only the
+resources need some treatment, and \TEX\ files have to remain untouched.
+
+Examples of preprocessing are \quote {reencoding a file} or \quote
+{applying an \XSLT\ script to a document source}. In all cases, the
+original is to be untouched, and \TEX\ needs to take the converted
+file as replacement. Also, when converting files |<|there can be
+more than one involved|>| we need to make sure that only files
+that did change are preprocessed.
+
+The preprocessing is controlled by a small \XML\ definition file,
+which is read by \TEXEXEC. There can be a file for each (main)
+source file with suffix \type {ctx}. Alternatively one can have a
+file \type {jobname.ctx}. The next example demonstrates how such a
+file is constructed:
+
+\starttyping
+<?xml version='1.0' standalone='yes'?>
+
+<ctx:job>
+    <ctx:message>xmldemo</ctx:message>
+    <ctx:preprocess>
+        <ctx:processors>
+            <ctx:processor name='demo'>texmfstart --direct xsltproc --output
+                <ctx:value name='new'/> kpse:demo.xsl <ctx:value name='old'/></ctx:processor>
+        </ctx:processors>
+        <ctx:files>
+            <ctx:file processor='demo'><ctx:value name='job' method='nosuffix'/>.xml</ctx:file>
+            <!-- ctx:file processor='demo'>demo-*.xml</ctx:file -->
+        </ctx:files>
+    </ctx:preprocess>
+    <ctx:process>
+        <ctx:resources>
+            <ctx:environment>o-m4all.tex</ctx:environment>
+        </ctx:resources>
+    </ctx:process>
+    <ctx:postprocess>
+        <!-- Postprocessing is not yet supported. -->
+    </ctx:postprocess>
+</ctx:job>
+\stoptyping
+
+You can apply one or more processors to a file, in our case we have only one:
+\type {demo}. Multiple processors are separated by a comma. The processors
+are defined in their own section. The old and new names will be resolved at
+the right moment.
+
+\starttyping
+<ctx:preprocess>
+    <ctx:processors>
+        <ctx:processor name='step-1'>texmfstart do_step_one <ctx:value name='old'/> steps.tmp</ctx:processor>
+        <ctx:processor name='step-2'>texmfstart do_step_two steps.tmp <ctx:value name='new'/></ctx:processor>
+    </ctx:processors>
+    <ctx:files>
+        <ctx:file processor='step-1,step-2'><ctx:value name='job' method='nosuffix'/>.tex</ctx:file>
+    </ctx:files>
+</ctx:preprocess>
+\stoptyping
+
+A file element can have a wildcard specification, which makes it
+possible to process a bunch of files. Only files that are changed
+will be processed. The processed file gets the {\em extra} suffix
+\type {prep}.
+
+The main proces section can contain a resource section that specifies
+one or more \type {environment} and|/|or \type {module} sections. This
+information will be passed onto \CONTEXT.
+
+You can share definitions by using the \type {include} feature. In that case
+each job has an associated file that looks as follows:
+
+\starttyping
+<?xml version='1.0' standalone='yes'?>
+
+<ctx:job>
+    <ctx:include name='common.ctx'/>
+</ctx:job>
+\stoptyping
+
+Inclusion can happen at each level, so the following is legal:
+
+\starttyping
+<?xml version='1.0' standalone='yes'?>
+
+<ctx:job>
+    <ctx:preprocess>
+        <ctx:include name='om-to-cml.ctx'/>
+        <ctx:files>
+            <ctx:file processor='demo'><ctx:value name='job' method='nosuffix'/>.xml</ctx:file>
+        </ctx:files>
+    </ctx:preprocess>
+</ctx:job>
+\stoptyping
+
+This assumes a file \type {om-to-mmc.ctx} that looks like:
+
+\starttyping
+<?xml version='1.0' standalone='yes'?>
+
+<ctx:processors>
+    <ctx:processor name='demo'>texmfstart --direct xsltproc --output
+        <ctx:value name='new'/> kpse:x-openmath.xsl <ctx:value name='old'/></ctx:processor>
+</ctx:processors>
+\stoptyping
+
+When everything went well, a log file will be produced. Depending on how
+\CONTEXT\ is configured, this log file will be consulted for replacement
+names. Consulting happens by default which means that loading unprocessed
+files will not take place, which prevents errors. The log file looks like:
+
+\starttyping
+<?xml version='1.0' standalone='yes'?>
+
+<ctx:preplist>
+	<ctx:prepfile done='yes'>myfile.xml</ctx:prepfile>
+</ctx:preplist>
+\stoptyping
+
+There can be multiple entries. Here the preprocessed file gets the
+name \type {myfile.xml.prep} and when deleted afterwards it will
+be regenerated a next time that it is needed. The following example
+is taken from one of our pet projects, related to open math:
+
+\starttyping
+<?xml version='1.0' standalone='yes'?>
+
+<ctx:job>
+    <ctx:message>mathadore</ctx:message>
+    <ctx:preprocess suffix='prep'>
+        <ctx:processors>
+            <ctx:processor name='mathadore' suffix='prep'>
+                texmfstart --direct xsltproc --output <ctx:value name='new'/> kpse:x-openmath.xsl <ctx:value name='old'/>
+            </ctx:processor>
+            <ctx:processor name='openmath'  suffix='om'>
+                texmfstart --direct xsltproc --output <ctx:value name='new'/> kpse:x-sm2om.xsl    <ctx:value name='old'/>
+            </ctx:processor>
+        </ctx:processors>
+        <ctx:files>
+            <ctx:file processor='mathadore,openmath'>v*.xml</ctx:file>
+            <ctx:file processor='mathadore,openmath'>h*.xml</ctx:file>
+            <ctx:file processor='mathadore,openmath'>openmath*.xml</ctx:file>
+        </ctx:files>
+    </ctx:preprocess>
+    <ctx:process>
+        <ctx:resources>
+            <ctx:environment>o-m4all.tex</ctx:environment>
+        </ctx:resources>
+    </ctx:process>
+    <ctx:postprocess>
+    </ctx:postprocess>
+</ctx:job>
+\stoptyping
+
+The file with suffix {prep} (a result from a previous
+preprocrssing run) is used for comparing time stamps. The suffixes
+set in the processor lines are used for the new files.
+
+This file is placed one level below where the data files are
+located. An \XML\ source file, say \type {whatever.xml}, starts
+with:
+
+\starttyping
+<?xml version='1.0'?>
+
+<?context-directive job ctxfile ../mathadore.ctx ?>
+\stoptyping
+
+When this file is processed with:
+
+\starttyping
+texmfstart texexec whatever.xml
+\stoptyping
+
+A whole bunch of files is preprocessed, but only if they have
+changed. The \type {prep} file is used for processing, the \type
+{om} file (in our case) is a result file used in another stage
+in the project.
+
+You can tell \TEXEXEC\ to locate elsewhere by saying:
+
+\starttyping
+texmfstart texexec --global --path=a,b,c/d whatever.xml
+\stoptyping
+
+or even
+
+\starttyping
+texmfstart --path=temp texexec --global --path=a,b,c/d whatever.xml
+\stoptyping
+
+which means that you process the file on path \type {temp} and fetch the
+data from one of the given paths \type {a}, \type {b}, \type {c/d} or
+the current path. This poses a problem with preprocessing. In that case
+it makes sense to use the \type {local} directive.
+
+\starttyping
+<ctx:processors local='yes'> ...
+\stoptyping
+
+Here, the original file will be fetched from the located path,
+but intermediate and final output will end up in the current
+path.
+
+\title{Manipulating Graphic Resources}
+
+Including graphic is only possible when the format in which they
+come are accepted by the backend. If not, they need to be
+converted. Also, sometimes graphics need to be manipulated before
+they can be used, think of downsampling a huge 24~MB image into a
+more handsome 2~MB one. Especially in automated workflows you want
+this to be done without user intervention and as efficient as
+possible, i.e.\ only once.
+
+The manipulating mechanism is just another variant of managing resource
+libraries and resource logs. It is hooked into the graphic inclusion
+macros (thereby complicating this mechanisms even more).
+
+A simple conversion is configured (and applied) as follows:
+
+\starttyping
+\usemodule[res-08] \setups[rl:manipulate]
+
+\setupexternalfigures[location=local,directory=.,conversion=pdf]
+
+\starttext
+  \externalfigure[svg/example.svg]
+\stoptext
+\stoptyping
+
+Sometimes it makes sense to collect files in a different spot:
+
+\starttyping
+\usemodule[res-08] \setups[rl:manipulate]
+
+\setupexternalfigures[location=local,directory=.,conversion=lowres,prefix=lowres/]
+
+\starttext
+  \externalfigure[whatever.pdf]
+\stoptext
+\stoptyping
+
+The manipulations themselves are defined in a file called \type
+{rlxtools.rlx}. This file should be placed in a path known to \TEX\
+(or in the local path). The \RLXTOOLS\ program takes care of
+the conversions between the first and successive runs. Graphics are
+only converted when their timestamp has changes.
+
+In the following examples, the values are expanded when needed. We
+will not cover each small detail of this setup, which is rather
+verbose anyway.
+
+\starttyping
+<?xml version='1.0 standalone='yes'?>
+
+<rl:manipulators>
+
+    <rl:manipulator name='pdf' suffix='svg'>
+        <rl:old>
+            <rl:value name='path'/>/<rl:value name='file'/>
+        </rl:old>
+        <rl:new>
+            <rl:value name='path'/>/<rl:value name='prefix'/><rl:value name='file' method='nosuffix'/>.pdf
+        </rl:new>
+        <rl:step>
+            inkscape
+            --without-gui
+            --print="&gt;<rl:value name='path'/>/<rl:value
+                name='prefix'/><rl:value name='file' method='nosuffix'/>.ps"
+            <rl:value name='path'/>/<rl:value name='file' method='nosuffix'/>.svg
+        </rl:step>
+        <rl:step>
+            texmfstart pstopdf
+            <rl:value name='path'/>/<rl:value name='prefix'/><rl:value name='file' method='nosuffix'/>.ps
+            <rl:value name='path'/>/<rl:value name='prefix'/><rl:value name='file' method='nosuffix'/>.pdf
+        </rl:step>
+    </rl:manipulator>
+
+    <rl:manipulator name='pdf' suffix='svgz'>
+        <rl:old>
+            <rl:value name='path'/>/<rl:value name='file'/>
+        </rl:old>
+        <rl:new>
+            <rl:value name='path'/>/<rl:value name='prefix'/><rl:value name='file' method='nosuffix'/>.pdf
+        </rl:new>
+        <rl:step>
+            inkscape
+            --without-gui
+            --print="&gt;<rl:value name='path'/>/<rl:value
+                name='prefix'/><rl:value name='file' method='nosuffix'/>.ps"
+            <rl:value name='path'/>/<rl:value name='file' method='nosuffix'/>.svgz
+        </rl:step>
+        <rl:step>
+            texmfstart pstopdf
+            <rl:value name='path'/>/<rl:value name='prefix'/><rl:value name='file' method='nosuffix'/>.ps
+            <rl:value name='path'/>/<rl:value name='prefix'/><rl:value name='file' method='nosuffix'/>.pdf
+        </rl:step>
+    </rl:manipulator>
+
+</rl:manipulators>
+\stoptyping
+
+The next setup defines conversion as well as downsampling
+manipulators.
+
+\starttyping
+<?xml version='1.0 standalone='yes'?>
+
+<rl:manipulators>
+
+    <rl:manipulator name='pdf' suffix='svg'>
+        <rl:old>
+            <rl:value name='path'/>/<rl:value name='file' method='nosuffix'/>.svg
+        </rl:old>
+        <rl:new>
+            <rl:value name='path'/>/<rl:value name='prefix'/><rl:value name='file' method='nosuffix'/>.pdf
+        </rl:new>
+        <rl:step>
+            texmfstart newpstopdf --convert
+            <rl:value name='old'/>
+            <rl:value name='new'/>
+        </rl:step>
+    </rl:manipulator>
+
+    <rl:manipulator name='pdf' suffix='svgz'>
+        <rl:old>
+            <rl:value name='path'/>/<rl:value name='file' method='nosuffix'/>.svgz
+        </rl:old>
+        <rl:new>
+            <rl:value name='path'/>/<rl:value name='prefix'/><rl:value name='file' method='nosuffix'/>.pdf
+        </rl:new>
+        <rl:step>
+            texmfstart newpstopdf --convert
+            <rl:value name='old'/>
+            <rl:value name='new'/>
+        </rl:step>
+    </rl:manipulator>
+
+    <rl:manipulator name='lowres' suffix='pdf'>
+        <rl:old>
+            <rl:value name='path'/>/<rl:value name='file'/>
+        </rl:old>
+        <rl:new>
+            <rl:value name='path'/>/<rl:value name='prefix'/><rl:value name='file'/>
+        </rl:new>
+        <rl:step>
+            texmfstart newpstopdf --convert --method=4
+            --inputpath=<rl:value name='path'/>
+            --outputpath=<rl:value name='path'/>/<rl:value name='prefix'/>
+            <rl:value name='file'/>
+        </rl:step>
+    </rl:manipulator>
+
+    <rl:manipulator name='medres' suffix='pdf'>
+        <rl:old>
+            <rl:value name='path'/>/<rl:value name='file'/>
+        </rl:old>
+        <rl:new>
+            <rl:value name='path'/>/<rl:value name='prefix'/><rl:value name='file'/>
+        </rl:new>
+        <rl:step>
+            texmfstart newpstopdf --convert  --method=4
+            --inputpath=<rl:value name='path'/>
+            --outputpath=<rl:value name='path'/>/<rl:value name='prefix'/>
+            <rl:value name='file'/>
+        </rl:step>
+   </rl:manipulator>
+
+</rl:manipulators>
+\stoptyping
+
+After the first run of \TEXEXEC, a resource log file is produced.
+It's this file that tells \RLXTOOLS\ what files need to be
+manipulated.
+
+\starttyping
+<?xml version='1.0' standalone='yes'?>
+
+<rl:library>
+    <rl:usage>
+        <rl:type>figure</rl:type>
+        <rl:state>missing</rl:state>
+        <rl:file>svg/example</rl:file>
+        <rl:suffix>svg</rl:suffix>
+        <rl:conversion>pdf</rl:conversion>
+        <rl:width>115.73352pt</rl:width>
+        <rl:height>86.80014pt</rl:height>
+    </rl:usage>
+</rl:library>
+\stoptyping
+
+Depending on the request, there can be more info in this file.
+
+\stoptext

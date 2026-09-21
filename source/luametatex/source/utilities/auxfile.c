@@ -107,7 +107,7 @@
         LPWSTR wname  = aux_utf8_to_wide(name);
         int    result = _wremove(wname);
         lmt_memory_free(wname);
-        return result;
+        return result == 0;
     }
 
     int aux_utf8_rename(const char *oldname, const char *newname)
@@ -117,7 +117,7 @@
         int    result   = _wrename(woldname, wnewname);
         lmt_memory_free(woldname);
         lmt_memory_free(wnewname);
-        return result;
+        return result == 0;
     }
 
     int aux_utf8_setargv(char * **av, char **argv, int argc)
@@ -155,17 +155,18 @@
     char *aux_utf8_getownpath(const char *file)
     {
         if (file) {
-            char *path = NULL;
-            char  buffer[MAX_PATH];
-            GetModuleFileName(NULL, buffer, sizeof(buffer));
-            path = lmt_memory_strdup(buffer);
-            if (path && strlen(path) > 0) {
-                for (size_t i = 0; i < strlen(path); i++) {
-                    if (path[i] == '\\') {
-                        path[i] = '/';
+            wchar_t wbuffer[MAX_PATH];
+            DWORD wlen = GetModuleFileNameW(NULL, wbuffer, MAX_PATH);
+            if (wlen > 0) {
+                char *path = aux_utf8_from_wide(wbuffer);
+                if (path && *path) {
+                    for (size_t i = 0; path[i] != '\0'; i++) {
+                        if (path[i] == '\\') {
+                            path[i] = '/';
+                        }
                     }
+                    return path;
                 }
-                return path;
             }
         }
         return lmt_memory_strdup(".");
@@ -284,6 +285,16 @@
     # include <unistd.h>
     # include <limits.h>
 
+    int aux_utf8_remove(const char *name)
+    {
+        return remove(name) == 0;
+    }
+
+    int aux_utf8_rename(const char *oldname, const char *newname)
+    {
+        return rename(oldname, newname) == 0;
+    }
+
     int aux_utf8_setargv(char * **av, char **argv, int argc)
     {
         *av = argv;
@@ -314,6 +325,9 @@
                         totallen = prefixlen + filelen;
 # ifdef PATH_MAX
                         if (totallen >= PATH_MAX) {
+                            if (esp) {
+                                index = esp + 1;
+                            }
                             continue;
                         }
 # endif
@@ -322,13 +336,15 @@
                             memcpy(path, index, prefixlen);
                             memcpy(path + prefixlen, file, filelen);
                         } else {
-                            /*tex This is an error, unlikely, but checking makes compilers happy. */
                             goto OEPS;
                         }
                     } else {
                         totallen = prefixlen + filelen + 1;
 # ifdef PATH_MAX
                         if (totallen >= PATH_MAX) {
+                            if (esp) {
+                                index = esp + 1;
+                            }
                             continue;
                         }
 # endif
@@ -338,7 +354,6 @@
                             path[prefixlen] = '/';
                             memcpy(path + prefixlen + 1, file, filelen);
                         } else {
-                            /*tex This is an error, unlikely, but checking makes compilers happy. */
                             goto OEPS;
                         }
                     }
@@ -348,16 +363,17 @@
                     }
                     lmt_memory_free(path);
                     path = NULL;
-                    index = esp + 1;
+                    if (esp) {
+                        index = esp + 1;
+                    }
                 } while (esp);
             }
+          OEPS:
             lmt_memory_free(searchpath);
             if (path) {
                 return path;
             } else {
-              OEPS:
-                lmt_memory_free(searchpath);
-                return lmt_memory_strdup("."); /* ok? */
+                return lmt_memory_strdup(".");
             }
         }
     }

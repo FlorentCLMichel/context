@@ -1,0 +1,32 @@
+% interface=en modes=A4 output=pdftex
+
+% \enablemode[A4]
+
+\startproduct style
+
+\environment style-000.tex
+
+\startfrontmatter
+
+  \component   style-001.tex % title page
+  \component   style-002.tex % introduction
+  \component   style-003.tex % contents
+
+\stopfrontmatter
+
+\startbodymatter
+
+  \component   style-004.tex % typesetting
+  \component   style-005.tex % organization
+  \component   style-006.tex % layout
+  \component   style-007.tex % examples
+
+\stopbodymatter
+
+% \startbackmatter
+%
+%   \component   style-010.tex % this document
+%
+% \stopbackmatter
+
+\stopproduct

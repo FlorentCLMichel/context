@@ -1,0 +1,232 @@
+% language=us
+
+\environment context-2025-style
+
+% \setuptyping
+%   [style=\switchtobodyfont[7pt,tt]]
+
+\definelayer
+  [extratext]
+  [preset=rightbottom,
+   height=\textheight,
+   width=\textwidth]
+
+\setupbackgrounds
+  [text]
+  [background=extratext]
+
+% \definehighlight[notabene][style=bf]
+\definehighlight[notabene][style=\glyphweight100\underbar]
+
+\setupalign[flushleft]
+
+\setuptyping
+  [align=hangright,
+   keeptogether=paragraph,
+   numbering=]
+
+\startdocument
+  [title={compact fonts},
+   banner={a practical approach},
+   location={context\enspace{\bf 2025}\enspace meeting}]
+
+\starttitle[title=Eight bit(maps)]
+
+\startitemize
+\startitem
+    Originally \TEX\ only supported bitmap fonts. These were generated
+    on demand at the right resolution, determined by target device and
+    scale.
+\stopitem
+\startitem
+    When \TYPEONE\ fonts showed up \POSTSCRIPT\ backend drivers made
+    sure that we would use those.
+\stopitem
+\startitem
+    The limited set of original fonts came with design sizes so there had to be
+    some mapping (and choice) to desired size.
+\stopitem
+\startitem
+    Those \POSTSCRIPT\ fonts seldom had design sizes translated into multiple
+    instances. Scaling was easy.
+\stopitem
+\startitem
+    In both cases there had to be suitable metric \TFM\ files, possibly
+    accompanied by virtual font definitions.
+\stopitem
+\startitem
+    Fonts can be extended (wider), slanted (angle) and subtle horizontal
+    scaling can emulate hz. This is also map file driven (backend).
+\stopitem
+\stopitemize
+
+\stoptitle
+
+\starttitle[title=Going wide]
+
+\startitemize
+\startitem
+    When wide fonts came available \PDFTEX\ was able to use them but still within
+    eight bit subsets.
+\stopitem
+\startitem
+    Both \XETEX\ and \LUATEX\ made sure that we could handle any \OPENTYPE\ font
+    in \UNICODE\ aware mode.
+\stopitem
+\startitem
+    The metrics and other properties come from the font itself. There are very
+    few design sized fonts, although one can discuss if variable fonts suit that
+    description (quality wise).
+\stopitem
+\startitem
+    But, \XETEX\ and \LUATEX\ still use instances in the engine, pre-calculated
+    dimension vectors.
+\stopitem
+\startitem
+    The backends have to support extend, slant and hz.
+\stopitem
+\startitem
+    But we can do better.
+\stopitem
+\stopitemize
+
+\stoptitle
+
+\starttitle[title=Math]
+
+\startitemize
+\startitem
+    In math we need three sizes (text, script, scriptscript), so
+    basically three copies with differently scaled
+    dimensions.
+\stopitem
+\startitem
+    We also can have increasing sizes.
+\stopitem
+\startitem
+    And even extensibles built from snippets.
+\stopitem
+\startitem
+    The number of fonts can grow large.
+\stopitem
+\stopitemize
+
+\stoptitle
+
+\starttitle[title=Evolution]
+
+\startitemize
+\startitem
+    The \TEX\ engine is only interested in dimensions of glyphs.
+\stopitem
+\startitem
+    We're talking width, height, depth, italic correction (not in \OPENTYPE),
+    and expansion factors (hz).
+\stopitem
+\startitem
+    In base mode it also like to know kerns and ligatures.
+\stopitem
+\startitem
+    In math we have no design sizes so we can as well just scale. So we started
+    doing just that
+\stopitem
+\startitem
+    And then we could as do that for text. Welcome to compact fonts.
+\stopitem
+\stopitemize
+
+\stoptitle
+
+\starttitle[title=Evolution]
+
+\startitemize
+\startitem
+    In text we have \typ {\glyphscale}, \typ {\glyphxscale} (extend), \typ
+    {\glyphyscale} (squeeze).
+\stopitem
+\startitem
+    We also have \typ {\glyphslant}, \typ {\glyphweight}
+\stopitem
+\startitem
+    In math we have and  \typ {\Umathxscale} and \typ {\Umathyscale}.
+\stopitem
+\startitem
+    We also have \typ {\glyphtextscale}, \typ {\glyphscriptscale} and
+    \typ {\glyphscriptscriptscale}.
+\stopitem
+\startitem
+    Text glyphs have expansion (and compression) properties for hz as well as
+    protrusion specifications. For base mode we still have kerns and ligatures.
+\stopitem
+\stopitem
+\startitem
+    Math glyphs have a lot of extra properties: a \type {smaller}, \typ {mirror},
+    \typ {flat accent}, \typ {next in size}, \typ {top anchor}, \typ {bottom anchor},
+    \typ {top left}, \typ {top right}, \typ {bottom left}, \typ {bottom right}
+    kerns, four (rather useless) staircase arrays, extensible recipes and italic
+    correction, \typ {top}, \typ {bottom}, \typ {left} and \typ {right} margins,
+    \typ {top} and \typ {bottom} overshoots, inner \type {x} and \typ {y} offsets.
+\stopitem
+\stopitemize
+
+\stoptitle
+
+\starttitle[title=Impact]
+
+\startitemize
+\startitem
+    We need less definitions at the \TEX\ end because we scale on the fly.
+\stopitem
+\startitem
+    We do still have instances for slant and weight variants because there
+    the macro package decides impact on dimensions.
+\stopitem
+\startitem
+    In math we resolve smaller (actually design) sizes on the fly too.
+\stopitem
+\startitem
+    When processing \OPENTYPE\ features we already operated on multiple
+    dimensions: instance (defaults), dynamic (smallcaps etc) and state (init,
+    etc) features. We now also take scales, weight and slant into account.
+\stopitem
+\startitem
+    Of course more calculations take place but in the end it gets compensated by
+    less passes and memory usage.
+\stopitem
+\startitem
+    We need different code paths at the macro level and might decide to remove
+    the old method which then makes some more cleanup possible.
+\stopitem
+\stopitemize
+
+\stoptitle
+
+\starttitle[title=Tricky]
+
+\startitemize
+\startitem
+    The backend has to work a bit harder to make sure that we don't mess up the
+    \PDF\ width arrays and keep drift due to scaling in glyph streams
+    within bounds.
+\stopitem
+\startitem
+    Because we share font resources we need to handle font specific scales,
+    slants, weights, as well as glyph bound scales, slant, weight and
+    expansion.
+\stopitem
+\startitem
+    We also have kerns (when encoded in glyphs), x- and y-offsets, virtual
+    font (glyph) properties, etc. All this can interfere.
+\stopitem
+\startitem
+    {\showglyphs Runtime {\glyphslant200 slant} and {\glyphweight200 weight} are okay for small values.}
+\stopitem
+\startitem
+    But for instance spacing also matters so there is more involved.
+\stopitem
+\stopitemize
+
+\stoptitle
+
+\stopdocument
+

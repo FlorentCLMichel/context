@@ -262,7 +262,7 @@ local function italic_correction_callback(node,kern,subtype)
             report_italics("enabling kern italics")
         end
     end
-    return kern
+    return kern, true  -- so we inject and check
 end
 
 callbacks.register {

@@ -1,0 +1,342 @@
+% language=us
+
+% Made with Michal Lapaj (Riverside) on the speakers alongside an 150 cm wide oled
+% display my brother gave me to work on when I had to enter "far-sight-eye-mode" due
+% to an eye infection. So, written when I was musically in a Polish mood. Any error
+% below I can blame on my eyes.
+
+\nologbuffering
+
+\usemodule[present-boring,abbreviations-logos]
+
+\definelayer
+  [extratext]
+  [preset=rightbottom,
+   height=\textheight,
+   width=\textwidth]
+
+\setupbackgrounds
+  [text]
+  [background=extratext]
+
+\setuptyping
+  [align=hangright,
+   keeptogether=paragraph,
+   numbering=]
+
+\startdocument
+  [title={Dimensions},
+   banner={polishing up},
+   location={bachotex\enspace {\bf 2025}\enspace meeting}]
+
+\starttitle[title=What are dimensions]
+
+\startbuffer
+\scratchdimen = 10pt
+\stopbuffer
+
+\typebuffer \getbuffer \the\scratchdimen
+
+\startbuffer
+\scratchdimen 10pt
+\stopbuffer
+
+\typebuffer \getbuffer \the\scratchdimen
+
+\startbuffer
+\scratchdimen \lineheight
+\stopbuffer
+
+\typebuffer \getbuffer \the\scratchdimen
+
+\startbuffer
+\scratchdimen 2em
+\stopbuffer
+
+\typebuffer \getbuffer \the\scratchdimen
+
+\startbuffer
+\scratchdimen - \numexpr 65536 * 4 + 65536 / 4 \relax sp
+\stopbuffer
+
+\typebuffer \getbuffer \the\scratchdimen
+
+properties: direct, units, accuracy, indirect, font related, just numbers
+
+\stoptitle
+
+\starttitle[title=Simple \ETEX\ expressions]
+
+\startbuffer
+\scratchdimen = \dimexpr 10pt + 1ex \relax
+\stopbuffer
+
+\typebuffer \getbuffer \the\scratchdimen
+
+\startbuffer
+\def\whatever#1{\scratchdimen = \dimexpr 10pt + #1 \relax}
+
+\whatever{1ex}
+
+\whatever{\dimexpr1ex}
+\stopbuffer
+
+\typebuffer \getbuffer \the\scratchdimen
+
+\startbuffer
+\scratchdimen = 33.3pt \divide\scratchdimen 33
+\stopbuffer
+
+\typebuffer \getbuffer \the\scratchdimen
+
+\startbuffer
+\scratchdimen = \dimexpr 33.3pt / 33\relax
+\stopbuffer
+
+\typebuffer \getbuffer \the\scratchdimen
+
+properties: order matters, read on as long as valid, just \type {+-/*},
+incompatible division
+\stoptitle
+
+\starttitle[title=Simple \ETEX\ expressions in \LUAMETATEX]
+
+\startbuffer
+\scratchdimen = 33.3pt \divide\scratchdimen 33
+\stopbuffer
+
+\typebuffer \getbuffer \the\scratchdimen
+\startbuffer
+\scratchdimen = \dimexpr 33.3pt : 33\relax
+\stopbuffer
+
+\typebuffer \getbuffer \the\scratchdimen
+
+properties: also div and mod \type {: ;} (only enabled in \CONTEXT)
+
+\stoptitle
+
+\starttitle[title=Extended \ETEX\ expressions]
+
+\startbuffer
+\scratchdimen = \dimexpression {10pt + 1ex}
+\stopbuffer
+
+\typebuffer \getbuffer \the\scratchdimen
+
+properties: bounded by braces, more operations, order matters less, compromise,
+dimensions, floats and integers
+
+\startcolumns
+\starttabulate[|Tl|l|]
+\NC !   not   \NC negate \NC \NR
+\NC \vreflected{±}   nmp   \NC negative \NC \NR % ∓ not in text font
+\NC ±   npm   \NC positive \NC \NR
+\NC +         \NC add \NC \NR
+\NC -         \NC subtract \NC \NR
+\NC *         \NC multiply \NC \NR
+\NC /         \NC divide \NC \NR
+\NC :   div   \NC idivide \NC \NR
+\NC ;   \letterpercent\ mod   \NC imodulo \NC \NR
+\NC =         \NC equal \NC \NR
+\NC <         \NC less \NC \NR
+\NC >         \NC greater \NC \NR
+\NC <>  ≠     \NC not equal \NC \NR
+\NC <=  ≤     \NC less equal \NC \NR
+\NC >=  ≥     \NC greater equal \NC \NR
+\NC &&  cand  \NC conditional and \NC \NR
+\NC \letterbar\letterbar\  cor   \NC conditional or \NC \NR
+\NC and       \NC and \NC \NR
+\NC or        \NC or \NC \NR
+\stoptabulate
+\stopcolumns
+
+\stoptitle
+
+\starttitle[title=Expression assignments]
+
+\startbuffer
+\scratchdimen = {10pt + 1ex}
+\stopbuffer
+
+\typebuffer \getbuffer \the\scratchdimen
+
+\startbuffer
+\def\whatever#1{%
+    \scratchdimen = \dimexpr 10pt + {#1} \relax
+}
+
+\whatever{1ex / 4.25}
+\stopbuffer
+
+\typebuffer \getbuffer \the\scratchdimen
+
+\startbuffer
+\scratchdimen{10pt + 1ex}
+\stopbuffer
+
+\typebuffer \getbuffer \the\scratchdimen
+
+\startbuffer
+\scratchdimen\dimexpr {10pt + 1ex} \relax
+\stopbuffer
+
+\typebuffer \getbuffer \the\scratchdimen
+
+\stoptitle
+
+\starttitle[title=More tolerant units]
+
+\startbuffer
+\scratchdimen{10pt + ex}
+\stopbuffer
+
+\typebuffer \getbuffer \the\scratchdimen
+
+\startbuffer
+\uunit 10pt \scratchdimen{10pt + 2uu}
+\stopbuffer
+
+\typebuffer \getbuffer \the\scratchdimen
+
+\startbuffer
+\newdimension\xxunit \newuserunit \xxunit xx
+
+\xxunit 20pt \scratchdimen{10pt - xx}
+\stopbuffer
+
+\typebuffer \getbuffer \the\scratchdimen
+
+\startbuffer
+\scratchcounter\dimexpression{(lh == (sh + sd))}
+\stopbuffer
+
+\typebuffer \getbuffer \the\scratchcounter
+
+\stoptitle
+
+\starttitle[title=Order matters less]
+
+\startbuffer
+\scratchdimen{10pt * 2}
+\stopbuffer
+
+\typebuffer \getbuffer \the\scratchdimen
+
+\startbuffer
+\scratchdimen{2 * 10pt}
+\stopbuffer
+
+\typebuffer \getbuffer \the\scratchdimen
+
+\stoptitle
+
+\starttitle[title=Better integration]
+
+\startbuffer
+\scratchdimen{2.1 * 10pt + ex/2 + lh}
+\stopbuffer
+
+\typebuffer \getbuffer \the\scratchdimen
+
+\startbuffer
+\framed[height=2lh+ex,width=tw/2]{indeed}
+\stopbuffer
+
+\typebuffer \startlinecorrection \getbuffer \stoplinecorrection
+
+properties: efficient (neglectable overhead), no explicit expression clutter
+
+\stoptitle
+
+\starttitle[title=Going further]
+
+\startbuffer
+\scratchdimen\dimexperimental{2.1 * 10pt + ex/2 + lh}
+\stopbuffer
+
+\start
+\tracingexpressions5
+\tracingonline2
+\typebuffer \getbuffer \the\scratchdimen
+\stop
+
+\stoptitle
+
+\starttitle[title=Going Polish]
+
+\starttyping
+[dimexpression rpn 1 s: 2.1 10.0pt * 6.1886pt 2 / + 17.3281pt +]
+[dimexpression rpn 1 r: ]
+[dimexpression rpn 2 s: 10.0pt * 6.1886pt 2 / + 17.3281pt +]
+[dimexpression rpn 2 r: 2.1]
+[dimexpression rpn 3 s: * 6.1886pt 2 / + 17.3281pt +]
+[dimexpression rpn 3 r: 2.1 10.0pt]
+[dimexpression rpn 4 s: * 6.1886pt 2 / + 17.3281pt +]
+[dimexpression rpn 4 r: 21.00006pt]
+[dimexpression rpn 5 s: 2 / + 17.3281pt +]
+[dimexpression rpn 5 r: 21.00006pt 6.1886pt]
+[dimexpression rpn 6 s: / + 17.3281pt +]
+[dimexpression rpn 6 r: 21.00006pt 6.1886pt 2]
+[dimexpression rpn 7 s: / + 17.3281pt +]
+[dimexpression rpn 7 r: 21.00006pt 3.0943pt]
+[dimexpression rpn 8 s: / + 17.3281pt +]
+[dimexpression rpn 8 r: 24.09436pt]
+[dimexpression rpn 9 s: +]
+[dimexpression rpn 9 r: 24.09436pt 17.3281pt]
+\stoptyping
+
+\stoptitle
+
+\starttitle[title=Not only values]
+
+\startbuffer
+\ifboolean \dimexperimental{(ex > em) and (lh > 2ex)} Yes \else No \fi
+\stopbuffer
+
+\start
+\tracingexpressions5
+\tracingonline2
+\typebuffer \getbuffer
+\stop
+
+\stoptitle
+
+\starttitle[title=Normalizing types]
+
+\starttyping
+[dimexpression rpn 1 s: 6.1886pt 11.99341pt > 17.3281pt 12.3772pt > and]
+[dimexpression rpn 1 r: ]
+[dimexpression rpn 2 s: 11.99341pt > 17.3281pt 12.3772pt > and]
+[dimexpression rpn 2 r: 6.1886pt]
+[dimexpression rpn 3 s: > 17.3281pt 12.3772pt > and]
+[dimexpression rpn 3 r: 6.1886pt 11.99341pt]
+[dimexpression rpn 4 s: > 17.3281pt 12.3772pt > and]
+[dimexpression rpn 4 r: 0]
+[dimexpression rpn 5 s: 12.3772pt > and]
+[dimexpression rpn 5 r: 0 17.3281pt]
+[dimexpression rpn 6 s: > and]
+[dimexpression rpn 6 r: 0 17.3281pt 12.3772pt]
+[dimexpression rpn 7 s: > and]
+[dimexpression rpn 7 r: 0 1]
+\stoptyping
+
+\stoptitle
+
+\starttitle[title=Cheating]
+
+\startbuffer
+\thewithoutunit   \dimexperimental{2.1 * 4.2}
+\todimension      \dimexperimental{2.1 * 4.2}
+\toscaled         \dimexperimental{2.1 * 4.2}
+\tosparsedimension\dimexperimental{2.1 * 4.2}
+\tosparsescaled   \dimexperimental{2.1 * 4.2}
+\the              \floatexpr2.1 * 4.2\relax
+\tolimitedfloat   \floatexpr2.1 * 4.2\relax
+\stopbuffer
+
+\typebuffer \startlines\getbuffer\stoplines
+
+\stoptitle
+
+\stopdocument

@@ -1159,8 +1159,8 @@ do
                      -- local r_x, s_x, s_y, r_y, te, tf = t[1], t[2], t[3], t[4], t[5], t[6]
                         local r_x, s_x, s_y, r_y = t[1], t[2], t[3], t[4]
                         --
-                        -- A parallel assignment retains the originals because 
-                        -- we need those in all six new values! 
+                        -- A parallel assignment retains the originals because
+                        -- we need those in all six new values!
                         --
                         rx, sx, sy, ry, tx, ty =
                             rx * r_x + sx * s_y,

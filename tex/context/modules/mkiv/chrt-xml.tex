@@ -1,0 +1,506 @@
+\ifdefined \startFLOWchart \else \usemodule[chart,abr-01] \fi
+
+\startFLOWchart[conversion 1]
+  \startFLOWcell
+    \name       {TEX 1}
+    \destination{TEX 1}
+    \location   {3,1}
+    \shape      {action}
+    \text       {\TeX}
+    \connection [rl] {context 1}
+  \stopFLOWcell
+  \startFLOWcell
+    \name       {CONTEXT 1}
+    \destination{CONTEXT 1}
+    \location   {4,1}
+    \shape      {action}
+    \text       {style}
+    \connection [rl] {PDF 1}
+  \stopFLOWcell
+  \startFLOWcell
+    \name       {PDF 1}
+    \destination{PDF 1}
+    \location   {5,1}
+    \shape      {action}
+    \text       {PDF}
+  \stopFLOWcell
+\stopFLOWchart
+
+\startFLOWchart[conversion 2]
+  \startFLOWcell
+    \name       {XML 2}
+    \destination{XML 2}
+    \location   {1,1}
+    \shape      {action}
+    \text       {XML}
+    \connection [rl] {context 2}
+  \stopFLOWcell
+  \startFLOWcell
+    \name       {CONTEXT 2}
+    \destination{CONTEXT 2}
+    \location   {4,1}
+    \shape      {action}
+    \text       {style}
+    \connection [rl] {PDF 2}
+  \stopFLOWcell
+  \startFLOWcell
+    \name       {PDF 2}
+    \destination{PDF 2}
+    \location   {5,1}
+    \shape      {action}
+    \text       {PDF}
+  \stopFLOWcell
+\stopFLOWchart
+
+\startFLOWchart[conversion 3]
+  \startFLOWcell
+    \name       {XML 3}
+    \destination{XML 3}
+    \location   {1,1}
+    \shape      {action}
+    \text       {XML}
+    \connection [rl] {TEX 3}
+  \stopFLOWcell
+  \startFLOWcell
+    \name       {TEX 3}
+    \destination{TEX 3}
+    \location   {3,1}
+    \shape      {action}
+    \text       {\TeX}
+    \connection [rl] {context 3}
+  \stopFLOWcell
+  \startFLOWcell
+    \name       {CONTEXT 3}
+    \destination{CONTEXT 3}
+    \location   {4,1}
+    \shape      {action}
+    \text       {style}
+    \connection [rl] {PDF 3}
+  \stopFLOWcell
+  \startFLOWcell
+    \name       {PDF 3}
+    \destination{PDF 3}
+    \location   {5,1}
+    \shape      {action}
+    \text       {PDF}
+  \stopFLOWcell
+\stopFLOWchart
+
+\startFLOWchart[conversion 4]
+  \startFLOWcell
+    \name       {XML 4}
+    \destination{XML 4}
+    \location   {1,1}
+    \shape      {action}
+    \text       {XML}
+    \connection [rl] {XSLT 4}
+  \stopFLOWcell
+  \startFLOWcell
+    \name       {XSLT 4}
+    \destination{XSLT 4}
+    \location   {2,1}
+    \shape      {action}
+    \text       {XSLT}
+    \connection [rl] {TEX 4}
+  \stopFLOWcell
+  \startFLOWcell
+    \name       {TEX 4}
+    \destination{TEX 4}
+    \location   {3,1}
+    \shape      {action}
+    \text       {\TeX}
+    \connection [rl] {context 4}
+  \stopFLOWcell
+  \startFLOWcell
+    \name       {CONTEXT 4}
+    \destination{CONTEXT 4}
+    \location   {4,1}
+    \shape      {action}
+    \text       {style}
+    \connection [rl] {PDF 4}
+  \stopFLOWcell
+  \startFLOWcell
+    \name       {PDF 4}
+    \destination{PDF 4}
+    \location   {5,1}
+    \shape      {action}
+    \text       {PDF}
+  \stopFLOWcell
+\stopFLOWchart
+
+\startFLOWchart[conversion 5]
+  \startFLOWcell
+    \name       {TEX 5}
+    \destination{TEX 5}
+    \location   {3,1}
+    \shape      {action}
+    \text       {\TeX}
+    \connection [rl] {context 5}
+  \stopFLOWcell
+  \startFLOWcell
+    \name       {CONTEXT 5}
+    \destination{CONTEXT 5}
+    \location   {4,1}
+    \shape      {action}
+    \text       {style}
+    \connection [rl] {XML 5}
+  \stopFLOWcell
+  \startFLOWcell
+    \name       {XML 5}
+    \destination{XML 5}
+    \location   {5,1}
+    \shape      {action}
+    \text       {XML}
+  \stopFLOWcell
+\stopFLOWchart
+
+\startFLOWchart[conversion 6]
+  \startFLOWcell
+    \name       {XML 6-1}
+    \destination{XML 6-1}
+    \location   {1,1}
+    \shape      {action}
+    \text       {XML}
+    \connection [rl] {XSLT 6}
+  \stopFLOWcell
+  \startFLOWcell
+    \name       {XSLT 6}
+    \destination{XSLT 6}
+    \location   {2,1}
+    \shape      {action}
+    \text       {XSLT}
+    \connection [rl] {XML 6-2}
+  \stopFLOWcell
+  \startFLOWcell
+    \name       {XML 6-2}
+    \destination{XML 6-2}
+    \location   {3,1}
+    \shape      {action}
+    \text       {XML}
+    \connection [rl] {context 6}
+  \stopFLOWcell
+  \startFLOWcell
+    \name       {CONTEXT 6}
+    \destination{CONTEXT 6}
+    \location   {4,1}
+    \shape      {action}
+    \text       {style}
+    \connection [rl] {PDF 6}
+  \stopFLOWcell
+  \startFLOWcell
+    \name       {PDF 6}
+    \destination{PDF 6}
+    \location   {5,1}
+    \shape      {action}
+    \text       {PDF}
+  \stopFLOWcell
+\stopFLOWchart
+
+\startFLOWchart[convert-en]
+  \includeFLOWchart [conversion 1] [x=1,y=1]
+  \includeFLOWchart [conversion 2] [x=1,y=2]
+  \includeFLOWchart [conversion 3] [x=1,y=3]
+  \includeFLOWchart [conversion 4] [x=1,y=4]
+  \includeFLOWchart [conversion 5] [x=1,y=5]
+  \includeFLOWchart [conversion 6] [x=1,y=6]
+\stopFLOWchart
+
+\startFLOWchart[conversion 7]
+  \startFLOWcell
+    \name       {TEX}
+    \location   {2,1}
+    \shape      {action}
+    \text       {\TEX}
+    \connection [b+l] {CONTEXT}
+  \stopFLOWcell
+  \startFLOWcell
+    \name       {XML}
+    \location   {1,2}
+    \shape      {action}
+    \text       {XML}
+    \connection [rl] {CONTEXT}
+  \stopFLOWcell
+  \startFLOWcell
+    \name       {METAPOST}
+    \location   {2,3}
+    \shape      {action}
+    \text       {\METAPOST}
+    \connection [t-l] {CONTEXT}
+  \stopFLOWcell
+  \startFLOWcell
+    \name       {CONTEXT}
+    \location   {3,2}
+    \shape      {action}
+    \text       {\ConTeXt}
+    \connection [rl] {PDF}
+    \connection [-b-t] {XSLT}
+    \connection [-t-b] {SQL}
+  \stopFLOWcell
+  \startFLOWcell
+    \name       {PDF}
+    \location   {4,2}
+    \shape      {action}
+    \text       {PDF}
+  \stopFLOWcell
+  \startFLOWcell
+    \name       {XSLT}
+    \location   {3,3}
+    \shape      {action}
+    \text       {XSLT}
+    \connection [+t+b] {CONTEXT}
+  \stopFLOWcell
+  \startFLOWcell
+    \name       {SQL}
+    \location   {3,1}
+    \shape      {action}
+    \text       {SQL}
+    \connection [+b+t] {CONTEXT}
+  \stopFLOWcell
+\stopFLOWchart
+
+\startFLOWchart[conversion 8]
+  \startFLOWcell
+    \name       {CONTEXT}
+    \location   {2,3}
+    \shape      {action}
+    \text       {\ConTeXt}
+  \stopFLOWcell
+
+  \startFLOWcell
+    \name       {CONTENT}
+    \location   {2,1}
+    \shape      {action}
+    \text       {ContentBase}
+    \connection [bt] {XML1}
+  \stopFLOWcell
+
+  \startFLOWcell
+    \name       {TEX}
+    \location   {1,2}
+    \shape      {action}
+    \text       {\TEX}
+    \connection [b-t] {CONTEXT}
+  \stopFLOWcell
+  \startFLOWcell
+    \name       {XML1}
+    \location   {2,2}
+    \shape      {action}
+    \text       {XML}
+    \connection [bt] {CONTEXT}
+  \stopFLOWcell
+  \startFLOWcell
+    \name       {METAPOST}
+    \location   {3,2}
+    \shape      {action}
+    \text       {\METAPOST}
+    \connection [b+t] {CONTEXT}
+  \stopFLOWcell
+
+  \startFLOWcell
+    \name       {WORD}
+    \location   {1,5}
+    \shape      {action}
+    \text       {MSWord}
+    \connection [tb] {XSLT}
+  \stopFLOWcell
+  \startFLOWcell
+    \name       {XSLT}
+    \location   {1,4}
+    \shape      {action}
+    \text       {XSLT}
+    \connection [tb] {XML2}
+  \stopFLOWcell
+  \startFLOWcell
+    \name       {XML2}
+    \location   {1,3}
+    \shape      {action}
+    \text       {XML}
+    \connection [rl]{CONTEXT}
+  \stopFLOWcell
+
+  \startFLOWcell
+    \name       {WYSIWYG}
+    \location   {2,5}
+    \shape      {action}
+    \text       {WYSIWYG}
+    \connection [tb] {XML FO}
+    \connection [rb] {PDF}
+  \stopFLOWcell
+  \startFLOWcell
+    \name       {XML FO}
+    \location   {2,4}
+    \shape      {action}
+    \text       {XML FO}
+    \connection [tb]{CONTEXT}
+  \stopFLOWcell
+
+  \startFLOWcell
+    \name       {GRAPHICS}
+    \location   {3,3}
+    \shape      {action}
+    \text       {GraphicsBase}
+    \connection [lr]{CONTEXT}
+  \stopFLOWcell
+  \startFLOWcell
+    \name       {PDF}
+    \location   {3,4}
+    \shape      {action}
+    \text       {PDF}
+    \connection [tb]{GRAPHICS}
+  \stopFLOWcell
+\stopFLOWchart
+
+\startFLOWchart[conversion 9]
+
+  \startFLOWcell
+    \name       {TEXWORK}
+    \location   {1,2}
+    \shape      {action}
+    \text       {\TeX Work}
+    \connection [bt]{TEX}
+  \stopFLOWcell
+  \startFLOWcell
+    \name       {TEX}
+    \location   {1,3}
+    \shape      {action}
+    \text       {\TeX}
+%    \connection [b-t]{TEXEXEC}
+    \connection [rl]{TEXEXEC}
+  \stopFLOWcell
+
+  \startFLOWcell
+    \name       {XMLWORK}
+    \location   {3,2}
+    \shape      {action}
+    \text       {XMLWork}
+    \connection [bt]{XML}
+    \connection [+b+t]{XML}
+  \stopFLOWcell
+  \startFLOWcell
+    \name       {XML}
+    \location   {3,3}
+    \shape      {action}
+    \text       {XML}
+    \connection [lr]{TEXEXEC}
+    \connection [+t+b]{XMLWORK}
+    \connection [+b+t]{FIGUREBASE}
+  \stopFLOWcell
+
+  \startFLOWcell
+    \name       {TEXEXEC}
+    \location   {2,3}
+    \shape      {action}
+    \text       {\TeX Exec}
+    \connection [bt]{CONTEXT}
+  \stopFLOWcell
+  \startFLOWcell
+    \name       {CONTEXT}
+    \location   {2,4}
+    \shape      {action}
+    \text       {\ConTeXt}
+    \connection [bt]{PDF}
+  \stopFLOWcell
+  \startFLOWcell
+    \name       {PDF}
+    \location   {2,5}
+    \shape      {action}
+    \text       {PDF}
+  \stopFLOWcell
+
+  \startFLOWcell
+    \name       {WWW}
+    \location   {2,1}
+    \shape      {action}
+    \text       {WWW}
+    \connection [bt]{CODHOST}
+  \stopFLOWcell
+  \startFLOWcell
+    \name       {CODHOST}
+    \location   {2,2}
+    \shape      {action}
+    \text       {CodHost}
+    \connection [bt]{TEXEXEC}
+    \connection [tb]{WWW}
+  \stopFLOWcell
+
+  \startFLOWcell
+    \name       {FIGUREBASE}
+    \location   {3,4}
+    \shape      {action}
+    \text       {FigureBase}
+    \connection [+t+b]{XML}
+    \connection [lr]{CONTEXT}
+  \stopFLOWcell
+\stopFLOWchart
+
+\startFLOWchart[conversion 10]
+  \startFLOWcell
+    \name       {TEX}
+    \location   {2,1}
+    \shape      {action}
+    \text       {\TEX}
+    \connection [b+l] {CONTEXT}
+  \stopFLOWcell
+  \startFLOWcell
+    \name       {XML}
+    \location   {1,2}
+    \shape      {action}
+    \text       {XML}
+    \connection [rl] {CONTEXT}
+  \stopFLOWcell
+  \startFLOWcell
+    \name       {METAPOST}
+    \location   {2,3}
+    \shape      {action}
+    \text       {\METAPOST}
+    \connection [t-l] {CONTEXT}
+  \stopFLOWcell
+  \startFLOWcell
+    \name       {CONTEXT}
+    \location   {3,2}
+    \shape      {action}
+    \text       {\ConTeXt}
+    \connection [rl] {PDF}
+    \connection [-b-t] {UTILITIES}
+    \connection [-t-b] {LUA}
+  \stopFLOWcell
+  \startFLOWcell
+    \name       {PDF}
+    \location   {4,2}
+    \shape      {action}
+    \text       {PDF}
+  \stopFLOWcell
+  \startFLOWcell
+    \name       {UTILITIES}
+    \location   {3,3}
+    \shape      {action}
+    \text       {UTILITIES}
+    \connection [+t+b] {CONTEXT}
+  \stopFLOWcell
+  \startFLOWcell
+    \name       {LUA}
+    \location   {3,1}
+    \shape      {action}
+    \text       {LUA}
+    \connection [+b+t] {CONTEXT}
+  \stopFLOWcell
+\stopFLOWchart
+
+\unprotect
+
+\setupFLOWcharts
+  [\c!width=5\bodyfontsize,
+   \c!height=3\bodyfontsize,
+   \c!dx=\bodyfontsize,
+   \c!dy=\bodyfontsize]
+
+\protect
+
+\continueifinputfile{chrt-xml.tex}
+
+\starttext
+
+    %\FLOWchart[convert-en]
+    \FLOWchart[conversion 7]
+
+\stoptext

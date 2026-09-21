@@ -1,0 +1,2307 @@
+<?xml version='1.0' ?>
+
+<!--
+
+    This file is used to generate an overview of manuals:
+
+    - a pdf file weith descriptions and cover pages, in this case the xml file
+      is processed by ConTeXt itself by compiling show-man.tex
+
+    - html pages that make a linked list, for which we use some xslt scripts
+      that are handles by xsltproc
+
+    Below we have entries for common, mkxl, mkiv, and mkii related documents and
+    the order is the same as in the mentioned products. We keep the mkii files
+    around because sometimes they still matter, and they are also part of the
+    history. Some manuals got updated to a more modern version and thereby moved
+    up in the version hierarchy. This means that at some point we can have (more)
+    duplicates. Just start with the latest.
+
+-->
+
+<!-- TO BE UPDATED  -->
+
+<!-- mmodes -->
+<!-- mvlcolumnsets -->
+
+<!-- MISSING -->
+
+<!-- documents/general/manuals/mkiv/aleph.pdf -->
+<!-- documents/general/manuals/mkiv/cont-enp.pdf -->
+<!-- documents/general/manuals/mkiv/ex-gui.pdf -->
+
+<!-- mkii archive --> <!-- documents/general/manuals/mkiv/mtexsync-p.pdf -->
+
+<!-- ms mp --> <!-- documents/general/manuals/mkiv/mp-ch-en.pdf -->
+
+<!-- MAYBE -->
+
+<!-- manuals/mkiv/external/fontspecial -->
+<!-- manuals/mkiv/external/leaflets -->
+<!-- manuals/mkiv/external/likethis -->
+
+<!-- VARIOUS -->
+
+<!-- manuals/mkiv/external/columns -->
+<!-- manuals/mkiv/external/examples -->
+<!-- manuals/mkiv/external/lua -->
+<!-- manuals/mkiv/external/magazines -->
+<!-- manuals/mkiv/external/tools -->
+<!-- manuals/mkiv/external/whatever\articles -->
+
+<!-- NEEDS CHECKING -->
+
+<!-- where widgets -->
+<!-- where ecmascript -->
+<!-- where scite -->
+
+<!-- TODO -->
+
+<!-- manuals/mkiv/external/structure -->
+<!-- manuals/mkiv/external/understanding -->
+<!-- manuals/mkiv/external/education -->
+
+<!-- PLACEHOLDER -->
+
+<!-- manuals/mkiv/external/runpathtest -->
+
+<documents prefix='show-man' colorset='7'>
+
+<!-- introductions -->
+
+<introduction version="all">
+    <title>The manuals</title>
+    <summary>
+        <p>Welcome to the suite of <logo label="context"/> manuals. These manuals
+        not only cover the macro package itself, but also the tools that come
+        with it. In this suite you will also find manuals on how to use <logo
+        label="context"/> for processing <logo label="xml"/>. Fonts and <logo
+        label="metapost"/> graphic are discussed in dedicated manuals.</p>
+        <p>On the following pages, the main manuals are shown large, while their
+        screen companions are shown in the bottom right corner of a page.
+        Clicking on a picture brings you to the document. Some manuals come in
+        more than one language, in which case small pictures of the title pages
+        are shown.</p>
+        <p>The next pages show overviews of manuals that are specific for <logo
+        label="mkii"/>, <logo label="mkiv"/> and <logo label="mkal"/>, as well as
+        obsolete manuals. The archived manuals cover <logo label="mkii"/> but can
+        still be of interest, if only because they give an idea about how all
+        evolved.</p>
+        <p>This is a snapshot. Check the distribution for the latest versions and
+        extra manuals.</p>
+    </summary>
+</introduction>
+
+<introduction version="common">
+    <title>Common manuals</title>
+    <summary>
+        <p>These are generic manuals. The more version specific manuals are
+        collected on the following pages, including some historic ones. In
+        addition to the manuals you can have a look at the Wiki and some
+        manuals (in various languages) by users that can be found on the
+        Internet.</p>
+    </summary>
+</introduction>
+
+<introduction version="mkxl">
+    <title>MkXL manuals</title>
+    <summary>
+        <p>All the good things come together in the <logo label="lmtx"/> where we
+        pair <logo label="luametatex"/> with <logo label="mkxl"/>. This
+        combination is more powerful and performs better. Most of the <logo
+        label="mkiv"/> manuals apply but there are some that are more exclusive
+        to the latest greatest. Manuals tagged at <logo label="mkiv"/> might not
+        compiel with <logo label="luametatex"/> due to new features but still be
+        usefull for that version.</p>
+    </summary>
+</introduction>
+
+<introduction version="mkiv">
+    <title>MkIV manuals</title>
+    <summary>
+        <p>Here you will find the manuals that describe <logo label="mkiv"/>
+        functionality and/or features not present in <logo label="mkii"/>. But
+        again we froze a version when we moved on, this time to <logo
+        label="luametatex"/>. The <logo label="mkiv"/> version is the test-case
+        for <logo label="luatex"/> so it will adapt when needed.</p>
+    </summary>
+</introduction>
+
+<introduction version="mkii">
+    <title>MkII manuals</title>
+    <summary>
+        <p>Although <logo label="mkii"/> and <logo label="mkiv"/> are rather
+        compatible, there are some differences. Also, as <logo label="mkii"/> is
+        frozen there are more features <logo label="mkiv"/>. Also because we
+        moved to <logo label="unicode"/> and <logo label="opentype"/> there are
+        differences in those areas.</p>
+        <p>When you want to process these manuals you need a <logo label="mkii"/>
+        installation which includes fonts no longer present in the later
+        versions. We will not update these manuals! They describe history.</p>
+    </summary>
+</introduction>
+
+<introduction classification="old">
+    <title>Obsolete manuals</title>
+    <summary>
+        <p>We keep some of the old manuals around for historic reasons. Some of
+        what is described might still float around in the distribution but is
+        likely replaced by more modern and hip variants.</p>
+    </summary>
+</introduction>
+
+<!-- common manuals -->
+
+<!-- manuals/mkiv/external/readme -->
+<!-- manuals/mkiv/external/tiptrick -->
+
+<collection version="common">
+    <description>
+        <theme>Read Me</theme>
+        <summary>
+            <p>It's in the name: you should read this file. Not so much because
+            the content should bother you, but more because it gives you an idea
+            about what we have in mind with making <logo label="context"/>
+            available for everyone.</p> <p><logo label="context"/> is completely
+            free software, which does not mean that there are no restrictions on
+            redistributing and changing the files. When you want to redistribute
+            (changed) source code, please read this licence first.</p>
+        </summary>
+    </description>
+    <resources>
+        <manual language="en">
+            <paper>documents/general/manuals/mkiv/mreadme</paper>
+            <screen>documents/general/manuals/mkiv/tiptrick</screen>
+        </manual>
+    </resources>
+</collection>
+
+<collection version="common">
+    <description>
+        <theme>Quick References</theme>
+        <summary>
+            <p>This quick reference manual does not replace the other manuals,
+            but advanced users can benefit from its compactness. The manual can
+            be generated on the user's system, since the style and database that
+            is needed is part of the distribution.</p>
+        </summary>
+    </description>
+    <resources>
+        <manual language="en">
+            <paper>documents/general/qrcs/setup-en</paper>
+        </manual>
+        <manual language="nl">
+            <paper>documents/general/qrcs/setup-nl</paper>
+        </manual>
+        <manual language="de">
+            <paper>documents/general/qrcs/setup-de</paper>
+        </manual>
+        <manual language="cz">
+            <paper>documents/general/qrcs/setup-cz</paper>
+        </manual>
+        <manual language="fr">
+            <paper>documents/general/qrcs/setup-fr</paper>
+        </manual>
+        <manual language="it">
+            <paper>documents/general/qrcs/setup-it</paper>
+        </manual>
+        <manual language="ro">
+            <paper>documents/general/qrcs/setup-ro</paper>
+        </manual>
+    </resources>
+</collection>
+
+<collection version="common">
+    <description>
+        <theme>MWE</theme>
+        <summary>
+            <p>When you run into troubles the best place to get help is the
+            mailing list. There the magic word is <logo label="mwe"/>.</p>
+        </summary>
+    </description>
+    <resources>
+        <manual language="en">
+            <paper>documents/general/manuals/mkxl/mwe</paper>
+        </manual>
+    </resources>
+</collection>
+
+
+                "leaflets/leaflet-context.tex",
+                "leaflets/leaflet-luametatex.tex",
+                "leaflets/leaflet-mixing.tex",
+
+<collection version="common">
+    <description>
+        <theme>What is <logo label="context"/></theme>
+        <summary>
+            <p>This is a one page summary of what <logo label="context"/> is
+            about.</p>
+        </summary>
+    </description>
+    <resources>
+        <manual language="en">
+            <paper>documents/general/leaflets/mkxl/leaflet-context</paper>
+        </manual>
+    </resources>
+</collection>
+
+<collection version="common">
+    <description>
+        <theme>What is <logo label="luametatex"/></theme>
+        <summary>
+            <p>This is a one page summary of what <logo label="luametatex"/> is
+            about.</p>
+        </summary>
+    </description>
+    <resources>
+        <manual language="en">
+            <paper>documents/general/leaflets/mkxl/leaflet-luametatex</paper>
+        </manual>
+    </resources>
+</collection>
+
+<collection version="common">
+    <description>
+        <theme>Input methods</theme>
+        <summary>
+            <p>These few pages show various input methods in <logo
+            label="context"/>. There are more so reading might trigger you to
+            look at various manuals, articles and examples.</p>
+        </summary>
+    </description>
+    <resources>
+        <manual language="en">
+            <paper>documents/general/leaflets/mkxl/leaflet-mixing</paper>
+        </manual>
+    </resources>
+</collection>
+
+<!-- manuals/mkxl/external/excursion -->
+
+<collection version="mkxl">
+    <description>
+        <theme>Excursion</theme>
+        <summary>
+            <p>This is the follow up on the getting started manual. It gives a
+            overview of the most important <logo label="context"/> commands. The
+            older manual covers <logo label="mkii"/> and <logo label="mkiv"/>.</p>
+        </summary>
+    </description>
+    <resources>
+        <manual language="en">
+            <title><logo label="context"/>, an excursion</title>
+            <paper  backgroundcolor="white">documents/general/manuals/mkxl/excursion-en</paper>
+        </manual>
+    </resources>
+</collection>
+
+<!-- manuals/mkiv/external/mathincontext -->
+
+<collection version="mkxl">
+    <description>
+        <theme>Math In ConTeXt</theme>
+        <summary>
+            <p>This manual describes how to typeset math in <logo
+            label="context"/> <logo label="lmtx"/>. In discusses the various
+            mechanisms but also shows how to code without tweaking in order to
+            keep a clean source. It uses the advanced math rendering options
+            available in <logo label="luametatex"/> and has numerous examples.
+            </p>
+        </summary>
+    </description>
+    <resources>
+        <manual language="en">
+            <paper  backgroundcolor="white">documents/general/manuals/mkxl/mathincontext-paper</paper>
+            <screen backgroundcolor="white">documents/general/manuals/mkxl/mathincontext-screen</screen>
+            <screen backgroundcolor="white">documents/general/manuals/mkxl/examples-mathmeanings</screen>
+        </manual>
+        <extra language="en">
+            <screen backgroundcolor="white" offset="yes">general/specials/math-repertoire-modern</screen>
+            <screen backgroundcolor="white" offset="yes">general/specials/math-repertoire-pagella</screen>
+            <screen backgroundcolor="white" offset="yes">general/specials/math-repertoire-termes</screen>
+            <screen backgroundcolor="white" offset="yes">general/specials/math-repertoire-bonum</screen>
+        <!-- screen backgroundcolor="white" offset="yes">general/specials/math-repertoire-schola</screen -->
+            <screen backgroundcolor="white" offset="yes">general/specials/math-repertoire-dejavu</screen>
+        <!-- screen backgroundcolor="white" offset="yes">general/specials/math-repertoire-xits</screen -->
+        <!-- screen backgroundcolor="white" offset="yes">general/specials/math-repertoire-cambria</screen -->
+        <!-- screen backgroundcolor="white" offset="yes">general/specials/math-repertoire-lucidanova</screen -->
+        </extra>
+    </resources>
+</collection>
+
+<collection version="mkxl">
+    <description>
+        <theme>SciTE in <logo label="context"/></theme>
+        <summary>
+            <p><logo label="scite"/> is an editor and these manuals describes how
+            to configure it for use with <logo label="context"/> and <logo
+            label="metafun"/>. Beware, the mscite manuals are the old ones, still
+            valid for traditional lexing, while the readme version descibes the
+            latest greatest lexers.</p>
+        </summary>
+    </description>
+    <resources>
+        <manual language="en">
+            <paper>documents/general/manuals/mkxl/scite-context-readme</paper>
+        </manual>
+        <!--
+        <manual language="en">
+            <paper>documents/general/manuals/mkiv/mscite-p</paper>
+            <screen>documents/general/manuals/mkiv/mscite-s</screen>
+        </manual>
+        -->
+    </resources>
+</collection>
+
+<!-- manuals/mkiv/external/svg -->
+
+<collection version="mkxl">
+    <description>
+        <theme>SVG</theme>
+        <summary>
+            <p>You can let <logo label="context"/> convert <logo label="svg"/>
+            images. It does so with the help of <logo label="metapost"/>.</p>
+        </summary>
+    </description>
+    <resources>
+        <manual language="en">
+            <paper>documents/general/manuals/mkxl/svg-lmtx</paper>
+        </manual>
+    </resources>
+</collection>
+
+<!-- manuals/mkiv/external/tagging -->
+<!-- manuals/mkiv/external/standards -->
+
+<collection version="mkxl">
+    <description>
+        <theme>Tagging</theme>
+        <summary>
+            <p>When you are forced to provide tagged <logo label="pdf"/> this
+            manual is your friend.</p>
+        </summary>
+    </description>
+    <resources>
+        <manual language="en">
+            <paper>documents/general/manuals/mkxl/tagging</paper>
+        </manual>
+    </resources>
+</collection>
+
+<collection version="mkxl">
+    <description>
+        <theme>Standards</theme>
+        <summary>
+            <p>In case you're forced to use <logo label="pdf"/>standards, this
+            manual can be of help.</p>
+        </summary>
+    </description>
+    <resources>
+        <manual language="en">
+            <paper>documents/general/manuals/mkxl/standards</paper>
+        </manual>
+    </resources>
+</collection>
+
+<!-- manuals/mkiv/external/signals -->
+
+<collection version="mkxl">
+    <description>
+        <theme>Signals</theme>
+        <summary>
+            <p>This manual introduces you to the signal progress and error
+            feature assisted by the <quote><logo label="context"/> watch</quote>
+            presented at the 2025 meeting. We're talking of a gadget here.</p>
+        </summary>
+    </description>
+    <resources>
+        <manual language="en">
+            <paper>documents/general/manuals/mkxl/signals</paper>
+        </manual>
+    </resources>
+</collection>
+
+<collection version="mkxl">
+    <description>
+        <theme>Little</theme>
+        <summary>
+            <p>This little manual introduces the <quote>little context
+            book</quote> that we presented at <logo label="bachotex"/> 2026 as
+            statement against the energy and environmental side effects of
+            artificial intelligence (datacenters).</p>
+        </summary>
+    </description>
+    <resources>
+        <manual language="en">
+            <paper>documents/general/manuals/mkxl/little-context-book</paper>
+        </manual>
+    </resources>
+</collection>
+
+<!-- manuals/mkiv/external/beyond -->
+<!-- manuals/mkiv/external/drawinglines -->
+<!-- manuals/mkiv/external/evenmore -->
+<!-- manuals/mkiv/external/moretocome -->
+<!-- manuals/mkiv/external/ontarget -->
+<!-- manuals/mkiv/external/canbedone -->
+
+<collection version="mkxl">
+    <description>
+        <theme>MkXL development: hybrid</theme>
+        <summary>
+            <p>This document is one in the series that keeps track of various
+            developments in <logo label="luatex"/> , <logo label="luametatex"/>,
+            <logo label="context"/> and <logo label="luametafun"/>.</p> <p>Here
+            you can also find explanations not found in manuals. As with earlier
+            development stories, some were written as articles for user group
+            journals.</p>
+        </summary>
+    </description>
+    <resources>
+        <manual language="en">
+            <paper>documents/general/manuals/mkiv/hybrid</paper>
+        </manual>
+    </resources>
+</collection>
+
+<collection version="mkxl">
+    <description>
+        <theme>MkXL development: beyond</theme>
+        <summary>
+            <p>This document is one in the series that keeps track of various
+            developments in <logo label="luatex"/> , <logo label="luametatex"/>,
+            <logo label="context"/> and <logo label="luametafun"/>.</p> <p>Here
+            you can also find explanations not found in manuals. As with earlier
+            development stories, some were written as articles for user group
+            journals.</p>
+        </summary>
+    </description>
+    <resources>
+        <manual language="en">
+            <paper>documents/general/manuals/mkxl/beyond</paper>
+        </manual>
+    </resources>
+</collection>
+
+<collection version="mkxl">
+    <description>
+        <theme>MkXL development: drawing lines</theme>
+        <summary>
+            <p>This document is one in the series that keeps track of various
+            developments in <logo label="luatex"/> , <logo label="luametatex"/>,
+            <logo label="context"/> and <logo label="luametafun"/>.</p> <p>Here
+            you can also find explanations not found in manuals. As with earlier
+            development stories, some were written as articles for user group
+            journals.</p>
+        </summary>
+    </description>
+    <resources>
+        <manual language="en">
+            <paper>documents/general/manuals/mkxl/drawinglines</paper>
+        </manual>
+    </resources>
+</collection>
+
+<collection version="mkxl">
+    <description>
+        <theme>MkXL development: even more</theme>
+        <summary>
+            <p>This document is one in the series that keeps track of various
+            developments in <logo label="luatex"/> , <logo label="luametatex"/>,
+            <logo label="context"/> and <logo label="luametafun"/>.</p> <p>Here
+            you can also find explanations not found in manuals. As with earlier
+            development stories, some were written as articles for user group
+            journals.</p>
+        </summary>
+    </description>
+    <resources>
+        <manual language="en">
+            <paper>documents/general/manuals/mkxl/evenmore</paper>
+        </manual>
+    </resources>
+</collection>
+
+<collection version="mkxl">
+    <description>
+        <theme>MkXL development: more to come</theme>
+        <summary>
+            <p>This document is one in the series that keeps track of various
+            developments in <logo label="luatex"/> , <logo label="luametatex"/>,
+            <logo label="context"/> and <logo label="luametafun"/>.</p> <p>Here
+            you can also find explanations not found in manuals. As with earlier
+            development stories, some were written as articles for user group
+            journals.</p>
+        </summary>
+    </description>
+    <resources>
+        <manual language="en">
+            <paper>documents/general/manuals/mkxl/moretocome</paper>
+        </manual>
+    </resources>
+</collection>
+
+<collection version="mkxl">
+    <description>
+        <theme>MkXL development: can be done</theme>
+        <summary>
+            <p>This document is one in the series that keeps track of various
+            developments in <logo label="luatex"/> , <logo label="luametatex"/>,
+            <logo label="context"/> and <logo label="luametafun"/>.</p> <p>Here
+            you can also find explanations not found in manuals. As with earlier
+            development stories, some were written as articles for user group
+            journals.</p>
+        </summary>
+    </description>
+    <resources>
+        <manual language="en">
+            <paper>documents/general/manuals/mkxl/canbedone</paper>
+        </manual>
+    </resources>
+</collection>
+
+<collection version="mkxl">
+    <description>
+        <theme>MkXL development: on target</theme>
+        <summary>
+            <p>This document is one in the series that keeps track of various
+            developments in <logo label="luatex"/> , <logo label="luametatex"/>,
+            <logo label="context"/> and <logo label="luametafun"/>.</p> <p>Here
+            you can also find explanations not found in manuals. As with earlier
+            development stories, some were written as articles for user group
+            journals.</p>
+        </summary>
+    </description>
+    <resources>
+        <manual language="en">
+            <paper>documents/general/manuals/mkxl/ontarget</paper>
+        </manual>
+    </resources>
+</collection>
+
+<!-- manuals/mkiv/external/mvlcolumnsets -->
+
+<collection version="mkxl">
+    <description>
+        <theme>Columnsets</theme>
+        <summary>
+            <p>The new columnset implementation does whole-set optimization, is
+            more robust and efficient and also more powerful. This manual
+            explains how to define and populate pages and create parallel
+            versions of documents. This is work in progress.</p>
+        </summary>
+    </description>
+    <resources>
+        <manual language="en">
+            <paper>documents/general/manuals/mkxl/mvlcolumnsets</paper>
+        </manual>
+    </resources>
+</collection>
+
+<collection version="mkxl">
+    <description>
+        <theme>ECMASCRIPT in ConTeXt LMTX</theme>
+        <summary>
+            <p>It is possible to embed <logo label="ecmascript"/> (of which <logo
+            label="javascript"/> is an example) in <logo label="context"/> <logo
+            label="lmtx"/>. The (external) library used is <logo
+            label="mujs"/>.</p>
+        </summary>
+    </description>
+    <resources>
+        <manual language="en">
+            <paper>documents/general/manuals/mkxl/ecmascript-mkxl</paper>
+        </manual>
+    </resources>
+</collection>
+
+<!-- manuals/mkiv/external/luametatex -->
+
+<collection version="mkxl">
+    <description>
+        <theme>LuaMetaTeX</theme>
+        <summary>
+            <p>The <logo label="lmtx"/> version of <logo label="context"/> uses
+            the <logo label="luametatex"/> engine. This engine is a follow up on
+            <logo label="luatex"/> and is an integral part of <logo
+            label="context"/> development. This manual descibes the current
+            (official) features.</p> <p>The related manual about primitives
+            discusses some of the new primitives that relate to low level macro
+            programming.</p>
+        </summary>
+    </description>
+    <resources>
+        <manual language="en">
+            <paper>documents/general/manuals/mkxl/luametatex</paper>
+            <!-- paper>documents/general/manuals/mkxl/primitives</paper -->
+        </manual>
+    </resources>
+</collection>
+
+<!-- manuals/mkiv/external/luametafun -->
+
+<collection version="mkxl">
+    <description>
+        <theme>LuaMetaFun</theme>
+        <summary>
+            <p>In <logo label="luametatex"/> we use an enhanced version of <logo
+            label="metapost"/> that is supported by extensions to <logo
+            label="metafun"/> discussed in this manual.</p> <p>There is a
+            dedicated manual for 3D graphics that descibes in great detail how to
+            generate implicit, parametric, and related surface plots in high
+            quality bitmap format bitmaps.</p>
+        </summary>
+    </description>
+    <resources>
+        <manual language="en">
+            <paper>documents/general/manuals/mkxl/luametafun</paper>
+        </manual>
+        <manual language="en">
+            <paper>documents/general/manuals/mkxl/threed</paper>
+        </manual>
+    </resources>
+</collection>
+
+<!-- manuals mkiv -->
+
+<!-- manuals/mkiv/external/start -->
+
+<collection version="mkiv">
+    <description>
+        <theme>Getting started</theme>
+        <summary>
+            <p>Although meant for beginners, these manuals shows already a lot of
+            what <logo label="context"/> can do for you. They also demonstrate
+            that <logo label="tex"/> documents can be colorful and can contain
+            lots of graphics. See the excursion manual for an update!</p>
+        </summary>
+    </description>
+    <resources>
+        <manual language="en">
+            <title><logo label="context"/>, an excursion</title>
+            <paper  backgroundcolor="white">documents/general/manuals/mkiv/ma-cb-en</paper>
+        </manual>
+    </resources>
+</collection>
+
+<!-- manuals/mkiv/external/metafun -->
+
+<collection version="mkiv">
+    <description>
+        <theme>MetaFun</theme>
+        <summary>
+            <p>If you like graphics, you may like <logo label="metafun"/>, a
+            collection of <logo label="metapost"/> macros. The manual covers most
+            of <logo label="metapost"/>, as well as the interface between this
+            graphical environment and <logo label="context"/>. There are numerous
+            examples, that give you an impression about the power of this
+            graphical system as well as the strength of the combination with
+            <logo label="tex"/>.</p>
+        </summary>
+    </description>
+    <resources>
+        <manual language="en">
+            <paper backgroundcolor="white">documents/general/manuals/mkiv/metafun-p</paper>
+            <screen>documents/general/manuals/mkiv/metafun-s</screen>
+        </manual>
+    </resources>
+</collection>
+
+<!-- manuals/mkiv/external/mathml -->
+
+<collection version="mkiv">
+    <description>
+        <theme>MathML</theme>
+        <summary>
+            <p><logo label="mathml"/> is a way of coding math in the <logo
+            label="xml"/> syntax. This manual not only covers both presentational
+            and content <logo label="mathml"/> in detail, but also provides many
+            examples and demonstrates ways to fine tune the typeset
+            representation.</p>
+            <p>The examples are somewhat old and as much of <logo
+            label="mathml"/> support originale in <logo label="mkii"/>. We used
+            too show <logo label="openmath"/> examples to but in the meantime
+            consider this one of the failures in <logo label="mathml"/> so we
+            dropped them.</p>
+        </summary>
+    </description>
+    <resources>
+        <manual language="en">
+            <paper  backgroundcolor="white">documents/general/manuals/mkiv/mmlprime</paper>
+        <!-- screen backgroundcolor="white">documents/general/manuals/mkiv/mmoexamp</screen -->
+            <screen backgroundcolor="white">documents/general/manuals/mkiv/mmlexamp</screen>
+        </manual>
+    </resources>
+</collection>
+
+<!-- manuals/mkiv/external/interaction -->
+
+<collection version="mkiv">
+    <description>
+        <theme>Interaction</theme>
+        <summary>
+            <p>Producing interactive documents have always been an integral
+            part of <logo label="context"/>. This manual describes how to
+            configure hyperlinks, comments, attachments, forms and also
+            how to add navigational elements to a document designed for
+            display.</p>
+        </summary>
+    </description>
+    <resources>
+        <manual language="en">
+            <paper>documents/general/manuals/mkiv/interaction</paper>
+        </manual>
+    </resources>
+</collection>
+
+<!-- manuals/mkiv/external/details -->
+
+<collection version="mkiv">
+    <description>
+        <theme>It's in the details</theme>
+        <summary>
+            <p>This manual is meant for users who want to divert from the more or
+            less traditional looking <logo label="tex"/> documents. There is a
+            strong focus on elements that determine the look and feel of a
+            document, like graphics. (This manual is unfinished)</p>
+        </summary>
+    </description>
+    <resources>
+        <manual language="en">
+            <paper>documents/general/manuals/mkiv/details</paper>
+        </manual>
+    </resources>
+</collection>
+
+<!-- manuals/mkiv/external/mk -->
+
+<collection version="mkiv">
+    <description>
+        <theme><logo label="context"/> MkII - MkIV, the history of LuaTeX</theme>
+        <summary>
+            <p>This document keeps track of the development history of both <logo
+            label="context"/> (mkiv) as well as <logo label="luatex"/>. It is
+            also one of our torture tests for both (rather related) systems.</p>
+        </summary>
+    </description>
+    <resources>
+        <manual language="en">
+            <paper>documents/general/manuals/mkiv/mk</paper>
+        </manual>
+    </resources>
+</collection>
+
+<!-- manuals/mkiv/external/hybrid -->
+
+<collection version="mkiv">
+    <description>
+        <theme>MkIV hybrid technology</theme>
+        <summary>
+            <p>This document keeps track of the development history of both <logo
+            label="context"/> (mkiv) as well as <logo label="luatex"/> from the
+            moment we considered ourselves to be halfway in the project. Like the
+            MK document it is also one of our torture tests.</p> <p>Many of the
+            chapters of MK were first published as articles and the same is true
+            for this document. So, the version published on the web lags behind
+            as we don't want to compete with the user group journals.</p>
+        </summary>
+    </description>
+    <resources>
+        <manual language="en">
+            <paper>documents/general/manuals/mkiv/hybrid</paper>
+        </manual>
+    </resources>
+</collection>
+
+<!-- manuals/mkiv/external/libraries -->
+
+<collection version="mkiv">
+    <description>
+        <theme>Libraries in LuaTeX</theme>
+        <summary>
+            <p>In <logo label="luatex"/> we use the <logo label="ffi"/> interface
+            to implement support for external (binary) libraries. In <logo
+            label="luametatex"/> we use so called optional libraries instead.
+            This manual explains this in modre detail.</p>
+        </summary>
+    </description>
+    <resources>
+        <manual language="en">
+            <paper>documents/general/manuals/mkiv/libraries-mkiv</paper>
+        </manual>
+    </resources>
+</collection>
+
+<!-- manuals/mkiv/external/swiglib -->
+
+<collection version="mkiv">
+    <description>
+        <theme>SwigLib basics</theme>
+        <summary>
+            <p>The swiglib project provides a framework for using additional
+            <logo label="lua"/> libraries in <logo label="luatex"/>. Although
+            <logo label="context"/> supports this, it will not depend on
+            external libraries for typesetting. In the meantime this subsystem
+            has become obsolete.</p>
+        </summary>
+    </description>
+    <resources>
+        <manual language="en">
+            <paper>documents/general/manuals/mkiv/swiglib-mkiv</paper>
+        </manual>
+    </resources>
+</collection>
+
+<!-- manuals/mkiv/external/columnsets -->
+
+<collection version="mkiv">
+    <description>
+        <theme>Columnsets (old)</theme>
+        <summary>
+            <p>Column sets can be used for quite complex but nice looking
+            layouts. They are used for magazine like layouts and mix well with
+            explicitly placed graphics. The <logo label="mkiv"/> version is a bit
+            different from the <logo label="mkii"/> version but uses teh same
+            principles.</p>
+        </summary>
+    </description>
+    <resources>
+        <manual language="en">
+            <paper>documents/general/manuals/mkiv/columnsets</paper>
+        </manual>
+    </resources>
+</collection>
+
+<!-- manuals/mkiv/external/math -->
+
+<collection version="mkiv">
+    <description>
+        <theme>Math</theme>
+        <summary>
+            <p>This a preliminary manual about some aspects of math typesetting.
+            It is not a replacement for the Knuthian references.</p>
+        </summary>
+    </description>
+    <resources>
+        <manual language="en">
+            <paper>documents/general/manuals/mkiv/math-mkiv</paper>
+        </manual>
+    </resources>
+</collection>
+
+<!-- manuals/mkiv/external/spacing -->
+
+<collection version="mkiv">
+    <description>
+        <theme>Spacing</theme>
+        <summary>
+            <p>This a work-in-progress manual about aspects of spacing in <logo
+            label="context"/> <logo label="mkiv"/>.</p>
+        </summary>
+    </description>
+    <resources>
+        <manual language="en">
+            <paper>documents/general/manuals/mkiv/spacing-mkiv</paper>
+        </manual>
+    </resources>
+</collection>
+
+<!-- manuals/mkiv/external/workflows -->
+
+<collection version="mkiv">
+    <description>
+        <theme>Workflows</theme>
+        <summary>
+            <p>The <logo label="context"/> ecosystem is of course centered around
+            typesetting but in addition comes with all kind of tools and subsystems
+            for managing the process. Here we collect some tips.</p>
+        </summary>
+    </description>
+    <resources>
+        <manual language="en">
+            <paper>documents/general/manuals/mkiv/workflows-mkiv</paper>
+        </manual>
+    </resources>
+</collection>
+
+<!-- manuals/mkiv/external/publications -->
+
+<collection version="mkiv">
+    <description>
+        <theme>Publications</theme>
+        <summary>
+            <p>In <logo label="context"/> we support the <logo label="bibtex"/>
+            format for handling references. The subsystem for dealing is flexible
+            enough to deal with many situations and is extensible as well. It
+            does not depend on external tools and is driven by <logo
+            label="lua"/> on the one hand and <logo label="context"/> setups on
+            the other.</p>
+        </summary>
+    </description>
+    <resources>
+        <manual language="en">
+            <paper>documents/general/manuals/mkiv/mkiv-publications</paper>
+        </manual>
+    </resources>
+</collection>
+
+<!-- manuals/mkiv/external/lowlevel -->
+
+<collection version="mkiv">
+    <description>
+        <theme>Lowlevel</theme>
+        <summary>
+            <p>This is a series of small manuals explaining subsystems of
+            <logo label="context"/> often in the perspective of <logo
+            label="luametatex"/>. Some are real lowlevel.</p>
+        </summary>
+    </description>
+    <resources>
+        <manual language="en">
+            <paper>documents/general/manuals/mkiv/lowlevel</paper>
+        </manual>
+    </resources>
+</collection>
+
+<!-- manuals/mkiv/external/languages -->
+
+<collection version="mkiv">
+    <description>
+        <theme>Languages</theme>
+        <summary>
+            <p>The ability to deal with many languages is an important property
+            of <logo label="tex"/> systems. Here we cover aspects like hyphenation
+            and language dependent labels.</p>
+        </summary>
+    </description>
+    <resources>
+        <manual language="en">
+            <paper>documents/general/manuals/mkiv/languages-mkiv</paper>
+        </manual>
+    </resources>
+</collection>
+
+<!-- manuals/mkiv/external/colors -->
+
+<collection version="mkiv">
+    <description>
+        <theme>Colors</theme>
+        <summary>
+            <p>Color support is like fonts and languages a core mechanism. This manual
+            is part of the more technical description of features like that.</p>
+        </summary>
+    </description>
+    <resources>
+        <manual language="en">
+            <paper>documents/general/manuals/mkiv/colors-mkiv</paper>
+        </manual>
+    </resources>
+</collection>
+
+<!-- manuals/mkiv/external/about -->
+
+<collection version="mkiv">
+    <description>
+        <theme>About <logo label="luatex"/> and <logo label="context"/></theme>
+        <summary>
+            <p>This is the third document in the series about the development of
+            <logo label="luatex"/> and <logo label="mkiv"/>. This one goes under
+            the name <quote>about</quote> as one might wonder what all this
+            development is about. After all we've now reached a state where we
+            can think about future applications instead of improving older
+            features as that process is ongoing.</p> <p>As we're a bit beyond
+            experimenting now, the focus will be on practical usage and of course
+            we target on applications that the <logo label="lua"/> and <logo
+            label="tex"/>combination makes possible, either new or in a renewed
+            form.</p>
+        </summary>
+    </description>
+    <resources>
+        <manual language="en">
+            <paper>documents/general/manuals/mkiv/about</paper>
+        </manual>
+    </resources>
+</collection>
+
+<!-- manuals/mkiv/external/xml -->
+
+<collection version="mkiv">
+    <description>
+        <theme>Dealing with XML</theme>
+        <summary>
+            <p>This manual explains how to define styles for tree based
+            processing of <logo label="xml"/> files. This variant showed up in
+            <logo label="mkiv"/>. The manual also contains examples of filtering
+            content.</p>
+        </summary>
+    </description>
+    <resources>
+        <manual language="en">
+            <paper>documents/general/manuals/mkiv/xml-mkiv</paper>
+        </manual>
+    </resources>
+</collection>
+
+<!-- manuals/mkiv/external/cld -->
+
+<collection version="mkiv">
+    <description>
+        <theme>ConTeXt Lua Documents</theme>
+        <summary>
+            <p>This manual describes how to generate documents (structure as well
+            as content) using <logo label="lua"/> exclusively. Of course you can
+            also embed such code in your normal <logo label="tex"/> documents but
+            usign <logo label="lua"/> has some advantages when you deal with for
+            instance database output.</p>
+        </summary>
+    </description>
+    <resources>
+        <manual language="en">
+            <paper>documents/general/manuals/mkiv/cld-mkiv</paper>
+        </manual>
+     <!-- extra language="en">
+            <paper>documents/general/manuals/mkiv/cld-base</paper>
+        </extra -->
+    </resources>
+</collection>
+
+<collection version="mkiv">
+    <description>
+        <theme>Luatools, Mtxrun &amp; Context</theme>
+        <summary>
+            <p>Here we discuss the main tools on the <logo label="context"/>
+            suite of programs. We focus on the <logo label="luatools"/> tree
+            handler, the <logo label="mtxrun"/> script manager and the process
+            management tool <logo label="context"/>.</p>
+        </summary>
+    </description>
+    <resources>
+        <manual language="en">
+            <paper>documents/general/manuals/mkiv/tools-mkiv</paper>
+        </manual>
+    </resources>
+</collection>
+
+<!-- manuals/mkiv/external/xtables -->
+
+<collection version="mkiv">
+    <description>
+        <theme>Extreme Tables</theme>
+        <summary>
+            <p>This is a short introduction to yet another table mechanism built
+            in <logo label="context"/>. It is a variant of the so called natural
+            tables but it has a different configuration. These tables are faster
+            to process and can span lots of pages.</p>
+        </summary>
+    </description>
+    <resources>
+        <manual language="en">
+            <paper>documents/general/manuals/mkiv/xtables-mkiv</paper>
+        </manual>
+    </resources>
+</collection>
+
+<!-- manuals/mkiv/external/units -->
+
+<collection version="mkiv">
+    <description>
+        <theme>Units</theme>
+        <summary>
+            <p>As part of physics support the <logo label="context"/> core
+            provides a mechanism for typesetting units. This manual describes the
+            basics as well as explains how additional units can be added and
+            extra variants of the command can be configured. The manual also
+            introduces the related digits mechanism. The built in support for
+            units should not be confused with the older (incompatible but
+            conceptually similar) units module.</p>
+        </summary>
+    </description>
+    <resources>
+        <manual language="en">
+            <paper>documents/general/manuals/mkiv/units-mkiv</paper>
+        </manual>
+    </resources>
+</collection>
+
+<!-- manuals/mkiv/external/spreadsheets -->
+
+<collection version="mkiv">
+    <description>
+        <theme>Simple Spreadsheets</theme>
+        <summary>
+            <p>This module provides an easy way to add calculations to a document
+            in a tabular form. It is not a replacement for a decent spreadsheet
+            program but fits well into regular document processing as done by
+            <logo label="context"/>.</p>
+        </summary>
+    </description>
+    <resources>
+        <manual language="en">
+            <paper>documents/general/manuals/mkiv/spreadsheets-mkiv</paper>
+        </manual>
+    </resources>
+</collection>
+
+<!-- manuals/mkiv/external/templates -->
+
+<collection version="mkiv">
+    <description>
+        <theme>LMX templates</theme>
+        <summary>
+            <p>Templates as described here can be used to construct <logo
+            label="context"/> documents using a more programmatic approach. The
+            method discussed wil stay but might get extended. This mechanism also
+            introduces two new dialects: <logo label="mkix"/> and <logo
+            label="mkxi"/>.</p>
+        </summary>
+    </description>
+    <resources>
+        <manual language="en">
+            <paper>documents/general/manuals/mkiv/templates-mkiv</paper>
+        </manual>
+    </resources>
+</collection>
+
+<collection version="mkiv">
+    <description>
+        <theme>Lua libraries</theme>
+        <summary>
+            <p>This manual describes how to use generic <logo label="lua"/>
+            modules outside <logo label="context"/>. The helper functions
+            themselves are discussed in the <logo label="cld"/> manuals.</p>
+        </summary>
+    </description>
+    <resources>
+        <manual language="en">
+            <paper>documents/general/manuals/mkiv/lua-mkiv</paper>
+        </manual>
+    </resources>
+</collection>
+
+<!-- manuals/mkiv/external/sql -->
+
+<collection version="mkiv">
+    <description>
+        <theme>SQL in context</theme>
+        <summary>
+            <p>The <logo label="context"/> infrastructure can be quite handy to
+            process <logo label="sql"/> output. This manual describes how
+            integrate mysql support into your styles. The libraries can also be
+            used independent from <logo label="context"/> but fit into the
+            package.</p>
+        </summary>
+    </description>
+    <resources>
+        <manual language="en">
+            <paper>documents/general/manuals/mkiv/sql-mkiv</paper>
+        </manual>
+    </resources>
+</collection>
+
+<!-- manuals/mkiv/external/fonts -->
+
+<collection version="mkiv">
+    <description>
+        <theme>Fonts out of context</theme>
+        <summary>
+            <p>In <logo label="tex"/> and therefore in <logo label="context"/>
+            fonts play an important role. This document describes some of the
+            characteristics of the <logo label="mkiv"/> font system. It is not a
+            manual about using fonts, although some details can be found only
+            here.</p>
+        </summary>
+    </description>
+    <resources>
+        <manual language="en">
+            <paper>documents/general/manuals/mkiv/fonts-mkiv</paper>
+        </manual>
+        <!-- extra language="en">
+            <screen backgroundcolor="white" offset="yes">specials/fonts/math-repertoire-modern</screen>
+            <screen backgroundcolor="white" offset="yes">specials/fonts/math-repertoire-pagella</screen>
+            <screen backgroundcolor="white" offset="yes">specials/fonts/math-repertoire-termes</screen>
+            <screen backgroundcolor="white" offset="yes">specials/fonts/math-repertoire-bonum</screen>
+            <screen backgroundcolor="white" offset="yes">specials/fonts/math-repertoire-xits</screen>
+            <screen backgroundcolor="white" offset="yes">specials/fonts/math-repertoire-cambria</screen>
+            <screen backgroundcolor="white" offset="yes">specials/fonts/math-repertoire-lucidanova</screen>
+        </extra -->
+    </resources>
+</collection>
+
+<collection version="mkiv">
+    <description>
+        <theme>Math</theme>
+        <summary>
+            <p>This manual describes a few aspects of typesetting mathematics in
+            <logo label="context"/> and will evolve over time.</p>
+        </summary>
+    </description>
+    <resources>
+        <manual language="en">
+            <paper>documents/general/manuals/mkiv/math-mkiv</paper>
+        </manual>
+    </resources>
+</collection>
+
+<!-- manuals/mkiv/external/epub -->
+
+<collection version="mkiv">
+    <description>
+        <theme>Epub</theme>
+        <summary>
+            <p>The export option in <logo label="context"/> can produce a basic
+            set of <logo label="xml"/> and epub files that can be either used
+            directly (using a css) or enhanced for usage otherwise. This manual
+            gives an overview of the process.</p>
+        </summary>
+    </description>
+    <resources>
+        <manual language="en">
+            <paper>documents/general/manuals/mkiv/epub-mkiv</paper>
+        </manual>
+    </resources>
+</collection>
+
+<!-- manuals/mkiv/external/luatex -->
+
+<collection version="mkiv">
+    <description>
+        <theme>LuaTeX</theme>
+        <summary>
+            <p>The <logo label="mkiv"/> version of <logo label="context"/> uses
+            the <logo label="luatex"/> engine. This engine is an ongoing
+            development and happens in the scope of <logo label="context"/>
+            development. This manual descibes the current version and is offered
+            here for convenience.</p>
+        </summary>
+    </description>
+    <resources>
+        <manual language="en">
+            <paper>documents/general/manuals/mkiv/luatex</paper>
+        </manual>
+    </resources>
+</collection>
+
+<!-- manuals/mkiv/external/charts -->
+
+<collection version="mkiv">
+    <description>
+        <theme>Flowcharts</theme>
+        <summary>
+            <p>The flowchart module is an old one that has been around for a while.
+            It got updated to <logo label="mkiv"/> and wil stay around.</p>
+        </summary>
+    </description>
+    <resources>
+        <manual language="en">
+            <paper>documents/general/manuals/mkiv/charts-mkiv</paper>
+        </manual>
+    </resources>
+</collection>
+
+<!-- manuals/mkiv/external/onandon -->
+
+<collection version="mkiv">
+    <description>
+        <theme>On and on</theme>
+        <summary>
+            <p>This is yet another document in the series about the development
+            of <logo label="luatex"/> and <logo label="mkiv"/>. This time we
+            use the tag <quote>onandon</quote> to indicate that we never seem to
+            stop moving forwards. The content lags a bit behind in the sense
+            that some chapters are first published in user group journals.</p>
+        </summary>
+    </description>
+    <resources>
+        <manual language="en">
+            <paper>documents/general/manuals/mkiv/onandon</paper>
+        </manual>
+    </resources>
+</collection>
+
+<!-- manuals/mkiv/external/followingup -->
+
+<collection version="mkiv">
+    <description>
+        <theme>Followingup</theme>
+        <summary>
+            <p>This is the fifth document in the series about the development of
+            <logo label="luatex"/> and <logo label="mkiv"/>, but here we focus on
+            <logo label="luametatex"/> instead. It is a relative small set of
+            progress reports that describes the steps to get there. This engine
+            is a follow up on <logo label="luatex"/>, the engine that is used for
+            the <logo label="context"/> version tagged as <logo label="lmtx"/>.
+            While the functionality of its ancestor is more or less set in stone,
+            so that it can be used in other macro packages, this follow up
+            permits further experiments in <logo label="context"/>.</p>
+        </summary>
+    </description>
+    <resources>
+        <manual language="en">
+            <paper>documents/general/manuals/mkiv/followingup</paper>
+        </manual>
+    </resources>
+</collection>
+
+<!-- manuals/mkiv/external/rules -->
+
+<collection version="mkiv">
+    <description>
+        <theme>Rules</theme>
+        <summary>
+            <p>In this manual we cover some aspects of drawing (ornamental) rules in <logo label="context"/>
+            using native rule operators as well as <logo label="metapost"/>.</p>
+        </summary>
+    </description>
+    <resources>
+        <manual language="en">
+            <paper>documents/general/manuals/mkiv/rules-mkiv</paper>
+        </manual>
+    </resources>
+</collection>
+
+<!-- Like this -->
+
+<!-- manuals/mkiv/external/bidi -->
+
+<collection version="mkiv">
+    <description>
+        <theme>Bidi</theme>
+        <summary>
+            <p>Right to left typesetting involves directives, fonts, heuristics,
+            and a sometimes dedicated layout. In <logo label="context"/> some
+            mechanism are direction aware. Here we discuss some details.</p>
+        </summary>
+    </description>
+    <resources>
+        <manual language="en">
+            <paper>documents/general/manuals/mkiv/bidi</paper>
+        </manual>
+    </resources>
+</collection>
+
+<!-- manuals/mkiv/external/musings -->
+
+<collection version="mkiv">
+    <description>
+        <theme>Musings</theme>
+        <summary>
+            <p>In this manual we collect articles that don't fit into another
+            manual or collection. Some relate to talks, other to experiences
+            or observations. They are often opinions.</p>
+        </summary>
+    </description>
+    <resources>
+        <manual language="en">
+            <paper>documents/general/manuals/mkiv/musings</paper>
+        </manual>
+    </resources>
+</collection>
+
+<!-- manuals/mkiv/external/nodes -->
+
+<collection version="mkiv">
+    <description>
+        <theme>Nodes</theme>
+        <summary>
+            <p>This manual is about a rather neat set of macros to produce node
+            related drawings in <logo label="metapost"/> and <logo
+            label="context"/> like charts and trees. It also presents some tricks
+            that can be applied elsewhere.</p>
+        </summary>
+    </description>
+    <resources>
+        <manual language="en">
+            <paper>documents/general/manuals/mkiv/nodes</paper>
+        </manual>
+    </resources>
+</collection>
+
+<!-- manuals/mkiv/external/graphics -->
+
+<collection version="mkiv">
+    <description>
+        <theme>Graphics</theme>
+        <summary>
+            <p>This manual explains how to insert images into a document.</p>
+        </summary>
+    </description>
+    <resources>
+        <manual language="en">
+            <paper>documents/general/manuals/mkiv/graphics</paper>
+        </manual>
+    </resources>
+</collection>
+
+<!-- manuals/mkiv/external/pdfmerge -->
+
+<collection version="mkiv">
+    <description>
+        <theme>PDFmerge</theme>
+        <summary>
+            <p>This manual explains how to efficiently include pages from <logo
+            label="pdf"/> files into documents. It also goes into detail about
+            some cleanup and manipulation of the content.</p>
+        </summary>
+    </description>
+    <resources>
+        <manual language="en">
+            <paper>documents/general/manuals/mkiv/pdfmerge</paper>
+        </manual>
+    </resources>
+</collection>
+
+<!-- manuals/mkiv/external/still -->
+
+<collection version="mkiv">
+    <description>
+        <theme>Still</theme>
+        <summary>
+            <p>This is the fourth document describing the history of <logo
+            label="luatex"/>. Most of the development is done, but we keep on
+            playing with the possibilities it offers for <logo label="context"/>.
+            We finally arrive at version 1.0 too.</p>
+        </summary>
+    </description>
+    <resources>
+        <manual language="en">
+            <paper>documents/general/manuals/mkiv/still</paper>
+        </manual>
+    </resources>
+</collection>
+
+<!-- manuals/mkiv/external/texit -->
+
+<collection version="mkiv">
+    <description>
+        <theme>Texit</theme>
+        <summary>
+            <p>Sometimes questions on the mailing list pop up that demand a bit
+            more tex-nical explanation. This manual will collect explanations and
+            insights that don't fit into regular manuals.</p>
+        </summary>
+    </description>
+    <resources>
+        <manual language="en">
+            <paper>documents/general/manuals/mkiv/texit</paper>
+        </manual>
+    </resources>
+</collection>
+
+<!-- manuals/mkiv/external/publications-->
+
+<collection version="mkiv">
+    <description>
+        <theme>Publications</theme>
+        <summary>
+            <p>Like any macro package <logo label="context"/> has to support
+            bibliographies. This manual describes in great detail how to copye
+            with this, and especially <logo label="bibtex"/> databases and
+            finetuning the rendering. We got rid of depdencies of external
+            programs and all happens in <logo label="lua"/>. This also opens up
+            access to the data to users for various purposes.</p>
+        </summary>
+    </description>
+    <resources>
+        <manual language="en">
+            <paper>documents/general/manuals/mkiv/mkiv-publications</paper>
+        </manual>
+    </resources>
+</collection>
+
+<!-- manuals/mkiv/external/pagecolumns -->
+
+<collection version="mkiv">
+    <description>
+        <theme>Page columns</theme>
+        <summary>
+            <p>There are several column mechanisms and this is one of them. It
+            boils down to treating each column as a page which in turn means that
+            we can do for instance side floats. This manual might also give you
+            an idea about its usability.</p>
+        </summary>
+    </description>
+    <resources>
+        <manual language="en">
+            <paper>documents/general/manuals/mkiv/pagecolumns</paper>
+        </manual>
+    </resources>
+</collection>
+
+<!-- manuals/mkiv/external/notnow -->
+
+<collection version="mkiv">
+    <description>
+        <theme>Not now</theme>
+        <summary>
+            <p>This is more an excuse manual: why are some features not supported
+            or limited.</p>
+        </summary>
+    </description>
+    <resources>
+        <manual language="en">
+            <paper>documents/general/manuals/mkiv/notnow</paper>
+        </manual>
+    </resources>
+</collection>
+
+<!-- Tabulate -->
+
+<!-- manuals mkii -->
+
+<!-- manuals/mkiv/external/tabulate -->
+
+<collection version="mkii">
+    <description>
+        <theme><logo label="texexec"/></theme>
+        <summary>
+            <p>Traditional <logo label="tex"/> is hard to control on the
+            commandline. This is why <logo label="context"/> comes with <logo
+            label="texexec"/>, a <logo label="perl"/> script that makes document
+            processing more convenient. This script also helps you to postprocess
+            <logo label="pdf"/> files, typeset <logo label="context"/>
+            documentation, arrange pages, and manage files.</p>
+        </summary>
+    </description>
+    <resources>
+        <manual language="en">
+            <paper>documents/general/manuals/mkii/mtexexec</paper>
+        </manual>
+    </resources>
+</collection>
+
+<collection version="mkii">
+    <description>
+        <theme>Typographic Programming</theme>
+        <summary>
+            <p>Designing styles is a mixture of making the right decisions in setting
+            up the layout, finding the right values for the parameters that determine
+            the typographic quality of the paragraph and page, and writing programs
+            that take care of constructing the special elements that make up the page.
+            This document tries to provide some insight in these matters and will
+            be completed when we have time or reason.</p>
+        </summary>
+    </description>
+    <resources>
+        <manual language="en">
+            <paper backgroundcolor="white">documents/general/manuals/mkii/style</paper>
+        </manual>
+    </resources>
+</collection>
+
+<collection version="mkii">
+    <description>
+        <theme>Fonts</theme>
+        <summary>
+            <p>Although installation of <logo label="tex"/> and friends has
+            become relatively easy, fonts always will be a special case. This is
+            a result from the flexibility of <logo label="tex"/>, as well as the
+            fact that <logo label="tex"/> can typeset virtually any language.</p>
+            <p>The font manual covers the installation of fonts in <logo
+            label="context"/> and describes in detail how to define typescripts,
+            how to achieve special effects, like hanging punctuation, and how to
+            set up math fonts.</p>
+        </summary>
+    </description>
+    <resources>
+        <manual language="en">
+            <paper>documents/general/manuals/mkii/mfonts</paper>
+            <screen>documents/general/manuals/mkiv/showfont</screen>
+            <screen>documents/general/manuals/mkiv/showunic</screen>
+        </manual>
+    </resources>
+</collection>
+
+<collection version="mkii">
+    <description>
+        <theme>Fonts</theme>
+        <summary>
+            <p>Installing fonts is one of the nasty parts of using <logo
+            label="tex"/>. This is why <logo label="context"/> comes with a <logo
+            label="perl"/> script called <logo label="texfont"/>. You can use
+            <logo label="texfont"/> to generate font metric files in specified
+            encodings, manipulate fonts, creating instances of multiple master
+            fonts, build map files, etc. The script runs on top of afm2tfm and
+            the mminstance tools.</p>
+        </summary>
+    </description>
+    <resources>
+        <manual language="en">
+            <paper>documents/general/manuals/mkii/mtexfont</paper>
+        </manual>
+    </resources>
+</collection>
+
+<collection version="mkii">
+    <description>
+        <theme>Chinese</theme>
+        <summary>
+            <p>In many aspects, typesetting Chinese differs from typesetting
+            Latin languages. Most noticably are the pictographic characters,
+            vertical typesetting, multiple numbering systems, and a different way
+            of handling labels.</p> <p>This manual covers the specific font
+            setups, encoding issues, and mixed Latin and Chinese typesetting.</p>
+        </summary>
+    </description>
+    <resources>
+        <manual language="en">
+            <paper>documents/general/manuals/mkii/mchinese</paper>
+        </manual>
+    </resources>
+</collection>
+
+<collection version="mkii">
+    <description>
+        <theme>What is ConTeXt</theme>
+        <summary>
+            <p>Occasionally I run into a description of <logo label="context"/>
+            that contains observations that are somewhat off. This document
+            provides some insight in why this macro package looks the way it
+            looks. What started out as a <logo label="tex"/> only system evolved
+            via adding <logo label="metapost"/> to the current hybrid system that
+            also uses <logo label="lua"/>.</p>
+        </summary>
+    </description>
+    <resources>
+        <manual language="en">
+            <paper>documents/general/manuals/mkii/what-is-context</paper>
+        </manual>
+    </resources>
+</collection>
+
+<!-- manuals/mkiv/external/cont-* -->
+
+<collection version="mkii">
+    <description>
+        <theme>The Manual</theme>
+        <summary>
+            <p>This is the big reference manual, the one that is supposed to
+            cover the whole of <logo label="context"/>. This manual is written
+            for <logo label="mkii"/> but a lot of it still applies to <logo
+            label="mkiv"/>. Especially fonts, encodings and languages are
+            different in <logo label="mkiv"/>. For most commands the user
+            interface hasn't changed, so don't be fooled by the fact that this
+            manual is old.</p>
+        </summary>
+    </description>
+    <resources>
+        <manual language="en">
+            <paper>documents/general/manuals/mkii/cont-enp</paper>
+            <screen backgroundcolor="white">documents/general/manuals/mkii/cont-eni</screen>
+        </manual>
+        <manual language="nl">
+            <paper>documents/general/manuals/mkii/cont-nlp</paper>
+            <screen backgroundcolor="white">documents/general/manuals/mkii/cont-nli</screen>
+        </manual>
+        <!-- manual>
+            <screen>documents/general/manuals/mkiv/enattab</screen>
+        </manual -->
+    </resources>
+</collection>
+
+<!-- manuals/mkiv/external/ppchtex -->
+
+<collection version="mkii">
+    <description>
+        <theme>Chemistry</theme>
+        <summary>
+            <p><logo label="ppchtex"/> is a relatively independent macro package
+            that can be used to typeset chemical formulas. These manuals show how
+            it's done. There were also some faq's and a suite with many
+            examples but we removed these.</p>
+        </summary>
+    </description>
+    <resources>
+        <manual language="en">
+            <paper>documents/general/manuals/mkii/mp-ch-en</paper>
+        </manual>
+        <manual language="nl">
+            <paper>documents/general/manuals/mkii/mp-ch-nl</paper>
+        </manual>
+        <manual language="de">
+            <paper>documents/general/manuals/mkii/mp-ch-de</paper>
+        </manual>
+    </resources>
+</collection>
+
+<!-- manuals/mkiv/external/mathml -->
+
+<collection version="mkii">
+    <description>
+        <theme>MathML support</theme>
+        <summary>
+            <p>This (short) manual explains how to invoke <logo label="mathml"/>
+            support in <logo label="context"/>. It can be seen as an addendum to
+            the <logo label="mathml"/> manual.</p>
+        </summary>
+    </description>
+    <resources>
+        <manual language="en">
+            <paper>documents/general/manuals/mkii/xmathml-p</paper>
+            <screen>documents/general/manuals/mkii/xmathml-s</screen>
+        </manual>
+    </resources>
+</collection>
+
+<collection version="mkii">
+    <description>
+        <theme><logo label="metapost"/> outlines</theme>
+        <summary>
+            <p><logo label="makempy"/> is a <logo label="perl"/> script and some
+            macros that make it possible to create outlines from text typeset by
+            <logo label="tex"/>, that can be imported into <logo
+            label="metapost"/> graphics. This toolkit uses <logo
+            label="pdftex"/>, pdftops, pstoedit and <logo label="ghostscript"/>,
+            and works with any <logo label="tex"/>.</p>
+        </summary>
+    </description>
+    <resources>
+        <manual language="en">
+            <paper>documents/general/manuals/mkii/mmakempy</paper>
+        </manual>
+    </resources>
+</collection>
+
+<collection version="mkii">
+    <description>
+        <theme>XML</theme>
+        <summary>
+            <p>Since <logo label="tex"/> can handle <logo label="ascii"/> input
+            rather well, it will be no surprise that <logo label="context"/> can
+            handle <logo label="xml"/>. In this document we describe the
+            interface to <logo label="xml"/>. We also provide some examples, tips
+            and tricks. This document is still under construction.</p>
+        </summary>
+    </description>
+    <resources>
+        <manual language="en">
+            <paper>documents/general/manuals/mkii/example</paper>
+        </manual>
+    </resources>
+</collection>
+
+<collection version="mkii">
+    <description>
+        <theme>Color separation</theme>
+        <summary>
+            <p>This is a manual for those who are forced to deliver their typeset
+            results color separated. The manual describes how to create an
+            instance of a document in a specific color space and channel. Text as
+            well as graphics are covered.</p>
+        </summary>
+    </description>
+    <resources>
+        <manual language="en">
+            <paper>documents/general/manuals/mkii/msplit</paper>
+        </manual>
+    </resources>
+</collection>
+
+<collection version="mkii">
+    <description>
+        <theme>Extreme Columns</theme>
+        <summary>
+            <p>Column sets can be used for quite complex but nice looking
+            layouts. (Behind the screens) this mechanims goes to the extremes of
+            what we can do with <logo label="tex"/>'s output routines. With
+            columnsets we try to bridge between sequential makeup and semi
+            automated desk top publishing.</p>
+        </summary>
+    </description>
+    <resources>
+        <manual language="en">
+            <paper>documents/general/manuals/mkii/columns</paper>
+        </manual>
+    </resources>
+</collection>
+
+<collection version="mkii">
+    <description>
+        <theme>Charts</theme>
+        <summary>
+            <p>The flow chart module is an example of combining the power of <logo
+            label="tex"/> and <logo label="metapost"/>. You can use this module to
+            define charts in a descriptive way such that parts can be used, and or
+            charts can be combined. The advantage of using this integrated approach
+            (opposite to dedicated programs) is that you have the whole <logo
+            label="context"/> machinery available, like hyperlinks and embedded
+            graphics. Also, by using this module, you have a proper match of fonts
+            between graphics and text.</p>
+        </summary>
+    </description>
+    <resources>
+        <manual language="en">
+            <paper>documents/general/manuals/mkii/mchart</paper>
+        </manual>
+    </resources>
+</collection>
+
+<collection version="mkii">
+    <description>
+        <theme>Weaving PS into PDF</theme>
+        <summary>
+            <p>This manual describes the <logo label="pstopdf"/> tool that comes
+            with <logo label="context"/>. You can use this tool to convert <logo
+            label="postscript"/> images into <logo label="pdf"/>. The program is
+            actually a wrapper around <logo label="ghostscript"/>, but applies
+            some additional trickery and filtering. It also supports watched
+            folders and is suited for interfacing to the <logo label="example"/>
+            framework.</p>
+        </summary>
+    </description>
+    <resources>
+        <manual language="en">
+            <paper>documents/general/manuals/mkii/mpstopdf</paper>
+        <!-- screen>examplap/gui/pstopdf</screen -->
+    </manual>
+    </resources>
+</collection>
+
+<collection version="mkii">
+    <description>
+        <theme>texmfstart &amp; ...tools</theme>
+        <summary>
+            <p>This very short manual demonstrates how you can use <logo
+            label="texmfstart"/> to launch scripts and documents located in your
+            <logo label="tex"/> tree. The script uses <logo label="kpsewhich"/>
+            as well as its own (more aggressive) methods for locating the
+            file.</p> <p>The <logo label="textools"/> manual describes a program
+            that actually is a (growing) collection of small utilities that
+            operate on <logo label="tex"/> related files and trees.</p> <p>The
+            <logo label="xmltools"/> manual describes a similar program, this
+            time a collection of utilities that operate on cq. produce <logo
+            label="xml"/> files and trees.</p> <p>Finally, the <logo
+            label="pdftools"/> manual deals with the associated program, that
+            operates on <logo label="pdf"/> files. This tool is not yet
+            public.</p>
+        </summary>
+    </description>
+    <resources>
+        <manual language="en">
+            <paper>documents/general/manuals/mkii/mtexmfstart</paper>
+        </manual>
+        <extra language="en">
+            <screen>documents/general/manuals/mkiv/mtextools</screen>
+        </extra>
+        <extra language="en">
+            <screen>documents/general/manuals/mkii/mxmltools</screen>
+        </extra>
+        <extra language="en">
+            <screen>documents/general/manuals/mkiv/mpdftools</screen>
+        </extra>
+    </resources>
+</collection>
+
+<collection version="mkii">
+    <description>
+        <theme>Hyphenation Patterns</theme>
+        <summary>
+            <p>Although normally users are not supposed to know the dirty details
+            of pattern management, it may be handy to read this manuals at least
+            once, if only to know what to do when for some reason pattern loading
+            fails on your machine. This manual also describes how to apply the
+            <logo label="ctxtools"/> program to generate generic pattern files
+            from existing encoding specific files.</p>
+        </summary>
+    </description>
+    <resources>
+        <manual language="en">
+            <paper>documents/general/manuals/mkii/mpattern</paper>
+        </manual>
+    </resources>
+</collection>
+
+<collection version="mkii">
+    <description>
+        <theme>foXet</theme>
+        <summary>
+            <p>You can see <logo label="foxet"/> as just another way of
+            processing <logo label="xml"/> formatting objects. You may use it to
+            process documents coded in (reasonable) <logo label="xslfo"/> or as
+            (textual) graphics format in <logo label="context"/> documents, a
+            sort of placed <logo label="xml"/>.</p>
+        </summary>
+    </description>
+    <resources>
+        <manual language="en">
+            <paper>documents/general/manuals/mkii/xmlfoe</paper>
+            <screen>documents/general/manuals/mkii/foxet</screen>
+        </manual>
+    </resources>
+</collection>
+
+<collection version="mkii">
+    <description>
+        <theme>Correspondence</theme>
+        <summary>
+            <p>One of the first application at <logo label="pragma"/>of <logo
+            label="tex"/> was in typesetting letters. Over time the <logo
+            label="tex"/> only based system moved to a combination of <logo
+            label="xml"/> and <logo label="tex"/>. This manual roughly describes
+            the components that make up such a system. A graphical user interface
+            is provided as well.</p>
+        </summary>
+    </description>
+    <resources>
+        <manual language="en">
+            <paper>documents/general/manuals/mkii/xcorresp</paper>
+            <!--
+                <screen>examplap/gui/letter</screen>
+                <screen>examplap/gui/envelop</screen>
+            -->
+        </manual>
+    </resources>
+</collection>
+
+<collection version="mkii">
+    <description>
+        <theme>Preprocessing and Manipulating</theme>
+        <summary>
+            <p>This manual describes the facilities for automatic preprocessing
+            of source files and manipulation of graphics. These features come in
+            handy in automated typesetting workflows and are handled by <logo
+            label="texexec"/> and <logo label="rlxtools"/>. The definition files
+            are <logo label="xml"/> based.</p>
+        </summary>
+    </description>
+    <resources>
+        <manual language="en">
+            <paper>documents/general/manuals/mkii/xmanipulate</paper>
+        </manual>
+    </resources>
+</collection>
+
+<!-- obsolete section -->
+
+<!-- manuals/mkiv/external/tiptrick -->
+
+<collection version="mkii" classification="old">
+    <description>
+        <theme>Installation</theme>
+        <summary>
+            <p>When one uses <logo label="tetex"/>, <logo label="fptex"/>, <logo
+            label="gwtex"/>, <logo label="miktex"/> or <logo label="tex"/> Live,
+            installation of <logo label="context"/> is a breeze. Nevertheless, in
+            this manual, we provide some information on installing <logo
+            label="context"/>.</p>
+        </summary>
+    </description>
+    <resources>
+        <manual language="en">
+            <paper>documents/general/manuals/mkii/minstall</paper>
+            <screen>documents/general/manuals/mkiv/tiptrick</screen>
+        </manual>
+    </resources>
+</collection>
+
+<collection version="mkii" classification="old">
+    <description>
+        <theme><logo label="texutil"/></theme>
+        <summary>
+            <p>The <logo label="texutil"/> <logo label="perl"/> script deals with
+            files, especially the <logo label="context"/> second pass data file.
+            It moves information around and sorts indexes and lists. This script
+            is the natural companion of <logo label="texexec"/>.</p>
+        </summary>
+    </description>
+        <resources>
+            <manual language="en">
+            <paper>documents/general/manuals/mkii/mtexutil</paper>
+        </manual>
+    </resources>
+</collection>
+
+<collection version="mkii" classification="old">
+    <description>
+        <theme><logo label="texwork"/></theme>
+        <summary>
+            <p><logo label="texwork"/> is our local editing environment. It is a
+            rewrite of the Modula~2 program <logo label="texedit"/> in <logo
+            label="perltk"/>.</p>
+        </summary>
+    </description>
+    <resources>
+        <manual language="en">
+            <paper>documents/general/manuals/mkii/mtexwork</paper>
+        </manual>
+    </resources>
+</collection>
+
+<collection version="mkii" classification="old">
+    <description>
+        <theme>Labels</theme>
+        <summary>
+            <p>The author of a graphic is not neccessarily also its graphic
+            designer. In that case it makes sense to split the design of the
+            graphic elements from the process of adding labels. This document
+            describes how to add text to graphics either or not using the
+            resource (figure) library mechanism.</p>
+        </summary>
+    </description>
+    <resources>
+        <manual language="en">
+            <paper>documents/general/manuals/mkii/mlabels</paper>
+        </manual>
+    </resources>
+</collection>
+
+<collection version="mkii">
+    <description>
+        <theme>Figure Databases</theme>
+        <summary>
+            <p>Instead of moving hundreds of graphics around, you can package
+            them in a database. <logo label="context"/> not only has means to
+            generate such databases, but also can filter the information needed
+            from the corresponding <logo label="xml"/> files and include graphics
+            by label. Figure bases make it easy to swap high and low resolution
+            graphics.</p>
+        </summary>
+    </description>
+    <resources>
+        <manual language="en">
+            <paper>documents/general/manuals/mkii/xfigures-p</paper>
+            <screen>documents/general/manuals/mkii/xfigures-s</screen>
+        </manual>
+    </resources>
+</collection>
+
+<!-- manuals/mkiv/external/steps -->
+
+<collection version="mkii">
+    <description>
+        <theme>Stepcharts</theme>
+        <summary>
+            <p>Stepcharts are a specific kind of tabular charts. They are a
+            combination of <logo label="metapost"/> graphics and <logo
+            label="tex"/> code. There is a <logo label="tex"/> as well as <logo
+            label="xml"/> implementation.</p>
+        </summary>
+    </description>
+    <resources>
+        <manual language="en">
+            <paper>documents/general/manuals/mkii/xsteps-p</paper>
+            <screen>documents/general/manuals/mkii/xsteps-s</screen>
+        </manual>
+    </resources>
+</collection>
+
+<collection version="mkii">
+    <description>
+        <theme>PhysML support</theme>
+        <summary>
+            <p>Support for physical units is build on top of the <logo
+            label="mathml"/> engine. The method used is derived from the units
+            module that comes with <logo label="context"/>.</p>
+        </summary>
+    </description>
+    <resources>
+        <manual language="en">
+            <paper>documents/general/manuals/mkii/xphysml-p</paper>
+            <screen>documents/general/manuals/mkii/xphysml-s</screen>
+        </manual>
+    </resources>
+</collection>
+
+<collection version="mkii">
+    <description>
+        <theme>ChemML support</theme>
+        <summary>
+            <p>Chemical formulas have their own typographic needs. This module
+            provides a way to code atoms, ions, molecules, and a sequence of
+            reactions.</p>
+        </summary>
+    </description>
+    <resources>
+    <manual language="en">
+        <paper>documents/general/manuals/mkii/xchemml-p</paper>
+        <screen>documents/general/manuals/mkii/xchemml-s</screen>
+    </manual>
+    </resources>
+</collection>
+
+<collection version="mkii" classification="old">
+    <description>
+        <theme>Widgets</theme>
+        <summary>
+            <p>Widgets are interative elements in (screen based) documents. This
+            manual describes how to use the reference mechanism for advanced
+            hyperlinking, but also discussed how to construct forms. Adding text
+            annotations and page transitions is also discussed. This manual is
+            replaced by the manual on interaction.</p>
+        </summary>
+    </description>
+    <resources>
+        <manual language="en">
+            <paper>documents/general/manuals/mkii/mwidget</paper>
+            <!--
+                <paper>documents/general/manuals/mkiv/mwidget-p</paper>
+                <screen>documents/general/manuals/mkiv/mwidget-s</screen>
+            -->
+        </manual>
+    </resources>
+</collection>
+
+<!-- manuals/mkiv/external/tools --> <!-- yes or no -->
+
+<collection version="mkii">
+    <description>
+        <theme>xmldir</theme>
+        <summary>
+            <p>This manual describes how to access information about files on your
+            system from within <logo label="context"/>. The modules described here
+            are accompanied by features in the <logo label="textools"/> script. You
+            can use the styles to generate overviews as well as access properties
+            of files.</p>
+        </summary>
+    </description>
+    <resources>
+        <manual language="en">
+            <paper>documents/general/manuals/mkii/xxmldir</paper>
+            <screen>documents/general/manuals/mkii/mxmltools</screen>
+        </manual>
+    </resources>
+</collection>
+
+<collection version="mkii">
+    <description>
+        <theme>Modes</theme>
+        <summary>
+            <p>Modes are a convenient way to create styles that server multiple
+            purposes. This manual describes how to enable modes and test for
+            their state. The special system modes that <logo label="context"/>
+            sets itself are also explained.</p>
+        </summary>
+    </description>
+    <resources>
+        <manual language="en">
+            <paper>documents/general/manuals/mkii/mmodes</paper>
+        </manual>
+    </resources>
+</collection>
+
+<!--
+    The Example framework files were actually kind of cool but it just doesn't pay
+    off to maintain the files and manuals. Also, in \LMTX\ we do have various other
+    tools anyway.
+-->
+
+<!-- collection version="mkii" classificat ion="old">
+    <description>
+        <theme>Example GUI</theme>
+        <summary>
+            <p>This manual describes how to install a user interface to some of
+            the <logo label="context"/> mechanisms and other programs. In the
+            distribution there are applications for postprocessing documents
+            (page imposition), testing <logo label="mathml"/>, and converting
+            <logo label="postscript"/> files to <logo label="pdf"/>.</p>
+        </summary>
+    </description>
+    <resources>
+        <manual language="en">
+            <paper>documents/general/manuals/mkiv/ex-gui</paper>
+            <screen>examplap/gui/examplap</screen>
+        </manual>
+    </resources>
+</collection -->
+
+<!--
+    Installations have evolved over time so this manual, even for historic reasons,
+    makes little sense. So it's gone now.
+-->
+
+<!-- collection version="common" classification="old">
+    <description>
+        <theme>texsync</theme>
+        <summary>
+            <p>There are several ways to install a <logo label="tex"/> system on
+            your machine. Popular platform dependent distributions are <logo
+            label="fptex"/>, <logo label="tetex"/>, <logo label="gwtex"/> and
+            <logo label="miktex"/>, and user groups distribute the nicely
+            packaged <logo label="texlive"/> collection.</p> <p>At <logo
+            label="pragma"/> we use for projects a small subset of <logo
+            label="tex"/> Live, often with the latest <logo label="context"/> and
+            project specific font trees. The program described in this manual
+            enables you to synchronize with our minimal <logo label="context"/>
+            tree.</p>
+        </summary>
+    </description>
+    <resources>
+        <manual language="en">
+            <paper>documents/general/manuals/mkiv/mtexsync-p</paper>
+            <screen>documents/general/manuals/mkiv/mtexsync-s</screen>
+        </manual>
+    </resources>
+</collection -->
+
+<!--
+    Apart from Idris no one ever used Aleph, if only because it never became a
+    stable alternative for directional typesetting. In the meantime that project
+    (as well as original Omega) has been stopped.
+-->
+
+<!-- collection classification="old">
+    <description>
+        <theme>Aleph</theme>
+        <summary>
+            <p>This document shows a few things that <logo label="aleph"/> can do
+            with respect to multidirectional typesetting. This document may
+            change over time and is mostly a testbed and less a manual, although
+            in the end it may evolve into one.</p>
+        </summary>
+    </description>
+    <resources>
+        <manual language="en">
+            <paper>documents/general/manuals/mkiv/aleph</paper>
+        </manual>
+    </resources>
+</collection -->
+
+<!-- collection>
+    <description>
+        <theme>Eximple Toolkit</theme>
+        <summary>
+            <p>This manual describes how to install the <logo label="context"/>
+            server application. This manual is under construction and for the
+            moment only available inside <logo label="pragma"/>.</p>
+        </summary>
+        </description>
+        <resources>
+            <manual language="en">
+            <paper>documents/general/manuals/mkiv/ex-imple</paper>
+        </manual>
+    </resources>
+</collection -->
+
+<!-- collection>
+    <description>
+        <theme>Example Interface</theme>
+        <summary>
+            <p>This manual describes the dirty details of the <logo
+            label="example"/> user interface macros, the <logo label="xml"/>
+            based data flows, and the scripting environment. This manual (as well
+            as the toolkit) is under construction and for the moment only
+            available inside <logo label="pragma"/>.</p>
+        </summary>
+    </description>
+    <resources>
+        <manual language="en">
+            <paper>documents/general/manuals/mkiv/ex-ample</paper>
+        </manual>
+    </resources>
+</collection -->
+
+</documents>
+
+<!--
+
+% \StartSomeSample
+%   [general/uptodate/up-001-p] [background=color,backgroundcolor=white]
+%   [general/uptodate/up-001-s] [background=color,backgroundcolor=white]
+%   {Up-To-Date 1}
+%
+% The Up|-|To|-|Date documents cover extensions and modules
+% that don't have a dedicated manual. This first issue deals
+% with hyperlinks and widgets.
+%
+% \StopSomeSample
+
+-->

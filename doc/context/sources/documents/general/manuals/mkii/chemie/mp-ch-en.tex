@@ -1,0 +1,2409 @@
+% output=pdftex interface=en 
+
+\environment man-init \mainlanguage[en]
+
+\starttext
+
+\titelblad
+  {PPCH\TeX}
+  {a macropackage for typesetting\\
+   chemical structure formulas}
+  {J. Hagen \& A.F. Otten\\
+   Pragma ADE, Hasselt NL}
+
+\title{Contents}
+
+\setuppagenumber[state=stop] \placecontent \pagina
+
+\title{Introduction}
+
+\PPCHTEX\ is a set of coherent macros that can be used to typeset chemical
+structure formulas. The macros fall back on \PICTEX, a public domain drawing
+package written by Michael Wichura. Although originally written on top of
+\PICTEX, the second release can cooperate with \PSTRICKS\ of Timothy Van
+Zandt, that is, with some limitations. Personally we still prefer the quality
+of the \PICTEX\ output. 
+
+The macros can be used from within several macro packages and fall back on
+a few generic \CONTEXT\ modules. The macros are written in a way that permits
+relatively easy upward compatible extensions. The interface is conform the
+\CONTEXT\ interface. 
+
+\PPCHTEX\ was originally meant for typesetting chemical structure formulas
+like sixrings. At the moment there is also support for reaction mechanisms.
+Formulas can be typeset at different sizes. Common elements or frequently
+used formula components can be reused. 
+
+Flexibility, simplicity and quality have been prefered over speed. We don't
+use the \PICTEX\ option to save pictures, because timing showed that the gain
+was minimal. 
+
+The first version of \PPCHTEX\ was ready for use in 1995. This manual
+describes the second major release. Thanks to the many suggestions of Tobias
+Burnus, Dirk Kuypers and Ton Otten, the functionality was extended 
+considerably. 
+
+\page \setuppagenumber[state=start]
+
+\vervolgblad
+  {Explanation}
+  []
+  [SIX,B,C,R1356,RZ1356]
+  [NO_2,NO_2,NO_2,CH_3]
+
+\chapter{Structures}
+
+The number of commands that is used to typeset chemical structure formulas
+is, apart from some bell and whistle commands, limited to four.\footnote{The
+concept structure in this manual only refers to the chemical structure. It is
+not related to the document structure.} In the following example all of these
+commands are used. 
+
+\startbuffer
+\setupchemical[axis=on,frame=on]
+
+\startchemical
+  \chemical[SIX,B,R,RZ][1,2,3,4,5,6]
+\stopchemical
+\stopbuffer
+
+\startfiguretext
+  [left][]
+  {none}
+  {\getbuffer}
+\voorbeeld[ex:sixring]
+\typebuffer
+\stopfiguretext
+
+With \type{\setupchemical} we can influence the makeup of the formulas. These
+setups influence all the following formulas, unless they are superceded by
+local setup variables.\footnote{One can of course limit the scope of the
+variables by using \type{{ }} and/or the grouping macros \type{..group}.} 
+
+The set up variables can be defined right after \tex{startchemical}. In that
+case the set up is only applied to one structure formula. 
+
+\startbuffer
+\startchemical[frame=on,width=fit,height=fit]
+  \chemical[CARBON,CB1][A,B,C,D,E,F]
+\stopchemical
+\stopbuffer
+
+\startfiguretext
+  [left][]
+  {none}
+  {\getbuffer}
+\voorbeeld
+\typebuffer
+\stopfiguretext
+
+Both examples show that \type{\chemical} is the essential command. This
+command that may be used more than once within a
+\type{\start}||\type{\stop}||pair, is accompanied with two arguments. These
+arguments are written between~\type{[ ]}. The first argument is used for
+defining the chemical bonds, the second argument for the atoms and molecules
+that make up the structure. 
+
+Text is typeset in mathematical mode, this means that you may type anything
+that normally is allowed between~\type{$ $}. 
+
+We will explain the first example in more detail. The key \type{SIX} means
+that we want to draw a sixring. In analogy we could type \type{ONE},
+\type{THREE}, \type{FOUR} and \type{FIVE}, \type{EIGHT}, \type{CARBON},
+\type{NEWMAN}, \type{CHAIR}, some alternatives on these keys and some
+symbols. 
+
+\def\littlestructure[#1]%
+  {\vbox
+     {\startchemical[frame=on,scale=small,size=small]%
+      \chemical[#1][1,2,3,4,5,6,7,8]%
+      \stopchemical}}
+
+\placefigure{none}
+ \startcombination[4*3]
+   {\littlestructure[ONE,SB,Z]}           {One}
+   {\littlestructure[THREE,B,R,RZ]}       {Three}
+   {\littlestructure[FOUR,B,R,RZ]}        {Four}
+   {\littlestructure[FIVE,B,R,CRZ]}       {Five}
+   {\littlestructure[SIX,B,R,RZ]}         {Six}
+   {\littlestructure[EIGHT,B]}            {Eight}
+   {\littlestructure[FIVE,FRONT,B,-R,+R]} {Five Front}
+   {\littlestructure[SIX,FRONT,B,-R,+R]}  {Six Front}
+   {\littlestructure[CARBON,CB]}          {Carbon}
+   {\littlestructure[NEWMAN,STAGGER,CB]}  {Newman Stacker}
+   {\littlestructure[NEWMAN,ECLIPSE,CB]}  {Newman Eclipse}
+   {\littlestructure[CHAIR,B,-R,+R]}      {Chair}
+ \stopcombination
+
+The dimensions of \type{CHAIR} are somewhat different from the others. This
+structure is also different in other means. Rotation for example is not
+possible. 
+
+\startbuffer
+\startchemical[frame=on,scale=small]
+  \chemical
+    [CHAIR,B,+R,-R,
+     +RZ1,+RZ2,+RZ3,+RZ4,+RZ5,+RZ6,
+     -RZ1,-RZ2,-RZ3,-RZ4,-RZ5,-RZ6]
+    [a,b,c,d,e,f,1,2,3,4,5,6]
+\stopchemical
+\stopbuffer
+
+\startfiguretext
+  [left][]
+  {none}
+  {\getbuffer}
+\voorbeeld
+\typebuffer
+\stopfiguretext
+
+Within a structure the chemical bonds between the \kap{c}||atoms are defined
+in the same way. In this example we use~\type{B} and~\type{R}. Bonds within a
+structure are numbered and can be defined by: 
+
+\starttyping
+\chemical[SIX,B1,B2,B3,B4,B5,B6]
+\chemical[SIX,B135]
+\chemical[SIX,B1..5]
+\stoptyping
+
+These keys draw parts of a sixring. With \type{R} and \type{RZ} we place
+substituents on the ring. The key \type{R} draws the bond from a ring corner
+to the substituent ($\angle~120^\circ$). The corner is also identified with a
+number. 
+
+\starttyping
+\chemical[SIX,B1..6,R1..6]
+\stoptyping
+
+The defininition above draws the six bonds in the sixring and the bonds to
+the substituents. The substituents are identified by the key \type{RZ}. Again
+numbers are used to mark the position. The substituents themselves are
+defined as text in the second argument. 
+
+\startbuffer
+\startchemical[frame=on,width=6000]
+  \chemical[SIX,B1..6,R1..6,RZ1..3][CH_3,CH_3,OH]
+\stopchemical
+\stopbuffer
+
+\startfiguretext
+  [left][]
+  {none}
+  {\getbuffer}
+\voorbeeld
+\typebuffer
+\stopfiguretext
+
+When the second argument is left out no text (substituents) are placed on
+the ring and the key \type{RZ1..3} has no effect. 
+
+\chapter{Bonds}
+
+This chapter gives an overview of the bonds you can use in structures. From
+the examples throughout this manual the use of the different keys will become
+more meaningful. 
+
+Bonds always have two alternatives: a long and a short version. The shortened
+bonds leave room to place atoms within a structure. A number of bonds can be
+shortened on both sides left (\type{-}) or right (\type{+}). 
+
+\placetable
+{Single bonds.}
+\starttable[|rT|lw(4cm)|rT|lw(4cm)|]
+\HL
+\VL ~~~B \VL Bond          \VL ~~SB \VL Single Bond       \VL\FR
+\VL ~~BB \VL Bold Bond     \VL ~-SB \VL Left Single Bond  \VL\MR
+\VL ~~HB \VL Hydrogen Bond \VL ~+SB \VL Right Single Bond \VL\LR
+\HL
+\stoptable
+
+The example below shows a number of bonds combined within one structure: 
+
+\startbuffer
+\startchemical[frame=on]
+  \chemical[ONE,SD1,SB4,BB2,SB7,Z01247][C,H,H,H,H]
+\stopchemical
+\stopbuffer
+
+\startfiguretext
+  [left][]
+  {none}
+  {\getbuffer}
+\voorbeeld
+\typebuffer
+\stopfiguretext
+
+A bond can be followed by one or more numbers or a range, for example:
+\type{B1}, \type{B135} and \type{B1..5}. When you want to draw all bonds you
+can type~\type{B}. 
+
+Within a ring structure you can define extra bonds between atoms, for example
+a double or triple bond. 
+
+\placetable
+{Multiple bonds.}
+\starttable[|rT|lw(4cm)|rT|lw(4cm)|]
+\HL
+\VL ~~EB \VL Extra Bond    \VL ~~DB \VL Double Bond       \VL\FR
+\VL      \VL               \VL ~~TB \VL Triple Bond       \VL\LR
+\HL
+\stoptable
+
+Free electrons and electron pairs can be defined in different ways.
+The accompanying keywords start with an~\type{E}. 
+
+\placetable
+{Free electrons and electron pairs.}
+\starttable[|rT|lw(4cm)|rT|lw(4cm)|]
+\HL
+\VL ~~ES \VL Extra Single  \VL ~~ED \VL Extra Double \VL\FR
+\VL ~~EP \VL Extra Pair    \VL ~~ET \VL Extra Triple \VL\LR
+\HL
+\stoptable
+
+The example below shows a carbon atom with 8~outer electrons arranged in a
+chemically very peculiar way. 
+
+\startbuffer
+\startchemical[frame=on]
+  \chemical[ONE,Z0,ES1,ED3,ET5,EP7][C]
+\stopchemical
+\stopbuffer
+
+\startfiguretext
+  [left][]
+  {none}
+  {\getbuffer}
+\voorbeeld
+\typebuffer
+\stopfiguretext
+
+Within a ring structure you can make a shortcut from one atom to another. In
+that case the atom that you want to skip has to be identified. As a
+replacement of the double bonds in an aromatic sixring a circle can be drawn
+and charges can be placed within the ring. 
+
+\placetable
+{Special bonds.}
+\starttable[|rT|lw(4cm)|rT|lw(4cm)|]
+\HL
+\VL ~~SS \VL Short Shortcut       \VL ~~~S \VL Shortcut            \VL\FR
+\VL ~-SS \VL Left Short Shortcut  \VL ~MID \VL Open Mid Shortcut   \VL\MR
+\VL ~+SS \VL Right Short Shortcut \VL MIDS \VL Closed Mid Shortcut \VL\LR
+\HL
+\stoptable
+
+\placetable
+{Circle bonds.}
+\starttable[|rT|lw(4cm)|rT|lw(4cm)|]
+\HL
+\VL ~~~C \VL Circle               \VL ~~CD \VL Dashed Circle          \VL\FR
+\VL ~~CC \VL Shifted Circle       \VL ~CCD \VL Dashed Shifted Circle  \VL\LR
+\HL
+\stoptable
+
+An example will explain the use of the circular bond and the use of displaced
+charges. 
+
+\startbuffer
+\startchemical[frame=on]
+  \chemical
+    [SIX,B,ER6,CCD12346,Z0,PB:RZ6,ONE,SB8,EP6,Z0,ZT6,Z8,PE]
+    [\ominus,O,\oplus,H]
+\stopchemical
+\stopbuffer
+
+\startfiguretext
+  [left][]
+  {none}
+  {\getbuffer}
+\voorbeeld
+\typebuffer
+\stopfiguretext
+
+Substituents can be connected to all corners of a structure. A substituent
+can be anything you want. It depends on the presence of atoms or molecules
+whether the bonds are long or short. In the examples you will see a great
+number of the keys that are used to define substituents. 
+
+\placetable
+{Bonds to substituents.}
+\starttable[|rT|lw(4cm)|rT|lw(4cm)|]
+\HL
+\VL ~~~R \VL Radical       \VL ~~SR \VL Single Radical       \VL\FR
+\VL ~~-R \VL Left Radical  \VL ~-SR \VL Single Left Radical  \VL\MR
+\VL ~~+R \VL Right Radical \VL ~+SR \VL Single Right Radical \VL\LR
+\HL
+\stoptable
+
+There are a few alternatives to draw bridges. 
+
+\placetable
+{Special bonds to substituents.}
+\starttable[|rT|lw(4cm)|rT|lw(4cm)|]
+\HL
+\VL ~~RD \VL Radical Dashed       \VL ~~RB\VL Radical Bold       \VL\FR
+\VL ~-RD \VL Left Radical Dashed  \VL ~-RB\VL Left Radical Bold  \VL\MR
+\VL ~+RD \VL Right Radical Dashed \VL ~+RB\VL Right Radical Bold \VL\LR
+\HL
+\stoptable
+
+Radicals can be drawn in three ways.\footnote{The word radical schould not be
+interpreted chemically, but typographically.} Some alternatives are seldom
+used. 
+
+\startbuffer
+\startchemical[frame=on]
+  \chemical[SIX,B,R14,RD25,RB36]
+\stopchemical
+\stopbuffer
+
+\startfiguretext
+  [left][]
+  {none}
+  {\getbuffer}
+\voorbeeld
+\typebuffer
+\stopfiguretext
+
+\placetable
+{More special bonds to substituents.}
+\starttable[|rT|lw(4cm)|rT|lw(4cm)|]
+\HL
+\VL ~~SD \VL Single Dashed \VL ~LDD \VL Left Double Dashed  \VL\FR
+\VL ~~OE \VL Open Ended    \VL ~RDD \VL Right Double Dashed \VL\LR
+\HL
+\stoptable
+
+An example of an {\em Open Ended} is defined below. We see a sixring
+(\type{SIX}) with a number of consecutive \type{ONE}s. The use of \type{PB}
+is explained later. 
+
+\startbuffer
+\startchemical
+    [width=5000,top=2500,bottom=1500,frame=on]
+  \chemical
+    [SIX,B,C,R6,
+     PB:RZ6,ONE,CZ0,OE1,SB5,MOV5,CZ0,OFF5,OE5,PE]
+    [CH,CH_2]
+\stopchemical
+\stopbuffer
+
+\startfiguretext
+  [left][]
+  {none}
+  {\getbuffer}
+\voorbeeld
+\typebuffer
+\stopfiguretext
+
+It's obvious that substituents can be attached to the structure by means of 
+double bonds. 
+
+\placetable
+{Double bonds to substituents.}
+\starttable[|rT|lw(4cm)|rT|lw(4cm)|]
+\HL
+\VL ~~ER \VL Extra Radical \VL ~~DR \VL Double Radical \VL\SR
+\HL
+\stoptable
+
+You can comment on a bond. Text is typed in the second argument
+of \type{\chemical}. 
+
+\placetable
+{Atoms and molecules (radicals).}
+\starttable[|rT|lw(4cm)|rT|lw(4cm)|]
+\HL
+\VL ~~~Z \VL Atom        \VL ~~RZ \VL Radical Atom       \VL\FR
+\VL ~CRZ \VL Center Atom \VL ~-RZ \VL Left Radical Atom  \VL\MR
+\VL MIDZ \VL Mid Atom    \VL ~+RZ \VL Right Radical Atom \VL\LR
+\HL
+\stoptable
+
+From these keys \type{RZ} is an addition to the key \type{R}. The key
+\type{MID} is only available in combination with a sixring (\type{SIX}). In
+the example below we see the effects of \type{MID} and \type{MIDZ}. These
+keys have no positioning parameter. 
+
+\startbuffer
+\startchemical[frame=on]
+  \chemical[SIX,B,MID,MIDZ][\SL{CH_2}]
+\stopchemical
+\stopbuffer
+
+\startfiguretext
+  [left][]
+  {none}
+  {\getbuffer}
+\voorbeeld
+\typebuffer
+\stopfiguretext
+
+Atoms and molecules are numbered clockwise. Combinations are also allowed.
+Position \type{0} (zero) is the middle of a structure.
+
+We can attach labels and numbers to an atom or a bond. This is done with
+\type{ZN} and \type{ZT}: 
+
+\placetable
+{Labels and numbers.}
+\starttable[|rT|lw(4cm)|rT|lw(4cm)|]
+\HL
+\VL ~~ZN \VL Atom Number \VL ~~ZT \VL Atom Text \VL\SR
+\HL
+\stoptable
+
+In case of a \type{SIX} and a \type{FIVE} we can also attach text to
+radicals. We use \type{RN} and \type{RT}. 
+
+\placetable
+{Labels and numbers.}
+\starttable[|rT|lw(4cm)|rT|lw(4cm)|]
+\HL
+\VL ~~RN \VL Radical Number        \VL ~~RT \VL Radical Text        \VL\FR
+\VL ~RTN \VL Radical Top Number    \VL ~RTT \VL Radical Top Text    \VL\MR
+\VL ~RBN \VL Radical Bottom Number \VL ~RBT \VL Radical Bottom Text \VL\LR
+\HL
+\stoptable
+
+The structure \type{ONE} has also a top and bottom alternative. 
+
+\placetable
+{Extra labels and numbers.}
+\starttable[|rT|lw(4cm)|rT|lw(4cm)|]
+\HL
+\VL ~ZTN \VL Atom Top Number    \VL ~ZTT \VL Atom Top Text    \VL\FR
+\VL ~ZBN \VL Atom Bottom Number \VL ~ZBT \VL Atom Bottom Text \VL\LR
+\HL
+\stoptable
+
+With the keys \type{ZTN} and \type{ZBN} numbers are generated automatically.
+The other keys will use the typed text of the second argument of 
+\type{chemical}.
+
+\startbuffer
+\startchemical[frame=on]
+  \chemical[ONE,SB,Z0,ZTT][C,a,b,c,d,e,f,g,h]
+\stopchemical
+\stopbuffer
+
+\startfiguretext
+  [left][]
+  {none}
+  {\getbuffer}
+\voorbeeld
+\typebuffer
+\stopfiguretext
+
+You can also add some symbols to the structure.
+
+\placetable
+{Indications.}
+\starttable[|rT|lw(4cm)|rT|lw(4cm)|]
+\HL
+\VL ~~AU \VL Arrow Up \VL ~~AD \VL Arrow Down \VL\SR
+\HL
+\stoptable
+
+The arrows are positioned between the atoms in a structure.
+
+\startbuffer
+\startchemical[frame=on]
+  \chemical[SIX,B,AU]
+\stopchemical
+\stopbuffer
+
+\startfiguretext
+  [left][]
+  {none}
+  {\getbuffer}
+\voorbeeld
+\typebuffer
+\stopfiguretext
+
+We want to add that while typesetting atoms and molecules the dimensions of
+these atoms and molecules are taken into account. The width of \chemical{C}
+and the height of \chemical{C^n_m} play an important role during positioning.
+This mechanism may be refined in a later stage. 
+
+\chapter{Frontviews}
+
+Structures \type{FIVE} and \type{SIX} can be displayed in a frontview.
+However there are some limitations. Frontviews can not be rotated. Also the
+coupling of several structures is limited. 
+
+We illustrate the frontview keys in two examples.
+
+\startbuffer
+\startchemical[height=4500,bottom=2500]
+  \bottext{$\beta$-D-Fructopyranose}
+  \chemical
+    [SIX,FRONT,BB1236,+SB4,-SB5,Z5][O]
+  \chemical
+    [SIX,FRONT,+R12346,+RZ12346][\SR{HO},H,H,H,OH]
+  \chemical
+    [SIX,FRONT,-R12346,-RZ12346][H,OH,\SR{HO},H,CH_2OH]
+\stopchemical
+\stopbuffer
+
+\startfiguretext
+  [left][]
+  {none}
+  {\getbuffer}
+\voorbeeld
+\typebuffer
+\stopfiguretext
+
+Positioning the radicals is an optimization of feasability and quality. The
+next example will illustrate this. 
+
+\startbuffer
+\startchemical[height=4500,bottom=2500]
+  \bottext{$\alpha$-D-Fructofuranose}
+  \chemical
+    [FIVE,FRONT,BB125,+SB3,-SB4,Z4][O]
+  \chemical
+    [FIVE,FRONT,+R1235,+RZ1235][\SR{HO},H,\SR{HOH_2C},CH_2OH]
+  \chemical
+    [FIVE,FRONT,-R1235,-RZ1235][OH,H,\SR{HO},H,CH_2OH]
+\stopchemical
+\stopbuffer
+
+\startfiguretext
+  [left][]
+  {none}
+  {\getbuffer}
+\voorbeeld
+\typebuffer
+\stopfiguretext
+
+\chapter{Definitions} 
+
+It is possible to build a library of structures. These predefined structures
+can be used in a later stage, for example as a component of a more complex
+structure. Predefinition can be done with the \TEX||primitive \type{\def}. 
+
+\starttyping
+\def\sixring{\chemical[SIX,B,R,RZ]}
+\stoptyping
+
+However it is better to use the command \type{\definechemical}. In that case
+a message will occur during processing if a duplicate name is found. 
+
+\starttyping
+\definechemical[sixring]
+  {\chemical[SIX,B,R,RZ]}
+\stoptyping
+
+Recalling \type{\chemical[sixring]} will display a bare sixring without
+substituents. 
+
+\startbuffer
+\definechemical[sixring]
+  {\chemical[SIX,B,R,RZ]}
+
+\startchemical[frame=on,width=6000]
+  \chemical[sixring]
+\stopchemical
+\stopbuffer
+
+\startfiguretext
+  [left][]
+  {none}
+  {\getbuffer}
+\voorbeeld
+\typebuffer
+\stopfiguretext
+
+If we want to attach six substituents in a later stage to a sixring we could
+type:
+
+\startbuffer
+\definechemical[sixring]
+  {\chemical[SIX,B,R,RZ]}
+
+\startchemical[frame=on,width=6000]
+  \chemical[sixring][R_1,R_2,R_3,R_4,R_5,R_6]
+\stopchemical
+\stopbuffer
+
+\startfiguretext
+  [left][]
+  {none}
+  {\getbuffer}
+\voorbeeld
+\typebuffer
+\stopfiguretext
+
+The structure \type{sixring} can be defined without substituents (\type{RZ}).
+We could attach them after recalling \type{\chemical[sixring]}. 
+
+\startbuffer
+\definechemical[sixring]
+  {\chemical[SIX,B,R]}
+
+\startchemical[frame=on,width=6000]
+  \chemical[sixring,RZ][A,B,C,D,E,F]
+\stopchemical
+\stopbuffer
+
+\startfiguretext
+  [left][]
+  {none}
+  {\getbuffer}
+\voorbeeld
+\typebuffer
+\stopfiguretext
+
+In principal the possibilities are unlimited. However, you should remember
+that atoms and molecules are selected from the second argument in the order
+of definition in the first argument. 
+
+A definition may contain atoms and molecules (texts). 
+
+\starttyping
+\definechemical[sixring]
+  {\chemical[SIX,B,R,RZ135][R_1,R_3,R_5]}
+\stoptyping
+
+In the example above there will always be three substituents. If we want to
+attach more substituents we have to indicate explicitly that we want to
+continue with the sixring (\type{SIX}). 
+
+\startbuffer
+\definechemical[sixring]
+  {\chemical[SIX,B,R,RZ135][R_1,R_3,R_5]}
+
+\startchemical[frame=on,width=6000]
+  \chemical[sixring,SIX,RZ246][A,B,C]
+\stopchemical
+\stopbuffer
+
+\startfiguretext
+  [left][]
+  {none}
+  {\getbuffer}
+\voorbeeld
+\typebuffer
+\stopfiguretext
+
+In a definition \type{\chemical[]} has a global scope (this means that
+\type{SIX} is remembered) and \type{\chemical[][]} has a local scope. The
+idea behind this is that in the first case a range of keys can be added and
+in the second case a complete structure. 
+
+In a definition \type{\chemical} may be used more than once. The last example
+could have been defined thus: 
+
+\startbuffer
+\definechemical[sixring]
+  {\chemical[SIX,B,R,RZ135][R_1,R_3,R_5]
+   \chemical[SIX,RZ246]}
+
+\startchemical[frame=on,width=6000]
+  \chemical[sixring][A,B,C]
+\stopchemical
+\stopbuffer
+
+\startfiguretext
+  [left][]
+  {none}
+  {\getbuffer}
+\voorbeeld
+\typebuffer
+\stopfiguretext
+
+When \TEX\ announces that an \type{unknown command} has occurred, you may have
+forgotten to type \type{SIX}, \type{FIVE} or a comparable key. 
+
+\chapter{Combinations}
+
+Structures can be combined to more complex compounds. Moving one structure in
+relation to another structure is done by \type{MOV}, \type{ROT}, \type{ADJ}
+and \type{SUB}. 
+
+\placetable
+{Moving and rotating.}
+\starttable[ | r T | l w(2cm) | p(8cm) | ]
+\HL
+\VL MOV \VL Move       \VL moving a comparable structure \hbox{structure} in
+                           the direction of a bond\VL\FR 
+\VL ADJ \VL Adjace     \VL moving another structure in the direction of the
+                           $x$-- or $y$--axis, adjacent to a bond\VL\MR 
+\VL SUB \VL Substitute \VL moving one structure in relation to another in
+                           the direction of the $x$-- or $y$--axis\VL\MR 
+\VL ROT \VL Rotate     \VL rotating a structure\VL\LR 
+\HL
+\stoptable
+
+The four keys mentioned above have different effects when they are applied to
+different structures. The angle of rotation in \type{\chemical[FIVE,ROT1,B]}
+differs from that in \type{\chemical[SIX,ROT1,B]}. 
+
+With the structure \type{ONE} you can use \type{MOV} but the key \type{DIR}
+is also available. Both keys have the same effect but differ in spacing.
+Small adjustments are possible with \type{OFF}. 
+
+\placetable
+{Moving and rotating.}
+\starttable[ | r T | l w(2cm) | p(8cm) | ]
+\HL
+\VL DIR \VL Direction \VL moving a structure in a diagonal direction\VL\FR
+\VL OFF \VL Offset    \VL moving atoms and molecules over small distances\VL\LR 
+\HL
+\stoptable
+
+The structure \type{CARBON} can be mirrored with \type{MIR}. 
+
+\placetable
+{Mirroring.}
+\starttable[ | r T | l w(2cm) | p(8cm) | ]
+\HL
+\VL MIR \VL Mirror     \VL mirroring a structure\VL\SR
+\HL
+\stoptable
+
+We use a number to indicate the direction of a movement or the level of
+rotation. These keys are closely related with the structure. Therefore they
+have to be defined before bonds are drawn and texts are placed. So definition
+\type{\chemical[FIVE,B,ROT1,R]} and \type{\chemical[FIVE,ROT1,B,R]} will not
+have the same result. The first definition will give an undesirable result. 
+
+\startbuffer
+\startchemical[frame=on,width=4000,right=3000]
+  \chemical[SIX,B,MOV1,B]
+\stopchemical
+\stopbuffer
+
+\startfiguretext
+  [left][]
+  {none}
+  {\getbuffer}
+\voorbeeld
+\typebuffer
+\stopfiguretext
+
+In this example a sixring is drawn because of \type{SIX,B}. Then a movement
+in the direction of bond~1 takes place and a second sixring is
+drawn:~\type{B} (\type{SIX} is stil in effect). 
+
+A movement with \type{MOV} in a sixring can occur in six directions. A
+movement with \type{ADJ} will take place in only four axis||directions ($x$,
+$-x$, $y$, $-y$). It is a coincidence that in a sixring some of these
+movements have the same effect. The example above could have been drawn with:
+\type{[SIX,B,ADJ1,B]}. 
+
+Structures can be combined. It is possible for example to combine structure
+\type{FIVE} with structure \type{SIX} in such a way that they have one mutual
+bond. Luckily the mechanism that takes care of these kinds of combinations is
+hidden for the user. In the next example you will see a sixring drawn by
+\type{SIX,B}. Then a movement in the positive $x$||direction is done by
+\type{ADJ1}. At last a rotated fivering is drawn: \type{FIVE,ROT3,B}. 
+
+\startbuffer
+\startchemical[frame=on,width=4000,right=3000]
+  \chemical[SIX,B,ADJ1,FIVE,ROT3,B]
+\stopchemical
+\stopbuffer
+
+\startfiguretext
+  [left][]
+  {none}
+  {\getbuffer}
+\voorbeeld
+\typebuffer
+\stopfiguretext
+
+\startbuffer
+\startchemical[frame=on,width=5000,right=4500]
+  \chemical[SIX,ROT2,B,R6,SUB1,FIVE,B,R4]
+\stopchemical
+\stopbuffer
+
+\startfiguretext
+  [left][]
+  {none}
+  {\getbuffer}
+\voorbeeld
+\typebuffer
+\stopfiguretext
+
+To go from one structure to an adjacent one is done with \type{ADJ}. Most of
+the time one of these structures will have to be rotated to obtain a good
+attachment. This is done by \type{ROT}. Rotations are always clockwise in
+steps of 90\graden. When a structure is attached with a bond you will have to
+use \type{SUB}. Movements with \type{ADJ} and \type{SUB} take place in the
+four directions of the $x$- and $y$||axis. 
+
+The next examples illustrate that the dimensions of the smaller structures
+are determined by the larger structures, especially \type{SIX}. You will
+notice that \type{EIGHT} has fewer possibilities than \type{SIX}. 
+
+\startbuffer
+\startchemical[width=6000,left=1500,frame=on]
+  \chemical[EIGHT,B,MOV1,B]
+\stopchemical
+\stopbuffer
+
+\startfiguretext
+  [left][]
+  {none}
+  {\getbuffer}
+\voorbeeld
+\typebuffer
+\stopfiguretext
+
+\startbuffer
+\startchemical[width=6000,left=1500,frame=on]
+  \chemical[EIGHT,B,ADJ1,SIX,B]
+\stopchemical
+\stopbuffer
+
+\startfiguretext
+  [left][]
+  {none}
+  {\getbuffer}
+\voorbeeld
+\typebuffer
+\stopfiguretext
+
+\startbuffer
+\startchemical[width=6000,left=1500,frame=on]
+  \chemical[EIGHT,B,ADJ1,FIVE,ROT3,B]
+\stopchemical
+\stopbuffer
+
+\startfiguretext
+  [left][]
+  {none}
+  {\getbuffer}
+\voorbeeld
+\typebuffer
+\stopfiguretext
+
+It will be clear by now that the order in which the keys are defined 
+makes a lot of difference. The order should be:
+
+\starttyping
+\chemical
+  [structure,                              % SIX, FIVE, ...
+   bonds within the structure,             % B, C, EB, ...
+   bonds pointing to substituents,         % R, DR, ...
+   atoms within the structure,             % Z
+   subsituents attached to the structure]  % RZ, -RZ, ...
+  [atoms,
+   substituents]
+\stoptyping
+
+Most of the time putting structures together is done by translating and
+rotating. You could automate this process. In earlier versions this was done
+automatically, however this led to misinterpretations of users concerning the
+positions of bonds, atoms and substituents. A structure that consists of more
+than one component can best be defined per component, translations included.
+Rotations should wait until the last step. 
+
+A sixring may have substituents consisting of a carbon chain. In those 
+situations we use \type{DIR} to build the chain. 
+
+\startbuffer
+\startchemical
+  [scale=small,width=6000,height=6000,frame=on]
+  \chemical[SIX,SB2356,DB14,Z2346,SR36,RZ36]
+    [C,N,C,C,H,H_2]
+  \chemical[PB:Z1,ONE,Z0,DIR8,Z0,SB24,DB7,Z27,PE]
+    [C,C,CH_3,O]
+  \chemical[PB:Z5,ONE,Z0,DIR6,Z0,SB24,DB7,Z47,PE]
+    [C,C,H_3C,O]
+  \chemical[SR24,RZ24]
+    [CH_3,H_3C]
+\stopchemical
+\stopbuffer
+
+\startfiguretext
+  [left][]
+  {none}
+  {\getbuffer}
+\voorbeeld
+\typebuffer
+\stopfiguretext
+
+Because chains have no predefined format the chains are build and positioned
+as a substructure. For positioning we use the keys \type{PB} and \type{PE}. 
+
+\placetable
+{Positioning.}
+\starttable[ | r T | l w(4cm) | p(6cm) | ]
+\HL
+\VL PB:.. \VL Picture Begin \VL beginning a substructure \VL\FR
+\VL PE    \VL Picture End   \VL ending a substructure    \VL\LR
+\HL
+\stoptable
+
+Directly after \type{PB} you will have to define the location where the
+substructure is positioned. The first following atom is centered on that
+location. Always use a central atom on this location. 
+
+These keys were introduced after trying to obtain structures that are
+typeset in an acceptable quality. There are different ways to define
+structures. The following alternative would have resulted in: 
+
+\startbuffer
+\startchemical
+    [scale=small,width=6000,height=6000,frame=on]
+  \chemical
+    [SIX,SB2356,DB14,Z36,SR36,RZ36][N,C,H,H_2]
+  \chemical
+    [PB:Z1,ONE,Z0,DIR8,Z0,SB24,DB7,Z27,PE][C,C,CH_3,O]
+  \chemical
+    [PB:Z5,ONE,Z0,DIR6,Z0,SB24,DB7,Z47,PE][C,C,H_3C,O]
+  \chemical
+    [PB:Z2,ONE,Z0,DIR2,SB6,CZ0,PE][C,CH_3]
+  \chemical
+    [PB:Z4,ONE,Z0,DIR4,SB8,CZ0,PE][C,H_3C]
+\stopchemical
+\stopbuffer
+
+\startfiguretext
+  [left][]
+  {none}
+  {\getbuffer}
+\voorbeeld
+\typebuffer
+\stopfiguretext
+
+
+The most efficient way to define such a structure would be like the example
+below. Typographically you wouldn't be satisfied. 
+
+\startbuffer
+\startchemical
+    [scale=small,width=6000,height=6000,frame=on]
+  \chemical[SIX,SB2356,DB14,Z,SR36,RZ36,SR1245,RZ24]
+    [C,C,N,C,C,C,H,H_2,CH_3,H_3C]
+  \chemical[PB:RZ1,ONE,Z0,SB2,DB7,Z27,PE]
+    [C,CH_3,O]
+  \chemical[PB:RZ5,ONE,Z0,SB4,DB7,Z47,PE]
+    [C,H_3C,O]
+\stopchemical
+\stopbuffer
+
+\startfiguretext
+  [left][]
+  {none}
+  {\getbuffer}
+\voorbeeld
+\typebuffer
+\stopfiguretext
+
+You may have noticed that the measurements of the structure is determined by
+the substituents. The chains are not taken into account. This leads to a
+consistent build-up of a structure. 
+
+The differences in outcome when using \type{SUB} in stead of \type{PB} are
+very small. However compare the following formulas. 
+
+\startbuffer
+\startchemical
+  [width=fit,frame=on,scale=small]
+  \chemical
+    [SIX,ROT2,B,C,R236,RZ23,
+     SUB1,ONE,OFF1,Z0,4OFF1,SB1,Z1]
+    [HO,HO,CHOH,CH_2NH_2]
+\stopchemical
+\stopbuffer
+
+\startfiguretext
+  [left][]
+  {none}
+  {\getbuffer}
+\voorbeeld
+\typebuffer
+\stopfiguretext
+
+\startbuffer
+\startchemical
+  [width=fit,frame=on,scale=small]
+  \chemical
+    [SIX,ROT2,B,C,R236,RZ23,
+     PB:RZ6,ONE,Z0,3OFF1,SB1,Z1,PE]
+    [HO,HO,CHOH,CH_2NH_2]
+\stopchemical
+\stopbuffer
+
+\startfiguretext
+  [left][]
+  {none}
+  {\getbuffer}
+\voorbeeld
+\typebuffer
+\stopfiguretext
+
+The use of the key \type{PB:} might be somewhat more difficult, but the
+results are much better. In that case you should define the width yourself,
+because the substituents are not taken into account when determining the
+dimensions. 
+
+First we will go into the key \type{OFF}. In some cases atom (\type{Z0}) in
+\type{ONE} can consist of more than one character. The reserved space for
+these characters would be insufficient and character and bond would overlap.
+When you need more space for \type{Z0} we can move bond~1, 2 and~8 by means
+of the key~\type{OFF} ('offset'). The example below will illustrate its use. 
+
+\startbuffer
+\startchemical
+  [width=fit,size=small,scale=small,frame=on]
+  \chemical
+    [SIX,B,C,ADJ1,
+     FIVE,ROT3,SB34,+SB2,-SB5,Z345,DR35,SR4,CRZ35,SUB1,
+     ONE,OFF1,SB258,Z0,Z28]
+    [C,N,C,O,O,
+     CH,COOC_2H_5,COOC_2H_5]
+\stopchemical
+\stopbuffer
+
+\startfiguretext
+  [left][]
+  {none}
+  {\getbuffer}
+\voorbeeld
+\typebuffer
+\stopfiguretext
+
+Moving the bonds makes room for an extra character. More space was obtained
+when we would have typed \type{3OFF1}. The example looks rather complex but
+you can define it rather easy by defining its components first. Rotating
+should be done in the last stage. 
+
+You see a new key: \type{CRZ}. This key is used to place the atom or molecule
+in one line with the bond. You could have used \type{RZ}, because you can
+influence spacing in the second argument with \type{{\,O}} in stead off
+\type{O} (spacing in mathematical mode). 
+
+We will show another example, produced in two ways. When choosing a method
+you should take into account the consistency throughout your document. 
+
+\startbuffer
+\startchemical
+  [width=fit,height=fit,frame=on,
+   scale=small]
+  \chemical
+    [ONE,SB15,DB7,Z057,3OFF1,MOV1,Z0,3OFF1,MOV1,
+     Z017,SB1357,MOV3,Z0,MOV3,SB1357,Z013,3OFF5,
+     MOV5,Z0,3OFF5,SB5,Z5]
+    [C,H_2N,NH,(CH_2)_3,C,COOH,H,\SL{NH},C,COOH,H,
+     (CH_2)_2,HOOC]
+\stopchemical
+\stopbuffer
+
+\startfiguretext
+  [left][]
+  {none}
+  {\getbuffer}
+\voorbeeld
+\typebuffer
+\stopfiguretext
+
+\startbuffer
+\startchemical
+  [width=fit,height=fit,frame=on,
+   scale=small]
+  \chemical [ONE,SB15,DB7,Z057,3OFF1][C,H_2N,NH]
+  \chemical [MOV1,Z0,3OFF1]          [(CH_2)_3]
+  \chemical [MOV1,Z017,SB1357]       [C,COOH,H]
+  \chemical [MOV3,Z0]                [\SL{NH}]
+  \chemical [MOV3,SB1357,Z013,3OFF5] [C,COOH,H]
+  \chemical [MOV5,Z0,3OFF5,SB5,Z5]   [(CH_2)_2,HOOC]
+\stopchemical
+\stopbuffer
+
+\startfiguretext
+  [left][]
+  {none}
+  {\getbuffer}
+\voorbeeld
+\typebuffer
+\stopfiguretext
+
+\startbuffer
+\startchemical
+  [width=fit,height=fit,frame=on,
+   scale=small]
+  \chemical
+    [ONE,Z0,SAVE,MOV7,SB1357,Z017,3OFF5,MOV5,Z0,
+     3OFF5,MOV5,SB15,DB7,Z057,RESTORE,
+     MOV3,SB1357,Z013,MOV5,3OFF5,Z0,6OFF5,SB5,Z5]
+    [\SL{NH},C,COOH,H,(CH_2)_3,C,H_2N,NH,C,COOH,H,
+     (CH_2)_2,HOOC]
+\stopchemical
+\stopbuffer
+
+\startfiguretext
+  [left][]
+  {none}
+  {\getbuffer}
+\voorbeeld
+\typebuffer
+\stopfiguretext
+
+\startbuffer
+\startchemical
+  [width=fit,height=fit,frame=on,scale=small]
+  \chemical
+    [ONE,Z0,MOV7,SB1357,Z017,3OFF5,MOV5,Z0,
+     3OFF5,MOV5,SB15,DB7,Z057,MOV0,MOV3,SB1357,
+     Z013,MOV5,3OFF5,Z0,6OFF5,SB5,Z5]
+    [\SL{NH},C,COOH,H,(CH_2)_3,C,H_2H,NH,C,COOH,H,
+     (CH_2)_2,HOOC]
+\stopchemical
+\stopbuffer
+
+\startfiguretext
+  [left][]
+  {none}
+  {\getbuffer}
+\voorbeeld
+\typebuffer
+\stopfiguretext
+
+Notice the use of \type{SAVE} and \type{RESTORE}. These keys enable you to
+save a location in a structure and return to that location in another stage. 
+
+As an extra we will show you a combination of \type{SIX} and \type{FIVE}. Be
+aware of the use of \type{SS}. 
+
+\startbuffer
+\startchemical
+    [width=fit,height=fit,frame=on]
+  \chemical
+    [SIX,DB135,SB246,Z,SR6,RZ6][C,C,N,\SR{HC},N,C,NH_2]
+  \chemical
+    [SIX,MOV1,DB1,SB23,SS6,Z1..5,SR3,RZ3][N,\SL{CH},N,C,C,H]
+\stopchemical
+\stopbuffer
+
+\startfiguretext
+  [left][]
+  {none}
+  {\getbuffer}
+\voorbeeld
+\typebuffer
+\stopfiguretext
+
+\chapter{Extra text}
+
+We can add text and symbols in and around structures. For example:
+
+\startbuffer
+\startchemical
+  [height=4500,top=1250,width=fit,frame=on]
+  \bottext
+    {2,2-Dimethyl-3-ethylpentane}
+  \chemical
+    [ONE,Z3570,SB1357]
+    [CH_3,\T{1}{H_3C},CH_3,\SR{\LT{2}{C}}]
+  \chemical
+    [MOV1,OFF1,Z0,SB3]
+    [\T{3}{CH}]
+  \chemical
+    [MOV3,Z0,SB3,MOV3,Z0,MOV7,MOV7]
+    [CH_2,CH_3]
+  \chemical
+    [OFF1,SB1,MOV1,OFF1,Z0,2OFF1,SB1,Z1]
+    [\T{4}{CH_2},\T{5}{CH_3}]
+\stopchemical
+\stopbuffer
+
+\startfiguretext
+  [left][]
+  {none}
+  {\getbuffer}
+\voorbeeld
+\typebuffer
+\stopfiguretext
+
+There is a range of keys like \type{\T}. In a number of cases the arguments
+are optional. Charges can be displayed in Roman by means of \type{\+} and
+\type{\-} or directly by means of~\type{\1} up to~\type{\7}. 
+
+\placetable
+{Text: charges.}
+\starttable[ | l | l | ]
+\HL
+\VL \type{\+{number}} \VL positive charge in Roman   \VL\FR
+\VL \type{\-{number}} \VL negative charge in Roman   \VL\MR
+\VL \type{\1}         \VL I (without sign)           \VL\MR
+\VL \type{\7}         \VL II, III, IV, V, VI and VII \VL\LR
+\HL
+\stoptable
+
+A charge is centered above the atom. For example:
+
+\startbuffer
+\placeformula
+  \startformula
+    \chemical{S}+\chemical{O_2}
+    \chemical{GIVES}
+    \chemical{\+{4}{S}\-{2}{O_2}}
+  \stopformula
+\stopbuffer
+
+\typebuffer
+
+will result in:
+
+\getbuffer
+
+If we want to repeat a number of atoms or molecules we can define an
+(endless) range with \type{\[} and \type{\]}. Both arguments are optional as
+is shown in the example of \kap{PTFE} of Polytetrafluorethane, better knowns
+as Teflon. 
+
+\startbuffer
+\startchemical[width=fit,frame=on]
+  \chemical
+    [ONE,ZT5,SB5,OFF1,Z0,OFF1,SB1,MOV1,SB5,OFF1,Z0,OFF1,SB1,ZT1]
+    [\[,CF_2,CF_2,\]{\sl n}]
+\stopchemical
+\stopbuffer
+
+\startfiguretext
+  [left][]
+  {none}
+  {\getbuffer}
+\voorbeeld
+\typebuffer
+\stopfiguretext
+
+\placetable
+{Text: repeating.}
+\starttable[ | l | l | l | ]
+\HL
+\VL \type{\[{bottom}} \VL \type{\[{top}{bottom}} \VL right repeating sign \VL\FR
+\VL \type{\]{bottom}} \VL \type{\]{top}{bottom}} \VL left repeating sign  \VL\LR
+\HL
+\stoptable
+
+
+There is no problem of placing texts 
+on the left, right, top or bottom of the atoms or molecules.
+If we preceed the keys \type{\L}, \type{\R}, \type{\T} and \type{\B} 
+by \type{\X} the distance from text to atoms is somewhat smaller.
+
+\placetable
+{Text: around an atom.}
+\starttable[ | l | l | ]
+\HL
+\VL \type{\L{text}} \VL text left   \VL\FR
+\VL \type{\R{text}} \VL text right  \VL\MR
+\VL \type{\T{text}} \VL text top    \VL\MR
+\VL \type{\B{text}} \VL text bottom \VL\LR
+\HL
+\stoptable
+
+Logical combinations of these keys are also possible. A key to centre text is
+also available. 
+
+\leavevmode\hbox to \hsize
+  {\def\sample#1{\chemical{#1{\oplus}{\ruledhbox{\ttx\string#1}}}}%
+   \sample\TL\hss\sample\L \hss\sample\LC\hss\sample\BL\hss
+   \sample\TR\hss\sample\R \hss\sample\RC\hss\sample\BR\hss
+   \sample\LT\hss\sample\T \hss\sample\RT\hss\sample\LB\hss
+   \sample\B \hss\sample\RB}
+
+\leavevmode\hbox to \hsize
+  {\def\sample#1{\chemical{\X#1{\oplus}{\ruledhbox{\ttx\string\X\string#1}}}}%
+   \sample\TL\hss\sample\L \hss\sample\LC\hss\sample\BL\hss
+   \sample\TR\hss\sample\R \hss\sample\RC\hss\sample\BR\hss
+   \sample\LT\hss\sample\T \hss\sample\RT\hss\sample\LB\hss
+   \sample\B \hss\sample\RB}
+
+In some cases you will need what we may call {\em smashed} text. 
+
+\placetable
+{Text: smashed text.}
+\starttable[ | l | l | ]
+\HL
+\VL \type{\SL{text}} \VL left align  \VL\FR
+\VL \type{\SM{text}} \VL centre      \VL\MR
+\VL \type{\SR{text}} \VL right align \VL\LR
+\HL
+\stoptable
+
+An example is given below. The text is centred around the first character.
+
+\startbuffer
+\startchemical[frame=on]
+  \chemical[SIX,B,R36,RZ36][\SL{COOH},\SL{COOH}]
+\stopchemical
+\stopbuffer
+
+\startfiguretext
+  [left][]
+  {none}
+  {\getbuffer}
+\voorbeeld
+\typebuffer
+\stopfiguretext
+
+We can place text above, under or in the middle of
+structures with the keys \type{\toptext}, \type{\midtext}
+and \type{\bottext}. The exact position is determined by the
+height and depth of the structure. 
+
+\startbuffer
+\placeformula
+  \startformula
+    \startchemical[width=fit]
+      \chemical[SIX,B,Z1,MOV1,B][\hbox{$\bullet$}]
+      \toptext{{\sl trans}-Decalin}
+    \stopchemical
+    \hskip 24pt
+    \startchemical[width=fit]
+      \chemical[SIX,B,Z12,MOV1,B][\hbox{$\bullet$},\hbox{$\bullet$}]
+      \bottext{{\sl cis}-Decalin}
+    \stopchemical
+  \stopformula
+\stopbuffer
+
+\typebuffer
+
+Both {\em Decalin} formulas look like this:
+
+\getbuffer 
+
+\chapter{Axis}
+
+Structures can be typeset in a frame that is divided by axis. The dimensions
+of the axis and the location of the origin can be defined in the set up. The
+axis and the frame can be made visible. 
+
+\startbuffer
+\startchemical
+  [axis=on,
+   width=6000,height=4000]
+\stopchemical
+\stopbuffer
+
+\startfiguretext
+  [left][]{none}
+  {\getbuffer}
+\voorbeeld[ex:axis]
+\typebuffer
+\stopfiguretext
+
+\startbuffer
+\startchemical
+  [axis=on,
+   left=2000,right=4000]
+\stopchemical
+\stopbuffer
+
+\startfiguretext
+  [left][]{none}
+  {\getbuffer}
+\voorbeeld
+\typebuffer
+\stopfiguretext
+
+\startbuffer
+\startchemical
+  [axis=on,
+   width=6000,right=1000]
+\stopchemical
+\stopbuffer
+
+\startfiguretext
+  [left][]{none}
+  {\getbuffer}
+\voorbeeld
+\typebuffer
+\stopfiguretext
+
+\startbuffer
+\startchemical
+  [axis=on,
+   width=6000,top=1000,bottom=3000]
+\stopchemical
+\stopbuffer
+
+\startfiguretext
+  [left][]{none}
+  {\getbuffer}
+\voorbeeld
+\typebuffer
+\stopfiguretext
+
+The dimensions of the total structure determine the dimensions of the axis.
+When \type{width=fit} and/or \type{height=fit}
+is typed the dimensions are determined by the real dimensions. Your choice 
+will depend on how you want to place the structure in the text.
+
+\in{Example}[ex:axis] shows the default set up. Within a
+\type{\start}||\type{\stop}||pair you can use \PICTEX||macros. However, be
+careful. 
+
+\chapter{Set ups}
+
+After \type{\startchemical} and  \type{\setupchemical} you can type the 
+set up.
+
+\placetable
+{Set ups for structures.}
+\starttable[|lT|Tl|lT|]
+\HL
+\VL \bf parameter \VL \bf values            \VL \bf default \VL\SR
+\HL
+\VL width         \VL number                     \VL 4000   \VL\FR
+\VL height        \VL number                     \VL 4000   \VL\MR
+\VL left          \VL number                     \VL        \VL\MR
+\VL right         \VL number                     \VL        \VL\MR
+\VL top           \VL number                     \VL        \VL\MR
+\VL bottom        \VL number                     \VL        \VL\LR
+\HL
+\VL resolution    \VL number                     \VL \type{\outputresolution} \VL\FR
+\VL bodyfont      \VL 8pt 9pt 10pt etc.          \VL \type{\bodyfontsize}        \VL\MR
+\VL character     \VL \type{\rm} \type{\bf} etc. \VL \type{\rm}               \VL\LR
+\HL
+\VL scale         \VL number                     \VL medium \VL\FR
+\VL size          \VL small medium big           \VL medium \VL\LR
+\HL
+\VL state         \VL start stop                 \VL start  \VL\FR
+\VL option        \VL test                       \VL        \VL\LR
+\HL
+\VL axis          \VL on off                     \VL off    \VL\FR
+\VL frame         \VL on off                     \VL off    \VL\LR
+\HL
+\VL alternative   \VL 1 2                        \VL 1      \VL\SR
+\HL
+\VL offset        \VL HIGH LOW                   \VL LOW    \VL\SR
+\HL
+\stoptable
+
+The axis range from $-2000$ upto $+2000$, height as well as width. The
+parameter \type{Z0} is at $(0,0)$. Other divisions can be set up with
+\type{left}, \type{right}, \type{top} and/or \type{bottom} in combination
+with \type{width} and \type{height}. 
+
+You can use the key \type{size} to set up the bodyfont. In doing so the
+\TEX||primitives \type{\textsize}, \type{\scriptsize} and
+\type{\scriptscriptsize} are used. With \type{scale} you can set up the
+dimensions of the structure itself. The scale is determined by the parameter
+\type{bodyfont}. The values \type{small}, \type{medium} and \type{big} are
+proportionally related. 
+
+The set up of the parameter \type{bodyfont} is used for calculations and has
+no consequences for the text. In \CONTEXT\ and \LATEX\ this set up parameter
+is coupled to the mechanism that sets the bodyfont. 
+
+In \TEX\ and \CONTEXT\ you can use commands like \type{\rm}, \type{\bf} and
+\type{\sl} in mathematical mode. \PPCHTEX\ uses default \type{\rm}. With the
+parameter \type{character} another alternative can be chosen. In
+\in{example}[ex:character] the substituents are typeset {\sl slanted}. 
+
+\startbuffer
+\startchemical[frame=on,character=\sl]
+  \chemical[SIX,B,R,RZ][A,B,C,D,E,F]
+\stopchemical
+\stopbuffer
+
+\startfiguretext
+  [left][]
+  {none}
+  {\getbuffer}
+\voorbeeld[ex:character]
+\typebuffer
+\stopfiguretext
+
+The set up of \type{character} is valid for chemical structures in a picture
+and in the text. The sub- and superscripts are changed accordingly. This is
+illustrated in {\setupchemical[character=\rm]\chemical{CH_4}},
+{\setupchemical[character=\bf]\chemical{CH_4}} and
+{\setupchemical[character=\sl]\chemical{CH_4}}, in which the set ups are
+\type{\rm}, \type{\bf} and \type{\sl}. Italic \type{\it} formulas lead to a
+bigger linewidth. In \CONTEXT\ default bold||slanted (\type{\bs}) and
+bold||italic (\type{\bi}) are available. These commands adjust automatically
+to the actual fontstyle: {\setupchemical[character=\ss\sl]\chemical{CH_4}},
+{\setupchemical[character=\rm\sl]\chemical{CH_4}},
+{\setupchemical[character=\tt\sl]\chemical{CH_4}} etc. (\type{\ss}, \type{\rm},
+\type{\tt}). 
+
+It is also possible to set the characters at the instant you type them in 
+the argument.
+
+\startbuffer
+\startchemical[frame=on]
+  \chemical[SIX,B,R,RZ][\tf a,\bf b,\it c,\sl d,\bi e,\bs f]
+\stopchemical
+\stopbuffer
+
+\startfiguretext
+  [left][]
+  {none}
+  {\getbuffer}
+\voorbeeld
+\typebuffer
+\stopfiguretext
+
+With parameter \type{state} calculations can be shortcut. The parameters
+\type{frame} and \type{axis} need no further explanation. With
+\type{option=test} frames are drawn around the texts in a structure. In this
+way you can see how the text is aligned.\footnote{In \CONTEXT\ you can
+activate the visual debugger. When activated the baseline is a dotted line.
+The module \type{supp-vis} can be used in other systems.} With the parameter
+\type{alternative} you can set up the quality of the lines. Default \PICTEX\ uses
+a 5~point . to draw lines. When option~2 is chosed a thinner line is drawn. 
+
+\startbuffer
+\startchemical[frame=on,option=test,alternative=2]
+  \chemical[SIX,B,R,RZ][R_1,R_2,R_3,R_4,R_5,R_6]
+\stopchemical
+\stopbuffer
+
+\startfiguretext
+  [left][]
+  {none}
+  {\getbuffer}
+\voorbeeld[ex:test]
+\typebuffer
+\stopfiguretext
+
+The offset relates to the position of the sub- and superscripts. With
+\type{HIGH} the subscripts are placed high (\chemical{HIGH,H_2O}) and with
+\type{LOW} somewhat lower (\chemical{LOW,H_2O}). 
+
+A structure can be displayed in different sizes. This is done with
+\type{formaat} and \type{scale}. 
+
+\startbuffer
+\startchemical[frame=on,scale=small,size=small]
+  \chemical[SIX,B,R,RZ][1,2,3,4,5,6]
+\stopchemical
+\stopbuffer
+
+\startfiguretext
+  [left][]
+  {none}
+  {\getbuffer}
+\voorbeeld
+\typebuffer
+\stopfiguretext
+
+\startbuffer
+\startchemical[frame=on,scale=medium,size=medium]
+  \chemical[SIX,B,R,RZ][1,2,3,4,5,6]
+\stopchemical
+\stopbuffer
+
+\startfiguretext
+  [left][]
+  {none}
+  {\getbuffer}
+\voorbeeld
+\typebuffer
+\stopfiguretext
+
+\startbuffer
+\startchemical[frame=on,scale=big,size=big]
+  \chemical[SIX,B,R,RZ][1,2,3,4,5,6]
+\stopchemical
+\stopbuffer
+
+\startfiguretext
+  [left][]
+  {none}
+  {\getbuffer}
+\voorbeeld
+\typebuffer
+\stopfiguretext
+
+You can also type a number between~1 and 1000 in \type{scale}. The values
+belonging to \type{small}, \type{medium} or \type{big} are proportionally 
+related.
+
+\chapter{Symbols}
+
+There are some symbols that can be used to display reactions. The reaction
+below is typed by: 
+
+\startbuffer
+\setupchemical
+  [size=small,
+   scale=small,
+   width=fit,
+   height=5500,
+   bottom=1500]
+
+\hbox
+  {\startchemical
+     \chemical[SIX,B,ER6,RZ6][O]
+   \stopchemical
+   \startchemical
+     \chemical[SPACE,PLUS,SPACE]
+   \stopchemical
+   \startchemical
+     \chemical[FIVE,ROT4,B125,+SB3,-SB4,Z4,SR4,RZ4][N,H]
+   \stopchemical
+   \startchemical
+     \chemical[SPACE,GIVES,SPACE][?]
+   \stopchemical
+   \startchemical
+     \chemical[SIX,B,EB6,R6,SUB4,FIVE,ROT4,B125,+SB3,-SB4,Z4][N]
+   \stopchemical
+   \startchemical
+     \chemical[SPACE,PLUS,SPACE,CHEM][H_2O]
+   \stopchemical}
+\stopbuffer
+
+\typebuffer
+
+The \type{\hbox} is necessary to align the structures. The symbols
+\type{GIVES} and \type{PLUS} need no further explanation. With \type{SPACE}
+more room can be created between the structures and symbols. 
+
+\placefigure
+  [hier]
+  [fig:reactie]
+  {none}
+  {\getbuffer}
+
+An equilibrium can be displayed with \type{EQUILIBRIUM}. Over \type{GIVES}
+and \type{EQUILIBRIUM} you can place text. In the example the text is just a
+'?'. In addition \type{MESOMERIC} is also available. Braces used for
+displaying complexes can be created with \type{OPENCOMPLEX} and
+\type{CLOSECOMPLEX}. 
+
+\chapter{Positioning}
+
+When you are combining atoms or molecules, for example with \type{SUB}, some
+positions and dimensions change their value. To overcome this problem it is
+possible to save a location with \type{SAVE} and return to that location with
+\type{RESTORE}. 
+
+\placetable
+{Positioning.}
+\starttable[ | r T | l w(4cm) | p(6cm) | ]
+\HL
+\VL SAVE    \VL Save Status    \VL save actual status    \VL\FR
+\VL RESTORE \VL Restore Status \VL restore actual status \VL\LR
+\HL
+\stoptable
+
+The keys \type{SAVE} and \type{RESTORE} are used with substituents. When
+placing radicals we use \type{PB} and \type{PE}. This example also
+illustrates the possibility to create chains. 
+
+\startbuffer
+\definechemical[molecule]
+  {\chemical
+     [ONE,Z0,SB1357,
+      SAVE,SUB2,SIX,B,R6,C,RESTORE,
+      MOV1,Z0,SB137,
+      MOV1,Z0,SB37,
+      MOV1]
+     [C,C,C]}
+
+\startchemical[width=fit,height=fit]
+  \chemical[molecule,molecule,molecule]
+\stopchemical
+\stopbuffer
+
+\typebuffer
+
+\placefigure
+  [here,force]
+  [fig:save]
+  {none}
+  {\getbuffer}
+
+The example below is more complicated and show a complete reaction. The set 
+up of bottom and top is essential in this example.
+
+\startbuffer
+\placeformula
+  \startformula
+    \setupchemical
+      [width=fit,top=2000,bottom=2000,
+       scale=small,size=small]
+    \startchemical
+      \chemical
+        [ONE,
+         SAVE,
+           Z0,SB7,SB3,SB1,MOV1,Z0,SB1,MOV1,Z0,DB8,CZ8,SB1,Z1,
+         RESTORE,
+         SAVE,
+           SUB4,ONE,Z0,SB3,SB1,MOV1,Z0,SB1,MOV1,Z0,DB8,CZ8,SB1,Z1,
+         RESTORE,
+         SUB2,ONE,Z0,SB7,SB1,MOV1,Z0,SB1,MOV1,Z0,DB8,CZ8,SB1,Z1]
+        [\SR{HC},O,C,O,C_{19}H_{39},
+         \SR{H_{2}C},O,C,O,C_{17}H_{29},
+         \SR{H_{2}C},O,C,O,C_{21}H_{41}]
+    \stopchemical
+    \startchemical
+      \chemical[SPACE,PLUS,SPACE]
+    \stopchemical
+    \startchemical[right=600]
+      \chemical[ONE,CZ0][3CH_{3}OH]
+    \stopchemical
+    \startchemical
+      \chemical[SPACE,GIVES,SPACE,SPACE][H^+/H_2O]
+    \stopchemical
+    \startchemical
+      \chemical
+        [ONE,
+         SAVE,
+           Z0,SB7,SB3,SB1,Z1,
+         RESTORE,
+         SAVE,
+           SUB4,ONE,Z0,SB3,SB1,Z1,
+         RESTORE,
+         SUB2,ONE,Z0,SB7,SB1,Z1]
+        [\SR{HC},OH,
+         \SR{H_{2}C},OH,
+         \SR{H_{2}C},OH]
+    \stopchemical
+    \startchemical
+      \chemical[SPACE,PLUS,SPACE]
+    \stopchemical
+    \startchemical
+      \chemical
+        [ONE,
+         SAVE,
+           Z0,DB8,CZ8,SB1,SB5,Z5,MOV1,Z0,SB1,Z1,
+         RESTORE,
+         SAVE,
+           SUB4,ONE,Z0,DB8,CZ8,SB1,SB5,Z5,MOV1,Z0,SB1,Z1,
+         RESTORE,
+         SUB2,ONE,Z0,DB8,CZ8,SB1,SB5,Z5,MOV1,Z0,SB1,Z1]
+        [C,O,C_{19}H_{39},O,CH_{3},
+         C,O,C_{17}H_{29},O,CH_{3},
+         C,O,C_{21}H_{41},O,CH_{3}]
+    \stopchemical
+  \stopformula
+\stopbuffer
+
+\typebuffer
+
+This definition might have been more compact if we would have typed
+\type{SB731} in stead of \type{SB7,SB3,SB1}. But in this way the definition
+is readable. Complex structures can best be defined in its respective
+components. 
+
+\getbuffer
+
+Just two more examples where we place text under a structure. 
+
+\startbuffer
+\placeformula
+  \startformula
+    \setupchemical
+      [width=fit,top=1500,bottom=3500]
+    \startchemical
+      \chemical
+        [ONE,Z0,DB1,SB3,SB7,Z7,MOV1,Z0,SB3,SB7,Z3,Z7,
+         MOV0,SUB2,SIX,B,R6,C]
+        [C,H,C,H,H]
+      \bottext{styreen}
+    \stopchemical
+    \quad\quad\quad
+    \startchemical
+      \chemical
+        [ONE,Z0,DB1,SB3,SB7,Z3,Z7,
+         MOV1,Z0,SB1,SB3,Z3,
+         MOV1,Z0,DB1,SB3,Z3,
+         MOV1,Z0,SB3,SB7,Z3,Z7]
+        [C,H,H,C,H,C,H,C,H,H]
+      \bottext{1,3-butadieen}
+   \stopchemical
+  \stopformula
+\stopbuffer
+
+\typebuffer
+
+\getbuffer
+
+The use of \type{OFF} can be very subtle. The examples below illustrate this
+and show minor shifts of \type{ONE}. 
+
+\startbuffer
+\startchemical[height=fit,frame=on]
+  \chemical[ONE,SB]
+\stopchemical
+\stopbuffer
+
+\startfiguretext
+  [left][]
+  {none}
+  {\getbuffer}
+\voorbeeld
+\typebuffer
+\stopfiguretext
+
+\startbuffer
+\startchemical[height=fit,frame=on]
+  \chemical[ONE,3OFF1,SB]
+\stopchemical
+\stopbuffer
+
+\startfiguretext
+  [left][]
+  {none}
+  {\getbuffer}
+\voorbeeld
+\typebuffer
+\stopfiguretext
+
+\startbuffer
+\startchemical[height=fit,frame=on]
+  \chemical[ONE,MOV1,SB]
+\stopchemical
+\stopbuffer
+
+\startfiguretext
+  [left][]
+  {none}
+  {\getbuffer}
+\voorbeeld
+\typebuffer
+\stopfiguretext
+
+\startbuffer
+\startchemical[height=fit,frame=on]
+  \chemical[ONE,3OFF1,MOV1,SB]
+\stopchemical
+\stopbuffer
+
+\startfiguretext
+  [left][]
+  {none}
+  {\getbuffer}
+\voorbeeld
+\typebuffer
+\stopfiguretext
+
+\startbuffer
+\startchemical[height=fit,frame=on]
+  \chemical[ONE,MOV1,3OFF1,SB]
+\stopchemical
+\stopbuffer
+
+\startfiguretext
+  [left][]
+  {none}
+  {\getbuffer}
+\voorbeeld
+\typebuffer
+\stopfiguretext
+
+\startbuffer
+\startchemical[height=fit,frame=on]
+  \chemical[ONE,MOV1,3OFF1,OFF0,SB]
+\stopchemical
+\stopbuffer
+
+\startfiguretext
+  [left][]
+  {none}
+  {\getbuffer}
+\voorbeeld
+\typebuffer
+\stopfiguretext
+
+\startbuffer
+\startchemical[height=fit,frame=on]
+  \chemical[ONE,MOV1,3OFF1,MOV0,SB] 
+\stopchemical
+\stopbuffer
+
+\startfiguretext
+  [left][]
+  {none}
+  {\getbuffer}
+\voorbeeld
+\typebuffer
+\stopfiguretext
+
+\startbuffer
+\startchemical[height=fit,frame=on]
+  \chemical[ONE,MOV1,MOV0,SB]
+\stopchemical
+\stopbuffer
+
+\startfiguretext
+  [left][]
+  {none}
+  {\getbuffer}
+\voorbeeld
+\typebuffer
+\stopfiguretext
+
+The next example shows the definition of complexes. Pay special attention to
+the use of \type{RBT}. Normally an extra spacing is not necessary but we use
+here |<|the command is not visible|>| a smaller bodyfont to prevent the
+structure to run in the margin. 
+
+\startbuffer
+\startformula
+\setupchemical[scale=small,width=fit]
+\startchemical
+  \chemical[OPENCOMPLEX,SPACE]
+\stopchemical
+\startchemical
+  \chemical[SIX,B,EB35,R6,-R1,+R1]                  
+  \chemical[SIX,PB:RZ6,ONE,OFF1,Z0,EP57,PE][\SL{OH}]
+  \chemical[SIX,-RZ1,+RZ1,RT2][H,Br,\oplus]
+\stopchemical
+\startchemical
+  \chemical[SPACE,MESOMERIC,SPACE]
+\stopchemical
+\startchemical
+  \chemical[SIX,B,EB25,R6,-R1,+R1]                  
+  \chemical[SIX,PB:RZ6,ONE,OFF1,Z0,EP57,PE][\SL{OH}] 
+  \chemical[SIX,-RZ1,+RZ1,RT4][H,Br,\oplus]
+\stopchemical
+\startchemical
+  \chemical[SPACE,MESOMERIC,SPACE]
+\stopchemical
+\startchemical
+  \chemical[SIX,B,EB24,R6,-R1,+R1]
+  \chemical[SIX,PB:RZ6,ONE,OFF1,Z0,EP57,PE][\SL{OH}]  
+  \chemical[SIX,-RZ1,+RZ1,RBT6][H,Br,\ \oplus]
+\stopchemical
+\startchemical
+  \chemical[SPACE,MESOMERIC,SPACE]
+\stopchemical
+\startchemical
+  \chemical[SIX,B,EB24,ER6,-R1,+R1]                   
+  \chemical[SIX,PB:RZ6,ONE,OFF1,Z0,EP5,ZT7,PE][\SL{OH},\oplus]
+  \chemical[SIX,-RZ1,+RZ1][H,Br]
+\stopchemical
+\startchemical
+  \chemical[SPACE,CLOSECOMPLEX]
+\stopchemical
+\stopformula
+\stopbuffer
+
+\typebuffer
+
+Without the use of \type{SPACE} the seperate structures would merge. Most of
+the time the optimization of such a reaction is an iterative proces. 
+
+\start
+\switchtobodyfont[small]
+\getbuffer
+\stop
+
+\chapter{Reactions}
+
+Not only the typesetting of chemical structures is supported but also the
+typesetting of normal reactions. The command \type{\chemical} has three other
+appearances: 
+
+\starttyping
+\chemical{formula}
+\chemical{formula}{bottom text}
+\chemical{formula}{top text}{bottom text}
+\stoptyping
+
+This command adapts itself to text mode. That means that it
+'knows' whether it is used in: 
+
+\startitemize[packed]
+\item text||mode
+\item mathematical text||mode
+\item mathematical display||mode
+\stopitemize
+
+When the command is used in running text it will automatically be surrounded
+by \type{$ $}. Typing \type{\chemical{NH_4^+}} will result in
+\chemical{NH_4^+}. 
+
+The result would be the same if we would place the command between \type{$
+$}. In both cases the second and third argument can be left out. If we place
+the command between \type{$$ $$} (or \type{\startformula} and
+\type{\stopformula}) both arguments do have a function. First a simple
+example. The command \type{\placeformula} is a \CONTEXT\ command and handles
+the positioning and numbering of the formula. 
+
+\startbuffer
+\placeformula
+  \startformula
+    \chemical{2H_2} \chemical{PLUS} \chemical{O_2}
+    \chemical{GIVES} \chemical{2H_2O}
+  \stopformula
+\stopbuffer
+
+\typebuffer
+
+\getbuffer
+
+The definition of the chemical part could be somewhat shorter:
+
+\starttyping
+\chemical{2H_2,PLUS,O_2,GIVES,2H_2O}
+\stoptyping
+
+or even:
+
+\starttyping
+\chemical{2H_2,+,O_2,->,2H_2O}
+\stoptyping
+
+A \TEX||addict will notice from these examples that the plus sign and the
+arrow are on the baseline. Compare for example $+$ and \chemical{+}. In the
+reaction you will see that the \chemical{+} and the \chemical{->} are
+vertically aligned. 
+
+You can use \type{PLUS}, \type{GIVES} and \type{EQUILIBRIUM} (\type{<->}) in
+this command. With \type{MESOMERIC} or \type{<>} you will get
+\chemical{MESOMERIC}. 
+
+The reaction can be placed in the text. In that case a more compact display
+is used: \chemical{2H_2,+,O_2,->,2H_2O}. Some finetuning with \type{\,} would
+result in \chemical{2{\,}H_2,{\,}+{\,},O_2\,,->,\,2{\,}H_2O}. 
+
+It is also possible to display bonds in textmode. For example if you want
+\chemical{H,SINGLE,CH,DOUBLE,HC,SINGLE,H} you should type
+\type{\chemical{H,SINGLE,CH,DOUBLE,HC,SINGLE,H}} or something like this
+\type{\chemical{H,-,CH,--,HC,-,H}}. A triple bond can be defined as
+\type{TRIPLE} or \type{---}: \chemical{HC,TRIPLE,CH}. 
+
+We return two the display||mode. The second and third argument can be used to
+add text to the reaction: 
+
+\startbuffer
+\placeformula
+  \startformula
+    \chemical{2H_2}{hydrogen} \chemical{PLUS} \chemical{O_2}{oxygen}
+    \chemical{GIVES}{heat} \chemical{2H_2O}{water}
+   \stopformula
+\stopbuffer
+
+\typebuffer
+
+So we can also place text over and under symbols!
+
+\getbuffer
+
+The last argument is placed under the compound. 
+
+\startbuffer
+\placeformula
+  \startformula
+    \chemical{H_2O}{liquid}{water}
+    \hbox{c.q.}
+    \chemical{H_2O}{water}
+  \stopformula
+\stopbuffer
+
+\getbuffer
+
+The formula above is defined with:
+
+\typebuffer
+
+The size of the formulas or reactions in the running text can be set up 
+with:
+
+\placetable
+{Set up in text formulas.}
+\starttable[|lT|Tl|lT|]
+\HL
+\VL \bf parameter \VL \bf set up \VL \bf default \VL\SR
+\HL
+\VL size  \VL small medium big \VL big \VL\SR
+\HL
+\stoptable
+
+The definition \type{\chemical{H,SINGLE,CH,DOUBLE,HC,SINGLE,H}} result with
+\type{big}, \type{medium} and \type{small} in the following formulas: 
+
+\leavevmode\hbox
+  {\setupchemical[textsize=big]\chemical{H,-,CH,--,HC,-,H}\hskip2em
+   \setupchemical[textsize=medium]\chemical{H,-,CH,--,HC,-,H}\hskip2em
+   \setupchemical[textsize=small]\chemical{H,-,CH,--,HC,-,H}}
+
+\chapter{Subscripts}
+
+Sub- and superscripts are placed somewhat lower as is recommended by Knuth in
+the {\TeX}Book. The rather strange chemical compound that is shown on
+page~179 of the {\TeX}Book is defined with
+\type{\chemical{Fe_2^{+2}Cr_2O_4}}. This will result in 
+\chemical{Fe_2^{+2}Cr_2O_4}. Without correction it would have been: $\rm
+Fe_2^{+2}Cr_2O_4$. 
+
+The position of the subscript is determined by the parameter \type{offset}:
+\type{HIGH} or \type{LOW}. This position can be influenced locally (per
+substituent) as is shown in the example below. 
+
+\startbuffer
+\startchemical[frame=on,option=test,alternative=2]
+  \chemical[SIX,B,R13,HIGH,RZ1,LOW,RZ3][NH_3,NH_3]
+\stopchemical
+\stopbuffer
+
+\startfiguretext
+  [left][]
+  {none}
+  {\getbuffer}
+\voorbeeld[ex:test]
+\typebuffer
+\stopfiguretext
+
+However, it is recommended to set up this parameter globally to obtain
+consistent formulas. 
+
+The values \type{LOW} and \type{HIGH} can also be used in text formulas. For
+example if you type \type{\chemical{HIGH,H_2O}} then you will get 
+\chemical{HIGH,H_2O} and \type{\chemical{LOW,H_2O}} will become
+\chemical{LOW,H_2O}. 
+
+\vervolgblad
+  {Backgrounds}
+  [left=1500,width=4000]
+  [FIVE,ROT3,B125,+SB3,-SB4,ER35,SR4,CRZ35,Z4,RZ4,Z0]
+  [O,O,N,CH_3]
+
+\chapter{Installation}
+
+The package \PPCHTEX\ is developed for use in combination with \CONTEXT.
+\PPCHTEX\ is activated in \CONTEXT\ by:\footnote{The macros in file
+\type{ppchtex.tex}, are loaded by typing \type{m-chemic.tex} (the~\type{m}
+stands for module).} 
+
+\starttyping
+\usemodule[pictex,chemic]
+\stoptyping
+
+This command loads the \PICTEX\ macros so \PPCHTEX\ knows what output is
+needed. The chemical macros are not automatically available. 
+
+The package can be used in combination with \PLAIN\ \TEX\ or \LATEX. In that
+case the file \type{m-chemie.sty} is also used. \PPCHTEX\ is then activated
+by \type{\documentstyle}: 
+
+\starttyping
+\documentstyle[m-pictex,m-chemie]{}
+\stoptyping
+
+In \LATEX$2_{\textstyle\varepsilon}$ it is somewhat different:
+
+\starttyping
+\usepackage{m-pictex}
+\usepackage{m-chemie}
+\stoptyping
+
+The file \type{m-pictex} takes care of an efficient loading of \PICTEX. This
+is necessary because \LATEX\ allocates a lot of \type{\dimen}s. Because of
+the userinterface a big version of \TEX\ is needed to run \PPCHTEX. 
+
+\PPCHTEX\ can be used in three languages. The actual language can be
+activated by: 
+
+\startregelcorrectie
+\starttable[|l|l|]
+\HL 
+\NC \bf language  \NC \bf files  \NC\SR 
+\HL 
+\NC dutch   \NC \type{m-che-nl} = \type{m-chemie.sty} \NC\FR
+\NC english \NC \type{m-che-en} = \type{m-chemic.sty} \NC\MR
+\NC german  \NC \type{m-che-de} = \type{m-chemie.sty} \NC\LR
+\HL 
+\stoptable
+\stopregelcorrectie
+
+In the file \type{ppchtex.noc} you can see the coupling between \CONTEXT\ and
+macropackage. This file also loads the system modules of \CONTEXT. 
+
+The total distribution consists of the definition files \type{ppchtex.tex} and
+\type{ppchtex.noc} the starting files \type{m-che-nl.tex},
+\type{m-che-en.tex} and \type{m-che-de.tex} and the alternative starting
+files \type{m-chemie.tex} and \type{m-chemic.tex}. 
+
+\chapter{Extensions}
+
+Users of \PPCHTEX\ are free to use and alter the macros. However one should
+be careful because most macros are stil under development. Some macros may
+look more complex than necessary, but this is due to the userfriendly
+interface of \CONTEXT\ and \PPCHTEX. 
+
+Commands like \type{\setup...} make it possible to make readable
+\ASCII||layouts. Compare for example: 
+
+\start
+\setuptyping[option=color]
+\starttyping
+\setupchemical[size=small]
+\stoptyping
+\stop
+
+and:
+
+\start
+\setuptyping[option=color]
+\starttyping
+\setupchemical
+  [size=small,
+   scale=500,
+   textsize=big]
+\stoptyping
+\stop
+
+The set up can be defined in a random order and newlines and spaces are not
+interpreted. 
+
+Originally \PPCHTEX\ was meant to be a module in \CONTEXT, therefore the
+package is multi lingual. 
+
+If you study the file \type{ppchtex.tex} you may notice that
+\type{\processaction} macros are being used while interpretating the keys in
+\type{\chemical[ ]}. These kind of macros are relatively slow but then the
+\PPCHTEX\ interface is very flexible. 
+
+\chapter{Fonts}
+
+The macros are in mathematical mode and therefore use \type{\textfont},
+\type{\scriptfont} and \type{\scriptscriptfont}. When needed the
+\type{\fontdimen}s~14, 16 and~17 of \type{\font2} are adapted. The size of
+the actual font is derived from $x$ height (\type{\fontdimen5}). 
+
+Changes in \type{\fontdimen} s have are global, so grouping makes no sense.
+The dimensions are therefore continually set and reset. This solution may
+seem poor but alternatives are not failsave and will result in problems with
+scaled fonts. 
+
+Typesetting atoms and molecules (text) during processing are rather time
+consuming. Speed depends on the complexity of the macro \type{\rm}. 
+
+\chapter{Definitions}
+
+The interface of \PPCHTEX\ is derived from the \CONTEXT\ interface. This
+means that the interface is multi langual. The advantage is that one can use
+\PPCHTEX\ in his or her own language. The disadvantage is the fact that
+macros have to be shared between languages. 
+
+At this moment the \CONTEXT\ commands and parameters are dutch. 
+\PPCHTEX\ however has english commands. 
+
+\starttyping
+\startchemical
+  \chemical[SIX,B,C]
+\stopchemical
+\stoptyping
+
+Set ups are more difficult. We use system constants and variables that are 
+dutch. In due time these will be translated. Adaption of these 
+constants and variables is not too difficult. 
+
+\starttyping
+\setupchemical[\c!breed=10cm,\c!height=\v!passend]
+\stoptyping
+
+Parameters are preceded by \type{\c!} and set ups by \type{\v!}. This only
+works when \type{!} is a character. That is the reason that these set ups
+have to be surrounded by \type{\unprotect} and \type{\protect}. For example: 
+
+\starttyping
+\unprotect
+
+\setupchemical[\c!width=10cm,\c!height=\v!passend]
+
+\startchemical
+  \chemical[SIX,B,C]
+\stopchemical
+
+\protect
+\stoptyping
+
+More information on the interface can be found in the documentation of the
+\CONTEXT\ modules from the \type{mult} group. 
+
+\chapter{Color}
+
+In \CONTEXT\ you can colorize parts of a structure. 
+In~\in{example}[ex:color] the substituent as well as the bond
+are colored red. 
+
+\startbuffer
+\startchemical[axis=on,frame=on,width=5000]
+  \chemical[SIX,B]
+  \color[red]{\chemical[SIX,R1,RZ1][COOH]}
+\stopchemical
+\stopbuffer
+
+\startfiguretext
+  [left][]
+  {none}
+  {\getbuffer}
+\voorbeeld[ex:color]
+\typebuffer
+\stopfiguretext
+
+First the color mechanism has to be activated by
+\type{\setupcolors[state=start]}. 
+
+\chapter[txt:cooh]{Interaction}
+
+In combination with \CONTEXT\ \PPCHTEX\ supports interactive texts. An
+interactive text is a text that can be consulted on a computerscreen and
+contains many hyperlinked textareas. This means that clicking on such an area
+will result in a jump to the target area. 
+
+\startbuffer
+\startchemical[axis=on,frame=on,width=5000]
+  \chemical[SIX,B]
+  \chemical[sub:cooh][SIX,R1,RZ1][COOH]
+\stopchemical
+\stopbuffer
+
+\startfiguretext
+  [left][]
+  {none}
+  {\getbuffer}
+\voorbeeld[ex:interaction]
+\typebuffer
+\stopfiguretext
+
+We see a new argument: the reference \type{[sub:cooh]}. This means that we
+can refer from the text \goto{\chemical{COOH}}[sub:cooh] to the structure 
+with: 
+
+\starttyping
+... text ... \goto{\chemical{COOH}}[sub:cooh] ... text ...
+\stoptyping
+
+In this definition \type{\goto} is a \CONTEXT||command. 
+We can also refer from the structure to a particular part of the text. 
+
+Clicking in \chemical{COOH} in the structure results in a jump to the text
+that is marked with: 
+
+\starttyping
+\paragraph[txt:cooh]{Substituents}
+
+... text ... \chemical{COOH} ... text ... 
+\stoptyping 
+
+A combination is also possible. In that case it is necessary to mark the
+reference with \type{\chemical} and to refer in the text with
+\type{\gotochemical}. 
+
+The coupling of the interaction mechanism is done with macros:
+
+\starttyping
+\localgotochemical   {reference} {text}
+\localthisischemical {reference}
+\stoptyping
+
+You can see the \CONTEXT\ sources for more information. 
+
+\vervolgblad
+  {Overview}
+  [left=1250,width=4000,bottom=1500,height=4000]
+  [SIX,B,C,MOV1,B,ER6,CRZ6]
+  [O]
+
+\input man-comm.tex
+
+\stoptext

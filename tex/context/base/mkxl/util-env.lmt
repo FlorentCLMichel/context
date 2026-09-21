@@ -1,0 +1,221 @@
+if not modules then modules = { } end modules ['util-env'] = {
+    version   = 1.001,
+    comment   = "companion to luat-lib.mkiv",
+    author    = "Hans Hagen, PRAGMA-ADE, Hasselt NL",
+    copyright = "PRAGMA ADE / ConTeXt Development Team",
+    license   = "see context related readme files"
+}
+
+local allocate, mark = utilities.storage.allocate, utilities.storage.mark
+
+local sub, match, gsub, find = string.sub, string.match, string.gsub, string.find
+local unquoted, quoted, optionalquoted = string.unquoted, string.quoted, string.optionalquoted
+local concat = table.concat
+local globfiles = dir.glob
+
+environment             = environment or { }
+local environment       = environment
+
+environment.arguments   = allocate()
+environment.files       = allocate()
+environment.sortedflags = nil
+
+environment.validengines = allocate {
+    ["luametatex"] = true,
+    ["luatex"]     = true,
+    ["luajittex"]  = true,
+}
+
+environment.basicengines = environment.validengines
+
+-- context specific arguments (in order not to confuse the engine)
+
+function environment.initializearguments(arg)
+    local arguments = { }
+    local files     = { }
+    environment.arguments   = arguments
+    environment.files       = files
+    environment.sortedflags = nil
+    for index=1,#arg do
+        local argument = arg[index]
+        if index > 0 then
+            local flag, value = match(argument,"^%-+(.-)=(.-)$")
+            if flag then
+                flag = gsub(flag,"^c:","")
+                arguments[flag] = unquoted(value or "")
+            else
+                flag = match(argument,"^%-+(.+)")
+                if flag then
+                    flag = gsub(flag,"^c:","")
+                    arguments[flag] = true
+                else
+                    files[#files+1] = argument
+                end
+            end
+        end
+    end
+    if not environment.ownname then
+        if os.selfpath and os.selfname then
+            environment.ownname = file.addsuffix(file.join(os.selfpath,os.selfname),"lua")
+        end
+    end
+    environment.ownname = file.reslash(environment.ownname or arg[0] or 'unknown.lua')
+end
+
+function environment.setargument(name,value)
+    environment.arguments[name] = value
+end
+
+function environment.getargument(name,partial)
+    local arguments   = environment.arguments
+    local sortedflags = environment.sortedflags
+    if arguments[name] then
+        return arguments[name]
+    elseif partial then
+        if not sortedflags then
+            sortedflags = allocate(table.sortedkeys(arguments))
+            for k=1,#sortedflags do
+                sortedflags[k] = "^" .. sortedflags[k]
+            end
+            environment.sortedflags = sortedflags
+        end
+        -- example of potential clash: ^mode ^modefile
+        for k=1,#sortedflags do
+            local v = sortedflags[k]
+            if find(name,v) then
+                return arguments[sub(v,2,#v)]
+            end
+        end
+    end
+    return nil
+end
+
+environment.argument = environment.getargument
+
+function environment.splitarguments(separator) -- rather special, cut-off before separator
+    local done, before, after = false, { }, { }
+    local originalarguments = environment.originalarguments
+    for k=1,#originalarguments do
+        local v = originalarguments[k]
+        if not done and v == separator then
+            done = true
+        elseif done then
+            after[#after+1] = v
+        else
+            before[#before+1] = v
+        end
+    end
+    return before, after
+end
+
+function environment.reconstructcommandline(arg,noquote)
+    local resolveprefix = resolvers.resolve -- something rather special
+    arg = arg or environment.originalarguments
+    if noquote and #arg == 1 then
+        return unquoted(resolveprefix and resolveprefix(arg[1]) or arg[1])
+    elseif #arg > 0 then
+        local result = { }
+        for i=1,#arg do
+            result[i] = optionalquoted(resolveprefix and resolveprefix(arg[i]) or resolveprefix)
+        end
+        return concat(result," ")
+    else
+        return ""
+    end
+end
+
+-- handy in e.g. package.addluapath(environment.relativepath("scripts"))
+
+function environment.relativepath(path,root)
+    if not path then
+        path = ""
+    end
+    if not file.is_rootbased_path(path) then
+        if not root then
+            root = file.pathpart(environment.ownscript or environment.ownname or ".")
+        end
+        if root == "" then
+            root = "."
+        end
+        path = root .. "/" .. path
+    end
+    return file.collapsepath(path,true)
+end
+
+-- -- when script lives on e:/tmp we get this:
+--
+-- print(environment.relativepath("x/y/z","c:/w")) -- c:/w/x/y/z
+-- print(environment.relativepath("x"))            -- e:/tmp/x
+-- print(environment.relativepath("../x"))         -- e:/x
+-- print(environment.relativepath("./x"))          -- e:/tmp/x
+-- print(environment.relativepath("/x"))           -- /x
+-- print(environment.relativepath("c:/x"))         -- c:/x
+-- print(environment.relativepath("//x"))          -- //x
+-- print(environment.relativepath())               -- e:/tmp
+
+if arg then
+
+    -- new, reconstruct quoted snippets (maybe better just remove the " then and add them later)
+
+    local newarg, instring = { }, false
+
+    for index=1,#arg do
+        local argument = arg[index]
+        if find(argument,"^\"") then
+            if find(argument,"\"$") then
+                newarg[#newarg+1] = gsub(argument,"^\"(.-)\"$","%1")
+                instring = false
+            else
+                newarg[#newarg+1] = gsub(argument,"^\"","")
+                instring = true
+            end
+        elseif find(argument,"\"$") then
+            if instring then
+                newarg[#newarg] = newarg[#newarg] .. " " .. gsub(argument,"\"$","")
+                instring = false
+            else
+                newarg[#newarg+1] = argument
+            end
+        elseif instring then
+            newarg[#newarg] = newarg[#newarg] .. " " .. argument
+        else
+            newarg[#newarg+1] = argument
+        end
+    end
+    for i=1,-5,-1 do
+        newarg[i] = arg[i]
+    end
+
+    environment.initializearguments(newarg)
+
+    environment.originalarguments = mark(newarg)
+    environment.rawarguments      = mark(arg)
+
+    arg = { } -- prevent duplicate handling
+
+end
+
+-- used in mtx-epub(-parallel)
+
+function environment.globfiles(files)
+    if not files then
+        files = environment.files
+    end
+    if files then
+        local globbed = { }
+        for i=1,#files do
+            local f = files[i]
+            if find(f,"%*") then
+                local g = globfiles(f)
+                if g then
+                    for i=1,#g do
+                        globbed[#globbed+1] = g[i]
+                    end
+                end
+            else
+                globbed[#globbed+1] = f
+            end
+        end
+        return globbed
+    end
+end

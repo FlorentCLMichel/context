@@ -18,8 +18,6 @@ local insert, remove = table.insert, table.remove
 local tonumber   = tonumber
 local sub        = string.sub
 local math       = math
-local context    = context
-local implement  = interfaces.implement
 
 local random     = math.random
 local randomseed = math.randomseed
@@ -128,17 +126,6 @@ local function getrandom(where,...)
     end
 end
 
--- todo: also open up in utilities.randomizer.*
-
-implement { name = "getrandomnumber", actions = { getrandomnumber, context }, arguments = { "integer", "integer" } }
-implement { name = "getrandomdimen",  actions = { getrandomnumber, context }, arguments = { "dimension", "dimension" } }
-implement { name = "getrandomfloat",  actions = { getrandomnumber, context }, arguments = { "number", "number" } }
-implement { name = "getrandomseed",   actions = { getrandomseed,   context } }
-implement { name = "setrandomseed",   actions = setrandomseed, arguments = "integer" }
-implement { name = "pushrandomseed",  actions = pushrandomseed, public = true, }
-implement { name = "poprandomseed",   actions = poprandomseed, public = true, }
-implement { name = "reuserandomseed", actions = reuserandomseed, public = true, }
-
 -- fun stuff
 
 local newrepeatable, getrepeatable, getrepeatableseed, repeatable
@@ -205,6 +192,24 @@ do
         local r = job.variables.collected.repeatable
         return r and r[name or "default"] or default
     end
+
+end
+
+-- todo: also open up in utilities.randomizer.*
+
+if context then
+
+    local context   = context
+    local implement = interfaces.implement
+
+    implement { name = "getrandomnumber", actions = { getrandomnumber, context }, arguments = { "integer", "integer" } }
+    implement { name = "getrandomdimen",  actions = { getrandomnumber, context }, arguments = { "dimension", "dimension" } }
+    implement { name = "getrandomfloat",  actions = { getrandomnumber, context }, arguments = { "number", "number" } }
+    implement { name = "getrandomseed",   actions = { getrandomseed,   context } }
+    implement { name = "setrandomseed",   actions = setrandomseed, arguments = "integer" }
+    implement { name = "pushrandomseed",  actions = pushrandomseed, public = true, }
+    implement { name = "poprandomseed",   actions = poprandomseed, public = true, }
+    implement { name = "reuserandomseed", actions = reuserandomseed, public = true, }
 
     implement {
         name      = "newrepeatablerandom",

@@ -34,7 +34,6 @@ if not modules then modules = { } end modules ['font-ttf'] = {
 --    delta  = (1-factor)*left + factor * right
 
 local next, type, unpack = next, type, unpack
------ band, rshift = bit32.band, bit32.rshift
 local sqrt, round, abs, min, max = math.sqrt, math.round, math.abs, math.min, math.max
 local char, rep = string.char, string.rep
 local concat = table.concat
@@ -79,9 +78,9 @@ directives.register("fonts.streamreader",function()
 
 end)
 
-local short  = 2
-local ushort = 2
-local ulong  = 4
+local short  <const> = 2
+local ushort <const> = 2
+local ulong  <const> = 4
 
 local helpers       = readers.helpers
 local gotodatatable = helpers.gotodatatable
@@ -232,8 +231,8 @@ local function mergecomposites(glyphs,shapes)
                     end
                 end
                 offset = offset + count
-            elseif subshape.type== "nothing" then
-                -- weird but let's assume it's okay
+            elseif subshape.type == "nothing" then
+                -- weird but let's assume it's okay, can be space
             else
                 report("missing contours composite %s, component %s of %s, glyph %s",index,i,#components,subindex)
             end
@@ -319,145 +318,135 @@ local function applyaxis(glyph,shape,deltas,dowidth)
                         for contour=1,nofcontours do
                             local last = contours[contour]
                             if last >= first then
-                                local lastindex = cnt
-                                if firstindex < cnt then
-                                    for currentindex=firstindex,cnt do
-                                        local found = dpoints[currentindex]
-                                        if found <= first then
-                                            firstindex = currentindex
+                                while firstindex <= cnt and dpoints[firstindex] < first do
+                                    firstindex = firstindex + 1
+                                end
+                                local lastindex = firstindex
+                                while lastindex <= cnt and dpoints[lastindex] <= last do
+                                    lastindex = lastindex + 1
+                                end
+                                if firstindex < lastindex then
+                                    lastindex = lastindex - 1
+                                 -- print("unicode: ",glyph.unicode or "?")
+                                 -- print("contour: ",first,contour,last)
+                                 -- print("index  : ",firstindex,lastindex,cnt)
+                                 -- print("points : ",dpoints[firstindex],dpoints[lastindex])
+                                    local function find(i)
+                                        local prv = lastindex
+                                        for j=firstindex,lastindex do
+                                            local nxt = dpoints[j] -- We could save this lookup when we return it.
+                                            if nxt == i then
+                                                return false, j, false
+                                            elseif nxt > i then
+                                                return prv, false, j
+                                            end
+                                            prv = j
                                         end
-                                        if found == last then
-                                            lastindex = currentindex
-                                            break
-                                        elseif found > last then
-                                            -- \definefontfeature[book][default][axis={weight=800}]
-                                            -- \definefont[testfont][file:Commissioner-vf-test.ttf*book]
-                                            -- \testfont EΘÄΞ
-                                            while lastindex > 1 and dpoints[lastindex] > last do
-                                                lastindex = lastindex - 1
+                                        return prv, false, firstindex
+                                    end
+                                    -- We need the first and last points untouched so we first collect data.
+                                    for point=first,last do
+                                        local d1, d2, d3 = find(point)
+                                        local p2 = points[point]
+                                        if d2 then
+                                            xv[point] = xvalues[d2]
+                                            yv[point] = yvalues[d2]
+                                        else
+                                            local n1 = dpoints[d1]
+                                            local n3 = dpoints[d3]
+                                            -- Some day I need to figure out these extra points but I'll wait
+                                            -- till the standard is more clear and fonts become better (see:
+                                            -- ntg-context: fraunces.ttf > abcdef).
+                                            if n1 > nofpoints then
+                                                n1 = nofpoints
+                                            end
+                                            if n3 > nofpoints then
+                                                n3 = nofpoints
                                             end
                                             --
-                                            break
+                                            local p1 = points[n1]
+                                            local p3 = points[n3]
+                                            local p1x = p1[1]
+                                            local p2x = p2[1]
+                                            local p3x = p3[1]
+                                            local p1y = p1[2]
+                                            local p2y = p2[2]
+                                            local p3y = p3[2]
+                                            local x1 = xvalues[d1]
+                                            local y1 = yvalues[d1]
+                                            local x3 = xvalues[d3]
+                                            local y3 = yvalues[d3]
+                                            --
+                                            local fx
+                                            local fy
+                                            --
+                                            if p1x == p3x then
+                                                if x1 == x3 then
+                                                    fx = x1
+                                                else
+                                                    fx = 0
+                                                end
+                                            elseif p2x <= min(p1x,p3x) then
+                                                if p1x < p3x then
+                                                    fx = x1
+                                                else
+                                                    fx = x3
+                                                end
+                                            elseif p2x >= max(p1x,p3x) then
+                                                if p1x > p3x then
+                                                    fx = x1
+                                                else
+                                                    fx = x3
+                                                end
+                                            else
+                                                fx = (p2x - p1x)/(p3x - p1x)
+                                             -- fx = round(fx)
+                                                fx = (1 - fx) * x1 + fx * x3
+                                            end
+                                            --
+                                            if p1y == p3y then
+                                                if y1 == y3 then
+                                                    fy = y1
+                                                else
+                                                    fy = 0
+                                                end
+                                            elseif p2y <= min(p1y,p3y) then
+                                                if p1y < p3y then
+                                                    fy = y1
+                                                else
+                                                    fy = y3
+                                                end
+                                            elseif p2y >= max(p1y,p3y) then
+                                                if p1y > p3y then
+                                                    fy = y1
+                                                else
+                                                    fy = y3
+                                                end
+                                            else
+                                                fy = (p2y - p1y)/(p3y - p1y)
+                                             -- fy = round(fy)
+                                                fy = (1 - fy) * y1 + fy * y3
+                                            end
+                                         -- -- maybe:
+                                         -- if p1y ~= p3y then
+                                         --     fy = (p2y - p1y)/(p3y - p1y)
+                                         --     fy = (1 - fy) * y1 + fy * y3
+                                         -- elseif abs(p1y-p2y) < abs(p3y-p2y) then
+                                         --     fy = y1
+                                         -- else
+                                         --     fy = y3
+                                         -- end
+                                            --
+                                            xv[point] = fx
+                                            yv[point] = fy
                                         end
                                     end
-                                end
-                             -- print("unicode: ",glyph.unicode or "?")
-                             -- print("contour: ",first,contour,last)
-                             -- print("index  : ",firstindex,lastindex,cnt)
-                             -- print("points : ",dpoints[firstindex],dpoints[lastindex])
-                                local function find(i)
-                                    local prv = lastindex
-                                    for j=firstindex,lastindex do
-                                        local nxt = dpoints[j] -- we could save this lookup when we return it
-                                        if nxt == i then
-                                            return false, j, false
-                                        elseif nxt > i then
-                                            return prv, false, j
-                                        end
-                                        prv = j
+                                else
+                                    -- An unreferenced contour has no inferred deltas.
+                                    for point=first,last do
+                                        xv[point] = 0
+                                        yv[point] = 0
                                     end
-                                    return prv, false, firstindex
-                                end
-                                -- We need the first and last points untouched so we first
-                                -- collect data.
-                                for point=first,last do
-                                    local d1, d2, d3 = find(point)
-                                    local p2 = points[point]
-                                    if d2 then
-                                        xv[point] = xvalues[d2]
-                                        yv[point] = yvalues[d2]
-                                    else
-                                        local n1 = dpoints[d1]
-                                        local n3 = dpoints[d3]
-                                        -- Some day I need to figure out these extra points but
-                                        -- I'll wait till the standard is more clear and fonts
-                                        -- become better (ntg-context: fraunces.ttf > abcdef).
-                                        if n1 > nofpoints then
-                                            n1 = nofpoints
-                                        end
-                                        if n3 > nofpoints then
-                                            n3 = nofpoints
-                                        end
-                                        --
-                                        local p1 = points[n1]
-                                        local p3 = points[n3]
-                                        local p1x = p1[1]
-                                        local p2x = p2[1]
-                                        local p3x = p3[1]
-                                        local p1y = p1[2]
-                                        local p2y = p2[2]
-                                        local p3y = p3[2]
-                                        local x1 = xvalues[d1]
-                                        local y1 = yvalues[d1]
-                                        local x3 = xvalues[d3]
-                                        local y3 = yvalues[d3]
-                                        --
-                                        local fx
-                                        local fy
-                                        --
-                                        if p1x == p3x then
-                                            if x1 == x3 then
-                                                fx = x1
-                                            else
-                                                fx = 0
-                                            end
-                                        elseif p2x <= min(p1x,p3x) then
-                                            if p1x < p3x then
-                                                fx = x1
-                                            else
-                                                fx = x3
-                                            end
-                                        elseif p2x >= max(p1x,p3x) then
-                                            if p1x > p3x then
-                                                fx = x1
-                                            else
-                                                fx = x3
-                                            end
-                                        else
-                                            fx = (p2x - p1x)/(p3x - p1x)
--- fx = round(fx)
-                                            fx = (1 - fx) * x1 + fx * x3
-                                        end
-                                        --
-                                        if p1y == p3y then
-                                            if y1 == y3 then
-                                                fy = y1
-                                            else
-                                                fy = 0
-                                            end
-                                        elseif p2y <= min(p1y,p3y) then
-                                            if p1y < p3y then
-                                                fy = y1
-                                            else
-                                                fy = y3
-                                            end
-                                        elseif p2y >= max(p1y,p3y) then
-                                            if p1y > p3y then
-                                                fy = y1
-                                            else
-                                                fy = y3
-                                            end
-                                        else
-                                            fy = (p2y - p1y)/(p3y - p1y)
--- fy = round(fy)
-                                            fy = (1 - fy) * y1 + fy * y3
-                                        end
-                                     -- -- maybe:
-                                     -- if p1y ~= p3y then
-                                     --     fy = (p2y - p1y)/(p3y - p1y)
-                                     --     fy = (1 - fy) * y1 + fy * y3
-                                     -- elseif abs(p1y-p2y) < abs(p3y-p2y) then
-                                     --     fy = y1
-                                     -- else
-                                     --     fy = y3
-                                     -- end
-                                        --
-                                        xv[point] = fx
-                                        yv[point] = fy
-                                    end
-                                end
-                                if lastindex < cnt then
-                                    firstindex = lastindex + 1
                                 end
                             end
                             first = last + 1
@@ -849,25 +838,19 @@ end
 local c_zero <const> = char(0)
 local s_zero <const> = char(0,0)
 
--- local shorthash = setmetatableindex(function(t,k)
---  -- t[k] = char(band(rshift(k,8),0xFF),band(k,0xFF)) return t[k]
---     t[k] = char((k >> 8) & 0xFF,k & 0xFF) return t[k]
--- end)
+-- local function toushort(n)
+--     return char((n >> 8) & 0xFF,n & 0xFF)
+-- end
 
-local function toushort(n)
- -- return char(band(rshift(n,8),0xFF),band(n,0xFF))
-    return char((n >> 8) & 0xFF,n & 0xFF)
- -- return shorthash[n]
-end
+-- local function toshort(n)
+--     if n < 0 then
+--         n = n + 0x10000
+--     end
+--     return char((n >> 8) & 0xFF,n & 0xFF)
+-- end
 
-local function toshort(n)
-    if n < 0 then
-        n = n + 0x10000
-    end
- -- return char(band(rshift(n,8),0xFF),band(n,0xFF))
-    return char((n >> 8) & 0xFF,n & 0xFF)
- -- return shorthash[n]
-end
+local toshort  = sio.tocardinal2
+local toushort = sio.tocardinal2
 
 -- todo: we can reuse result, xpoints and ypoints
 
@@ -885,17 +868,18 @@ local function repackpoints(glyphs,shapes)
     for index=0,#glyphs do
         local shape = shapes[index]
         if shape then
-            local r     = 0
-            local glyph = glyphs[index]
+            local r           = 0
+            local glyph       = glyphs[index]
             local contours    = shape.contours
             local nofcontours = contours and #contours or 0
+if nofcontours > 0 then
             local boundingbox = glyph.boundingbox or noboundingbox
             r = r + 1 result[r] = toshort(nofcontours)
             r = r + 1 result[r] = toshort(boundingbox[1]) -- xmin
             r = r + 1 result[r] = toshort(boundingbox[2]) -- ymin
             r = r + 1 result[r] = toshort(boundingbox[3]) -- xmax
             r = r + 1 result[r] = toshort(boundingbox[4]) -- ymax
-            if nofcontours > 0 then
+--             if nofcontours > 0 then
                 for i=1,nofcontours do
                     r = r + 1 result[r] = toshort(contours[i]-1)
                 end
@@ -993,7 +977,7 @@ local function repackpoints(glyphs,shapes)
              -- r = r + 1 result[r] = concat(ypoints)
                 r = r + 1 result[r] = concat(xpoints,"",1,x)
                 r = r + 1 result[r] = concat(ypoints,"",1,y)
-            end
+--             end
             -- can be helper or delegated to user
             local stream  = concat(result,"",1,r)
             local length  = #stream
@@ -1010,6 +994,9 @@ local function repackpoints(glyphs,shapes)
                 stream = stream .. padding
             end
             glyph.stream = stream
+else
+            glyph.stream = ""
+end
         end
     end
 end

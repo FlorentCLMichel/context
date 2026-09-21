@@ -1,0 +1,60 @@
+% language=us signal=signal
+
+% \nologbuffering
+
+\usemodule[present-boring,abbreviations-logos]
+
+\definelayer
+  [extratext]
+  [preset=rightbottom,
+   height=\textheight,
+   width=\textwidth]
+
+\setupbackgrounds
+  [text]
+  [background=extratext]
+
+\startdocument
+  [title={blowing the whistle},
+   banner={tagged or flagged},
+   location={bachotex\enspace {\bf 2025}\enspace meeting}]
+
+\starttitle[title=Outline]
+
+\startitemize
+\startitem
+    Tagged \PDF\ gets enforced upon us. Validators dominate over properly designed
+    documents. What happened to rendering for specific target groups and
+    purposes?
+\stopitem
+\startitem
+    Universities want documents to comply so they offer checkers. We managed to
+    get them happy (after all, they are clueless about content) except for
+    colors; show an example.
+\stopitem
+\startitem
+    However, the tool that we use is rather inaccessible. Take error messages.
+    How accessible are they?
+\stopitem
+\startitem
+    But \unknown\ let's test this! We introduce several techniques, for instance
+    QR codes. After all, this is the time of phones and we need to attract youth.
+    Of course it now can become fashion to generate errors.
+\stopitem
+\startitem
+    But isn't it more challenging to use colors? How can they help us? We need to
+    do some research!
+\stopitem
+\startitem
+    Tove's color \PDF\ talk. A scientific experiment to determine if colors in
+    \PDF\ are really an issue. If not, we can move back to \TEX.
+\stopitem
+\startitem
+    Back to \TEX. We're going to do two tests: with QR tags and with colors. And
+    in the end the user might decide. We also explore sound as feedback!
+\stopitem
+\stopitemize
+
+\stoptitle
+
+\stopdocument

@@ -10,7 +10,6 @@ local format, concat = string.format, table.concat
 local utfchar, utfbyte, char = utf.char, utf.byte, string.char
 local lpegmatch, lpegpatterns = lpeg.match, lpeg.patterns
 local P, C, R, S, Cc, Cs, V = lpeg.P, lpeg.C, lpeg.R, lpeg.S, lpeg.Cc, lpeg.Cs, lpeg.V
------ rshift = bit32.rshift
 local hextointeger, octtointeger = string.hextointeger,string.octtointeger
 
 lpdf = lpdf or { }

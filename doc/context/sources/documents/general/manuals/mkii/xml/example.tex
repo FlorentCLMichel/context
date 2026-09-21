@@ -1,0 +1,1339 @@
+% interface=nl output=pdftex
+
+\gebruikmodule
+  [chart, abr-02]
+
+\logo [EXAMPLE] {eXaMpLe}
+
+\gebruikXMLfilter[mml,mmp,mmc]
+
+\input chrt-xml
+
+%\steluitvoerin
+%  [pdftex]
+
+\stelkorpsin
+  [lbr,10pt]
+
+\mainlanguage
+  [en]
+
+\stelwitruimtein
+  [middel]
+
+\stelblankoin
+  [middel]
+
+\steltypenin
+  [blanko=middel]
+
+%\stelpapierformaatin
+%  [S6,liggend]
+%  [S6,liggend]
+
+\stellayoutin
+  [breedte=midden,
+   hoogte=passend,
+   rugwit=12pt,
+   kopwit=12pt,
+   hoofd=0cm,
+   voet=0cm,
+   onder=8pt,
+   onderafstand=16pt]
+
+\stelkleurenin
+  [status=start]
+
+\steltypenin
+  [kleur=framecolor]
+
+\steltypein
+  [kleur=linecolor]
+
+\definecolor [focuscolor]      [r=.5,g=.9,b=.5]
+\definecolor [linecolor]       [r=.9,g=.5,b=.5]
+\definecolor [framecolor]      [r=.5,g=.5,b=.9]
+\definecolor [backgroundcolor] [s=.50]
+\definecolor [textgroundcolor] [s=.85]
+
+\definecolor [FLOWfocuscolor]      [focuscolor]
+\definecolor [FLOWlinecolor]       [linecolor]
+\definecolor [FLOWframecolor]      [framecolor]
+\definecolor [FLOWbackgroundcolor] [backgroundcolor]
+
+\definieerfont[TitleFont]  [RegularBold at 60pt]
+\definieerfont[AuthorFont] [RegularBold at 18pt]
+\definieerfont[ContentFont][RegularBold at 15pt]
+
+\startMPrun
+  logo_type := 304 ; mpgraph := 304 ; input mp-prag ;
+\stopMPrun
+
+\stelachtergrondenin
+  [pagina]
+  [achtergrond=kleur,
+   achtergrondkleur=backgroundcolor,
+   achtergrondoffset=4pt]
+
+\stelachtergrondenin
+  [tekst][tekst]
+  [achtergrond={kleur,vooruit},
+   achtergrondkleur=textgroundcolor]
+
+\stelachtergrondenin
+  [status=herhaal]
+
+\definieeroverlay[vooruit][\overlaybutton{vooruit}]
+
+\stelinteractiein
+  [kleur=backgroundcolor,
+   contrastkleur=backgroundcolor,
+   menu=aan,
+   status=start]
+
+%\stelinteractieschermin
+%  [optie=max]
+
+\stelsubpaginanummerin
+  [status=start,
+   wijze=perparagraaf]
+
+\stelinteractiemenuin
+  [onder]
+  [midden=\hskip1em,
+   offset=0pt,
+   letter=vet,
+   status=start,
+   kleur=textgroundcolor,
+   contrastkleur=textgroundcolor]
+
+\startuniqueMPgraphic{frame}
+  draw unitsquare
+    xscaled \overlaywidth yscaled \overlayheight
+    withpen pencircle scaled 1pt
+    withcolor \MPcolor{\overlaylinecolor} ;
+\stopuniqueMPgraphic
+
+\definieeroverlay[frame][\uniqueMPgraphic{frame}]
+
+\definesymbol[vorige]   [{\strut\symbool[1]}]
+\definesymbol[ergens]   [{\strut\symbool[1]}]
+\definesymbol[volgende] [{\strut\symbool[1]}]
+
+\stelinteractiebalkin
+  [variant=d,
+   status=start,
+   symbool=ja,
+   kleur=textgroundcolor,
+   contrastkleur=linecolor]
+
+\startinteractiemenu[onder]
+\got [SluitDocument] exit      \\
+\got [eerstepagina]  begin     \\
+\got [reference]     reference \\
+\hfill
+\txt \interactiebalk \\
+\hfill
+%\got [introduction]  \externalfigure[mp-xml.1]  [hoogte=8pt] \\
+%\got [general]       \externalfigure[mp-xml.100][hoogte=8pt] \\
+%\got [processing]    \externalfigure[mp-xml.2]  [hoogte=8pt] \\
+%\got [interfaces]    \externalfigure[mp-xml.101][hoogte=8pt] \\
+%\got [workflows]     \externalfigure[mp-xml.3]  [hoogte=8pt] \\
+%\got [examples]      \externalfigure[mp-xml.102][hoogte=8pt] \\
+%\got [reference]     \externalfigure[mp-xml.4]  [hoogte=8pt] \\
+\got [introduction]  \symbol[introduction] \\
+\got [general]       \symbol[general]      \\
+\got [processing]    \symbol[processing]   \\
+\got [interfaces]    \symbol[interfaces]   \\
+\got [workflows]     \symbol[workflows]    \\
+\got [examples]      \symbol[examples]     \\
+\got [reference]     \symbol[reference]    \\
+\stopinteractiemenu
+
+\definefiguresymbol [introduction] [mp-xml.1]  [hoogte=8pt] 
+\definefiguresymbol [general]      [mp-xml.100][hoogte=8pt] 
+\definefiguresymbol [processing]   [mp-xml.2]  [hoogte=8pt] 
+\definefiguresymbol [interfaces]   [mp-xml.101][hoogte=8pt] 
+\definefiguresymbol [workflows]    [mp-xml.3]  [hoogte=8pt] 
+\definefiguresymbol [examples]     [mp-xml.102][hoogte=8pt] 
+\definefiguresymbol [reference]    [mp-xml.4]  [hoogte=8pt] 
+
+\def\SomeLogo#1%
+  {\pagina
+   \naarbox
+     {\externfiguur[mp-xml.#1][bfactor=max]}%
+     [eerstepagina]
+   \par\nointerlineskip}
+
+\def\MainChart%
+  {%\pagina
+   \startregelcorrectie
+   \bgroup
+   \stelinteractiein[kleur=,contrastkleur=]%
+   \framed
+     [breedte=ruim,
+      kader=overlay,
+      achtergrond=frame,
+      kaderkleur=linecolor]
+     {\FLOWchart[convert-en]}%
+   \egroup
+   \stopregelcorrectie}
+%   \par\nointerlineskip}
+
+\def\SomeChart#1#2%
+  {\pagina
+   \bgroup
+   \stelinteractiein[kleur=,contrastkleur=]%
+   \setupFLOWcharts[focus=#2]%
+   \naarbox
+     {\framed
+        [breedte=ruim,
+         kader=overlay,
+         achtergrond=frame,
+         kaderkleur=linecolor]
+        {\paginareferentie[#2]\FLOWchart[#1]}}%
+     [workflows]
+   \egroup
+   \blanko[2*groot]
+   }% \par\nointerlineskip}
+
+\setupFLOWcharts
+  [dy=.5\bodyfontsize,
+   dx=2\bodyfontsize]
+
+\def\KopCommando#1%
+  {\naarbox{#1}[eerstepagina]}
+
+\stelkopin
+  [paragraaf,subparagraaf]
+  [variant=paragraaf,
+   nummer=nee,
+   tekstcommando=\KopCommando,
+   uitlijnen=links,
+   pagina=,
+   voor=\removelastskip,
+   na=\vskip24pt,
+   kleur=backgroundcolor,
+   letter=\bfc]
+
+\stelkopin
+  [subparagraaf]
+  [variant=paragraaf,
+   nummer=nee,
+   tekstcommando=\KopCommando,
+   uitlijnen=links,
+   voor={\blanko[2*groot]},
+   na=\blanko,
+   kleur=backgroundcolor,
+   letter=\bfb]
+
+\starttekst
+
+\stelkopnummerin[paragraaf][+1]
+
+\startstandaardopmaak
+
+\stelinteractiein[kleur=,letter=]
+
+\vskip24pt
+
+\steluitlijnenin[links]
+
+\startkleur[backgroundcolor]
+
+\TitleFont \stelinterliniein
+
+XML in \par \ConTeXt
+
+\vfill
+
+\ContentFont \stelinterliniein % better: \plaatslist[section]
+
+\naarbox {\strut        introduction}[introduction]\par
+\naarbox {\strut      general markup}[general]     \par
+\naarbox {\strut    processing files}[processing]  \par
+\naarbox {\strut defining interfaces}[interfaces]  \par
+\naarbox {\strut     basic workflows}[workflows]   \par
+\naarbox {\strut       some examples}[examples]    \par
+\naarbox {\strut   command reference}[reference]   \vskip12pt
+
+\AuthorFont \stelinterliniein
+
+\naarbox{\strut PRAGMA ADE \blokje[breedte=1pt,hoogte=max,diepte=max] \currentdate}[laatstepagina]
+
+\stopkleur
+
+\vskip24pt
+
+\stopstandaardopmaak
+
+\SomeLogo{1} \paragraaf[introduction]{introduction}
+
+This document is meant for those who want to use \CONTEXT\
+for processing documents coded in \XML. We will introduce
+some basics of \XML\ processing first. In the following
+chapters we will explain the interface between \XML\ and
+\CONTEXT. This document is a by||product of the internal
+\PRAGMA\ project that is carried under the name \EXAMPLE,
+so you may expect some examples.
+
+Some basic knowledge of general markup as well as \CONTEXT\
+does not hurt. Since everyone who read this document
+probably spent some time using \CONTEXT, we hope that the
+examples will ring a few bells.
+
+We will {\em not} explain \XML, \XSLT, \TEX, \CONTEXT\ and
+\PDF\ in full detail. Maybe the next chapters will inspire
+the reader to download the specifications and manuals and
+spend some time studying.
+
+No, this document was not encoded in \XML, but in \TEX. The
+\XML\ examples are processed as embedded \XML, so what we
+keyed is what you see. We hope that you will enjoy reading
+this manual.
+
+Hans Hagen \& Ton Otten
+
+\SomeLogo{100} \paragraaf[general]{general markup}
+
+General markup can be defined as \citaat {coding a document
+source in such a way that by reading the code, the structure
+and meaning is clear}. Readability of such a source is
+therefore an important prerequisite. In this chapter we will
+introduce a few concepts. A more in||depth exploration of
+mapping \XML\ onto \CONTEXT\ will take place in following
+chapters.
+
+\subonderwerp{coding in angle brackets}
+
+An intentional way of coding is not new. Ever since
+computers were around, users have tried to code documents
+in such a way that its content could be understood by
+humans and programs. As soon as the coding permits multiple
+output formats, it can be classified as general markup.
+General markup has nothing to do with typography, but is
+focused on structure.
+
+\starttypen
+@chapter General Markup
+
+In this chapter we will deal with ...
+\stoptypen
+
+In this example, the \type {@chapter} ensures that we can
+pick up the chapter title and typeset it in a special way.
+To \TEX, a more natural syntax is:
+
+\starttypen
+\chapter {General Markup}
+
+In this chapter we will deal with ...
+\stoptypen
+
+Both examples share that they not only enable parsing the
+code, but also provide a visual cue about the structure of
+the document. Although some people tend to classify this
+kind of coding as archaic, in principle it does not differ
+too much from todays most popular coding \citeer {languages},
+like \HTML\ and \XML:
+
+\starttypen
+<chapter>General Markup</chapter>
+
+In this chapter we will deal with ...
+\stoptypen
+
+One of the purposes of coding in such a verbose way is that
+we want to be able to reuse the information. Since both the
+\type {@} and \type {\abc{}} way of coding is emotionally
+related to applications, some people favour the \type {<xyz>}
+way of dealing with source code. Although we feel that many
+applications that deal with this angle bracketed code, are
+just as \citeer {narrow minded} as any application, we
+nevertheless follow this thread in this document.
+
+Just adding \type {<>} to a document is not enough. A
+document may look modern and up||to||date, but this kind of
+neutral coding only makes sense when one is willing to look
+behind the horizon of todays applications. Typesetting and
+reading are moving from paper to screen and beyond, and the
+more structure we add, the more prepared we are for future
+reuse. But, how much structure is needed? The previous
+example can be recoded as:
+
+\starttypen
+<chapter>General Markup</chapter>
+<p>In this chapter we will deal with ...</p>
+\stoptypen
+
+Even these additional paragraph markers cannot be enough, so
+maybe we should go further:
+
+\starttypen
+<chapter>
+  <title>General Markup</title>
+  <text>
+    <p>In this chapter we will deal with ...</p>
+  </text>
+</chapter>
+\stoptypen
+
+Coding in this way, makes it easy to filter chapters, as
+well as their titles, the text or even individual
+paragraphs. It may be clear that in order to handle such
+code properly, we also need a clear description on how to
+interpret the labels. Hopefully, the labels themselves
+provide some information, but it is good practice to define
+them in a so called document type definition:
+
+\starttypen
+<?XML version="1.0" encoding="ISO-8859-1"?>
+
+<!ELEMENT chapter (title,text)>
+<!ELEMENT text    (p)>
+<!ELEMENT title   (#PCDATA)>
+<!ELEMENT p       (#PCDATA)>
+\stoptypen
+
+This means as much as: there can be \type {chapter}s, and
+such a chapter can have a \type {title} and a body of \type
+{text}. A text can consist of one or more paragraphs, and
+since there can be many of them, we use a short element
+name \type {p}.
+
+\subonderwerp{converting \XML}
+
+In itself, coding and defining is not enough: we want to
+typeset a document, and why not use \TEX\ for doing that?
+Later we will describe several ways of going from \XML\ to
+for instance \PDF\ by using \TEX, but first we will
+concentrate on a general transformation language, in this
+case \XSLT. The next snippets define the transformation from
+the previous code to \CONTEXT\ code.
+
+\starttypen
+<xsl:template match="chapter">
+<xsl:apply-templates/>
+</xsl:template>
+\stoptypen
+
+This is the way to say that everything between \type
+{<chapter>} and \type {</chapter>} is passed along the way.
+
+\starttypen
+<xsl:template match="chapter/title">
+<xsl:text>\chapter{</xsl:text>
+<xsl:apply-templates/>
+<xsl:text>}</xsl:text>
+</xsl:template>
+\stoptypen
+
+The title is to be converted to \type {\chapter{...}}, and the
+text is simply passed on.
+
+\starttypen
+<xsl:template match="chapter/text">
+<xsl:apply-templates/>
+</xsl:template>
+\stoptypen
+
+To make sure that \TEX\ will know where a new paragraph will
+start, the \type {</p>} tags are converted into \type
+{\par}'s.
+
+\starttypen
+<xsl:template match="chapter/text/p">
+<xsl:apply-templates/>
+<xsl:text>\par</xsl:text>
+</xsl:template>
+\stoptypen
+
+A few more commands are needed to make this snippet of
+\XSLT\ acceptable for programs like \type {xt}, but when
+processed, we will have a proper \TEX\ file that can be
+processed by \CONTEXT.
+
+\subonderwerp{direct processing}
+
+In many cases, the overhead involved in additional coding
+is not worth the effort. Since \TEX\ and \CONTEXT\ can
+manipulate text in quite advanced ways, directly coding in a
+syntax more natural to \TEX, often pays off. When properly
+coded, such a document can be converted to \XML\ anyway.
+
+In \CONTEXT\ you can also mix \TEX\ and \XML\ code. You can
+for instance decide to encode your formulas in \MATHML, while
+the rest is just \TEX. From this you may indeed deduce that
+\CONTEXT\ can handle \XML\ directly. Therefore, in many
+cases, you can bypass the \XSL\ conversion stage.
+
+\startbuffer
+<math>
+  <apply> <root/>
+    <cn> 3 </cn>
+    <apply> <times/>
+      <apply> <plus/>  <ci> a </ci> <ci> b </ci> </apply>
+      <apply> <minus/> <ci> c </ci> <ci> d </ci> </apply>
+    </apply>
+  </apply>
+</math>
+\stopbuffer
+
+\typebuffer
+
+\CONTEXT\ will convert this piece of content \MATHML\ into:
+
+\processXMLbuffer
+
+Although \XML\ parsing is part of the core, you explicitly
+need to load the specific kind of \XML\ support you need
+for your job. You define the mapping of \XML\ elements onto
+\CONTEXT\ commands in your regular environments. However,
+for some well standardized \DTD's \CONTEXT\ (will) provide
+the corresponding \XML\ filters. Basic \MATHML\ support is
+for instance part of the \CONTEXT\ distribution, although
+we can imagine that you use your own implementation. The
+special file prefix \type {xtag} is reserved for the
+filters provided by \PRAGMA. You can load the
+presentational and content \MATHML\ filters by saying:
+
+\starttypen
+\useXMLfilter[mml,mmp,mmc] % basic mathml/presentational/content
+\stoptypen
+
+\subonderwerp{getting started}
+
+A convenient way to get familiar with \XML\ is to embed this
+kind of coding into a normal \TEX\ document. In this manual,
+we used buffers to accomplish this. So, given that you have
+loaded the \MATHML\ filters, you can say:
+
+\startbuffer
+\startbuffer
+<math>
+  <apply> <eq/>
+    <apply> <power/> <ci> a </ci> <ci> 2 </ci> </apply>
+    <apply> <plus/>
+      <apply> <power/> <ci> b </ci> <ci> 2 </ci> </apply>
+      <apply> <power/> <ci> c </ci> <ci> 2 </ci> </apply>
+    </apply>
+  </apply>
+</math>
+\stopbuffer
+\stopbuffer
+
+\typebuffer \haalbuffer
+
+You can show this buffer verbatim by saying \type {\typebuffer}
+and process its content with \type {\processXMLbuffer}. As
+with other buffers, you can use label them and recall them
+by name.
+
+\processXMLbuffer
+
+Instead of buffers, you can also use:
+
+\startbuffer
+\startXMLdata
+<math>
+  <apply> <plus/> <ci> a </ci> <ci> b </ci> <ci> c </ci> </apply>
+</math>
+\stopXMLdata
+\stopbuffer
+
+\typebuffer
+
+In print this wil become:
+
+\haalbuffer
+
+You can save \XML\ code in memory with:
+
+\startbuffer
+\startXMLcode[somename]
+<math>
+  <apply> <plus/> <ci> a </ci> <ci> b </ci> <ci> c </ci> </apply>
+</math>
+\stopXMLcode
+\stopbuffer
+
+\typebuffer \haalbuffer
+
+after which you can recall it with \typ {\getXMLcode
+[somename]}, for instance in the body of a macro. This
+latter mechanism is meant for future communication with
+other applications.
+
+\SomeLogo{3} \paragraaf[processing]{processing files}
+
+Apart from the previously mentioned methods of embedding
+\XML\ into a document, we need a way to process a complete
+\XML\ file. In doing that, we have the problem that once
+\XML\ processing mode is entered, we no longer can use the
+backslash to execute commands. So, we have to make sure
+that we not only can enter \XML\ mode, but also quit it.
+
+\starttypen
+\defineXMLenvironment [note] {(} {)}
+
+\enableXML just a <note>little</note> bit of XML
+\stoptypen
+
+When we process this file, \TEX\ will finally wait for you to
+enter a command on the console, since it encountered the end
+of a file. One solution is the following:
+
+\starttypen
+\defineXMLenvironment [note] {(} {)}
+
+\enableXML just a <note>little</note> bit of XML
+
+<?context-command \disableXML ?>
+\stoptypen
+
+The next solution works as well:
+
+\starttypen
+\defineXMLenvironment [note] {(} {)}
+
+\starttext \enableXML
+
+just a <note>little</note> bit of XML
+
+<?context-command \stoptext ?>
+\stoptypen
+
+These methods are quite ugly, and since normally we will use
+\XML\ source code that is stored in another file, in most
+cases one will use one of:
+
+\starttypen
+\processXMLfile        {filename.xml}
+\processXMLfilegrouped {filename.xml}
+\stoptypen
+
+This second command is probably the best one to use, as in:
+
+\starttypen
+% here go style definitions
+% and XML to TEX mappings
+
+\starttext
+\processXMLfilegrouped {filename.xml}
+\stoptext
+\stoptypen
+
+\SomeLogo{101} \paragraaf[interfaces]{defining interfaces}
+
+When mapping \XML\ onto \CONTEXT\ commands, the complexity
+of the definitions depends on to what extend the content is
+to be manipulated. We will start with some examples of
+straightforward mappings, where no tricky things are needed.
+
+\subonderwerp{mapping elements}
+
+Any document has a starting point and an end point.
+Furthermore there will be many rather symmetrical
+structuring commands.
+
+Consider the following example:
+
+\starttypen
+<document>
+  <title name="small">A very small document</title>
+  <list packed="yes">
+    <item>of course these commands <b>don't</b> match &context;
+          commmand names</item>
+    <item>and even worse, <ref name="att"> attributes will not
+          be the same as in &context;</item>
+  </list>
+</document>
+\stoptypen
+
+For the moment we will ignore the attributes and just handle
+the plain elements. The document is encapsulated in a \type
+{document} element. You can use the begin- and endtag to do
+initializations, but for the moment we stick to a simple
+definition.
+
+\starttypen
+\defineXMLenvironment [document] \starttext    \stoptext
+\stoptypen
+
+The title element comes next. Because we need to pass the
+content of this element to a context heading command, like
+\type {\title}, we will define it as an argument element.
+
+\starttypen
+\defineXMLargument [title] \title
+\stoptypen
+
+This means as much as that the content is collected and
+passed on to \type {\title}. As usual, \CONTEXT\ will take
+care of preparing the necessary table of content entries,
+if needed.
+
+The itemized list has child elements that identify the
+individual components. A suitable definition is:
+
+\starttypen
+\defineXMLenvironment [list] \startitemize \stopitemize
+\defineXMLenvironment [item] \item         \par
+\stoptypen
+
+Because in \CONTEXT\ you don't have to explicitly mark the
+end of an item, the last element can be defined as a
+command element:
+
+\starttypen
+\defineXMLcommand [item] \item
+\stoptypen
+
+The \type {b} element can be mapped onto \CONTEXT's \type
+{\bf} command. The best way to do this is the following:
+
+\starttypen
+\defineXMLgrouped [b] \bf
+\stoptypen
+
+In this case we could have said:
+
+\starttypen
+\defineXMLenvironment [b] {\bgroup\bf} {\egroup}
+\stoptypen
+
+But in other situations the previous definition is more
+robust. Although a valid definition, the following one is to
+be avoided, since picking up arguments takes time.
+
+\starttypen
+\defineXMLargument [b] {\groupedcommand{\bf}{}}
+\stoptypen
+
+The reference element \type {ref} is an example of an empty
+element. The following invocations are equivalent:
+
+\starttypen
+<ref name="something"></ref>
+<ref name="something" />
+\stoptypen
+
+For handling empty elements, we have two definition commands
+available. Given that \type {\myXMLref} is defined, you can
+say:
+
+\starttypen
+\defineXMLcommand  [ref] \myXMLref
+\defineXMLsingular [ref] \myXMLref
+\stoptypen
+
+The command definition handles both cases, while the
+\type {singular} one only handles the second (\type {../>})
+alternative. This makes it possible to distinguish between
+both cases, although officially there is no distinction.
+
+Now, how should we define this \type {\myXMLref} command. It
+is clear that we have to use the \type {name} attribute.
+Because the definition of \type {\myXMLref} is rather
+simple, we can instead directly handle the reference, as in:
+
+\starttypen
+\defineXMLsingular [ref] {\pagereference[\XMLpar{ref}{name}{}]}
+\stoptypen
+
+You can pick up a parameter with \type {\XMLpar}. Each
+parameter is accessed by its element and attribute. The
+third argument to \type {\XMLpar} is the default value. We
+can slightly change the definition of the \type {title}
+element.
+
+\starttypen
+\defineXMLargument [title] {\title[\XMLpar{title}{name}{}]}
+\stoptypen
+
+For more advanced attribute handling, there are specific
+testing macros available, and to enlighten the task of using
+the attributes as input for \CONTEXT\ setup commands, there
+are methods to map values onto other ones.
+
+A complication in mapping is that we have to make sure that
+the values are passed in the way that macros expect them. For
+instance, if we want to convert \type {packed="yes"} into
+the \type {packed} directive, we can use:
+
+\starttypen
+\XMLifequalelse{itemize}{packed}{yes}{packed}{}
+\stoptypen
+
+This expands into \type {packed} or into an empty string.
+Expansion can be very confusing since one never knows when
+this takes place, unless one has a rather detailed
+knowlegde of \CONTEXT's low level behaviour.
+
+\starttypen
+\defineXMLenvironment [itemize]
+  {\startitemize[\XMLifequalelse{itemize}{packed}{yes}{packed}{}]}
+  {\stopitemize}
+\stoptypen
+
+The following definition works out all right, since \type
+{\startitemize} expands its argument, but in other
+situations one may have to force expansion:
+
+\starttypen
+\defineXMLenvironment [itemize]
+  {\expanded{\startitemize[....]}}
+  {\stopitemize}
+\stoptypen
+
+This example also demonstrates that mapping \XML\ onto
+\CONTEXT\ is not that hard, but sometimes needs a bit of
+hard work. The good news is of course that once that job is
+done, you seldom have to look into it again.
+
+\subonderwerp{entities}
+
+You can compare entities to \CONTEXT's named glyphs,
+abbreviations, logos and alike. They are, so to say,
+predefined representations of something. In the previous
+example we met \type {&context;} as an example of an entity.
+
+You can define an entity with:
+
+\starttypen
+\defineXMLentity [context] {The ConTeXt Macro Package}
+\stoptypen
+
+although, when you use \TEX, it makes more sense to say:
+
+\starttypen
+\defineXMLentity [context] \ConTeXt
+\stoptypen
+
+We will provide an entity dictionary for the more or less
+standardized named glyphs, the most common logos, and
+special characters. You can load these by saying:
+
+\starttypen
+\useXMLfilter[ent]
+\stoptypen
+
+As with elements, you can always overload an entity. Behind
+the screens, entities become empty elements, which enables
+them to move around in the \CONTEXT\ kernel and auxiliary
+files without much trouble. So, don't be surprised when you
+see such a disguised entity passing by on your screen.
+
+\subonderwerp{delimited environments}
+
+In \TEX\ there are several ways to define a command that
+acts upon an argument. The most straightforward way is:
+
+\starttypen
+\def\MyCommand#1{... #1 ...}
+\stoptypen
+
+Such a command is invoked with \type {\MyCommand{Works}}
+where the \type {{}} determines the begin and end of the
+argument.
+
+Sometimes, using braces is not that charming, and
+delimiters are used. Many setup commands in \CONTEXT\ use
+\type {[]} to delimit the parameters. One reason for this
+is that it stands out in editors, especially when they
+support syntax highlighting. Another reason is that
+implementing optional arguments is more convenient with
+non||braces.
+
+Yet another kind of delimiting is the following:
+
+\starttypen
+\StartOfMyText
+... my beautiful text ...
+\StopOfMyText
+\stoptypen
+
+Such a command can be defined as:
+
+\starttypen
+\def\StartOfMyText#1\StopOfMyText{... #1 ...}
+\stoptypen
+
+Normally users of \CONTEXT\ can remain happily unaware of
+how a command is implemented. There are however a few cases
+where \CONTEXT\ uses delimited commands of the last
+category, for instance in natural tables. Since these
+macros were developed with processing \HTML\ in mind, using
+them in an \XML\ environment makes sense.
+
+\startbuffer[xml]
+<table>
+  <tr> <td> a </td> <td> one   </td> <td> alpha </td> </tr>
+  <tr> <td> b </td> <td> two   </td> <td> beta  </td> </tr>
+  <tr> <td> c </td> <td> three </td> <td> gamma </td> </tr>
+</table>
+\stopbuffer
+
+\typebuffer[xml]
+
+Here we need to map \typ {<tr> ... </tr>} onto \typ {\bTR
+... \eTR} and \typ {<td> ... </td>} onto \typ {\bTD ...
+\eTD}. This is handled by the pickup element
+environment.
+
+\startbuffer[def]
+\defineXMLenvironment [table] \bTABLE \eTABLE
+\defineXMLpickup      [tr]    \bTR    \eTR
+\defineXMLpickup      [td]    \bTD    \eTD
+\stopbuffer
+
+\typebuffer[def] \haalbuffer[def]
+
+For simple tables this solution works quite well, which is
+demonstrated here.
+
+\startregelcorrectie
+\processXMLbuffer[xml]
+\stopregelcorrectie
+
+But, what happens when a user nests a table. Just take a
+close look at the following table, and try to imagine what
+happens when we pick up the argument of the \type {<td>}
+that is followed by \type {<table>}.
+
+\startbuffer[xml]
+<table>
+<tr> <td> a </td> <td> 1 </td> </tr>
+<tr> <td> <table> <tr> <td> a </td> <td> 1 </td>
+                       <td> b </td> <td> 2 </td>
+                       <td> c </td> <td> 3 </td> </tr>
+   </table> </td> <td> 2 </td> </tr>
+<tr> <td> c </td> <td> 3 </td> </tr>
+</table>
+\stopbuffer
+
+\typebuffer[xml]
+
+The argument will not contain the whole table, but just
+\typ {<table> <tr> <td> a} since \TEX\ will stop grabbing
+the argument when it encounters the \type {</td>}. Even if
+\TEX\ would have a regular expression engine like \PERL,
+handling this kind of nesting would be quite complicated.
+
+In a document coded in \TEX, putting \type {{}} around the
+inner table would solve the problem, so this is what we will
+do behind the screen.
+
+\startbuffer[def]
+\defineXMLenvironment [table] \bTABLE \eTABLE
+\defineXMLnested      [tr]    \bTR    \eTR
+\defineXMLnested      [td]    \bTD    \eTD
+\stopbuffer
+
+\typebuffer[def] \haalbuffer[def]
+
+The nested environment analyzes its argument and keeps
+picking up code until the nesting is proper. Because this
+slows down processing, you should not use the nested
+environment unneeded.
+
+\startregelcorrectie
+\processXMLbuffer[xml]
+\stopregelcorrectie
+
+This also works with more complicated cases, like the
+following (unreadable) table:
+
+\startbuffer[xml]
+<table>
+<tr> <td> a </td> <td> 1 </td> </tr>
+<tr> <td> <table> <tr> <td> a </td> <td> 1 </td>
+                       <td> <table>
+                              <tr> <td> a </td> <td> 1 </td>
+                                   <td> b </td> <td> 2 </td>
+                                   <td> c </td> <td> 3 </td> </tr>
+                     </table> </td> <td> 2 </td>
+                       <td> c </td> <td> 3 </td> </tr>
+   </table> </td> <td> 2 </td> </tr>
+<tr> <td> c </td> <td> 3 </td> </tr>
+</table>
+\stopbuffer
+
+\typebuffer[xml]
+
+\startregelcorrectie
+\processXMLbuffer[xml]
+\stopregelcorrectie
+
+\subonderwerp{pushing and popping}
+
+\startbuffer
+<text>
+
+<title>Hello <tt>\World</tt>, this is &tex;!</title>
+
+Welcome to this small XML example.
+
+<figure label="cow">
+  <caption>Some Caption</caption>
+  <graphic>koe.pdf</graphic>
+</figure>
+
+<!-- Next comes some rather contextual code. The ? indicates
+that we are dealing with a processing instruction. -->
+
+<?context-command {\bf What a happy end to a small story!} ?>
+
+</text>
+\stopbuffer
+
+\typebuffer
+
+We will start with the easy part of the interface to this
+\XML\ document.
+
+\starttypen
+\defineXMLenvironment [text]  {\starttext} {\stoptext}
+\defineXMLargument    [title] {\chapter[\XMLpar{title}{label}{}]}
+\defineXMLgrouped     [tt]    {\tt}
+\stoptypen
+
+In order to resolve some entities, we also say:
+
+\starttypen
+\useXMLfilter[ent]
+\stoptypen
+
+The comment is skipped, while the processing instruction is
+processed right away. So, how about the graphic.
+
+\starttypen
+\defineXMLenvironment [figure]
+  {\bgroup
+   \defineXMLpush[caption]
+   \defineXMLpush[graphic]}
+  {\placefigure
+     [\XMLpar{figure}{location}{here}]
+     [fig:\XMLpar{figure}{label}{unknown}]
+     {\XMLpop{caption}}
+     {\externalfigure[\XMLpop{graphic}]}
+   \egroup}
+\stoptypen
+
+Before we can process the graphic, we need to know its
+caption. Therefore, we push the caption and the graphic
+definition into memory and at the end pop them in the order
+needed.
+
+\subonderwerp{more on attributes}
+
+In the previous example, the location is passed as it is.
+If the \XML\ code is not yours, there is a good chance that
+the values don't match those understood bij \CONTEXT. This
+omission can be compensated by mapping a value, as in:
+
+\starttypen
+\mapXMLvalue{figure}{location}{thisplace}{here}
+\stoptypen
+
+When we replace the \type {\XMLpar} with \type {\XMLvar}, we
+get the remapped value. This would permit calls like:
+
+\starttypen
+<figure label="cow" location="thisplace"> ... </figure>
+\stoptypen
+
+\SomeLogo{1} \paragraaf[workflows]{basic workflows}
+
+We won't be surprised if, at this stage, you have lost track
+on how to proceed in going from \XML\ to \TEX. This chapter
+will describe several methods, and which way you go depends
+on both your input and your wishes.
+
+\MainChart
+
+\SomeChart {conversion 1} {}
+
+This manual was processed this way. The source was coded in
+\TEX, but in order to demonstrate how \XML\ is processed, we
+used snippets of \XML. In such cases, the necessary \XML\
+support is part of the regular style file.
+
+\starttypen
+texexec --pdf yourfile
+\stoptypen
+
+\SomeChart {conversion 2} {}
+
+The most straightforward way to process \XML\ is to let
+\CONTEXT\ directly interpret the \XML\ commands. Normally you
+will use a specific environment file in which the mapping as
+well as the style setup is defined.
+
+\starttypen
+texexec --pdf --env=list yourfile.xml
+\stoptypen
+
+In this case, \TEXEXEC\ will make a dummy file called \type
+{yourfile.tex} that loads the \XML\ file. If you simply want
+to test a \MATHML\ fragment, you can say:
+
+\starttypen
+texexec --pdf --xmlfilter=mml,mmp,mmc yourfile.xml
+\stoptypen
+
+\SomeChart {conversion 3} {}
+
+This method uses a dedicated converter that converts the
+\XML\ code into a \TEX\ file where angle brackets and
+ampersands are replaced by a few \TEX\ commands and where
+characters that have a special meaning in \TEX\ become
+entities. In most cases, the direct interpretation of \XML\
+code is more suitable, but for less restrictive dialects
+this is a safe way to go. Discussing this method, which is
+occasionally used at \PRAGMA\ is beyond the scope of this
+document.
+
+\SomeChart {conversion 4} {}
+
+This can be a convenient method but its usage depends on
+the complexity of the mapping. Although using \XSLT\ has a
+certain charm, a decent mapping file can look quite
+unreadable and take some time to prepare. This method is
+used when manipulations have to take place that are not
+present in \CONTEXT. The resulting \TEX\ file is processed
+as any normal \TEX\ file.
+
+\SomeChart {conversion 6} {}
+
+When you want to do a lot of manipulations, or when you want
+to convert part of the \XML\ code into other code (think of
+manipulating math), you can use \XSLT\ to do that before the
+document source is passed on to \CONTEXT. It is to be
+expected that such filters will become available.
+
+\SomeChart {conversion 5} {}
+
+When you want to convert \TEX\ documents into \XML\ (or
+\HTML) counterparts, it makes sense to use \TEX\ itself,
+because that way we have the full engine at our fingertips.
+
+In \CONTEXT\ we use a strange but charming way to handle
+this conversion: we simply typeset \XML. The typeset
+document (with lots of angle brackets) is then converted
+into raw text. A complication is math, but given that you
+can embed \MATHML\ in your document, this can be passed on
+directly.
+
+\SomeLogo{102} \paragraaf[examples]{examples of markup}
+
+\SomeLogo{4} \paragraaf[reference]{command reference}
+
+In this chapter we summarize the mapping commands. You
+should be aware of the fact that some of them are
+experimental and so their names and even their meanings may
+change.
+
+For the moment we left out the commands that are used for
+two||step remapping \MATHML\ onto \TEX. Once these have
+proven to be useful, they will be discussed here too.
+These two||step remapping commands convert an \XML\ stream
+into a \TEX\ one that then can be processed in a for \TEX\
+more comfortable way.
+
+\subonderwerp {mapping elements}
+
+\starttypen
+\defineXMLsingular    [name] {command}
+\defineXMLcommand     [name] {command}
+\defineXMLgrouped     [name] {command}
+\defineXMLargument    [name] {command}
+\defineXMLargument    [name] {command}
+\defineXMLpickup      [name] {before} {after}
+\defineXMLenvironment [name] {before} {after}
+\defineXMLpush        [name]
+\defineXMLprocess     [name]
+\defineXMLnested      [name] {before} {after}
+\stoptypen
+
+\subonderwerp{instruction processors}
+
+\starttypen
+\defineXMLprocessor [name] \command
+\stoptypen
+
+The following processing instructions are predefined:
+
+\starttypen
+<?context-command   \somecommand{to be executed} ?>
+<?context-directive class key value              ?>
+<?context-message   some text to show in the log ?>
+\stoptypen
+
+\subonderwerp{mapping entities}
+
+\starttypen
+\defineXMLentity [name] {command}
+\stoptypen
+
+\subonderwerp{processing files}
+
+\starttypen
+\XMLinput               filename
+\processXMLfile        {filename}
+\processXMLfilegrouped {filename}
+\showXMLfile           {filename}
+\stoptypen
+
+\subonderwerp{embedding code}
+
+\starttypen
+\startXMLdata xml commands \stopXMLdata
+
+\processXMLbuffer [name]
+
+\startXMLcode [name] xml commands \stopXMLcode
+\getXMLcode   [name]
+\stoptypen
+
+\subonderwerp{loading filters}
+
+\starttypen
+\useXMLfilter [list]
+\stoptypen
+
+\subonderwerp{handling attributes}
+
+\starttypen
+\mapXMLvalue {name} {key} {old} {new}
+
+\XMLvar {name} {key} {default}
+\XMLval {name} {key} {default}
+\XMLpar {name} {key} {default}
+
+\doifXMLvarelse {name} {key} {then branch} {else branch}
+\doifXMLvalelse {name} {key} {then branch} {else branch}
+\doifXMLparelse {name} {key} {then branch} {else branch}
+
+\getXMLarguments {class} {key="value" pairs}
+
+\XMLifequalelse {name} {key} {value} {then branch} {else branch}
+\stoptypen
+
+\subonderwerp{manipulating pushed elements}
+
+\starttypen
+\XMLpop     {name}
+\XMLappend  {name} {text}
+\XMLprepend {name} {text}
+\XMLerase   {name}
+\XMLassign  {name}
+\XMLshow    {name}
+
+\defXMLstring \command {name}
+
+\doifXMLdataelse {name} {then branch} {else branch}
+\stoptypen
+
+\subonderwerp{auxiliary commands}
+
+\starttypen
+\defXMLlowerclean \command
+
+\bXMLs
+\eXMLs
+\stoptypen
+
+% \SomeChart {conversion 1} {TEX     1}
+% \SomeChart {conversion 1} {CONTEXT 1}
+% \SomeChart {conversion 1} {PDF     1}
+%
+% \SomeChart {conversion 2} {XML     2}
+% \SomeChart {conversion 2} {CONTEXT 2}
+% \SomeChart {conversion 2} {PDF     2}
+%
+% \SomeChart {conversion 3} {XML     3}
+% \SomeChart {conversion 3} {TEX     3}
+% \SomeChart {conversion 3} {CONTEXT 3}
+% \SomeChart {conversion 3} {PDF     3}
+%
+% \SomeChart {conversion 4} {XML     4}
+% \SomeChart {conversion 4} {XSLT    4}
+% \SomeChart {conversion 4} {TEX     4}
+% \SomeChart {conversion 4} {CONTEXT 4}
+% \SomeChart {conversion 4} {PDF     4}
+%
+% \SomeChart {conversion 6} {XML     6}
+% \SomeChart {conversion 6} {XSLT    6}
+% \SomeChart {conversion 6} {XML     6}
+% \SomeChart {conversion 6} {CONTEXT 6}
+% \SomeChart {conversion 6} {PDF     6}
+%
+% \SomeChart {conversion 5} {TEX     5}
+% \SomeChart {conversion 5} {CONTEXT 5}
+% \SomeChart {conversion 5} {XML     5}
+
+%\SomeLogo{101} \paragraaf[educational]{educational markup}
+%
+%Although over time, \CONTEXT\ has been used for all kind of
+%applications, the primary reason for its existence is that
+%we needed a tool to typeset complex educational documents.
+%
+%
+%An important characteristic of such documents is that they
+%can have many different ways of presenting information, as
+%well as that they are quite demanding in terms of reusing
+%components. This means that one has to provide a lot of
+%structure, and since \XML\ is about structure, educational
+%documents make a nice example.
+%
+%Here we will not so much present complete styles and \XML\
+%definitions, but introduce some general purpose techniques
+%for handling this kind of data.
+
+%\SomeLogo{102} \paragraaf[examination]{examination markup}
+%
+%Every Dutch school kid at some moment has to pass an
+%official examn. When in the mid nineties we were in search
+%of a good example for interactive documents, we decided to
+%take the examns as example source code. That way we could
+%make useful documents, free of copyright, and demonstrating
+%a broad range of typographical challenges.
+%
+%The examns were either rekeyed from print, or edited from
+%rough scanned and converted documents. \unknown\
+
+\pagina \stelkopnummerin[paragraaf][+1]
+
+\definieeroverlay[vooruit][\overlaybutton{eerstepagina}]
+
+\startstandaardopmaak
+
+\stelinteractiein[letter=]
+
+\steluitlijnenin[midden]
+
+\startkleur[backgroundcolor]
+
+\vskip24pt
+
+\leavevmode\externalfigure
+  [\bufferprefix mprun.304][hoogte=.75\teksthoogte]
+
+\vfill
+
+\AuthorFont \stelinterliniein
+
+PRAGMA Advanced Document Engineering
+
+\vskip6pt
+
+\naar{www.pragma-ade.com}[url(http://www.pragma-ade.com)]
+
+\vskip24pt
+
+\stopkleur
+
+\stopstandaardopmaak
+
+\stoptekst

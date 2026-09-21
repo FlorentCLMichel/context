@@ -84,7 +84,7 @@ sandbox.finalizer {
         if p_validroot then
             report("roots are already initialized")
         else
-            sandbox.registerroot(".","write") -- always ok
+            registerroot(".","write") -- always ok
             -- also register texmf as read
             for name in sortedhash(validroots) do
                 if p_validroot then
@@ -323,7 +323,9 @@ local reported  = { }
 local function validcommand(name,program,template,checkers,defaults,variables,reporter,strict)
     if validbinaries ~= false and (validbinaries == true or validbinaries[program]) then
         local binpath = nil
-        if variables then
+        if type(variables) ~= "table" then
+            variables = { }
+        else
             for variable, value in next, variables do
                 local chktype = checkers[variable]
                 if chktype == "verbose" then

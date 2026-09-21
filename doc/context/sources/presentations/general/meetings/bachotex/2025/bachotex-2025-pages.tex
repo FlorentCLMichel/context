@@ -1,0 +1,566 @@
+% language=us signal=signal
+
+% \nologbuffering
+
+\usemodule[present-boring,abbreviations-logos]
+
+\definelayer
+  [extratext]
+  [preset=rightbottom,
+   height=\textheight,
+   width=\textwidth]
+
+\setupbackgrounds
+  [text]
+  [background=extratext]
+
+\setuptyping
+  [align=hangright,
+   keeptogether=paragraph,
+   numbering=]
+
+\startdocument
+  [title={balancing mvls},
+   banner={from one to the other},
+   location={bachotex\enspace {\bf 2025}\enspace meeting}]
+
+\starttitle[title=Disclaimer]
+
+This is work in progress. We hope to be stable around the \CONTEXT\ meeting so
+what we give here is an impression. The primitives shown are meant to be used in
+mechanisms that bring them together.
+
+In this talk we go:
+
+\startitemize[packed]
+\startitem from paragraphs \stopitem
+\startitem via pages \stopitem
+\startitem and columns \stopitem
+\startitem to mvls \stopitem
+\startitem as well as balancing \stopitem
+\startitem and discuss what is involved \stopitem
+\stopitemize
+
+What follow is mostly an outline for myself.
+
+\stoptitle
+
+\starttitle[title=The context]
+
+\startitemize
+
+\startitem
+    In \LUAMETATEX\ we have an extended, multi-pass par builder, the mechanism
+    that breaks lines into paragraphs.
+\stopitem
+
+\startitem
+    We also extended the page builder a bit, the mechanism that collects and
+    split of content.
+\stopitem
+
+\startitem
+    Alongside these we added a new mechanism that relates these two in terms of
+    solution space.
+\stopitem
+
+\stopitemize
+
+\stoptitle
+
+\starttitle[title={Paragraphs}]
+
+In the par builder the engine deals with:
+
+\startitemize[columns,two,packed]
+    \startitem orphan penalties       : lone words on the last line \stopitem
+    \startitem toddler penalties      : single glyphs at the margin \stopitem
+    \startitem twin penalties         : similar words at the margin \stopitem
+    \startitem spacing glue           : glue between words \stopitem
+    \startitem punctuation glue       : glue around punctuation \stopitem
+    \startitem l r m boxes            : repeated content at breaks \stopitem
+    \startitem various math           : all kind of constraints \stopitem
+    \startitem (user) leaders         : adaptive content \stopitem
+    \startitem glyph expansion        : stretching and shrinking \stopitem
+    \startitem character protrusion   : escaping into margins \stopitem
+    \startitem discretionaries        : end and begin line snippets \stopitem
+    \startitem hyhenation (penalties) : breaks within words \stopitem
+    \startitem optional content       : multi-pass wiggle room \stopitem
+    \startitem shapes & indentation   : determines width \stopitem
+\stopitemize
+
+\startitemize[columns,two,packed]
+    \startitem widow penalties        : between last lines  \stopitem
+    \startitem club penalties         : between first lines \stopitem
+    \startitem shape penalties        : between shape lines \stopitem
+    \startitem broken penalties       : between hyphenated lines \stopitem
+    \startitem interline penalties    : between lines \stopitem
+\stopitemize
+
+\startitemize[columns,two,packed]
+    \startitem spacing (stretch & shrink) : criteria driven  \stopitem
+    \startitem emergency stretch          : just in case \stopitem
+    \startitem left & right margins       : determines width \stopitem
+    \startitem left & right hanging       : determines width \stopitem
+    \startitem initial left & right       : determines width \stopitem
+    \startitem final left & right         : determines width \stopitem
+\stopitemize
+
+\stoptitle
+
+\starttitle[title={Pages}]
+
+In the page builder the engine deals with:
+
+\startitemize[columns,two,packed]
+    \startitem vsize             : the main constraint \stopitem
+    \startitem inserts           : need to be bound \stopitem
+    \startitem glue              : can ease constraints \stopitem
+    \startitem penalties         : drives the routine \stopitem
+    \startitem adjusted content  : used for special purposes \stopitem
+    \startitem marks             : synchronized content \stopitem
+    \startitem vz wiggle room    : less constraints \stopitem
+    \startitem top & bottom skip : for aligning the bottom \stopitem
+    \startitem extra goal        : optional wiggle room \stopitem
+    \startitem feedback loop     : permits column construction \stopitem
+\stopitemize
+
+\stoptitle
+
+\starttitle[title={Columns}]
+
+See Mikaels presentation. We have different solutions for different situations:
+
+\definehighlight[kindofbold][style=\bf\glyphweight100]
+
+\startitemize
+\startitem
+    \kindofbold {Simple columns:} Collect content in a vbox and let \TEX\ do the
+    splitting.
+\stopitem
+\startitem
+    \kindofbold {Mixed columns:} Set the vsize to n times the text height and
+    when we have a full page split the collected content. This is sensitive for
+    spacing and decisions around page and column breaks. The splitting is mostly
+    delegated to \LUA. ({\bf Boxed columns} are a variant of this.)
+\stopitem
+\startitem
+    \kindofbold {Page columns:} Set the vsize to the text height and collect
+    pages as usual but delay flushing till the number of columns is reached. The
+    splitting is mostly done in \TEX\ using the regular builder.
+\stopitem
+\startitem
+    \kindofbold {Column sets (old):} Change the vsize every time a pseudo page is
+    split off. In \MKIV\ we let \LUA\ do some of the work.
+\stopitem
+
+\blank
+
+\startitem
+    \kindofbold {Column sets (new):} Collect content and define page template and
+    at some point flush the content to fit those templates using multi-slot
+    optimization.
+\stopitem
+\stopitemize
+
+\stoptitle
+
+\starttitle[title={Main vertical lists}]
+
+\startitemize
+\startitem
+    In vertical mode the engine is either assembling a vbox (or equivalent like an insert)
+    or adding to the main vertical list.
+\stopitem
+\startitem
+    Splitting of pages from that vertical list happen as we go.
+\stopitem
+\startitem
+    The vsplit routine is not the same as the page split routine.
+\stopitem
+\startitem
+    In \CONTEXT\ we migrate deeply hidden material (inserts, marks, adjusts) to
+    the outer level (in \LUAMETATEX\ natively or \MKIV\ via callbacks).
+\stopitem
+\startitem
+    In \LUAMETATEX\ we can (efficiently) collect to different vertical lists
+    without packaging (vboxing) or splitting (page break).
+\stopitem
+\stopitemize
+
+\stoptitle
+
+\starttitle[title={Balancing}]
+
+\startitemize
+\startitem
+    This evolved out of a previous (\MKIV/\MKXL) columnset implementation.
+\stopitem
+\startitem
+    We started with a similar approach as the par builder: choosing the best solution
+    out of (possibly) many.
+\stopitem
+
+\startitem
+    We started from the same routine but with specific features dropped. For a
+    while we kept discretionary code.
+\stopitem
+
+\startitem
+    Interfacing wise something like discretionaries makes no sense: there is no
+    intuitive way to use something equivalent (conditional content at page
+    breaks) also because decisions are made as one goes before breaking kicks in.
+    So it was dropped (less code due to less active|/|passive breakpoints.
+\stopitem
+
+\startitem
+    What did make sense, was exploring page shapes analogue to par shapes:
+    heights (noflines), topskip and bottomskip conditions kick in. Shape entries
+    relate to what we call slots in columnsets.
+\stopitem
+
+\startitem
+    That set us on the path of trial runs and adaptive shapes. However this is
+    done at the \TEX\ end in loops that can test conditions and results and
+    retry.
+\stopitem
+
+\startitem
+    At first we didn't want to do inserts but then realized that it was doable given some
+    constraints: they are slot based.
+\stopitem
+
+\startitem
+    Because we want to work on the grid, we need to take care of half-line spacing and
+    synchronize at breaks. This introduces top and bottom optional content, basically
+    dumb discretionaries but done differently.
+\stopitem
+
+\startitem
+    In the end we also realized that trial runs made it possible to implement high
+    performance balancing.
+\stopitem
+
+\stopitemize
+
+\stoptitle
+
+\starttitle[title=Activities: intercept]
+
+We have to intercept a \quote {page stream}:
+
+\starttyping
+\beginmvl 1
+    various content
+\endmvl
+
+\setbox\scratchboxone\flushmvl 1
+
+\beginmvl
+    index 2
+  % prevdepth 4pt
+    options \numexpr "1 + "4\relax
+\relax
+    various content
+\endmvl
+\stoptyping
+
+\setlayerframed
+    [extratext]
+    [frame=on,offset=2mm,strut=no,align=normal]
+    \bgroup
+        \dorecurse{15}{\blackrule[height=.8sh,depth=.8sd,width=3cm,color=white]\par}
+    \egroup
+
+% \starttabulate[|Tr|||]
+% \NC 0x\tohexadecimal\ignoreprevdepthmvloptioncode \NC ignore prevdepth \NC \type {\ignoreprevdepthmvloptioncode} \NC \NR
+% \NC 0x\tohexadecimal\noprevdepthmvloptioncode     \NC no prevdepth     \NC \type {\noprevdepthmvloptioncode    } \NC \NR
+% \NC 0x\tohexadecimal\discardtopmvloptioncode      \NC discard top      \NC \type {\discardtopmvloptioncode     } \NC \NR
+% \NC 0x\tohexadecimal\discardbottommvloptioncode   \NC discard bottom   \NC \type {\discardbottommvloptioncode  } \NC \NR
+% \stoptabulate
+
+% \tracingmvl <number>
+% \mvlcurrentlyactive
+
+\stoptitle
+
+\starttitle[title=Activities: shapes]
+
+\starttyping
+\balanceshape 3
+    vsize      3\lineheight
+    topskip    \strutht
+    bottomskip \strutdp
+next
+    vsize      5\lineheight
+    topskip    \strutht
+    bottomskip \strutdp
+next
+    vsize      8\lineheight
+    topskip    \strutht
+    bottomskip \strutdp
+\relax
+\stoptyping
+
+\starttyping
+\setbox\scratchboxtwo\vbalance\scratchboxone
+\stoptyping
+
+\setlayerframed
+    [extratext]
+    [frame=on,offset=2mm,strut=no,align=normal]
+    \bgroup % 15
+        \hbox \bgroup
+            \vbox \bgroup
+                \framed[align=normal]\bgroup
+                    \dorecurse{3}{\blackrule[height=.8sh,depth=.8sd,width=3cm,color=white]\par}
+                \egroup\par
+                \framed[align=normal]\bgroup
+                    \dorecurse{5}{\blackrule[height=.8sh,depth=.8sd,width=3cm,color=white]\par}
+                \egroup\par
+                \framed[align=normal]\bgroup
+                    \dorecurse{7}{\blackrule[height=.8sh,depth=.8sd,width=3cm,color=white]\par}
+                    \dorecurse{1}{\blackrule[height=.8sh,depth=.8sd,width=3cm,color=extracolor]\par}
+                \egroup\par
+            \egroup
+            \hskip2mm
+            \vbox \bgroup
+                \framed[align=normal]\bgroup
+                    \dorecurse{3}{\blackrule[height=.8sh,depth=.8sd,width=3cm,color=white]\par}
+                \egroup\par
+                \framed[align=normal]\bgroup
+                    \dorecurse{4}{\blackrule[height=.8sh,depth=.8sd,width=3cm,color=white]\par}
+                    \dorecurse{1}{\blackrule[height=.8sh,depth=.8sd,width=3cm,color=extracolor]\par}
+                \egroup\par
+                \framed[align=normal]\bgroup
+                    \dorecurse{8}{\blackrule[height=.8sh,depth=.8sd,width=3cm,color=white]\par}
+                \egroup\par
+            \egroup
+        \egroup
+    \egroup
+
+\stoptitle
+
+\starttitle[title=Activities: flush]
+
+\starttyping
+\hbox \bgroup
+    \localcontrolledendless {%
+        \ifvoid\scratchboxtwo
+            \expandafter\quitloop
+        \else
+            \setbox\scratchbox\ruledhbox\bgroup
+                \vbalancedbox\scratchboxtwo
+            \egroup
+            \vbox to 12\lineheight \bgroup
+                \box\scratchbox
+                \vfill
+            \egroup
+            \hskip1em
+        \fi
+    }\unskip
+\egroup
+\stoptyping
+
+\stoptitle
+
+\starttitle[title=Activities: trials]
+
+\starttyping
+\setbox\scratchboxtwo\vbalance\scratchboxone
+    trial
+\stoptyping
+
+\setlayerframed
+    [extratext]
+    [frame=on,offset=2mm,strut=no,align=normal]
+    \bgroup % 15
+        \hbox \bgroup
+            \vbox \bgroup
+                \framed[align=normal]\bgroup
+                    \dorecurse{3}{\strut\kern3cm\par}%
+                \egroup\par
+                \framed[align=normal]\bgroup
+                    \dorecurse{5}{\strut\kern3cm\par}%
+                \egroup\par
+                \framed[align=normal]\bgroup
+                    \dorecurse{7}{\strut\kern3cm\par}%
+                \egroup\par
+            \egroup
+            \hskip2mm
+            \vbox \bgroup
+                \framed[align=normal]\bgroup
+                    \dorecurse{3}{\strut\kern3cm\par}%
+                \egroup\par
+                \framed[align=normal]\bgroup
+                    \dorecurse{4}{\strut\kern3cm\par}%
+                \egroup\par
+                \framed[align=normal]\bgroup
+                    \dorecurse{8}{\strut\kern3cm\par}%
+                \egroup\par
+            \egroup
+        \egroup
+    \egroup
+
+\stoptitle
+
+\starttitle[title=Activities: breaks]
+
+\starttyping
+\balanceboundary 3 1\relax
+\vskip\zeropoint
+\balanceboundary 3 0\relax
+\vskip\zeropoint
+\balanceboundary 3 0\relax
+\stoptyping
+
+Using these with a proper callback we can go to a next slot. column, page or
+spread.
+
+% \starttabulate[|c|c|||]
+% \BC first \BC second \BC action                                    \BC user interface          \NC \NR
+% \NC 1     \NC 1 or 0 \NC goto next spread (1 initial, 0 follow up) \NC \type {\page[spread]}   \NC \NR
+% \NC 2     \NC 1 or 0 \NC goto next page (idem)                     \NC \type {\page}           \NC \NR
+% \NC 3     \NC 1 or 0 \NC goto next column (idem)                   \NC \type {\column}         \NC \NR
+% \NC 4     \NC 1 or 0 \NC goto next slot (idem)                     \NC \type {\column[slot]}   \NC \NR
+% \NC 5     \NC n      \NC next slot when more than n lines          \NC \type {\testroom[5]}    \NC \NR
+% \NC 6     \NC s      \NC next slot when more than s scaled points  \NC \type {\testroom[80pt]} \NC \NR
+% \stoptabulate
+
+\stoptitle
+
+\starttitle[title=Activities: marks]
+
+Marks are kind of hidden in the resulting (split of) segments of the
+balanced list. They can be set using \LUA\ calls:
+
+\starttyping
+node.direct.updatetopmarks()
+node.direct.updatefirstmarks()
+\stoptyping
+
+and
+
+\starttyping
+node.direct.updatemarks(list)
+node.direct.updatefirstandbotmarks(list)
+\stoptyping
+
+The pattern is:
+
+\startitemize[packed]
+\startitem set the top marks \stopitem
+\startitem loop over columns and set marks \stopitem
+\startitem set the first marks \stopitem
+\stopitemize
+
+\stoptitle
+
+\starttitle[title=Activities: inserts]
+
+\startitemize[packed]
+\startitem We can assume a reasonable amount of notes. \stopitem
+\startitem These are normally small with no (vertical) whitespace. \stopitem
+\startitem Notes taking multiple lines may split. \stopitem
+\startitem But we need to obey widow and club penalties. \stopitem
+\startitem There can be math formulas but mostly inline. \stopitem
+\startitem We need to keep them close to where they are referred from. \stopitem
+\blank
+\startitem We can ignore complex conflicting demands. \stopitem
+\startitem As long as we get some result, we're fine. \stopitem
+\startitem So users have to check what comes out. \stopitem
+\startitem We don't assume fully automated unattended usage. \stopitem
+\stopitemize
+
+One can check for inserts with
+
+\starttyping
+<state> = \boxinserts <box>
+\stoptyping
+
+and fetch them with
+
+\starttyping
+<box>   = \vbalancedinsert <box> <class>
+\stoptyping
+
+possible states are: has_inserts, has_inserts_with_content, has_inserts_with_height
+
+\stoptitle
+
+\starttitle[title=Activities: discarding]
+
+We need to deal with (for instance) half line spacing on the grid which is a bit
+hackish but sort of generic. Kind of like this:
+
+Trigger:
+
+\starttyping
+\par \vskip0pt \hrule discardable height 1sh depth 1sd width 1em \par
+\stoptyping
+
+Before:
+
+\starttyping
+\vskip0pt \vbox discardable {\hpack{\strut BEFORE}} \par
+\stoptyping
+
+After:
+
+\starttyping
+\vskip0pt \vbox discardable {\hpack{\strut AFTER}} \penalty -1 \par
+\stoptyping
+
+Handling:
+
+\starttyping
+\vbalanceddiscard 2       \relax % becomes a \nohrule
+\vbalanceddiscard 2 remove\relax % disappears
+\stoptyping
+
+This mechanism is still evolving.
+
+\stoptitle
+
+\starttitle[title=Activities: penalties]
+
+It is possible to discourage breaks at the end of a to be balanced list, like:
+
+\starttyping
+\balancefinalpenalties 6
+    10000 9000 8000 7000 6000 5000
+\relax
+\stoptyping
+
+\stoptitle
+
+\starttitle[title=Activities: passes]
+
+One can optimize the balancing with multiple passes, but we need to experiment a
+bit more with this. We just mention variables to play with:
+
+\startitemize[columns,three,packed]
+\startitem threshold \stopitem
+\startitem tolerance \stopitem
+\startitem looseness \stopitem
+\startitem adjdemerits \stopitem
+\startitem originalstretch \stopitem
+\startitem emergencystretch \stopitem
+\startitem emergencyfactor \stopitem
+\startitem emergencypercentage \stopitem
+\stopitemize
+
+This model is simpler than the one used in the par builder but we can relatively
+easy extend it.
+
+\stoptitle
+
+\starttitle[title=Some examples]
+
+We show some of the examples that we use for testing and figuring out additional
+features. We really start from usability, not from some abstract cq.\ utopian
+dream.
+
+\stoptitle
+
+\stopdocument

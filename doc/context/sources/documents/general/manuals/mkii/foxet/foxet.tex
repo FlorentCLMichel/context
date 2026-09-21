@@ -1,0 +1,65 @@
+\definecolor[darkgray] [s=.125]
+\definecolor[lightgray][s=.875]
+
+\setupcolors
+  [state=start,
+   textcolor=lightgray]
+
+\newbox\foxetbox
+\setbox\foxetbox\hbox{\chardef\foxetcolormode2\scale[width=400pt]{\strut\foXet}}
+
+\definepapersize
+  [foxet]
+  [width=\wd\foxetbox,
+   height=\dimexpr(\ht\foxetbox+\dp\foxetbox)]
+
+\setuppapersize
+  [foxet]
+  [foxet]
+
+\setupbackgrounds
+  [page]
+  [background=color,
+   backgroundcolor=darkgray]
+
+\setuplayout
+  [backspace=8pt,
+   topspace=8pt,
+   header=0pt,
+   footer=0pt,
+   width=middle,
+   height=middle]
+
+\setupwhitespace
+  [halfline]
+
+\starttext
+
+\startTEXpage\copy\foxetbox\stopTEXpage
+
+\definedfont[cmvtt10]
+
+You can process a file containing so called XML formatting objects
+by issuing the command:
+
+\starttyping
+texexec --pdf --use=foxet yourfile.fo
+texexec --pdf --use=foxet yourfile.xml
+texexec --pdf --use=foxet yourfile.xyz --xml
+\stoptyping
+
+The shortcut \type {--foxet} can be used instead:
+
+\starttyping
+texexec --foxet --pdf yourfile.fox
+\stoptyping
+
+If your file does not need graphics and/or cross references, you
+can do with one run and gain some speed by using the \type {--once}
+directive.
+
+\vfill
+
+\hfill Hans Hagen, PRAGMA-ADE, 2004
+
+\stoptext

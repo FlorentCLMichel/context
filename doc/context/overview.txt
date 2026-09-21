@@ -1,0 +1,71 @@
+--------------------------------------------------------------------------------
+The documentation
+--------------------------------------------------------------------------------
+
+The largest part of the ConTeXt distribution concerns manuals of various kind,
+including sources. There can be manuals for mkii (historic, some still apply),
+mkiv (they usually apply) and mkxl (the latest greatest). When we don't add
+we get complaints that there is no documentation, when we do add them some
+want less files. So, we just add them.
+
+Managing documentation is somewhat tricky because:
+
+-- We don't want to get bad pdf files when we're updating a manual so we separate
+   the work directory from the one where the finals live.
+
+-- It is practical to have manual sources on their own path as there can be
+   multiple files involved, while it is more convenient to have the results in
+   one path.
+
+-- A web page setup can be different (or at least it always was in our case) so
+   again we need to move to different spots. One complication is that the way a
+   TeX distribution wants the files is different: someplace in the doc tree.
+   Again sources and results demand a different practical structure.
+
+We describe the public files in Lua tables (public-*.lua) but also need to render
+web pages and an overview and that has always been done using xml files (like
+show-man.xml) with descriptions so that we can generate the site automatically
+with xltproc (already for decades).
+
+Given this all, this directory and file structures are as follows:
+
+work:
+    develop/context/manuals/[mkii|mkiv|mkxl]/
+        external/manual-one/one.tex
+        external/manual-two/two.tex
+
+www:
+    general/[mkii|mkiv|mkxl]/
+        one.pdf
+        two.pdf
+
+distribution:
+    tex/texmf-context/doc/context/documents/general/[mkii|mkiv|mkxl]/
+        one.pdf
+        two.pdf
+    tex/texmf-context/doc/context/sources/general/[mkii|mkiv|mkxl]/
+        manual-one/one.tex
+        manual-two/two.tex
+
+The official archive has a structure that conforms to TeXLive (tds) although it
+is somewhat inconvenient for us. We're not responsible for distributions and
+what they ship or leave out.
+
+In case one wonders why we don't edit in e.g. some git structure: we just don't
+want to manage temporary files and/or todo's that way. We don't want poluted
+directories. We don't even put work-in-progress there.
+
+--------------------------------------------------------------------------------
+License
+--------------------------------------------------------------------------------
+
+Most of the documents in this archive are copyrighted (if that still means
+something nowadays) under:
+
+    Creative Commons, Attribution - NonCommercial - ShareAlike, 3.0 Unported
+
+So, you can run it and mess with. We appreciate not to see my cover images be
+reused elsewhere. It's also not hard to make tex code look horrible, so if you
+use bits and pieces then also make sure that it looks okay. The best place to
+go for information is contextgarden.net (support site and wiki) and/or
+ntg-context@ntg.nl (mailing list) and of course www.pragma-ade.nl (website).

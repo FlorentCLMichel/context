@@ -1,0 +1,246 @@
+% interface=en engine=pdftex
+
+\definefont[BigFont][Regular at 75pt]
+\definefont[MedFont][Regular at 25pt]
+\definefont[SmaFont][Regular at 15pt]
+
+\startbuffer[texlogo]
+\framed[strut=no,frame=of,offset=5pt]{\BigFont\blue\TeX}
+\stopbuffer
+
+\startbuffer[ntslogo]
+\framed[strut=no,frame=off,offset=5pt]{\BigFont\blue\NtS}
+\stopbuffer
+
+\useexternalfigure[tex][texlogo.tmp][width=200pt,height=200pt]
+\useexternalfigure[nts][ntslogo.tmp][width=200pt,height=200pt]
+
+\def\MinW{1}
+\def\MinH{1}
+\def\MaxW{4}
+\def\MaxH{4}
+
+\def\Shift#1#2#3#4%
+  {\vbox\bgroup
+   \forgetall
+   \offinterlineskip
+   \def\CurrentN{#1}%
+   \setupclipping[nx=4,ny=4]%
+   \dorecurse{\MaxW}
+     {\let\ClipW\recurselevel
+      \dorecurse{\MaxH}
+        {\let\ClipH\recurselevel
+         \letvalue{clips-\ClipW-\ClipH-x}\ClipW
+         \letvalue{clips-\ClipW-\ClipH-y}\ClipH}}%
+   \def\CurrentW{#3}\let\PrevW\CurrentW
+   \def\CurrentH{#4}\let\PrevH\CurrentH
+   \ifnum#1>0
+     \newcounter\CurrentI
+     \doloop
+       {\getrandomnumber\Random{0}{3}%
+        \ifcase\Random\relax
+          \ifnum\CurrentW<\MaxW\relax\increment\CurrentW\relax\fi \or
+          \ifnum\CurrentW>\MinW\relax\decrement\CurrentW\relax\fi \or
+          \ifnum\CurrentH<\MaxH\relax\increment\CurrentH\relax\fi \or
+          \ifnum\CurrentH>\MinH\relax\decrement\CurrentH\relax\fi \or
+        \fi
+        \donefalse
+        \ifnum\CurrentW=\PrevW\relax\else\donetrue\fi
+        \ifnum\CurrentH=\PrevH\relax\else\donetrue\fi
+        \ifdone
+          \edef\TempW{\getvalue{clips-\PrevW-\PrevH-x}}%
+          \edef\TempH{\getvalue{clips-\PrevW-\PrevH-y}}%
+          \edef\CurrW{\getvalue{clips-\CurrentW-\CurrentH-x}}%
+          \edef\CurrH{\getvalue{clips-\CurrentW-\CurrentH-y}}%
+          \expanded{\setevalue{clips-\PrevW-\PrevH-x}{\CurrW}}%
+          \expanded{\setevalue{clips-\PrevW-\PrevH-y}{\CurrH}}%
+          \expanded{\setevalue{clips-\CurrentW-\CurrentH-x}{\TempW}}%
+          \expanded{\setevalue{clips-\CurrentW-\CurrentH-y}{\TempH}}%
+          \let\PrevW\CurrentW
+          \let\PrevH\CurrentH
+          \increment\CurrentI
+        \fi
+        \ifnum\CurrentN=\CurrentI\relax
+          \exitloop
+        \fi}%
+   \fi
+   \vbox
+     {\forgetall
+      \offinterlineskip
+      \dorecurse{\MaxH}
+        {\let\ClipH\recurselevel
+         \hbox
+           {\dorecurse{\MaxW}
+              {\let\ClipW\recurselevel
+               \ifnum\ClipH=\CurrentH\relax
+                 \ifnum\ClipW=\CurrentW\relax
+                   \def\HideClip{yes}%
+                   \def\ClipColor{blue}%
+                 \else
+                   \def\HideClip{no}%
+                   \def\ClipColor{gray}%
+                 \fi
+               \else
+                 \def\HideClip{no}%
+                 \def\ClipColor{gray}%
+               \fi
+               \framed
+                 [width=fit,height=fit,offset=none,strut=no,
+                  rulethickness=2pt,framecolor=blue,
+                  background=color,backgroundcolor=\ClipColor,
+                  empty=\HideClip]
+                 {\clip
+                    [x=\getvalue{clips-\ClipW-\ClipH-x},
+                     y=\getvalue{clips-\ClipW-\ClipH-y}]
+                    {\externalfigure[#2]}}}}}}%
+   \egroup}
+
+\def\NtS{N\kern-.1667em\raise.5ex\hbox{T}\kern-.125emS}
+
+\starttext
+
+\definecolor[gray][s=.8]
+\definecolor[blue][b=.4]
+
+\setuppapersize
+  [S6][S6]
+
+\setupbodyfont
+  [lbr]
+
+\setuplayout
+  [width=middle,height=fit,bottom=2cm,
+   header=0cm,footer=0cm,
+   backspace=1cm,topspace=1cm]
+
+\setupcolors
+  [state=local]
+
+\setupbackgrounds
+  [page]
+  [background=color,backgroundcolor=blue,offset=10pt]
+
+\setupinteraction
+  [state=start,
+   display=new,
+   menu=on]
+
+\setupinteractionscreen
+  [option=max,
+   delay=1]
+
+\setupinteractionmenu
+  [bottom]
+  [state=start,
+   color=gray,contrastcolor=gray,
+   style=\MedFont]
+
+\setuppagetransitions
+
+\startinteractionmenu[bottom]
+  \got [pre-ntsa::] History \\
+  \got [pre-ntsb::] Choices \\
+  \got [pre-ntsc::] Results \\
+  \got [pre-ntsd::] Future  \\
+\stopinteractionmenu
+
+\def\Steps{24}
+
+\setupinteractionscreen
+  [delay=5]
+
+\startstandardmakeup
+  \dontcomplain
+  \startalignment[middle]
+    \startcolor[gray]
+      \MedFont \setupinterlinespace
+      The NTS Project                    \par
+      Euro\TeX\ -- Heidelberg DE -- 1999 \vfill
+      \SmaFont \setupinterlinespace
+      Ji\v{r}\'i Zlatu\v{s}ka            \blank[medium]
+      Philip     Taylor                  \blank[medium]
+      Karel      Skoup\'y                \blank[medium]
+      Joachim    Lammarsch               \blank[medium]
+      Hans       Hagen                   \vfill
+    \stopcolor
+  \stopalignment
+\stopstandardmakeup
+
+\setupinteractionscreen
+  [delay=1]
+
+\newcounter\NameCounter
+
+\def\NameList%
+  {Peter      Breitenlohner,
+   Hans       Hagen,
+   Joachim    Lammarsch,
+   Jerzy      Ludwichowski,
+   Mariusz    Olko,
+   Bernd      Raichle,
+   Joachim    Schrod,
+   Rainer     Sch\"opf,
+   Karel      Skoup\'y,
+   Friedhelm  Sowa,
+   Philip     Taylor,
+   Ji\v{r}\'i Zlatu\v{s}ka,
+              Dante~e.V.,
+   Unknown    Donator}
+
+\getcommacommandsize[\NameList] \let\NameLength\commalistsize
+
+\def\NameBanner%
+  {\color[gray]{\hbox to \hsize
+     {\SmaFont \setstrut \strut
+      \hss
+      \ifnum\NameCounter=\NameLength\relax
+        \gdef\NameCounter{1}%
+      \else
+        \doglobal\increment\NameCounter\relax
+      \fi
+      \getfromcommacommand[\NameList][\NameCounter]%
+      \commalistelement\hss
+      \dorecurse{2}
+        {\ifnum\NameCounter=\NameLength\relax
+           \def\NameCounter{1}%
+         \else
+           \increment\NameCounter\relax
+         \fi
+         \getfromcommacommand[\NameList][\NameCounter]%
+         \commalistelement\hss}}}}
+
+\dostepwiserecurse{0}{\Steps}{1}
+  {\startstandardmakeup
+   \randomi=123456
+   \NameBanner
+   \vfill
+   \let\TeXStep\recurselevel
+   \let\NtsStep\Steps
+   \decrement(\NtsStep,\recurselevel)
+   \hbox to \hsize
+     {\hss
+      \Shift{\TeXStep}{tex}{4}{4}%
+      \hss
+      \Shift{\NtsStep}{nts}{1}{1}%
+      \hss}
+   \vfill
+   \stopstandardmakeup}
+
+\dostepwiserecurse{0}{\Steps}{1}
+  {\startstandardmakeup
+   \randomi=123456
+   \NameBanner
+   \vfill
+   \let\NtsStep\recurselevel
+   \let\TeXStep\Steps
+   \decrement(\TeXStep,\recurselevel)
+   \hbox to \hsize
+     {\hss
+      \Shift{\TeXStep}{tex}{4}{4}%
+      \hss
+      \Shift{\NtsStep}{nts}{1}{1}%
+      \hss}
+   \vfill
+   \stopstandardmakeup}
+
+\stoptext

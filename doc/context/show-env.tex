@@ -1,0 +1,129 @@
+\usemodule[abr-02] % todo
+
+\setuppapersize
+  [S6][S6]
+
+% \definefontfeature
+%   [default]
+%   [default]
+%   [ss01=yes]
+
+\usetypescriptfile[pennstander]
+\setupbodyfont[pennstander-thin,10pt]
+
+\setuplogos
+  [style=bold,
+   headstyle=bold]
+
+\setupcolors
+  [state=start]
+
+\setuptolerance
+  [verytolerant,stretch]
+
+\definecolor [shade-1] [s=.7]
+\definecolor [shade-2] [s=.1]
+\definecolor [shade-3] [s=.8]
+\definecolor [shade-4] [b=.8]
+\definecolor [shade-5] [g=.6]
+\definecolor [shade-6] [r=.6]
+\definecolor [shade-7] [r=.6,g=.6]
+\definecolor [shade-8] [s=.125]
+\definecolor [shade-9] [s=.250]
+
+\startmode [print]
+
+    \definecolor [shade-2] [white]
+    \definecolor [white]   [black]
+
+\stopmode
+
+\startnotmode [print]
+
+    \startMPinclusions
+        color plcolor ; plcolor = \MPcolor{shade-1} ;
+        color pwcolor ; pwcolor = \MPcolor{shade-2} ;
+    \stopMPinclusions
+
+\stopnotmode
+
+\setupbackgrounds
+  [state=repeat]
+
+\setupbackgrounds
+  [paper]
+  [background=paper]
+
+\defineoverlay[paper][\reuseMPgraphic{paper}]
+
+\startreusableMPgraphic{paper}
+    fill
+        unitsquare xyscaled (OverlayWidth,OverlayHeight)
+        enlarged .5cm withcolor \MPcolor {shade-2} ;
+\stopreusableMPgraphic
+
+\setupbackgrounds
+  [text]
+  [background=textlayer]
+
+\definelayer
+  [textlayer]
+  [width=\textwidth,
+   height=\textheight]
+
+\setupinteractionscreen
+  [option=max]
+
+\setupinteraction
+  [state=start,
+   click=no,
+   display=new,
+   color=shade-5,
+   contrastcolor=shade-5,
+   menu=on]
+
+\setupwhitespace
+  [big]
+
+\defineoverlay[forward][\overlaybutton{forward}]
+\defineoverlay[quit]   [\overlaybutton{CloseDocument}]
+
+% a bit of XML
+
+\startxmlsetups xml:logo
+    \getvalue{\cldcontext{string.upper("\xmlatt{#1}{label}")}}
+\stopxmlsetups
+
+\startxmlsetups xml:v
+    \dontleavehmode
+    \begingroup
+        \tt
+        \xmlflush{#1}
+    \endgroup
+\stopxmlsetups
+
+\startxmlsetups xml:p
+    \startparagraph
+        \ignorespaces
+            \xmlflush{#1}
+        \removeunwantedspaces
+    \stopparagraph
+\stopxmlsetups
+
+\startxmlsetups xml:compound
+    \compound{-}
+\stopxmlsetups
+
+\startxmlsetups xml:destination
+    \gotobox{\xmlflush{#1}}[file(\xmlattdef{#1}{destination}{unknown})]
+\stopxmlsetups
+
+\startxmlsetups xml:quote
+    \quote{\xmlflush{#1}}
+\stopxmlsetups
+
+\startxmlsetups xml:basics
+    \xmlsetsetup{main}{logo|v|p|compound|link|quote}{xml:*}
+\stopxmlsetups
+
+\xmlregistersetup{xml:basics}

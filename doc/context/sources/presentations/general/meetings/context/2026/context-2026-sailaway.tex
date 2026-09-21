@@ -1,0 +1,407 @@
+% \nopdfcompression
+
+\usemodule[present-prompting]
+
+\setupcounter
+  [itemgroup:itemize]
+  [way=bytext]
+
+\setuphead
+  [chapter]
+  [number=no]
+
+\setupitemgroup
+  [itemize]
+  [prefix=chapter]
+  [inmargin]
+
+\setupinteraction
+  [state=start]
+
+% \enabletrackers[*ref*ana*]
+
+\starttexdefinition protected SomeDetails #1
+    \removeunwantedspaces
+    \llap {
+        \goto {
+            #1\space>>
+        } [
+            musings-basic::musings-basic:presentation
+            -
+            #1
+            .
+            \currentitemnumber
+        ]
+        \kern{\leftskip+\leftmargindistance}
+    }
+    \ignorespaces
+\stoptexdefinition
+
+\starttext
+
+\startstandardmakeup[bottom=]
+    \startchapter[title=sail away][sequence=123456,colors=111222]
+        \startalign[flushright]
+            \start
+                \bfa \setupinterlinespace
+                pl > bachotex 2026\crlf
+                de > context 2026
+                \blank[halfline]
+                nl > hans hagen
+            \stop
+            \vfilll
+            \start
+                \bfx \setupinterlinespace
+                prompting donald knuth
+            \stop
+        \stopalign
+    \stopchapter
+\stopstandardmakeup
+
+% \startstandardmakeup
+%     \startchapter[title=old is gold][sequence=123456,colors=121212]
+%         \startcombination[2*2]
+%             {\externalfigure[bachotex-2026-apollo.png]  [height=.325th]} {}
+%             {\externalfigure[bachotex-2026-colossus.png][height=.325th]} {}
+%             {\externalfigure[bachotex-2026-ship.png]    [height=.325th]} {}
+%             {\externalfigure[bachotex-2026-knuth.png]   [height=.325th]} {}
+%         \stopcombination
+%     \stopchapter
+%     \vfilll
+% \stopstandardmakeup
+
+% \startstandardmakeup
+%     \startchapter[title=old is gold][sequence=123456,colors=121212]
+%         \dontleavehmode\raggedcenter
+%         \externalfigure[context-2026-knuth.png]   [height=.5th]
+%     \stopchapter
+%     \vfilll
+% \stopstandardmakeup
+
+\setupmakeup[standard][bottom=\vfill]
+
+\startstandardmakeup
+    \startchapter[title=memory lane][sequence=123456,colors=111222]
+
+        Stanford has videos online where Knuth presents and discusses \TEX\
+        development. Watching them brings me back to school:
+
+        \startitemize[packed]
+            \startitem
+                artificial intelligence was discussed: expert systems (prolog)
+            \stopitem
+            \startitem
+                there were experiments with computer assisted teaching:
+                experimental authoring systems
+            \stopitem
+            \startitem
+                there was little clue how to apply computers in education (the apple
+                2 network, atari, m amiga were used for gaming)
+            \stopitem
+            \startitem
+                we ended up with: cai language (vm based), controlling video
+                tapes (random access), simulations
+            \stopitem
+            \startitem
+                computers were not yet everywhere, there was little interest, and
+                it was time consuming
+            \stopitem
+        \stopitemize
+    \stopchapter
+\stopstandardmakeup
+
+\startstandardmakeup
+    \startchapter[title=some observations][sequence=234561,colors=123456]
+        \startitemize[n]
+            \startitem \SomeDetails 2
+                case insensitive control sequences
+            \stopitem
+            \startitem \SomeDetails 2
+                limited identifier length might have inspired hashing
+            \stopitem
+            \startitem \SomeDetails 2
+                did the language used influence the implementation
+            \stopitem
+            \startitem \SomeDetails 2
+                it started out without hash but with strings and lookups
+            \stopitem
+            \startitem \SomeDetails 2
+                the 7 bit limitations were later removed
+            \stopitem
+            \startitem \SomeDetails 2
+                subtle changes took place, like spaced after single char \string \cs
+            \stopitem
+        \stopitemize
+
+        \vfill
+
+        {\tx\em The numbers refer to fragments in \type {musings-basic.pdf} (available
+        in the \CONTEXT\ distribution) that also has more details.}
+
+    \stopchapter
+\stopstandardmakeup
+
+\startstandardmakeup
+    \startchapter[title=more observations][sequence=234561,colors=123456]
+        \startitemize[continue]
+            \startitem \SomeDetails 2
+                it started with 32 fonts and \string \: to change one
+            \stopitem
+            \startitem \SomeDetails 2
+                they were tagged with single ascii characters
+            \stopitem
+            \startitem \SomeDetails 2
+                grouping with \string { \string } was used to limits the scope
+            \stopitem
+            \startitem \SomeDetails 2
+                the nesting level was actually more than we need today
+            \stopitem
+            \startitem \SomeDetails 2
+                the par builder evolved over time
+            \stopitem
+            \startitem \SomeDetails 2
+                spaces after macro bodies were ignored
+            \stopitem
+        \stopitemize
+    \stopchapter
+\stopstandardmakeup
+
+\startstandardmakeup
+    \startchapter[title=even more observations][sequence=234561,colors=123456]
+        \startitemize[continue]
+            \startitem \SomeDetails 2
+                most units were there, but things changed a bit
+            \stopitem
+            \startitem \SomeDetails 2
+                hyphenation was hard-coded
+            \stopitem
+            \startitem \SomeDetails 2
+                tracing and logging was very much related to terminals
+            \stopitem
+            \startitem \SomeDetails 2
+                math spacing was there but much was frozen
+            \stopitem
+        \stopitemize
+    \stopchapter
+\stopstandardmakeup
+
+\startstandardmakeup
+    \startchapter[title=the basic format][sequence=345612,colors=123456]
+        \startitemize[n]
+            \startitem \SomeDetails 3
+                special symbols (like arrows for assignments) are used
+             \stopitem
+            \startitem \SomeDetails 3
+                we don't have a variables like \string \hsize\ yet
+            \stopitem
+            \startitem \SomeDetails 3
+                there is a concept of ragged right built in
+            \stopitem
+            \startitem \SomeDetails 3
+                commands like \string \sin \ are curiously coded
+            \stopitem
+            \startitem \SomeDetails 3
+                the \string \quad \ primitive is hard coded
+            \stopitem
+            \startitem \SomeDetails 3
+                there are various hard codes kern commands (again symbols)
+            \stopitem
+        \stopitemize
+    \stopchapter
+\stopstandardmakeup
+
+\startstandardmakeup
+    \startchapter[title=more basics][sequence=345612,colors=123456]
+        \startitemize[continue]
+            \startitem \SomeDetails 3
+                there is already a fight going on with spurious spaces
+            \stopitem
+            \startitem \SomeDetails 3
+                the various fonts show up (not yet c-named)
+            \stopitem
+            \startitem \SomeDetails 3
+                in addition to single char font changes we have \string \rm \ etc.
+            \stopitem
+            \startitem \SomeDetails 3
+                we already have parameters that control spacing
+            \stopitem
+            \startitem \SomeDetails 3
+                but \string \textfont\ etc. definitions are more obscure
+            \stopitem
+            \startitem \SomeDetails 3
+                we have some counters but they behave differently
+            \stopitem
+        \stopitemize
+    \stopchapter
+\stopstandardmakeup
+
+\startstandardmakeup
+    \startchapter[title=start sailing][sequence=345612,colors=123456]
+        \startitemize[n]
+            \startitem \SomeDetails 4
+                the first version was written in sail, a kind of pascal
+            \stopitem
+            \startitem \SomeDetails 4
+                it definitely didn't look like the later web'd source
+            \stopitem
+            \startitem \SomeDetails 4
+                the cmd plus chr \quote {instruction} model is visible
+            \stopitem
+            \startitem \SomeDetails 4
+                the meaning of characters (catcodes) is hard coded
+            \stopitem
+            \startitem \SomeDetails 4
+                concepts have different \quote {tags} (block for group)
+            \stopitem
+            \startitem \SomeDetails 4
+                extensions have always been there (!)
+            \stopitem
+        \stopitemize
+    \stopchapter
+\stopstandardmakeup
+
+\startstandardmakeup
+    \startchapter[title=sail further][sequence=345612,colors=123456]
+        \startitemize[continue]
+            \startitem \SomeDetails 4
+                there is talk about \quote {reals} (no registers yet)
+            \stopitem
+            \startitem \SomeDetails 4
+                advancing a counter is limited by step one
+            \stopitem
+            \startitem \SomeDetails 4
+                conditionals are kind of odd (and \string \ifeven)
+            \stopitem
+            \startitem \SomeDetails 4
+                two classes of inserts are hard coded (Don dislikes notes)
+            \stopitem
+            \startitem \SomeDetails 4
+                box sized can use \quote {size}, no \string \hsize \ yet
+            \stopitem
+            \startitem \SomeDetails 4
+                we have marks but no first one yet
+            \stopitem
+        \stopitemize
+    \stopchapter
+\stopstandardmakeup
+
+\startstandardmakeup
+    \startchapter[title=sail away][sequence=345612,colors=123456]
+        \startitemize[continue]
+            \startitem \SomeDetails 4
+                instead of special penalties we have \string \eject
+            \stopitem
+            \startitem \SomeDetails 4
+                equations are always numbered right
+            \stopitem
+            \startitem \SomeDetails 4
+                math concepts like fences and fractions will later evolve
+            \stopitem
+            \startitem \SomeDetails 4
+                hanging is there but different, and no shapes yet
+            \stopitem
+            \startitem \SomeDetails 4
+                the eqtb[...] entries are there but way less
+            \stopitem
+            \startitem \SomeDetails 4
+                glues are already nodes and much is hardcoded
+            \stopitem
+        \stopitemize
+    \stopchapter
+\stopstandardmakeup
+
+\startstandardmakeup
+    \startchapter[title=the intermezzo][sequence=456123,colors=123456]
+        \startitemize[n]
+            \startitem \SomeDetails 5
+                there where some changes between the major releases
+            \stopitem
+            \startitem \SomeDetails 5
+                registers were introduced and \string \advance \ evolved
+            \stopitem
+            \startitem \SomeDetails 5
+                it became clear that conditionals had to be redone
+            \stopitem
+            \startitem \SomeDetails 5
+                units matured and box dimensions got primitives
+            \stopitem
+            \startitem \SomeDetails 5
+                catcodes, char codes and math codes showed up
+            \stopitem
+            \startitem \SomeDetails 5
+                glue got order and fillers, no more extreme values
+            \stopitem
+        \stopitemize
+    \stopchapter
+\stopstandardmakeup
+
+\startstandardmakeup
+    \startchapter[title=post sail tex][sequence=561234,colors=123456]
+        \startitemize[n]
+            \startitem
+                the early '82 version was major refactoring
+            \stopitem
+            \startitem
+                there came a better organization of the \quote {virtual machine}
+            \stopitem
+            \startitem
+                hyphenation, par and page building, math improved
+            \stopitem
+            \startitem
+                inserts, marks and adjusts grew up
+            \stopitem
+            \startitem
+                we got more registers and more internal parameters
+            \stopitem
+            \startitem
+                metafont became quite different
+            \stopitem
+        \stopitemize
+    \stopchapter
+\stopstandardmakeup
+
+\startstandardmakeup
+    \startchapter[title=post sail tex][sequence=561234,colors=123456]
+        \startitemize[continue]
+            \startitem
+                documenting in web for sure made us end up here
+            \stopitem
+            \startitem
+                testing and feedback lead to subtle additions
+            \stopitem
+            \startitem
+                between '82 and '89 we see some cleanup
+            \stopitem
+            \startitem
+                7 bit became 8 bit
+            \stopitem
+        \stopitemize
+    \stopchapter
+\stopstandardmakeup
+
+\startstandardmakeup
+    \startchapter[title=timeline][sequence=612345,colors=123456]
+        \startitemize[n]
+            \startitem
+                the errorlog.tex file gives a good overview
+            \stopitem
+            \startitem
+                (the smalltalk project has a similar paper trail)
+            \stopitem
+            \startitem
+                all this helps \quote {a history of computer science}
+            \stopitem
+            \startitem
+                tex software evolved alongside the hardware
+            \stopitem
+            \startitem
+                the videos and books show the teamwork
+            \stopitem
+            \startitem
+                it took a Donald Knuth to pull this off
+            \stopitem
+        \stopitemize
+    \stopchapter
+\stopstandardmakeup
+
+\stoptext

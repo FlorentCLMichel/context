@@ -1,0 +1,242 @@
+% output=pdftex
+
+\environment mstyle
+
+\definefont [BigFont] [RegularBold at 75pt]
+\definecolor[BigColor][s=.9]
+
+\startuseMPgraphic{page}
+  StartPage ;
+
+  path p[] ; color c[] ; picture pic ;
+
+  % yellow instead of red also looks ok (but does not match the style)
+
+  c[1] := \MPcolor{blue} ;
+  c[2] := \MPcolor{red} ;
+  c[3] := .1white ;
+
+  p[1] := (0,0) -- (0,100) ;
+  p[2] := (0,50) {right} .. (50,75) .. {left}  (0,100) ;
+  p[3] := (10,0) {right} .. {left} (30,25) .. {right} (50,50) ;
+  p[4] := (25,50) -- (25,0) ;
+  p[5] := (25,0) {left} .. (10,12.5) .. {right} (25,25) ;
+  p[6] := (35,0) -- (35,35) {up} .. {right} (50,50) ;
+  p[7] := (35,25) -- (50,25) ;
+
+  pic := image
+    ( for i := 1 upto 100 :
+        for j := 1 upto 2 :
+          draw p[j] randomized 15
+            withcolor c[if odd i: 1 else: 2 fi] randomized (.5,.8) ;
+        endfor ;
+        for j := 3 upto 3 :
+          draw p[j] randomized 10 withcolor c[1] randomized (.5,.8) ;
+        endfor ;
+        for j := 4 upto 5 :
+          draw p[j] randomized 10 withcolor c[2] randomized (.5,.8) ;
+        endfor ;
+        for j := 6 upto 7 :
+          draw p[j] randomized 10 withcolor c[2] randomized (.5,.8) ;
+        endfor ;
+      endfor ; ) ;
+
+  pic := pic shifted - llcorner pic ;
+  pic := pic xysized (bbwidth(Page)-20pt,bbheight(Page)-20pt) ;
+  pic := pic shifted (10pt,10pt) ;
+
+  fill Page withcolor c[3] ;
+  draw pic ;
+
+  StopPage ;
+\stopuseMPgraphic
+
+\starttext
+
+\setuplayout[page]
+
+\definelayer[page][width=\paperwidth,height=\paperheight]
+
+\startstandardmakeup
+  \setlayer[page]
+    {\useMPgraphic{page}}
+  \setlayerframed[page]
+    [preset=rightbottom]
+    [width=fit,height=fit,
+     align=left,offset=10pt,
+     frame=off,foregroundcolor=BigColor]
+    {\BigFont \setstrut
+     \strut Weaving
+     \vskip-15pt
+     \strut PS into PDF}
+  \flushlayer[page]
+\stopstandardmakeup
+
+\setuplayout[reset]
+
+\section {Introduction}
+
+This manual will describe the \PSTOPDF\ conversion tool,
+written in \RUBY\ on top of \GHOSTSCRIPT. When going from
+\POSTSCRIPT\ to \PDF, you can use \DISTILLER\ and a few
+other commercial applications, as well as the free
+\GHOSTSCRIPT\ tool. Each tool has its advantages and in
+professional workflows they will be used intermixed.
+
+The \PSTOPDF\ converter evolved out of the converter built
+into \TEXUTIL, a file utility that comes with \CONTEXT.
+That converter itself was inspired by the \PDF\ to \PS\
+pipeline posted by Sebastian Rahtz in the early days of
+\PDFTEX.
+
+Where \TEXUTIL\ goes beyond piping by applying some filters
+to the \POSTSCRIPT\ code, \PSTOPDF\ adds even more
+filtering and cleanup of \PS\ code, especially application
+specific directives that fall outside the scope of
+standards and converters.
+
+The extensions were driven by the fact that in out projects
+we were confronted with rather messy \POSTSCRIPT\ and
+cleanup was needed anyhow. Not only the content can be a
+problem, also filenames and suffixes can be messed up. This
+is why \PSTOPDF\ is accompanied by a series of other image
+handling tools, described elsewhere.
+
+\section {The command line}
+
+Because this tool is part of the \EXAMPLE\ toolkit that
+comes with \CONTEXT, it's control may look strange but suits
+this framework.
+
+\starttabulate[|Tl|p|]
+\NC --debug      \NC shows a lot of extra info                 \NC \NR
+\NC --nopipe     \NC avoids piping, handy for buggy platsforms \NC \NR
+\NC --method     \NC 1--5, more on that later                  \NC \NR
+\NC --offset     \NC an additional offset to cropped images    \NC \NR
+\NC --prefix     \NC tokens to prepend to teh output filename  \NC \NR
+\NC --suffix     \NC tokens to append to teh output filename   \NC \NR
+\NC --inputpath  \NC the path where input files are looked up  \NC \NR
+\NC --outputpath \NC the path where output files are placed    \NC \NR
+\stoptabulate
+
+An example of usage is:
+
+\starttyping
+pstopdf --method=2 *.eps *.ai
+\stoptyping
+
+\section {Watched folders}
+
+You can set up a watched folder (aka hot folder) structure.
+This has the advantage that you only have to install one
+instance of \PSTOPDF\ in a network.
+
+\starttabulate[|Tl|p|]
+\NC --watch      \NC folder to watch for files to convert     \NC \NR
+\NC --delay      \NC interval between watch scans             \NC \NR
+\stoptabulate
+
+Say that we called \PSTOPDF\ as follows:
+
+\starttyping
+pdtopdf --watch=e:/pstopdf/watch --delay=2
+\stoptyping
+
+The program will look in subfolders of the \type {watch}
+path for user subpaths, like:
+
+\starttyping
+.../pstopdf/watch/hagen
+\stoptyping
+
+Results will be placed in:
+
+\starttyping
+.../pstopdf/watch/hagen/result
+\stoptyping
+
+A converted file ends up in:
+
+\starttyping
+e:/pstopdf/watch/hagen/done
+\stoptyping
+
+You can control the conversion by putting the files into the
+automatically created substructure:
+
+\starttyping
+.../pstopdf/watch/hagen/raw
+.../pstopdf/watch/hagen/bound
+.../pstopdf/watch/hagen/crop
+\stoptyping
+
+There is an bonus subpath:
+
+\starttyping
+.../pstopdf/watch/hagen/bitmap
+\stoptyping
+
+When bitmap images are placed on this path, they are
+converted to \PDF\ using \IMAGEMAGICK. The compression and
+quality chosen roughly depends on the size of the file.
+
+\section {Batch control}
+
+{\em To do: Here we will discuss how you can set up
+conversion presets and or use \EXAMPLEX\ to control
+\PSTOPDF.}
+
+\section {Configuration}
+
+There is not much configuration needed. First of all you
+need to install \RUBY, \GHOSTSCRIPT, and optionally
+\IMAGEMAGICK. Then you must locate \PSTOPDF\ in your \TEX\
+tree. You can either call this script directly or call it
+by passing the filename to \RUBY. This depends on your
+operating system and configuration.
+
+\starttyping
+.../tex/texmf-local/context/ruby
+\stoptyping
+
+Details of the environment can be set up in the \EXAMPLE\
+configuration files, located in (for instance):
+
+\starttyping
+.../tex/texmf-local/context/examplap/scripts
+\stoptyping
+
+The main configuration file is called \type {example.exa},
+which calls up a few others. Don't mess around with the file
+\type {basic.exa}, but stick to adapting \type {path.exe} or
+\type {local.exa} if needed.
+
+\section {Methods}
+
+Currently there three conversion methods for \EPS\ images,
+and two for \PDF\ images:
+
+\starttabulate[|l|lT|lT|p|]
+\NC \bf method \NC \bf suffix \NC prefix \NC action \NC \NR
+\NC 1 \NC eps \NC         \NC leave boundingbox as it is            \NC \NR
+\NC 2 \NC eps \NC         \NC crop image to internal bounding box   \NC \NR
+\NC 3 \NC eps \NC         \NC crop image to analyzed bounding box   \NC \NR
+\NC 4 \NC pdf \NC lowres- \NC downsample image to screen resolution \NC \NR
+\NC 5 \NC pdf \NC normal- \NC cleanup image to prepress defaults    \NC \NR
+\stoptabulate
+
+When no output filename is specified, the prefix is appended to
+the filename.
+
+\section {The GUI}
+
+We've written an interface to this tool, called \type
+{pdtopdf.pdf}. You can find the interface in the path:
+
+\starttyping
+.../tex/texmf-local/context/examplap/gui
+\stoptyping
+
+The interface is more or less self documenting.
+
+\stoptext

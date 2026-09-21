@@ -24,7 +24,9 @@
 %D I guess that the reason for this hackery is that a \TEXLIVE\ doesn't do
 %D an update of the file database after installing some \CONTEXT\ related
 %D files. In a similar manner, when a used updated something \CONTEXT\ we
-%D don't generate an lsr file. Here both are checked.
+%D don't generate an lsr file. Here both are checked. It can also be that
+%D a user installs \TEX\ as root and therefore other stuff ends up in user
+%D space. Whatever.
 
 \registerctxluafile{data-tld}{autosuffix}
 

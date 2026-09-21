@@ -10,9 +10,9 @@ if not modules then modules = { } end modules ['util-deb'] = {
 -- bound to a variable, like node.new, node.copy etc (contrary to for instance
 -- node.hasattribute which is bound to a hasattribute local variable in mkiv)
 
-local type, next, tostring, tonumber, xpcall, print = type, next, tostring, tonumber, xpcall, print
-local format, find, sub, gsub = string.format, string.find, string.sub, string.gsub
-local insert, remove, sort = table.insert, table.remove, table.sort
+local type, next, xpcall, print = type, next, xpcall, print
+local format, sub, gsub = string.format, string.sub, string.gsub
+local sort = table.sort
 local setmetatableindex = table.setmetatableindex
 
 utilities          = utilities or { }
@@ -49,94 +49,9 @@ setmetatableindex(names,function(t,name)
     return v
 end)
 
-local getinfo = nil
-local sethook = nil
-
--- local function hook(where)
---    local f = getinfo(2,"nS")
---     if f then
---         local source = f.short_src
---         if not source then
---             return
---         end
---         local line = f.linedefined or 0
---         local name = f.name
---         if not name then
---             local what = f.what
---             if what == "C" then
---                 name = "<anonymous>"
---             else
---                 name = f.namewhat or what or "<unknown>"
---             end
---         end
---         local data = names[name][source][line]
---         if where == "call" then
---             local nesting = data.nesting
---             if nesting == 0 then
---                 data.count = data.count + 1
---                 insert(data,ticks())
---                 data.nesting = 1
---             else
---                 data.nesting = nesting + 1
---             end
---         elseif where == "return" then
---             local nesting = data.nesting
---             if nesting == 1 then
---                 local t = remove(data)
---                 if t then
---                     data.total = data.total + ticks() - t
---                 end
---                 data.nesting = 0
---             else
---                 data.nesting = nesting - 1
---             end
---         end
---     end
--- end
-
+local getinfo      = nil
+local sethook      = nil
 local getdebuginfo = lua.getdebuginfo
-
--- local function hook(where) -- make two hooks
---     local name, source, line = getdebuginfo()
---     if name then
---         local data = names[name][source][line]
---         if where == "call" then
---             local nesting = data.nesting
---             if nesting == 0 then
---                 data.count = data.count + 1
---              -- insert(data,ticks())
---                 data.nesting = 1
---                 data.ticks = ticks()
---             else
---                 data.nesting = nesting + 1
---             end
---         elseif where == "return" then
---             local nesting = data.nesting
---             if nesting == 1 then
---              -- local t = remove(data)
---                 local t = data.ticks
---                 if t then
---                     data.total = data.total + ticks() - t
---                 end
---                 data.nesting = 0
---             elseif nesting > 0 then
---                 data.nesting = nesting - 1
---             end
---         elseif where == "tail call" then
---             local nesting = data.nesting
---             if nesting == 1 then
---              -- local t = remove(data)
---                 local t = data.ticks
---                 if t then
---                     data.total = data.total + ticks() - t
---                 end
---                 data.nesting = 0
---             elseif nesting > 0 then
---                 data.nesting = nesting - 1
---             end
---         end
---     end
--- end
 
 local function hook(where) -- make two hooks
     local name, source, line = getdebuginfo()
@@ -269,18 +184,16 @@ local function getdebug()
     end
     if not debug then
         local okay
-        okay, debug = pcall(require,"debug")
+        okay, debug = pcall(require,"debug") -- should fail if disabled
     end
     if type(debug) ~= "table" then
         return
     end
     getinfo = debug.getinfo
     sethook = debug.sethook
-    if type(getinfo) ~= "function" then
-        getinfo = nil
-    end
-    if type(sethook) ~= "function" then
+    if type(getinfo) ~= "function" or type(sethook) ~= "function" then
         sethook = nil
+        getinfo = nil
     end
 end
 
@@ -300,8 +213,6 @@ function debugger.enable()
             initialize()
         end
         sethook(hook,"cr")
---         sethook(hook_c,"c")
---         sethook(hook_r,"r")
         local function dummy() end
         local t = ticks()
         for i=1,dummycalls do
@@ -360,7 +271,6 @@ local function showtraceback(rep) -- from lua site / adapted
 end
 
 debugger.showtraceback = showtraceback
--- debug.showtraceback = showtraceback
 
 -- showtraceback()
 

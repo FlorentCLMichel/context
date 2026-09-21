@@ -1,0 +1,165 @@
+return {
+    category  = "documentation",
+    targets   = {
+        tree  = {
+            sources = "doc/context/sources/documents",
+            results = "doc/context/documents",
+            objects = { "sources", "results" }
+        },
+        site = {
+            sources = "sources/documents", -- placeholder
+            results = "documents",
+            objects = { "results" }
+        },
+    },
+    documents = {
+        ["allkind"] = {
+            status  = "okay",
+            group   = "general/manuals/mkii",
+            sources = {
+                "allkind/mcommon.tex",
+
+                "allkind/mchart.tex",
+                "allkind/mchinese.tex",
+                "allkind/mfonts.tex",
+                "allkind/minstall.tex",
+                "allkind/mlabels.tex",
+                "allkind/mmakempy.tex",
+                "allkind/mmodes.tex",
+                "allkind/mpattern.tex",
+                "allkind/mpstopdf.tex",
+                "allkind/msplit.tex",
+                "allkind/mtexexec.tex",
+                "allkind/mtexfont.tex",
+                "allkind/mtexmfstart.tex",
+                "allkind/mtexsync-p.tex",
+                "allkind/mtexsync-s.tex",
+                "allkind/mtexutil.tex",
+                "allkind/mtexwork.tex",
+                "allkind/mxmltools.tex",
+                "allkind/mwidget.tex",
+                "allkind/what-is-context.tex",
+            },
+            results = {
+                "allkind/mchart.pdf",
+                "allkind/mchinese.pdf",
+                "allkind/mfonts.pdf",
+                "allkind/minstall.pdf",
+                "allkind/mlabels.pdf",
+                "allkind/mmakempy.pdf",
+                "allkind/mmodes.pdf",
+                "allkind/mpattern.pdf",
+                "allkind/mpstopdf.pdf",
+                "allkind/msplit.pdf",
+                "allkind/mtexexec.pdf",
+                "allkind/mtexfont.pdf",
+                "allkind/mtexmfstart.pdf",
+                "allkind/mtexsync-p.pdf",
+                "allkind/mtexsync-s.pdf",
+                "allkind/mtexutil.pdf",
+                "allkind/mtexwork.pdf",
+                "allkind/mxmltools.pdf",
+                "allkind/mwidget.pdf",
+                "allkind/what-is-context.pdf",
+            },
+        },
+        ["style"] = {
+            status  = "okay",
+            group   = "general/manuals/mkii",
+            sources = {
+                "styledesign/style.tex",
+            },
+            results = {
+                "styledesign/style.pdf",
+            },
+        },
+        ["xml"] = {
+            status  = "okay",
+            group   = "general/manuals/mkii",
+            sources = {
+                "xml/xmanipulate.tex",
+                "xml/xchemml-p.tex",
+                "xml/xchemml-s.tex",
+                "xml/xmathml-p.tex",
+                "xml/xmathml-s.tex",
+                "xml/xphysml-p.tex",
+                "xml/xphysml-s.tex",
+                "xml/xsteps-p.tex",
+                "xml/xsteps-s.tex",
+                "xml/xfigures-p.tex",
+                "xml/xfigures-s.tex",
+                "xml/xxmldir.tex",
+                "xml/example.tex",
+            },
+            results = {
+                "xml/xmanipulate.pdf",
+                "xml/xchemml-p.pdf",
+                "xml/xchemml-s.pdf",
+                "xml/xmathml-p.pdf",
+                "xml/xmathml-s.pdf",
+                "xml/xphysml-p.pdf",
+                "xml/xphysml-s.pdf",
+                "xml/xsteps-p.pdf",
+                "xml/xsteps-s.pdf",
+                "xml/xfigures-p.pdf",
+                "xml/xfigures-s.pdf",
+                "xml/xxmldir.pdf",
+                "xml/example.pdf",
+            },
+        },
+        ["columns"] = {
+            status  = "okay",
+            group   = "general/manuals/mkii",
+            sources = {
+                "columns/columns.tex",
+            },
+            results = {
+                "columns/columns.pdf",
+            },
+        },
+        ["foxet"] = {
+            status  = "okay",
+            group   = "general/manuals/mkii",
+            sources = {
+                "foxet/xmlfoe.tex",
+                "foxet/foxet.tex",
+            },
+            results = {
+                "foxet/xmlfoe.pdf",
+                "foxet/foxet.pdf",
+            },
+        },
+        ["context"] = {
+            status  = "okay",
+            group   = "general/manuals/mkii",
+            sources = {
+                "corresp/xcorresp.tex",
+                "context/cont-enp.tex",
+                "context/cont-nlp.tex",
+                "context/cont-eni.tex",
+                "context/cont-nli.tex",
+            },
+            results = {
+                "corresp/xcorresp.pdf",
+                "context/cont-enp.pdf",
+                "context/cont-nlp.pdf",
+                "context/cont-eni.pdf",
+                "context/cont-nli.pdf",
+            },
+        },
+        ["chemie"] = {
+            status  = "okay",
+            group   = "general/manuals/mkii",
+            sources = {
+                "chemie/mp-ch-en.tex",
+                "chemie/mp-ch-nl.tex",
+                "chemie/mp-ch-de.tex",
+            },
+            results = {
+                "chemie/mp-ch-en.pdf",
+                "chemie/mp-ch-nl.pdf",
+                "chemie/mp-ch-de.pdf",
+            },
+        }
+    },
+}

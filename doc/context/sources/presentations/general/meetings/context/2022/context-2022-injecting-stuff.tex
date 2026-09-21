@@ -1,0 +1,277 @@
+% language=us
+
+\environment context-2022-style
+
+\startdocument
+  [title={Injecting stuff},
+   banner={fundamental or not},
+   location={context\enspace {\bf 2022}\enspace meeting}]
+
+\starttitle[title=Where to draw a line]
+
+What can be done in \LUA\ should be done in \LUA, unless:
+
+\startitemize
+    \startitem
+        There is a too tight interaction with the builders: par, page, math.
+    \stopitem
+    \startitem
+        Information is only available at specific stages and is hard to
+        communicate.
+    \stopitem
+    \startitem
+        The callback overhead would be too large due to either too many
+        slightly different places to call and/or contexts to check.
+    \stopitem
+    \startitem
+        Something really should be part of the core engine (also at the
+        macro, input, tracing, etc level).
+    \stopitem
+\stopitemize
+
+\blank[3*big]
+
+{\em This is per 2022, so expect things to have matured size then. The low-level
+manuals get updated as we go forward and more examples are added to the test
+suite. The mechanisms mentioned here are mostly feature complete in 2026.}
+
+\stoptitle
+
+\starttitle[title=Boxes]
+
+\startitemize
+
+\startitem
+    Traditionally \TEX\ has two kind of boxes and they can be set, copied,
+    flushed either or not unpacked.
+\stopitem
+
+\startitem
+    Most box processing is influenced by (optional) callbacks: the most
+    significant one is the one that deals with fonts.
+\stopitem
+
+\startitem
+    These callbacks can be avoided by packing instead of boxing (the full
+    package).
+\stopitem
+
+\startitem
+    Repacking can be avoided by using some manipulators (a chicken|-|egg
+    situation).
+\stopitem
+
+\blank[3*big]
+
+\starttyping
+lowlevel-boxes
+\stoptyping
+
+\stopitemize
+
+\stoptitle
+
+\starttitle[title=Leaders]
+
+\startitemize
+
+\startitem
+    Leaders are very \TEX ie. They are bound to glue and have basic content like
+    boxes and rules, although in \LUAMETATEX\ we can also have glyphs and math.
+\stopitem
+
+\startitem
+    They fill the space calculated for the glue by repeated content.
+\stopitem
+
+\stopitemize
+
+\blank[3*big]
+
+\starttyping
+lowlevel-rules   % to be done
+lowlevel-leaders % to be done
+\stoptyping
+
+\stoptitle
+
+\starttitle[title=Inserts]
+
+\startitemize
+
+\startitem
+    These are content blobs that travel around with the rest. Think footnotes.
+\stopitem
+
+\startitem
+    They are part of vertical calculations and therefore vertical splitting like
+    page breaks.
+\stopitem
+
+\startitem
+    They have side effects and complicate for instance faking multi column
+    processing.
+\stopitem
+
+\startitem
+    The traditional engine (naturally) stores insert related properties in
+    registers. In \LUAMETATEX\ we have a dedicated name space.
+\stopitem
+
+\startitem
+    We move around inserts in a different way. This avoids them being not seen as
+    in regular \TEX\ when they are buried deeply.
+\stopitem
+
+\stopitemize
+
+\blank[3*big]
+
+\starttyping
+lowlevel-inserts
+\stoptyping
+
+\stoptitle
+
+\starttitle[title=Marks]
+
+\startitemize
+
+\startitem
+    Marks are special nodes that carry token lists around in the text. Think
+    section titles in headers and footers.
+\stopitem
+
+\startitem
+    They are invisible but can be accessed in the output routine where
+    they have been set according the split page box.
+\stopitem
+
+\startitem
+    As with inserts in \LUAMETATEX\ they travel around a bit different. They also
+    bubble up.
+\stopitem
+
+\startitem
+    In \MKII\ we always used marks extensively for state info (\ETEX\ made
+    that more efficient). In \MKIV\ we emulated what is now more natural in
+    \LUAMETATEX\ and \MKIX\ (\LMTX).
+\stopitem
+
+\stopitemize
+
+\blank[3*big]
+
+\starttyping
+lowlevel-marks
+\stoptyping
+
+\stoptitle
+
+\starttitle[title=Vadjust]
+
+\startitemize
+
+\startitem
+    This mechanism permits pushing stuff in front of or after the current
+    line.
+\stopitem
+
+\startitem
+    It is hard to use because it interferes badly with spacing.
+\stopitem
+
+\startitem
+    As side effect of some math experiments this mechanism got extended
+    with better spacing control.
+\stopitem
+
+\startitem
+    It might evolve a bit more (which is no problem because we use it low level
+    and we can adapt).
+\stopitem
+
+\stopitemize
+
+\blank[3*big]
+
+\starttyping
+lowlevel-adjust % todo
+vadjust-001.tex
+\stoptyping
+
+\stoptitle
+
+\starttitle[title=Local boxes]
+
+\startitemize
+
+\startitem
+    This difficult and confusing feature comes from \ALEPH\ and can bind
+    content to the left and right end of lines.
+\stopitem
+
+\startitem
+    The dimensions are taken into account at line breaks.
+\stopitem
+
+\startitem
+    It's semi global nature makes it hard to deal with.
+\stopitem
+
+\startitem
+    They have been redone in \LUAMETATEX\ and we now use them for some
+    experiments.
+\stopitem
+
+\stopitemize
+
+\blank[3*big]
+
+\starttyping
+lowlevel-localboxes
+\stoptyping
+
+\stoptitle
+
+\starttitle[title=Anchors]
+
+\startitemize
+
+\startitem
+    This is a new mechanism that can be seen as side track of the math
+    engine overhaul.
+\stopitem
+
+\startitem
+    It is a way to bind boxes together and is something that the backend
+    has to deal with.
+\stopitem
+
+\startitem
+    So it is more about carrying around information. It could have been
+    attributes but this is more efficient when used large scale.
+\stopitem
+
+\startitem
+    Usage is not standardized.
+\stopitem
+
+\stopitemize
+
+\blank[3*big]
+
+\starttyping
+ontarget-anchoring
+anchoring-001.tex
+\stoptyping
+
+\stoptitle
+
+% \starttitle[title=Paragraphs]
+% \stoptitle
+
+% \starttitle[title=Groups]
+% \stoptitle
+
+\stopdocument

@@ -1,0 +1,3086 @@
+% output=pdftex interface=nl 
+
+\environment man-init.tex \hoofdtaal[de]
+
+% For Tobias: 
+
+\let\normalcommaskip=\,
+
+\def\,{\ifmmode\normalcommaskip\else\kern.1em\ignorespaces\fi}
+
+% This is used for abbriviations like d.\,h.
+
+\starttekst
+
+\titelblad
+  {PPCH\TeX}
+  {ein Makropaket f"ur den Satz\\
+   chemischer Strukturformeln}
+  {J. Hagen \& T. Burnus\\
+   Pragma ADE, Hasselt NL}
+
+\titel{Inhalt}
+
+\stelpaginanummerin[status=stop] \plaatsinhoud \pagina
+
+\titel{Vorwort}
+
+Das Makropaket \PPCHTEX\ wird f"ur den Satz chemischer Strukturformeln 
+benutzt. Die Makros basieren auf \PICTEX, ein von Michael Wichura in 
+public||domain gebrachtes Makropaket, mit dem Grafiken und Liniendiagramme
+erstellt werden k"onnen. Obwohl die erste Version von \PPCHTEX\ nur f"ur
+\PICTEX\ entwickelt wurde, kann inzwischen auch \PSTRICKS\ von Timothy Van 
+Zandt benutzt werden (wenn auch mit einigen Einschr"ankungen). Man mu"s
+aber zugeben, da"s das Ergebnis von \PICTEX\ sch"oner ist.
+
+Die Makros k"onnen in verschiedenen \TEX||Umgebungen verwendet werden; 
+dabei wird auf einige \CONTEXT||Module zur"uckgegriffen. Die Makros wurden
+so erstellt, da"s eine Erweiterung leicht m"oglich ist. F"ur die 
+Interaktivit"at wird auf innerhalb von \CONTEXT\ verwendete Mechanismen
+zur"uckgegriffen.
+
+\PPCHTEX\ wurde in erster Linie zum Satz chemischer Strukturformeln 
+entworfen, zus"atz\-lich k"onnen aber auch Reaktionsmechanismen wiedergegeben
+werden. Die chemischen Strukturformeln k"onnen unterschiedlich dargestellt 
+werden, wobei zusammenh"angende Formeln optisch zusammengestellt werden 
+k"onnen. Oft benutzte Strukturen k"onnen vordefiniert und abgerufen werden.
+
+Bei der Entwicklung der Makros war Flexiblilit"at, Simplizit"at und
+Qualit"at wichtiger als Geschwindigkeit. Die M"oglichkeit Grafiken in
+Dateien zu speichern, die \PICTEX\ bietet, wird nicht benutzt. Es hat
+sich n"amlich herausgestellt, da"s dies nicht zu einem
+Geschwindigkeitsvorteil f"uhrt.
+
+Die erste Version von \PPCHTEX\ erschien 1995. Diese Anleitung beschreibt die
+zweite Version, die dank der vielen Vorschl"age von Tobias Burnus, Dirk 
+Kuypers und Ton Otten die doppelte Funktionalit"at hat.
+
+\pagina \stelpaginanummerin[status=start]
+
+\vervolgblad
+  {Grundlagen}
+  []
+  [SIX,B,C,R1356,RZ1356]
+  [NO_2,NO_2,O_2N,CH_3]
+
+\hoofdstuk{Strukturen}
+
+Die Anzahl der Befehle, die zum Satz von Strukturformeln gebraucht werden,
+beschr"anken sich auf vier.\voetnoot{In dieser Anleitung 
+bezieht sich der Begriff Struktur nur auf chemische Strukturen und nicht auf
+die Struktur des Textes, in der die Formel plaziert wird.} Im folgenden 
+Beispiel werden all diese Befehle benutzt:
+
+\startbuffer
+\stelchemiein[assenstelsel=aan,kader=aan]
+
+\startchemie
+  \chemie[SIX,B,R,RZ][1,2,3,4,5,6]
+\stopchemie
+\stopbuffer
+
+\startfiguurtekst
+  [links][]
+  {geen}
+  {\haalbuffer}
+\voorbeeld[vb:zesring]
+\starttypen
+\stellechemieein[achsen=an,rahmen=an]
+\startchemie
+  \chemie[SIX,B,R,RZ][1,2,3,4,5,6]
+\stopchemie
+\stoptypen
+\stopfiguurtekst
+
+Mit \type{\stellechemieein} k"onnen verschiedene Optionen des Setzsystems
+eingestellt werden. Die mit diesem Befehl vorgenommen Einstellungen gelten
+f"ur alle folgenden Formeln.\voetnoot{Nat"urlich kann die G"ultigkeit 
+durch \type{{ }} und den Gruppierungsmakros \type{..group} begrenzt werden.
+Die Einstellungen k"onnen auch direkt nach \type{startchemie} gegeben 
+werden; sie gelten dann nur f"ur die jeweilige Formel.} 
+
+\startbuffer
+\startchemie[kader=aan,breedte=passend,hoogte=passend]
+  \chemie[CARBON,CB1][A,B,C,D,E,F]
+\stopchemie
+\stopbuffer
+
+\startfiguurtekst
+  [links][]
+  {geen}
+  {\haalbuffer}
+\voorbeeld
+\starttypen
+\startchemie[rahmen=an,breite=passend,hoehe=passend]
+  \chemie[CARBON,CB1][A,B,C,D,E,F]
+\stopchemie
+\stoptypen
+\stopfiguurtekst
+
+Wie man an beiden Beispielen erkennt ist \type{\chemie} der zentrale Befehl.
+Dieser Befehl, der mehrmals innerhalb eines
+\type{\start}||\type{\stop}||Paars vorkommen kann, hat ein oder zwei
+Argumente. Diese werden zwischen~\type{[ ]} angegeben. Das erste Argument
+bezieht sich auf die zu zeichnenden Bindungen, wogegen das zweite die Atome
+oder Molek"ule, die dargestellt werden sollen, enth"alt. Der Text wird im
+mathematischen Modus gesetzt, somit kann alles, was zwischen~\type{$ $}
+erlaubt ist, verwendet werden. 
+
+Gehen wir nun das erste Beispiel durch. Zuerst wird das Schl"usselword
+\type{SIX} angegeben. Durch Verwendung dieses Wortes teilen wir dem Makro mit,
+da"s wir eine Sechsringstruktur zeichnen wollen. Ebenso k"onnen wir
+\type{ONE}, \type{THREE}, \type{FOUR}, \type{FIVE}, \type{EIGHT}, 
+\type{CARBON}, \type{NEWMAN} und \type{CHAIR} verwenden.
+
+\def\structuurtje[#1]%
+  {\vbox
+     {\startchemie[kader=aan,schaal=klein,formaat=klein]%
+      \chemie[#1][1,2,3,4,5,6,7,8]%
+      \stopchemie}}
+
+\plaatsfiguur{geen}
+ \startcombinatie[4*3]
+   {\structuurtje[ONE,SB,Z]}           {One}
+   {\structuurtje[THREE,B,R,RZ]}       {Three}
+   {\structuurtje[FOUR,B,R,RZ]}        {Four}
+   {\structuurtje[FIVE,B,R,CRZ]}       {Five}
+   {\structuurtje[SIX,B,R,RZ]}         {Six}
+   {\structuurtje[EIGHT,B]}            {Eight}
+   {\structuurtje[FIVE,FRONT,B,-R,+R]} {Five Front}
+   {\structuurtje[SIX,FRONT,B,-R,+R]}  {Six Front}
+   {\structuurtje[CARBON,CB]}          {Carbon}
+   {\structuurtje[NEWMAN,STAGGER,CB]}  {Newman Stacker}
+   {\structuurtje[NEWMAN,ECLIPSE,CB]}  {Newman Eclipse}
+   {\structuurtje[CHAIR,B,-R,+R]}      {Chair}
+ \stopcombinatie
+
+Bez"uglich der Abmessungen f"allt \type{CHAIR} auf. Auch in anderen 
+Bereichen unterscheidet sich diese Struktur von den anderen. So ist 
+beispielsweise das Drehen und Kombinieren nicht m"oglich.
+
+\startbuffer
+\startchemie[kader=aan,schaal=klein]
+  \chemie
+    [CHAIR,B,+R,-R,
+     +RZ1,+RZ2,+RZ3,+RZ4,+RZ5,+RZ6,
+     -RZ1,-RZ2,-RZ3,-RZ4,-RZ5,-RZ6]
+    [a,b,c,d,e,f,1,2,3,4,5,6]
+\stopchemie
+\stopbuffer
+
+\startfiguurtekst
+  [links][]
+  {geen}
+  {\haalbuffer}
+\voorbeeld
+\starttypen
+\startchemie[rahmen=an,format=klein]
+  \chemie
+    [CHAIR,B,+R,-R,
+     +RZ1,+RZ2,+RZ3,+RZ4,+RZ5,+RZ6,
+     -RZ1,-RZ2,-RZ3,-RZ4,-RZ5,-RZ6]
+    [a,b,c,d,e,f,1,2,3,4,5,6]
+\stopchemie
+\stoptypen
+\stopfiguurtekst
+
+Innerhalb dieser Strukturen werden die Bindungen zwischen den \chemie{C}||Atomen auf
+eine vergleichbare Weise angegeben. In diesem Beispiel verwenden wir~\type{B}
+und~\type{R}. Die Bindungen, die nummeriert sind, k"onnen verschiedenartig
+angegeben werden:
+
+\starttypen
+\chemie[SIX,B1,B2,B3,B4,B5,B6]
+\chemie[SIX,B135]
+\chemie[SIX,B1..5]
+\stoptypen
+
+Diese Befehle erstellen Teile eines Sechsrings. Mit \type{R} und \type{RZ}
+k"onnen Substituenten an den Sechsring plaziert werden. Der Parameter \type{R}
+zeichnet eine Bindung von einer Sechs\-ring\-ecke ($\angle~120^\circ$) zu einem 
+Substituenten. Die jeweilige Ringecke wird mit einer Nummer angegeben.
+
+\starttypen
+\chemie[SIX,B1..6,R1..6]
+\stoptypen
+
+Dieser obrige Befehl zeichnet nur die Bindung zum Substituenten. Der 
+Substituent selbst wird mit \type{RZ} angegeben. Auch hier mu"s, um die 
+Position zu bestimmen, die Nummer angegeben werden. Als zweites optionales
+Argument werden die Substituenten angegeben.
+
+\startbuffer
+\startchemie[kader=aan,breedte=6000]
+  \chemie[SIX,B1..6,R1..6,RZ1..3][CH_3,CH_3,OH]
+\stopchemie
+\stopbuffer
+
+\startfiguurtekst
+  [links][]
+  {geen}
+  {\haalbuffer}
+\voorbeeld
+\starttypen
+\startchemie[rahmen=an,breite=6000]
+  \chemie[SIX,B1..6,R1..6,RZ1..3][CH_3,CH_3,OH]
+\stopchemie
+\stoptypen
+\stopfiguurtekst
+
+Wenn das zweite Argument weggelassen wird, wird kein Text platziert, d.~h.
+der Parameter \type{RZ1..3} hat keinen Effekt.
+
+\hoofdstuk{Bindungen}
+
+In diesem Kapitel geben wir eine "Ubersicht "uber die Bindungen, die man
+bei unterschiedlichen Strukturen verwenden kann. In den Beispielen und 
+"Ubersichten in sp"ateren Kapiteln werden wir n"aher auf die Parameter 
+eingehen.
+
+In der linken Spalte stehen die vollst"andigen Bindungen, in der rechten
+die verk"urzten. Letztere erm"oglichen es, da"s Atome und Molek"ule an
+diese platziert werden k"onnen. Die Bindungen k"onnen auf beiden Seiten,
+links (\type{-}) sowie rechts (\type{+}), verk"urzt sein.
+
+\plaatstabel
+{Einfachbindungen.}
+\starttabel[|rT|lw(4cm)|rT|lw(4cm)|]
+\HL
+\VL ~~~B \VL Bond          \VL ~~SB \VL Single Bond       \VL\FR
+\VL ~~BB \VL Bold Bond     \VL ~-SB \VL Left Single Bond  \VL\MR
+\VL ~~HB \VL Hydrogen Bond \VL ~+SB \VL Right Single Bond \VL\LR
+\HL
+\stoptabel
+
+In diesem Beispiel wurden einige der Bindungen kombiniert:
+
+\startbuffer
+\startchemie[kader=aan]
+  \chemie[ONE,SD1,SB4,BB2,SB7,Z01247][C,H,H,H,H]
+\stopchemie
+\stopbuffer
+
+\startfiguurtekst
+  [links][]
+  {geen}
+  {\haalbuffer}
+\voorbeeld
+\starttypen
+\startchemie[rahmen=an]
+  \chemie[ONE,SD1,SB4,BB2,SB7,Z01247][C,H,H,H,H]
+\stopchemie
+\stoptypen
+\stopfiguurtekst
+
+Einer Bindung kann eine oder mehrere Zahlen bzw. ein Zahlenbereich folgen,
+zum Beispiel: \type{B1}, \type{B135} und \type{B1..5}. Wenn alle Bindungen
+n"otig sind, kann einfach nur~\type{B} angegeben werden.
+
+In einem Ring kann eine zus"atzliche Bindung angegeben werden (f"uhrt zu 
+einer Doppelbindung); zwischen Atomen und Molek"ulen k"onnen Doppel|| und 
+Dreifachbindungen gezeichnet werden.
+
+\plaatstabel
+{Mehrfachbindungen.}
+\starttabel[|rT|lw(4cm)|rT|lw(4cm)|]
+\HL
+\VL ~~EB \VL Extra Bond    \VL ~~DB \VL Double Bond       \VL\FR
+\VL      \VL               \VL ~~TB \VL Triple Bond       \VL\LR
+\HL
+\stoptabel
+
+Freie Elektronen k"onnen verschiedenartig angegeben werden. Die 
+zugeh"origen Parameter beginnen mit einem \type{E}.
+
+\plaatstabel
+{Freie Elektronen.}
+\starttabel[|rT|lw(4cm)|rT|lw(4cm)|]
+\HL
+\VL ~~ES \VL Extra Single  \VL ~~ED \VL Extra Double \VL\FR
+\VL ~~EP \VL Extra Pair    \VL ~~ET \VL Extra Triple \VL\LR
+\HL
+\stoptabel
+
+Das untenstehende Kohlenstoffatom hat nur aus Demonstrationszwecken
+8~Au"sen\-elek\-tronen:
+
+\startbuffer
+\startchemie[kader=aan]
+  \chemie[ONE,Z0,ES1,ED3,ET5,EP7][C]
+\stopchemie
+\stopbuffer
+
+\startfiguurtekst
+  [links][]
+  {geen}
+  {\haalbuffer}
+\voorbeeld
+\starttypen
+\startchemie[rahmen=an]
+  \chemie[ONE,Z0,ES1,ED3,ET5,EP7][C]
+\stopchemie
+\stoptypen
+\stopfiguurtekst
+
+Eine Ringbindung kann \citaat{kurzgeschlossen} werden. Dies kommt vor allem
+bei Sechsringen vor. In diesem Fall wird das Atom, das wegfallen soll, 
+angegeben. Es es auch m"oglich einen Kreis innerhalb eines Sechsrings zu 
+zeichen.
+
+\plaatstabel
+{Besondere Bindungen.}
+\starttabel[|rT|lw(4cm)|rT|lw(4cm)|]
+\HL
+\VL ~~SS \VL Short Shortcut       \VL ~~~S \VL Shortcut            \VL\FR
+\VL ~-SS \VL Left  Short Shortcut \VL ~MID \VL Mid Shortcut        \VL\MR
+\VL ~+SS \VL Right Short Shortcut \VL MIDS \VL Closed Mid Shortcut \VL\LR
+\HL
+\stoptabel
+
+\plaatstabel
+{Kreisf"ormige Bindungen.}
+\starttabel[|rT|lw(4cm)|rT|lw(4cm)|]
+\HL
+\VL ~~~C \VL Circle               \VL ~~CD \VL Dashed Circle          \VL\FR
+\VL ~~CC \VL Shifted Circle       \VL ~CCD \VL Dashed Shifted Circle  \VL\LR
+\HL
+\stoptabel
+
+Obwohl sich die Bedeutung der kreisf"ormigen \type{C..}||Parameter leicht 
+erraten la"st, ist hier trotzdem ein Beispiel.
+
+\startbuffer
+\startchemie[kader=aan]
+  \chemie
+    [SIX,B,ER6,CCD12346,Z0,PB:RZ6,ONE,SB8,EP6,Z0,ZT6,Z8,PE]
+    [\ominus,O,\oplus,H]
+\stopchemie
+\stopbuffer
+
+\startfiguurtekst
+  [links][]
+  {geen}
+  {\haalbuffer}
+\voorbeeld
+\starttypen
+\startchemie[rahmen=an]
+  \chemie
+    [SIX,B,ER6,CCD12346,Z0,PB:RZ6,ONE,SB8,EP6,Z0,ZT6,Z8,PE]
+    [\ominus,O,\oplus,H]
+\stopchemie
+\stopchemie
+\stoptypen
+\stopfiguurtekst
+
+An allen Ringecken k"onnen Substituenten gebunden werden. Wobei Substituent
+im weiteren Sinn zu verstehen ist. Die Bindungen k"onnen, abh"angig von
+der Anwesenheit von Atomen und Molek"ulen, kurz oder lang sein. Wir werden
+diesen Parametern oft begegnen.
+
+\plaatstabel
+{Bindungen zu Substituenten.}
+\starttabel[|rT|lw(4cm)|rT|lw(4cm)|]
+\HL
+\VL ~~~R \VL Radical       \VL ~~SR \VL Single Radical       \VL\FR
+\VL ~~-R \VL Left Radical  \VL ~-SR \VL Single Left Radical  \VL\MR
+\VL ~~+R \VL Right Radical \VL ~+SR \VL Single Right Radical \VL\LR
+\HL
+\stoptabel
+
+Neben dieser Bindungen gibt es noch andere Einfachbindungen.
+
+\plaatstabel
+{Besondere Bindungen zu Substituenten.}
+\starttabel[|rT|lw(4cm)|rT|lw(4cm)|]
+\HL
+\VL ~~RD \VL Radical Dashed       \VL ~~RB\VL Radical Bold       \VL\FR
+\VL ~-RD \VL Left Radical Dashed  \VL ~-RB\VL Left Radical Bold  \VL\MR
+\VL ~+RD \VL Right Radical Dashed \VL ~+RB\VL Right Radical Bold \VL\LR
+\HL
+\stoptabel
+
+Die Radikale k"onnen stets in drei Richtungen gezeichnet werden. Die linke
+und rechte Variante ($-$ und $+$) werden aber sehr selten ben"otigt.
+
+\startbuffer
+\startchemie[kader=aan]
+  \chemie[SIX,B,R14,RD25,RB36]
+\stopchemie
+\stopbuffer
+
+\startfiguurtekst
+  [links][]
+  {geen}
+  {\haalbuffer}
+\voorbeeld
+\starttypen
+\startchemie[rahmen=an]
+  \chemie[SIX,B,R14,RD25,RB36]
+\stopchemie
+\stoptypen
+\stopfiguurtekst
+
+
+\plaatstabel
+{Weitere besondere Bindungen zu Substituenten.}
+\starttabel[|rT|lw(4cm)|rT|lw(4cm)|]
+\HL
+\VL ~~SD \VL Single Dashed \VL ~LDD \VL Double Dashed Left  \VL\FR
+\VL ~~OE \VL Open Ended    \VL ~RDD \VL Double Dashed Right \VL\LR
+\HL
+\stoptabel
+
+Hier folgt ein Beispiel f"ur ein {\em Open End}. Man sieht einen Sechsring
+(\type{SIX}), an dem mehrere \type{ONE}s gebunden sind. Auf die Bedeutung 
+von \type{PB} gehen wir sp"ater ein.
+
+\startbuffer
+\startchemie
+    [breedte=5000,boven=2500,onder=1500,kader=aan]
+  \chemie
+    [SIX,B,C,R6,
+     PB:RZ6,ONE,CZ0,OE1,SB5,MOV5,CZ0,OFF5,OE5,PE]
+    [CH,CH_2]
+\stopchemie
+\stopbuffer
+
+\startfiguurtekst
+  [links][]
+  {geen}
+  {\haalbuffer}
+\voorbeeld
+\starttypen
+\startchemie
+    [breite=5000,oben=2500,unten=1500,rahmen=an]
+  \chemie
+    [SIX,B,C,R6,
+     PB:RZ6,ONE,CZ0,OE1,SB5,MOV5,CZ0,OFF5,OE5,PE]
+    [CH,CH_2]
+\stopchemie
+\stoptypen
+\stopfiguurtekst
+
+Nat"urlich k"onnen die Substituenten auch mit einer Doppelbindung an die
+Struktur gebunden werden.
+
+\plaatstabel
+{Mehrfachbindungen zu Substituenten.}
+\starttabel[|rT|lw(4cm)|rT|lw(4cm)|]
+\HL
+\VL ~~ER \VL Extra Radical \VL ~~DR \VL Double Radical \VL\SR
+\HL
+\stoptabel
+
+An die Bindungen kann Text gebunden werden. Dieser steht bei \type{\chemie}
+im zweiten Klammerpaar.
+
+\plaatstabel
+{Atome und Molek"ule (Radikale).}
+\starttabel[|rT|lw(4cm)|rT|lw(4cm)|]
+\HL
+\VL ~~~Z \VL Atom        \VL ~~RZ \VL Radical Atom       \VL\FR
+\VL ~CRZ \VL Center Atom \VL ~-RZ \VL Left Radical Atom  \VL\MR
+\VL MIDZ \VL Mid Atom    \VL ~+RZ \VL Right Radical Atom \VL\LR
+\HL
+\stoptabel
+
+Bei diesen Parametern schlie"st \type{RZ} an \type{R}, das zuerst angegeben
+werden mu"s, an. Der Parameter \type{MID} kann nur bei einem Sechsring 
+(\type{SIX}) verwendet werden. In dem folgenden Beispiel wird sowohl 
+\type{MID} als auch \type{MIDZ} verwendet. Bei diesen Parametern wird keine
+Positionzahl angegeben.
+
+\startbuffer
+\startchemie[kader=aan]
+  \chemie[SIX,B,MID,MIDZ][\SL{CH_2}]
+\stopchemie
+\stopbuffer
+
+\startfiguurtekst
+  [links][]
+  {geen}
+  {\haalbuffer}
+\voorbeeld
+\starttypen
+\startchemie[rahmen=an]
+  \chemie[SIX,B,MID,MIDZ][\SL{CH_2}]
+\stopchemie
+\stoptypen
+\stopfiguurtekst
+
+Die Atome/Molek"ule werden im Uhrzeigersinn nummeriert. Auch hier sind
+Kombinationen erlaubt. Die Position \type{0} (null) plaziert den Text in
+die Mitte einer Struktur.
+
+Wir k"onnen die Atombindungen nummerieren und beschriften. Dies geschieht
+mit \type{ZN} und \type{ZT}:
+
+\plaatstabel
+{Beschriftung und Nummerierung der Bindungen.}
+\starttabel[|rT|lw(4cm)|rT|lw(4cm)|]
+\HL
+\VL ~~ZN \VL Atom Number \VL ~~ZT \VL Atom Text \VL\SR
+\HL
+\stoptabel
+
+Die obrigen Parameter haben bei \type{ONE} noch eine oben (top) und unten 
+(bottom) Variante.
+
+\plaatstabel
+{Zus"atzliche Beschriftung und Nummerierung der Bindungen.}
+\starttabel[|rT|lw(4cm)|rT|lw(4cm)|]
+\HL
+\VL ~ZTN \VL Atom Top Number    \VL ~ZTT \VL Atom Top Text    \VL\FR
+\VL ~ZBN \VL Atom Bottom Number \VL ~ZBT \VL Atom Bottom Text \VL\LR
+\HL
+\stoptabel
+
+Bei \type{ZTN} und \type{ZBN} werden die Nummern automatisch erstellt. Beim
+anderen Parameter wird der "ubergebene Text benutzt.
+
+\startbuffer
+\startchemie[kader=aan]
+  \chemie[ONE,SB,Z0,ZTT][C,a,b,c,d,e,f,g,h]
+\stopchemie
+\stopbuffer
+
+\startfiguurtekst
+  [links][]
+  {geen}
+  {\haalbuffer}
+\voorbeeld
+\starttypen
+\startchemie[rahmen=an]
+  \chemie[ONE,SB,Z0,ZTT][C,a,b,c,d,e,f,g,h]
+\stopchemie
+\stoptypen
+\stopfiguurtekst
+
+Bei \type{SIX} und \type{FIVE} kann man auch Radikalebindungen nummerieren. 
+Dazu benutzen wir \type{RN} und \type{RT}.
+
+\plaatstabel
+{Beschriftungen und Nummern.}
+\starttabel[|rT|lw(4cm)|rT|lw(4cm)|]
+\HL
+\VL ~~RN \VL Radical Number        \VL ~~RT \VL Radical Text        \VL\FR
+\VL ~RTN \VL Radical Top Number    \VL ~RTT \VL Radical Top Text    \VL\MR
+\VL ~RBN \VL Radical Bottom Number \VL ~RBT \VL Radical Bottom Text \VL\LR
+\HL
+\stoptabel
+
+Zuletzt noch Symbole, die f"ur den Drehsinn einer Struktur verwendet werden.
+
+\plaatstabel
+{Anzeige des Drehsinns.}
+\starttabel[|rT|lw(4cm)|rT|lw(4cm)|]
+\HL
+\VL ~~AU \VL Arrow Up \VL ~~AD \VL Arrow Down \VL\SR
+\HL
+\stoptabel
+
+Die Pfeile werden zwischen die Radikale gezeichnet.
+
+\startbuffer
+\startchemie[kader=aan]
+  \chemie[SIX,B,AU]
+\stopchemie
+\stopbuffer
+
+\startfiguurtekst
+  [links][]
+  {geen}
+  {\haalbuffer}
+\voorbeeld
+\starttypen
+\startchemie[rahmen=an]
+  \chemie[SIX,B,AU]
+\stopchemie
+\stoptypen
+\stopfiguurtekst
+
+Beim Platzieren der Atome und Molek"ule in einem Textes, wird so gut wie 
+m"oglich die Gr"o"se der Struktur bestimmt. Die Breite des \chemie{C} und
+die H"ohe von \chemie{C^n_m} spielen dabei eine Rolle. Der Mechanismus kann
+aber noch verfeinert werden.
+
+\hoofdstuk{Frontalansicht}
+
+Die Strukturen \type{FIVE} und \type{SIX} sind auch als Frontalansicht
+darstellbar (die der {\sc Haworth}||Projektion bei Sacchariden entspricht).
+Als Beispiel f"ur die Strukturen werden unten zwei Monosaccheride 
+dargestellt.
+
+Die Frontalansichten k"onnen nicht rotiert werden; auch sind Verkn"upfungen
+mit anderen Strukturen (noch) nicht m"oglich.
+
+\startbuffer
+\startchemie[hoogte=4500,onder=2500]
+  \bottext{$\beta$-{\sc d}-Fructopyranose}
+  \chemie
+    [SIX,FRONT,BB1236,+SB4,-SB5,Z5][O]
+  \chemie
+    [SIX,FRONT,+R12346,+RZ12346][\SR{HO},H,H,H,OH]
+  \chemie
+    [SIX,FRONT,-R12346,-RZ12346][H,OH,\SR{HO},H,CH_2OH]
+\stopchemie
+\stopbuffer
+
+\startfiguurtekst
+  [links][]
+  {geen}
+  {\haalbuffer}
+\voorbeeld
+\starttypen
+\startchemie[hoehe=4500,unten=2500]
+  \bottext{$\beta$-{\sc d}-Fructopyranose}
+  \chemie
+    [SIX,FRONT,BB1236,+SB4,-SB5,Z5][O]
+  \chemie
+    [SIX,FRONT,+R12346,+RZ12346][\SR{HO},H,H,H,OH]
+  \chemie
+    [SIX,FRONT,-R12346,-RZ12346][H,OH,\SR{HO},H,CH_2OH]
+\stopchemie
+\stoptypen
+\stopfiguurtekst
+
+
+Das Positionieren der Radikale ist ein Kombination von
+Durchf"uhrbarkeit und Qualit"at. 
+Das folgende Beispiel macht dies noch deutlicher:
+
+\startbuffer
+\startchemie[hoogte=4500,onder=2500]
+  \bottext{$\alpha$-{\sc d}-Fructofuranose}
+  \chemie
+    [FIVE,FRONT,BB125,+SB3,-SB4,Z4][O]
+  \chemie
+    [FIVE,FRONT,+R1235,+RZ1235][\SR{HO},H,\SR{HOH_2C},CH_2OH]
+  \chemie
+    [FIVE,FRONT,-R1235,-RZ1235][OH,H,\SR{HO},H,CH_2OH]
+\stopchemie
+\stopbuffer
+
+\startfiguurtekst
+  [links][]
+  {geen}
+  {\haalbuffer}
+\voorbeeld
+\starttypen
+\startchemie[hoehe=4500,unten=2500]
+  \bottext{$\alpha$-{\sc d}-Fructofuranose}
+  \chemie
+    [FIVE,FRONT,BB125,+SB3,-SB4,Z4][O]
+  \chemie
+    [FIVE,FRONT,+R1235,+RZ1235][\SR{HO},H,\SR{HOH_2C},CH_2OH]
+  \chemie
+    [FIVE,FRONT,-R1235,-RZ1235][OH,H,\SR{HO},H,CH_2OH]
+\stopchemie
+\stoptypen
+\stopfiguurtekst
+
+\hoofdstuk{Definitionen} 
+
+Es ist m"oglich eine Strukturbibliothek zu erstellen. Diese 
+Strukturen k"onnen wir dann sp"ater wieder aufrufen und erweitern.
+Weiter k"onnen sie zur Blockbildung beim Aufbau komplizierter Strukturen
+dienen. Strukturen k"onnen mit dem \TEX-Befehl \type{\def} vordefiniert 
+werden.
+
+\starttypen
+\def\sechsring{\chemie[SIX,B,R,RZ]}
+\stoptypen
+
+An Stelle von \type{\def} kann auch der folgende Befehl benutzt werden.
+In diesem Fall wird eine Meldung gegeben, da"s die Definition bereits
+besteht.
+
+\starttypen
+\definierechemie[sechsring]
+  {\chemie[SIX,B,R,RZ]}
+\stoptypen
+
+Obwohl beide Definitionen m"oglich sind, ist die zweite robuster, da
+diese darauf achtet bestehende Befehle nicht zu "uberschreiben.
+
+Der Befehl \type{\chemie[sechsring]} liefert einen Sechsring ohne 
+Substituenten. Es wurde kein zweites Argument angegben.
+
+\startbuffer
+\definieerchemie[zesring]
+  {\chemie[SIX,B,R,RZ]}
+
+\startchemie[kader=aan,breedte=6000]
+  \chemie[zesring]
+\stopchemie
+\stopbuffer
+
+\startfiguurtekst
+  [links][]
+  {geen}
+  {\haalbuffer}
+\voorbeeld
+\starttypen
+\definierechemie[sechsring]
+  {\chemie[SIX,B,R,RZ]}
+
+\startchemie[rahmen=an,breite=6000]
+  \chemie[sechsring]
+\stopchemie
+\stoptypen
+\stopfiguurtekst
+
+Um Substituenten hinzuzuf"ugen, m"ussen wir das Folgende machen:
+
+\startbuffer
+\definieerchemie[zesring]
+  {\chemie[SIX,B,R,RZ]}
+
+\startchemie[kader=aan,breedte=6000]
+  \chemie[zesring][R_1,R_2,R_3,R_4,R_5,R_6]
+\stopchemie
+\stopbuffer
+
+\startfiguurtekst
+  [links][]
+  {geen}
+  {\haalbuffer}
+\voorbeeld
+\starttypen
+\definierechemie[sechsring]
+  {\chemie[SIX,B,R,RZ]}
+
+\startchemie[rahmen=an,breite=6000]
+  \chemie[sechsring][R_1,R_2,R_3,R_4,R_5,R_6]
+\stopchemie
+\stoptypen
+\stopfiguurtekst
+
+Die Struktur \type{sechsring} kann auch ohne Substituenten (\type{RZ}) 
+definiert werden. In diesm Fall werden durch \type{\chemie[sechsring]} keine
+Substituenten gezeichnet. Trotzdem k"onnen diese noch gezeichnet werden,
+wie es im folgenden Beispiel gezeigt wird.
+
+\startbuffer
+\definieerchemie[zesring]
+  {\chemie[SIX,B,R]}
+
+\startchemie[kader=aan,breedte=6000]
+  \chemie[zesring,RZ][A,B,C,D,E,F]
+\stopchemie
+\stopbuffer
+
+\startfiguurtekst
+  [links][]
+  {geen}
+  {\haalbuffer}
+\voorbeeld
+\starttypen
+\definierechemie[sechsring]
+  {\chemie[SIX,B,R]}
+
+\startchemie[rahmen=an,breite=6000]
+  \chemie[sechsring,RZ][A,B,C,D,E,F]
+\stopchemie
+\stoptypen
+\stopfiguurtekst
+
+Im Prinzip sind die M"oglichkeiten unbegrenzt. Man sollte sich aber 
+bewu"st sein, da"s die Argumente im zweiten Klammerpaar in der 
+Reihenfolge der Parameter der ersten verwendet werden.
+
+In einer Definition k"onnen aber auch Atome und Molek"ule (Text) plaziert
+werden.
+
+\starttypen
+\definierechemie[sechsring]
+  {\chemie[SIX,B,R,RZ135][R_1,R_3,R_5]}
+\stoptypen
+
+Hier werden immer drei Substituenten plaziert. Wenn wir mehr Substituenten
+platzieren wollen, m"ussen wir explizit angeben, da"s wir eine 
+Sechsringstruktur (\type{SIX}) verwenden.
+
+\startbuffer
+\definieerchemie[zesring]
+  {\chemie[SIX,B,R,RZ135][R_1,R_3,R_5]}
+
+\startchemie[kader=aan,breedte=6000]
+  \chemie[zesring,SIX,RZ246][A,B,C]
+\stopchemie
+\stopbuffer
+
+\startfiguurtekst
+  [links][]
+  {geen}
+  {\haalbuffer}
+\voorbeeld
+\starttypen
+\definierechemie[sechsring]
+  {\chemie[SIX,B,R,RZ135][R_1,R_3,R_5]}
+
+\startchemie[rahmen=an,breite=6000]
+  \chemie[sechsring,SIX,RZ246][A,B,C]
+\stopchemie
+\stoptypen
+\stopfiguurtekst
+
+In den Definitionen ist \type{\chemie[ ]} global (d.~h. das sich die
+Struktur \type{SIX} gemerkt wird) und \type{\chemie[ ][ ]} lokal. Die Idee 
+dahinter ist, da"s im ersten Fall eine Folge von Befehlen angegeben wird,
+wogegen das zweite als v"ollig unabh"angige Struktur angesehen wird.
+
+In einer Definition kann \type{\chemie} mehrmals vorkommen. Das vorige
+Beispiel kann auch so angegeben werden:
+
+\startbuffer
+\definieerchemie[zesring]
+  {\chemie[SIX,B,R,RZ135][R_1,R_3,R_5]
+   \chemie[SIX,RZ246]}
+
+\startchemie[kader=aan,breedte=6000]
+  \chemie[zesring][A,B,C]
+\stopchemie
+\stopbuffer
+
+\startfiguurtekst
+  [links][]
+  {geen}
+  {\haalbuffer}
+\voorbeeld
+\starttypen
+\definierechemie[sechsring]
+  {\chemie[SIX,B,R,RZ135][R_1,R_3,R_5]
+   \chemie[SIX,RZ246]}
+
+\startchemie[rahmen=an,breite=6000]
+  \chemie[sechsring][A,B,C]
+\stopchemie
+\stoptypen
+\stopfiguurtekst
+
+Wenn \TEX\ meldet, da"s es auf einen unbekannten Befehl gestossen ist,
+dann hat man wahrscheinlich vergessen \type{SIX}, \type{FIVE} oder ein 
+vergleichbaren Strukturparameter anzugeben.
+
+\hoofdstuk{Kombinieren}
+
+Strukturen k"onnen zu komplexen Verbindungen verbunden werden. Das 
+Verschieben einer Struktur geschieht mit \type{MOV}, \type{ROT}, 
+\type{ADJ} und \type{SUB}.
+
+\plaatstabel
+{Verschieben und Drehen.}
+\starttabel[ | r T | l w(2cm) | p(8cm) | ]
+\HL
+\VL MOV \VL Move       \VL Verschieben der selben Art von Struktur in Richtung
+                           einer Bindung\VL\FR 
+\VL ADJ \VL Adjace     \VL Verschieben einer anders artigen Struktur, die 
+                           \"uber eine Bindung verbunden wird, in 
+                           Richtung der $x$- oder $y$-Achsen\VL\MR
+\VL SUB \VL Substitute \VL Verschieben einer Struktur relativ zu einer anderen
+                           in Richtung der $x$- oder $y$-Achse\VL\MR 
+\VL ROT \VL Rotate     \VL Drehen einer Struktur\VL\LR 
+\HL
+\stoptabel
+
+Die obrigen vier Parameter haben innerhalb der verschieden Strukturen 
+unterschiedliche Wirkung. So unterscheidet sich beispielsweise der
+Drehwinkel bei \type{\chemie[FIVE,ROT1,B]} von dem bei 
+\type{\chemie[SIX,ROT1,B]}.
+
+\type{ONE} ist auf die Parameter \type{MOV} und \type{DIR} beschr"ankt.
+Beide Befehle haben den selben Effekt mit Au"snahme der L"ange der
+Verschiebung. Kleine Verschiebungen sind mit \type{OFF} m"oglich.
+
+\plaatstabel
+{Verschieben.}
+\starttabel[ | r T | l w(2cm) | p(8cm) | ]
+\HL
+\VL DIR \VL Direction \VL Wie \type{MOV}, aber zum diagonalen Verschieben von
+                          Strukturen\VL\FR
+\VL OFF \VL Offset    \VL Kleine Verschiebungen eines Atom innerhalb eines 
+                          Molek\"uls\VL\LR 
+\HL
+\stoptabel
+
+Innerhalb von \type{CARBON} ist es auch m"oglich die Struktur zu spiegeln.
+Dies geschieht mit \type{MIR}.
+
+\plaatstabel
+{Spiegelen.}
+\starttabel[ | r T | l w(2cm) | p(8cm) | ]
+\HL
+\VL MIR \VL Mirror     \VL Spiegeln einer Struktur\VL\SR
+\HL
+\stoptabel
+
+Mit einer Ziffer wird die Richtung der Verschiebung bzw. das Ma"s der
+Drehung angegeben. Da diese Parameter stark von der Struktur abh"angen,
+m"ussen sie angegeben werden, bevor Bindungen und Text gezeichnet wurden.
+Es macht einen Unterschied, ob \type{\chemie[FIVE,B,ROT1,R]} oder 
+\type{\chemie[FIVE,ROT1,B,R]} angegeben wird. Das erste liefert ein
+unerw"unschtes Resultat.
+
+\startbuffer
+\startchemie[kader=aan,breedte=4000,rechts=3000]
+  \chemie[SIX,B,MOV1,B]
+\stopchemie
+\stopbuffer
+
+\startfiguurtekst
+  [links][]
+  {geen}
+  {\haalbuffer}
+\voorbeeld
+\starttypen
+\startchemie[rahmen=an,breite=4000,rechts=3000]
+  \chemie[SIX,B,MOV1,B]
+\stopchemie
+\stoptypen
+\stopfiguurtekst
+
+Zuerst wurde ein Sechsring gezeichnet: \type{SIX,B}, die aktuelle Position
+wurde dann in Richtung der Bindung~1 verschoben: \type{MOV1} und ein zweiter 
+Ring gezeichnet:~\type{B}. Durch die Verschiebung mit \type{MOV} kann der zweite
+Sechsring an allen sechs Kanten plaziert werden, wogegen \type{ADJ} nur
+in Achsenrichtung ($x$, $-x$, $y$, $-y$) verschieben kann.
+Bei einem Sechsring fallen die Verschiebungen sogar zusammen, das obenstehende
+Beispiel h"atte auch so erreicht werden k"onnen: \type{[SIX,B,ADJ1,B]}.
+
+Auch k"onnen verschiedene Strukturen kombiniert werden. An einer Struktur
+\type{SIX} kann beispielsweise \type{FIVE} gekoppelt werden.
+Der f"ur das Koppeln n"otige Mechanismus wird weitestgehend 
+vor dem Benutzer verborgen. Im folgenden Beispiel wird zuerst ein
+Sechsring gezeichnet: \type{SIX,B}, die Position in Richtung der $x$-Achse
+verschoben: \type{ADJ1} und ein F"unfring gezeichnet: \type{FIVE,ROT3,B}.
+
+\startbuffer
+\startchemie[kader=aan,breedte=4000,rechts=3000]
+  \chemie[SIX,B,ADJ1,FIVE,ROT3,B]
+\stopchemie
+\stopbuffer
+
+\startfiguurtekst
+  [links][]
+  {geen}
+  {\haalbuffer}
+\voorbeeld
+\starttypen
+\startchemie[rahmen=an,breite=4000,rechts=3000]
+  \chemie[SIX,B,ADJ1,FIVE,ROT3,B]
+\stopchemie
+\stoptypen
+\stopfiguurtekst
+
+\startbuffer
+\startchemie[kader=aan,breedte=5000,rechts=4500]
+  \chemie[SIX,ROT2,B,R6,SUB1,FIVE,B,R4]
+\stopchemie
+\stopbuffer
+
+\startfiguurtekst
+  [links][]
+  {geen}
+  {\haalbuffer}
+\voorbeeld
+\starttypen
+\startchemie[rahmen=an,breite=5000,rechts=4500]
+  \chemie[SIX,ROT2,B,R6,SUB1,FIVE,B,R4]
+\stopchemie
+\stoptypen
+\stopfiguurtekst
+
+Eine Kopplung zu einer andersartigen Struktur geschieht mit \type{ADJ}. Wobei
+die einzelnen Strukturen ggf. mit \type{ROT} gedreht werden m"ussen. Soll eine
+Struktur nicht direkt, sondern "uber eine Bindung verkn"upft werden, verwendet
+man \type{SUB}. Drehungen sind in 90 Grad Schritten im Uhrzeigersinn,
+Verschiebungen durch \type{ADJ} und \type{SUB} in Richtung der Achsen m"oglich.
+
+Die folgenden Beispiele illustrieren noch, da"s die Abmessungen der kleinen
+Strukturen an die der gro"sen angepa"st sind. Die Struktur \type{EIGHT} hat 
+"ubrigens etwas weniger M"oglichkeiten als zum Beispiel \type{SIX}.
+
+\startbuffer
+\startchemie[breedte=6000,links=1500,kader=aan]
+  \chemie[EIGHT,B,MOV1,B]
+\stopchemie
+\stopbuffer
+
+\startfiguurtekst
+  [links][]
+  {geen}
+  {\haalbuffer}
+\voorbeeld
+\starttypen
+\startchemie[breite=6000,links=1500,rahmen=an]
+  \chemie[EIGHT,B,MOV1,B]
+\stopchemie
+\stoptypen
+\stopfiguurtekst
+
+\startbuffer
+\startchemie[breedte=6000,links=1500,kader=aan]
+  \chemie[EIGHT,B,ADJ1,SIX,B]
+\stopchemie
+\stopbuffer
+
+\startfiguurtekst
+  [links][]
+  {geen}
+  {\haalbuffer}
+\voorbeeld
+\starttypen
+\startchemie[breite=6000,links=1500,rahmen=an]
+  \chemie[EIGHT,B,ADJ1,SIX,B]
+\stopchemie
+\stoptypen
+\stopfiguurtekst
+
+\startbuffer
+\startchemie[breedte=6000,links=1500,kader=aan]
+  \chemie[EIGHT,B,ADJ1,FIVE,ROT3,B]
+\stopchemie
+\stopbuffer
+
+\startfiguurtekst
+  [links][]
+  {geen}
+  {\haalbuffer}
+\voorbeeld
+\starttypen
+\startchemie[breite=6000,links=1500,rahmen=an]
+  \chemie[EIGHT,B,ADJ1,FIVE,ROT3,B]
+\stopchemie
+\stoptypen
+\stopfiguurtekst
+
+
+Inzwischen haben Sie sicher festgestellt, da"s die Reihenfolge der Parameter
+wichtig ist. Die empfohlene Reihenfolge lautet wie folgt: 
+
+\starttypen
+\chemie
+  [Struktur,                             % SIX, FIVE, ...
+   Bindungen innerhalb der Struktur,     % B, C, EB, ...
+   Bindungen auáerhalb der Struktur,     % R, DR, ...
+   Platz der Atome,                      % Z
+   Platz der Substituenten]              % RZ, -RZ, ...
+  [Atome,
+   Substituenten]
+\stoptypen
+
+Das Verbinden von Strukturen kommt in der Regel nach dem Drehen. Obwohl
+dies vielleicht nicht sofort zu verstehen ist, hat dies durchaus Systematik.
+Der Proze"s h"atte zu dem vereinfacht werden k"onnen. 
+Wir experimentierten mit einem mehr oder weniger automatischen
+Drehmechanismus, aber solche versteckten Drehungen k"onnen
+zu unerwarteten Ergebnissen f"uhren, so da"s wir davon Abstand nahmen.
+Zudem ist es einfacher eine Struktur zu erstellen und sie dann erst zu drehen.
+So  sollte eine verkn"upfte Struktur besser erst als Unterstruktur 
+definiert werden, und dann als Ganzes gedreht werden.
+
+Oft ist ein Sechsring  mit einem oder mehreren \type{ONE}s verbunden.
+Solche Kohlenstoffketten werden oft im Zigzack dargestellt.
+In einem solchen Fall benutzen wir \type{DIR}. 
+
+\startbuffer
+\startchemie
+  [schaal=klein,breedte=6000,hoogte=6000,kader=aan]
+  \chemie[SIX,SB2356,DB14,Z2346,SR36,RZ36]
+    [C,N,C,C,H,H_2]
+  \chemie[PB:Z1,ONE,Z0,DIR8,Z0,SB24,DB7,Z27,PE]
+    [C,C,CH_3,O]
+  \chemie[PB:Z5,ONE,Z0,DIR6,Z0,SB24,DB7,Z47,PE]
+    [C,C,H_3C,O]
+  \chemie[SR24,RZ24]
+    [CH_3,H_3C]
+\stopchemie
+\stopbuffer
+
+\startfiguurtekst
+  [links][]
+  {geen}
+  {\haalbuffer}
+\voorbeeld
+\starttypen
+\startchemie
+  [format=klein,breite=6000,hoehe=6000,rahmen=an]
+  \chemie[SIX,SB2356,DB14,Z2346,SR36,RZ36]
+    [C,N,C,C,H,H_2]
+  \chemie[PB:Z1,ONE,Z0,DIR8,Z0,SB24,DB7,Z27,PE]
+    [C,C,CH_3,O]
+  \chemie[PB:Z5,ONE,Z0,DIR6,Z0,SB24,DB7,Z47,PE]
+    [C,C,H_3C,O]
+  \chemie[SR24,RZ24]
+    [CH_3,H_3C]
+\stopchemie
+\stoptypen
+\stopfiguurtekst
+
+Damit die Bindungen der Kette die gleiche L"ange haben, kann man jene
+als Substruktur positionieren. Dazu verwenden wir die Befehle \type{PB}
+und \type{PE}.
+
+\plaatstabel
+{Positioneren.}
+\starttabel[ | r T | l w(4cm) | p(6cm) | ]
+\HL
+\VL PB:.. \VL Picture Begin \VL Beginn einer Unterstruktur\VL\FR
+\VL PE    \VL Picture End   \VL Ende einer Unterstruktur\VL\LR
+\HL
+\stoptabel
+
+Direkt nach \type{PB} wird angegeben, wohin die Struktur
+platziert wird. Es ist wichtig daran zu denken, da"s das unmittelbar
+folgende Atom zentriert wird. Darum ist der Gebrauch dem eines Zentralatom
+vorzuziehen.
+
+Der Ansto"s zum Einf"uhren dieser Befehle lag darin begr"undet, da"s
+eine Struktur auf eine optisch akzeptable Weise gezeichnet werden sollte.
+Es gibt jedoch verschiedene M"oglich\-keiten solche Strukturen zu zeichen.
+Die folgende Variante liefert auch das Resultat: 
+
+\startbuffer
+\startchemie
+    [schaal=klein,breedte=6000,hoogte=6000,kader=aan]
+  \chemie[SIX,SB2356,DB14,Z36,SR36,RZ36][N,C,H,H_2]
+  \chemie[PB:Z1,ONE,Z0,DIR8,Z0,SB24,DB7,Z27,PE][C,C,CH_3,O]
+  \chemie[PB:Z5,ONE,Z0,DIR6,Z0,SB24,DB7,Z47,PE][C,C,H_3C,O]
+  \chemie[PB:Z2,ONE,Z0,DIR2,SB6,CZ0,PE][C,CH_3]
+  \chemie[PB:Z4,ONE,Z0,DIR4,SB8,CZ0,PE][C,H_3C]
+\stopchemie
+\stopbuffer
+
+\startfiguurtekst
+  [links][]
+  {geen}
+  {\haalbuffer}
+\voorbeeld
+\starttypen
+\startchemie
+    [format=klein,breite=6000,hoehe=6000,rahmen=an]
+  \chemie
+    [SIX,SB2356,DB14,Z36,SR36,RZ36][N,C,H,H_2]
+  \chemie
+    [PB:Z1,ONE,Z0,DIR8,Z0,SB24,DB7,Z27,PE][C,C,CH_3,O]
+  \chemie
+    [PB:Z5,ONE,Z0,DIR6,Z0,SB24,DB7,Z47,PE][C,C,H_3C,O]
+  \chemie
+    [PB:Z2,ONE,Z0,DIR2,SB6,CZ0,PE][C,CH_3]
+  \chemie
+    [PB:Z4,ONE,Z0,DIR4,SB8,CZ0,PE][C,CH_3]
+\stopchemie
+\stoptypen
+\stopfiguurtekst
+
+Am effizientesten wird diese Struktur aber wie folgt definiert. Die letzte
+L"osung ist aber bez"uglich der Typographie nicht unbedingt die Beste.
+
+\startbuffer
+\startchemie
+    [schaal=klein,breedte=6000,hoogte=6000,kader=aan]
+  \chemie[SIX,SB2356,DB14,Z,SR36,RZ36,SR1245,RZ24]
+    [C,C,N,C,C,C,H,H_2,CH_3,H_3C]
+  \chemie[PB:RZ1,ONE,Z0,SB2,DB7,Z27,PE]
+    [C,CH_3,O]
+  \chemie[PB:RZ5,ONE,Z0,SB4,DB7,Z47,PE]
+    [C,H_3C,O]
+\stopchemie
+\stopbuffer
+
+\startfiguurtekst
+  [links][]
+  {geen}
+  {\haalbuffer}
+\voorbeeld
+\starttypen
+\startchemie
+    [format=klein,breite=6000,hoehe=6000,rahmen=an]
+  \chemie[SIX,SB2356,DB14,Z,SR36,RZ36,SR1245,RZ24]
+    [C,C,N,C,C,C,H,H_2,CH_3,H_3C]
+  \chemie[PB:RZ1,ONE,Z0,SB2,DB7,Z27,PE]
+    [C,CH_3,O]
+  \chemie[PB:RZ5,ONE,Z0,SB4,DB7,Z47,PE]
+    [C,H_3C,O]
+\stopchemie
+\stoptypen
+\stopfiguurtekst
+
+Es ist vielleicht allen aufgefallen, da"s die Gr"o"se der Struktur durch
+die Substituenten festgestellt wird. Dabei z"ahlen Ketten, abgesehen von
+dem ersten Atom, dazu. Dies f"ordert einen konstanten Aufbau.
+
+Die Unterschiede zwischen \type{SUB} und \type{PB} sind gering, sollten
+aber nicht vernachl"assigt werden. Vergleichen Sie beispielsweise folgende
+Formeln:
+
+\startbuffer
+\startchemie
+  [breedte=passend,kader=aan,schaal=klein]
+  \chemie
+    [SIX,ROT2,B,C,R236,RZ23,
+     SUB1,ONE,OFF1,Z0,4OFF1,SB1,Z1]
+    [HO,HO,CHOH,CH_2NH_2]
+\stopchemie
+\stopbuffer
+
+\startfiguurtekst
+  [links][]
+  {geen}
+  {\haalbuffer}
+\voorbeeld
+\starttypen
+\startchemie
+  [breite=passend,rahmen=an,format=klein]
+  \chemie
+    [SIX,ROT2,B,C,R236,RZ23,
+     SUB1,ONE,OFF1,Z0,4OFF1,SB1,Z1]
+    [HO,HO,CHOH,CH_2NH_2]
+\stopchemie
+\stoptypen
+\stopfiguurtekst
+
+\startbuffer
+\startchemie
+  [breedte=passend,kader=aan,schaal=klein]
+  \chemie
+    [SIX,ROT2,B,C,R236,RZ23,
+     PB:RZ6,ONE,Z0,3OFF1,SB1,Z1,PE]
+    [HO,HO,CHOH,CH_2NH_2]
+\stopchemie
+\stopbuffer
+
+\startfiguurtekst
+  [links][]
+  {geen}
+  {\haalbuffer}
+\voorbeeld
+\starttypen
+\startchemie
+  [breite=passend,rahmen=an,format=klein]
+  \chemie
+    [SIX,ROT2,B,C,R236,RZ23,
+     PB:RZ6,ONE,Z0,3OFF1,SB1,Z1,PE]
+    [HO,HO,CHOH,CH_2NH_2]
+\stopchemie
+\stoptypen
+\stopfiguurtekst
+
+Das Verwenden von \type{PB:} ist etwas umst"andlicher, f"uhrt aber zu einem
+besseren Ergebnis. Wie man "ubrigens hier deutlich sieht, mu"s man in diesem
+Fall selbst die Breite der Struktur angeben. Dies kommt daher, da"s die
+Abmessungen der so angegebenden Substituenten nicht ber"ucksichtigt werden k"onnen.
+Ansonsten w"urden die Strukturen inkonsistente Abmessungen bekommen und
+das Kombinieren erschweren.
+
+Gehen wir zuerst auf die Bedeutung von \type{OFF} ein. Bei \type{ONE}
+kann \type{Z0} aus mehr als einem Atom bestehen. In diesem Fall ist
+der reservierte Platz zu klein. Wenn vor \type{Z0} mehr Platz n"otig
+ist, dann k"onnen die Bindungen~1, 2 und~8 mit dem Parameter \type{OFF}
+(\citaat{Offset}) verschoben werden. Wie wir den Parameter verwenden,
+ist dem untenstehenden Beispiel zu entnehmen.
+
+\startbuffer
+\startchemie
+  [breedte=passend,formaat=klein,schaal=klein,kader=aan]
+  \chemie
+    [SIX,B,C,ADJ1,
+     FIVE,ROT3,SB34,+SB2,-SB5,Z345,DR35,SR4,CRZ35,SUB1,
+     ONE,OFF1,SB258,Z0,Z28]
+    [C,N,C,O,O,
+     CH,COOC_2H_5,COOC_2H_5]
+\stopchemie
+\stopbuffer
+
+\startfiguurtekst
+  [links][]
+  {geen}
+  {\haalbuffer}
+\voorbeeld
+\starttypen
+\startchemie
+  [breite=passend,groesse=klein,format=klein,rahmen=an]
+  \chemie
+    [SIX,B,C,ADJ1,
+     FIVE,ROT3,SB34,+SB2,-SB5,Z345,DR35,SR4,CRZ35,SUB1,
+     ONE,OFF1,SB258,Z0,Z28]
+    [C,N,C,O,O,
+     CH,COOC_2H_5,COOC_2H_5]
+\stopchemie
+\stoptypen
+\stopfiguurtekst
+
+Ein Verschieben schafft Platz f"ur ein weiteres Zeichen. Wenn wir mehr Platz
+ben"otigen, k"onnen wir beispielsweise \type{3OFF1} verwenden.
+Solche auf den ersten Blick recht komplizierten Definitionen sollten
+am Besten schrittweise aufgebaut werden und dann als Ganzes eingef"ugt
+werden.
+
+Es taucht hier auch noch ein neuer Parameter auf: \type{CRZ}. Dieser Parameter
+kann dazu benutzt werden, um ein Atom oder Molek"ul mit der normalen Bindungsl"ange
+zu platzieren, was hier gew"unscht ist. Dasselbe h"atten wir mit dem Parameter
+\type{RZ} erreichen k"onnen, wenn wir mittels des zweiten Arguments den
+Zwischenraum angepa"st h"att: \type{{\,O}} anstelle von \type{O}.
+
+Zeigen wir noch ein weiteres Beispiel, zu dem wir noch einen Rat geben wollen:
+Mit der Auswahl {\em eines} Verfahrens dient man der Konsistenz des 
+bearbeiteten Dokuments.
+
+
+\startbuffer
+\startchemie
+  [breedte=passend,hoogte=passend,kader=aan,
+   schaal=klein]
+  \chemie
+    [ONE,SB15,DB7,Z057,3OFF1,MOV1,Z0,3OFF1,MOV1,
+     Z017,SB1357,MOV3,Z0,MOV3,SB1357,Z013,3OFF5,
+     MOV5,Z0,3OFF5,SB5,Z5]
+    [C,H_2N,NH,(CH_2)_3,C,COOH,H,\SL{NH},C,COOH,H,
+     (CH_2)_2,HOOC]
+\stopchemie
+\stopbuffer
+
+\startfiguurtekst
+  [links][]
+  {geen}
+  {\haalbuffer}
+\voorbeeld
+\starttypen
+\startchemie
+  [breite=passend,hoehe=passend,rahmen=an,
+   format=klein]
+  \chemie
+    [ONE,SB15,DB7,Z057,3OFF1,MOV1,Z0,3OFF1,MOV1,
+     Z017,SB1357,MOV3,Z0,MOV3,SB1357,Z013,3OFF5,
+     MOV5,Z0,3OFF5,SB5,Z5]
+    [C,H_2N,NH,(CH_2)_3,C,COOH,H,\SL{NH},C,COOH,H,
+     (CH_2)_2,HOOC]
+\stopchemie
+\stoptypen
+\stopfiguurtekst
+
+\startbuffer
+\startchemie
+  [breedte=passend,hoogte=passend,kader=aan,
+   schaal=klein]
+  \chemie [ONE,SB15,DB7,Z057,3OFF1][C,H_2N,NH]
+  \chemie [MOV1,Z0,3OFF1]          [(CH_2)_3]
+  \chemie [MOV1,Z017,SB1357]       [C,COOH,H]
+  \chemie [MOV3,Z0]                [\SL{NH}]
+  \chemie [MOV3,SB1357,Z013,3OFF5] [C,COOH,H]
+  \chemie [MOV5,Z0,3OFF5,SB5,Z5]   [(CH_2)_2,HOOC]
+\stopchemie
+\stopbuffer
+
+\startfiguurtekst
+  [links][]
+  {geen}
+  {\haalbuffer}
+\voorbeeld
+\starttypen
+\startchemie
+  [breite=passend,hoehe=passend,rahmen=an,
+   format=klein]
+  \chemie [ONE,SB15,DB7,Z057,3OFF1][C,H_2N,NH]
+  \chemie [MOV1,Z0,3OFF1]          [(CH_2)_3]
+  \chemie [MOV1,Z017,SB1357]       [C,COOH,H]
+  \chemie [MOV3,Z0]                [\SL{NH}]
+  \chemie [MOV3,SB1357,Z013,3OFF5] [C,COOH,H]
+  \chemie [MOV5,Z0,3OFF5,SB5,Z5]   [(CH_2)_2,HOOC]
+\stopchemie
+\stoptypen
+\stopfiguurtekst
+
+\startbuffer
+\startchemie
+  [breedte=passend,hoogte=passend,kader=aan,
+   schaal=klein]
+  \chemie
+    [ONE,Z0,SAVE,MOV7,SB1357,Z017,3OFF5,MOV5,Z0,
+     3OFF5,MOV5,SB15,DB7,Z057,RESTORE,
+     MOV3,SB1357,Z013,MOV5,3OFF5,Z0,6OFF5,SB5,Z5]
+    [\SL{NH},C,COOH,H,(CH_2)_3,C,H_2N,NH,C,COOH,H,
+     (CH_2)_2,HOOC]
+\stopchemie
+\stopbuffer
+
+\startfiguurtekst
+  [links][]
+  {geen}
+  {\haalbuffer}
+\voorbeeld
+\starttypen
+\startchemie
+  [breite=passend,hoehe=passend,rahmen=an,
+   format=klein]
+  \chemie
+    [ONE,Z0,SAVE,MOV7,SB1357,Z017,3OFF5,MOV5,Z0,
+     3OFF5,MOV5,SB15,DB7,Z057,RESTORE,
+     MOV3,SB1357,Z013,MOV5,3OFF5,Z0,6OFF5,SB5,Z5]
+    [\SL{NH},C,COOH,H,(CH_2)_3,C,H_2N,NH,C,COOH,H,
+     (CH_2)_2,HOOC]
+\stopchemie
+\stoptypen
+\stopfiguurtekst
+
+\startbuffer
+\startchemie
+  [breedte=passend,hoogte=passend,kader=aan,
+   schaal=klein]
+  \chemie
+    [ONE,Z0,MOV7,SB1357,Z017,3OFF5,MOV5,Z0,
+     3OFF5,MOV5,SB15,DB7,Z057,MOV0,MOV3,SB1357,
+     Z013,MOV5,3OFF5,Z0,6OFF5,SB5,Z5]
+    [\SL{NH},C,COOH,H,(CH_2)_3,C,H_2N,NH,C,COOH,H,
+     (CH_2)_2,HOOC]
+\stopchemie
+\stopbuffer
+
+\startfiguurtekst
+  [links][]
+  {geen}
+  {\haalbuffer}
+\voorbeeld
+\starttypen
+\startchemie
+  [breite=passend,hoehe=passend,rahmen=an,
+   format=klein]
+  \chemie
+    [ONE,Z0,MOV7,SB1357,Z017,3OFF5,MOV5,Z0,
+     3OFF5,MOV5,SB15,DB7,Z057,MOV0,MOV3,SB1357,
+     Z013,MOV5,3OFF5,Z0,6OFF5,SB5,Z5]
+    [\SL{NH},C,COOH,H,(CH_2)_3,C,H_2N,NH,C,COOH,H,
+     (CH_2)_2,HOOC]
+\stopchemie
+\stoptypen
+\stopfiguurtekst
+
+
+Was vorzuziehen ist, h"angt von dem Geschmack der Benutzers und
+nat"urlich von der gew"unschten typografischen Qualit"at ab. Kommen wir nun
+zum Gebrauch von \type{SAVE} und \type{RESTORE}. Mit diesem Parameter
+werden Zustandsvariablen gespeichert und wieder abgerufen.
+
+Zum Schlu"s zeigen wir noch einmal ein Beispiel f"ur eine Kombination von
+\type{SIX} mit \type{FIVE}. Es zeigt auch den Gebrauch von \type{SS}.
+
+\startbuffer
+\startchemie
+    [breedte=passend,hoogte=passend,kader=aan]
+  \chemie
+    [SIX,DB135,SB246,Z,SR6,RZ6][C,C,N,\SR{HC},N,C,NH_2]
+  \chemie
+    [SIX,MOV1,DB1,SB23,SS6,Z1..5,SR3,RZ3][N,\SL{CH},N,C,C,H]
+\stopchemie
+\stopbuffer
+
+\startfiguurtekst
+  [links][]
+  {geen}
+  {\haalbuffer}
+\voorbeeld
+\starttypen
+\startchemie
+    [breite=passend,hoehe=passend,rahmen=an]
+  \chemie
+    [SIX,DB135,SB246,Z,SR6,RZ6][C,C,N,\SR{HC},N,C,NH_2]
+  \chemie
+    [SIX,MOV1,DB1,SB23,SS6,Z1..5,SR3,RZ3][N,\SL{CH},N,C,C,H]
+\stopchemie
+\stoptypen
+\stopfiguurtekst
+
+\hoofdstuk{Sonstiges Pla\-tzieren um Atome}
+
+Wir k"onnen Strukturformeln mit Symbolen und Texten versehen, zum
+Beispiel:
+
+\startbuffer
+\startchemie
+  [hoogte=4500,boven=1250,breedte=passend,kader=aan]
+  \ondertekst
+    {2,2-Dimethyl-3-etylpentan}
+  \chemie
+    [ONE,Z3570,SB1357]
+    [CH_3,\T{1}{H_3C},CH_3,\SR{\LT{2}{C}}]
+  \chemie
+    [MOV1,OFF1,Z0,SB3]
+    [\T{3}{CH}]
+  \chemie
+    [MOV3,Z0,SB3,MOV3,Z0,MOV7,MOV7]
+    [CH_2,CH_3]
+  \chemie
+    [OFF1,SB1,MOV1,OFF1,Z0,2OFF1,SB1,Z1]
+    [\T{4}{CH_2},\T{5}{CH_3}]
+\stopchemie
+\stopbuffer
+
+\startfiguurtekst
+  [links][]
+  {geen}
+  {\haalbuffer}
+\voorbeeld
+\starttypen
+\startchemie
+  [hoehe=4500,oben=1250,breite=passend,rahmen=an]
+  \textunter
+    {2,2-Dimethyl-3-etylpentan}
+  \chemie
+    [ONE,Z3570,SB1357]
+    [CH_3,\T{1}{H_3C},CH_3,\SR{\LT{2}{C}}]
+  \chemie
+    [MOV1,OFF1,Z0,SB3]
+    [\T{3}{CH}]
+  \chemie
+    [MOV3,Z0,SB3,MOV3,Z0,MOV7,MOV7]
+    [CH_2,CH_3]
+  \chemie
+    [OFF1,SB1,MOV1,OFF1,Z0,2OFF1,SB1,Z1]
+    [\T{4}{CH_2},\T{5}{CH_3}]
+\stopchemie
+\stoptypen
+\stopfiguurtekst
+
+Neben \type{\T} gibt es noch eine Reihe anderer Parameter. Die Anzahl der
+den Parametern "ubergebenen Argumenten ist optional.  So k"onnen die 
+Oxidationszahlen (r"omische Ziffern) mit f"uhrenden \type{\+} und \type{\-}, oder
+mit mit~\type{\1} bis~\type{\7} dargestellt werden.
+
+\plaatstabel
+{Sonstiges Platzieren um Atome: Oxidationszahlen}
+\starttabel[ | l | l | ]
+\HL
+\VL \type{\+{nummer}} \VL positive r\"omische Oxidationszahl       \VL\FR
+\VL \type{\-{nummer}} \VL negative r\"omische Oxidationszahl       \VL\MR
+\VL \type{\1}         \VL die r\"omische Zahl 1 (ohne $+$ oder $-$)\VL\MR
+\VL \type{\7}         \VL gleiches f\"ur 2, 3, 4, 5, 6 und 7       \VL\LR
+\HL
+\stoptabel
+
+Die Oxidationszahlen werden "uber dem zugeh"origen Atom zentriert.
+So ergibt: 
+
+\startbuffer
+\plaatsformule
+  \startformule
+    \chemie{S}+\chemie{O_2}
+    \chemie{GIVES}
+    \chemie{\+{4}{S}\-{2}{O_2}}
+  \stopformule
+\stopbuffer
+
+\starttypen
+$$
+  \chemie{S}+\chemie{O_2}
+  \chemie{GIVES}
+  \chemie{\+{4}{S}\-{2}{O_2}}
+$$
+\stoptypen
+
+dies:
+
+\haalbuffer
+
+Wir k"onnen schier endlose Polymerketten mit \type{\[} und~\type{\]} zeichnen.
+Hierbei kann beiden Parametern optional Argumente "ubergeben werden, wie im
+Beispiel f"ur Polytetrafluorethylen (PTFE, Handelsnamen sind Teflon und Hostaflon TF):
+
+\startbuffer
+\startchemie[breedte=passend,kader=aan]
+  \chemie
+    [ONE,ZT5,SB5,OFF1,Z0,,OFF1,SB1,MOV1,SB5,OFF1,Z0,OFF1,SB1,ZT1]
+    [\[,CF_2,CF_2,\]{\sl n}]
+\stopchemie
+\stopbuffer
+
+\startfiguurtekst
+  [links][]
+  {geen}
+  {\haalbuffer}
+\voorbeeld
+\starttypen
+\startchemie[breite=passend,rahmen=an]
+  \chemie
+    [ONE,ZT5,SB5,OFF1,Z0,,OFF1,SB1,MOV1,SB5,OFF1,Z0,OFF1,SB1,ZT1]
+    [\[,C,C,C,\]{\sl n}]
+\stopchemie
+\stoptypen
+\stopfiguurtekst
+
+\plaatstabel
+{Sonstiges platzieren um Atome: Polymerklammern.}
+\starttabel[ | l | l | l | ]
+\HL
+\VL \type{\[{unten}} \VL \type{\[{unten}{oben}} \VL linke Polymerklammer (Fortf\"uhren nach rechts) \VL\FR
+\VL \type{\]{unten}} \VL \type{\]{unten}{oben}} \VL rechte Polymerklammer (Fortf\"uhren nach links) \VL\LR
+\HL
+\stoptabel
+
+Nat"urlich k"onnen wir Text links, rechts, oben oder unten platzieren.
+Wir k"onnen vor \type{\L}, \type{\R}, \type{\T} und \type{\B}, um den 
+Abstand zu verkleinen, den Parameter \type{\X} angeben.
+
+\plaatstabel
+{Sonstiges platzieren um Atome: Text.}
+\starttabel[ | l | l | ]
+\HL
+\VL \type{\L{text}} \VL Text links  platzieren \VL\FR
+\VL \type{\R{text}} \VL Text rechts platzieren \VL\MR
+\VL \type{\T{text}} \VL Text oben   platzieren \VL\MR
+\VL \type{\B{text}} \VL Text unten  platzieren \VL\LR
+\HL
+\stoptabel
+
+Neben diesen vier Parametern k"onnen wir auch alle nun folgenden
+Kombinationen verwenden, einschlie"slich der zentrierten Varianten.
+
+\leavevmode\hbox to \hsize
+  {\def\sample#1{\chemie{#1{\oplus}{\ruledhbox{\ttx\string#1}}}}%
+   \sample\TL\hss\sample\L \hss\sample\LC\hss\sample\BL\hss
+   \sample\TR\hss\sample\R \hss\sample\RC\hss\sample\BR\hss
+   \sample\LT\hss\sample\T \hss\sample\RT\hss\sample\LB\hss
+   \sample\B \hss\sample\RB}
+
+\leavevmode\hbox to \hsize
+  {\def\sample#1{\chemie{\X#1{\oplus}{\ruledhbox{\ttx\string\X\string#1}}}}%
+   \sample\TL\hss\sample\L \hss\sample\LC\hss\sample\BL\hss
+   \sample\TR\hss\sample\R \hss\sample\RC\hss\sample\BR\hss
+   \sample\LT\hss\sample\T \hss\sample\RT\hss\sample\LB\hss
+   \sample\B \hss\sample\RB}
+
+Eine andere M"oglichkeit ist das Ausrichten von Text, was in der 
+\TEX||Terminologie {\em smashed} Text genannt wird.
+
+\plaatstabel
+{Sonstiges platzieren um Atome: Ausrichtung der Atome}
+\starttabel[ | l | l | ]
+\HL
+\VL \type{\SL{text}} \VL linksb\"undig  \VL\FR
+\VL \type{\SM{text}} \VL zentriert      \VL\MR
+\VL \type{\SR{text}} \VL rechtsb\"undig \VL\LR
+\HL
+\stoptabel
+
+Die erste Variante wird nun als Beispiel verwendet, die anderen lassen sich
+sinngem"a"s ableiten. Der Text wird linksb"undig ausgegeben:
+
+\startbuffer
+\startchemie[kader=aan]
+  \chemie[SIX,B,R36,RZ36][\SL{COOH},\SL{COOH}]
+\stopchemie
+\stopbuffer
+
+\startfiguurtekst
+  [links][]
+  {geen}
+  {\haalbuffer}
+\voorbeeld
+\starttypen
+\startchemie[rahmen=an]
+  \chemie[SIX,B,R36,RZ36][\SL{COOH},\SL{COOH}]
+\stopchemie
+\stoptypen
+\stopfiguurtekst
+
+Wir k"onnen Text mit den Befehlen \type{\textueber}, \type{\textmitte} 
+und \type{\textunter} "uber, unter oder in der Mitte der Strukturen  
+platzieren. Die exakte Position des Textes h"angt von den Ausma"sen
+der Strukturformel ab.
+
+\startbuffer
+\plaatsformule
+  \startformule
+    \startchemie[breedte=passend]
+      \chemie[SIX,B,Z1,MOV1,B][\hbox{$\bullet$}]
+      \boventekst{{\sl trans}-Decalin}
+    \stopchemie
+    \hskip 24pt
+    \startchemie[breedte=passend]
+      \chemie[SIX,B,Z12,MOV1,B][\hbox{$\bullet$},\hbox{$\bullet$}]
+      \ondertekst{{\sl cis}-Decalin}
+    \stopchemie
+  \stopformule
+\stopbuffer
+
+\starttypen
+$$
+    \startchemie[breite=passend]
+      \chemie[SIX,B,Z1,MOV1,B][\hbox{$\bullet$}]
+      \textueber{{\sl trans}-Decalin}
+    \stopchemie
+    \hskip 24pt
+    \startchemie[breite=passend]
+      \chemie[SIX,B,Z12,MOV1,B][\hbox{$\bullet$},\hbox{$\bullet$}]
+      \textunter{{\sl cis}-Decalin}
+    \stopchemie
+$$
+\stoptypen
+
+Beide {\em Decalin}||Formeln sehen wie folgt aus: 
+
+\haalbuffer 
+
+\hoofdstuk{Achsen}
+
+Strukturen werden in einem abgegrenzten Bereich gezeichnet, der
+aus Bequemlichkeit mit Achsen dargestellt werden kann. Die Abmessungen
+der Achsen und deren Ursprung kann eingestellt werden. Zus"atzlich k"onnen
+die Achsen angezeigt werden (z.\,B. zum Positionieren von Text) und
+ein Rahmen kann gezeichent werden.
+
+\startbuffer
+\startchemie
+  [assenstelsel=aan,
+   breedte=6000,hoogte=4000]
+\stopchemie
+\stopbuffer
+
+\startfiguurtekst
+  [links][]{geen}
+  {\haalbuffer}
+\voorbeeld[vb:assenstelsel]
+\starttypen
+\startchemie
+  [achsen=an,
+   breite=6000,hoehe=4000]
+\stopchemie
+\stoptypen
+\stopfiguurtekst
+
+\startbuffer
+\startchemie
+  [assenstelsel=aan,
+   links=2000,rechts=4000]
+\stopchemie
+\stopbuffer
+
+\startfiguurtekst
+  [links][]{geen}
+  {\haalbuffer}
+\voorbeeld
+\starttypen
+\startchemie
+  [achsen=an,
+   links=2000,rechts=4000]
+\stopchemie
+\stoptypen
+\stopfiguurtekst
+
+\startbuffer
+\startchemie
+  [assenstelsel=aan,
+   breedte=6000,rechts=1000]
+\stopchemie
+\stopbuffer
+
+\startfiguurtekst
+  [links][]{geen}
+  {\haalbuffer}
+\voorbeeld
+\starttypen
+\startchemie
+  [achsen=an,
+   breite=6000,rechts=1000]
+\stopchemie
+\stoptypen
+\stopfiguurtekst
+
+\startbuffer
+\startchemie
+  [assenstelsel=aan,
+   breedte=6000,boven=1000,onder=3000]
+\stopchemie
+\stopbuffer
+
+\startfiguurtekst
+  [links][]{geen}
+  {\haalbuffer}
+\voorbeeld
+\starttypen
+\startchemie
+  [achsen=an,
+   breite=6000,oben=1000,unten=3000]
+\stopchemie
+\stoptypen
+\stopfiguurtekst
+
+Die Abmessungen der gesammten Struktur werden den Abmessungen der
+Achsen entnommen. Wenn jedoch \type{breite=passend} und/oder 
+\type{hoehe=passend} angegeben wird, werden die Ausmessungen
+entsprechend der wirklichen Gr"o"se der Struktur gesetzt.
+Die Struktur wird, gem"a"s der Einstellungen, in den Text platziert:
+nebeneinander, "ubereinander usw. \in{Beispiel}[vb:assenstelsel] zeigt
+die Voreinstellung.
+
+Innerhalb eines \type{\start}||\type{\stop}||Paars k"onnen \PICTEX||Makros
+verwendet werden. Einige Vorsicht ist dabei nat"urlich geboten.
+
+\hoofdstuk{Einstellungen}
+
+Hinter \type{\startchemie} und \type{\stellechemieein} k"onnen verschiedene
+Einstellungen angegeben werden.
+
+\plaatstabel
+{Einstellungen bei Strukturformeln.}
+\starttabel[|lT|Tl|lT|]
+\HL
+\VL \bf Variable  \VL \bf Einstellungen          \VL \bf Vorgabe \VL\SR
+\HL
+\VL breite        \VL Zahl                       \VL 4000        \VL\FR
+\VL hoehe         \VL Zahl                       \VL 4000        \VL\MR
+\VL links         \VL Zahl                       \VL             \VL\MR
+\VL rechts        \VL Zahl                       \VL             \VL\MR
+\VL oben          \VL Zahl                       \VL             \VL\MR
+\VL unten         \VL Zahl                       \VL             \VL\LR
+\HL
+\VL aufloesung    \VL Zahl                       \VL \type{\outputresolution} \VL\FR
+\VL fliesstext    \VL 8pt 9pt 10pt usw.          \VL \type{\bodyfontsize}     \VL\MR
+\VL schrift       \VL \type{\rm} \type{\bf} usw. \VL \type{\rm}               \VL\LR
+\HL
+\VL format         \VL Zahl klein mittel gross    \VL mittel     \VL\FR
+\VL groesse       \VL klein mittel gross         \VL mittel      \VL\LR
+\HL
+\VL status        \VL start stop                 \VL start       \VL\FR
+\VL option        \VL test                       \VL             \VL\LR
+\HL
+\VL achsen        \VL an aus                     \VL aus         \VL\FR
+\VL rahmen        \VL an aus                     \VL aus         \VL\LR
+\HL
+\VL alternative   \VL 1 2                        \VL 1           \VL\SR
+\HL
+\VL offset        \VL HIGH LOW                   \VL LOW         \VL\SR
+\HL
+\stoptabel
+
+Standardgem"a"s ist der Bereich der Achsen (H"ohe wie Breite) auf $-2000$ 
+bis $+2000$ eingestellt. Der Ursprungspunkt \type{Z0} liegt dabei bei (0,0).
+Andere Werte k"onnen mit Hilfe von \type{links}, \type{rechts}, 
+\type{oben} und/oder \type{unten} in Kombination mit \type{breite}
+und \type{hoehe} eingestellt werden.
+
+Mit \type{groesse} kann die Abmessung der Buchstaben eingestellt werden.
+Dabei werden die \TEX||Primitive \type{\textsize}, \type{\scriptsize} und
+\type{\scriptscriptsize} verwendet. Man stellt mit \type{format} die
+Abmessungen der Struktur selbst ein (\type{1..1000}). Die Gr"o"se wird durch
+den \type{fliesstext} bestimmt. Die Schl"usselw"orter \type{klein}, 
+\type{mittel} und \type{gross} sind auf einander abgestimmt.
+
+Die Einstellung \type{fliesstext} wird zum Berechnen ben"utzt und hat 
+auf den laufenden Text keinen Einflu"s. Innerhalb von \CONTEXT\ und
+\LATEX\ ist er automatisch mit der Gr"o"se des Flie"stextes gekoppelt.
+
+Sowohl in \TEX\ als auch in \CONTEXT\ k"onnen im mathematischen Modus
+Befehle wie \type{\rm}, \type{\bf} und \type{\sl} verwendet werden.
+Standardgem"a"s benutzt \PPCHTEX\ \type{\rm}. Mit der Einstellung 
+\type{schrift} kann eine andere Einstellung gesetzt werden. In 
+\in{Beispiel}[vb:letter] wurden die Substituenten {\sl geneigt} gesetzt.
+
+\startbuffer
+\startchemie[kader=aan,letter=\sl]
+  \chemie[SIX,B,R,RZ][A,B,C,D,E,F]
+\stopchemie
+\stopbuffer
+
+\startfiguurtekst
+  [links][]
+  {geen}
+  {\haalbuffer}
+\voorbeeld[vb:letter]
+\starttypen
+\startchemie[rahmen=an,schrift=\sl]
+  \chemie[SIX,B,R,RZ][A,B,C,D,E,F]
+\stopchemie
+\stoptypen
+\stopfiguurtekst
+
+Die Einstellung der \type{schrift} gilt (vorl"aufig) sowohl f"ur Textformeln
+als auch f"ur Strukturformeln. Die Indizies werden mit ver"andert, beispielsweise:
+{\stelchemiein[letter=\rm]\chemie{CH_4}},{\stelchemiein[letter=\bf]\chemie{CH_4}} 
+und {\stelchemiein[letter=\sl]\chemie{CH_4}}; dazu haben wir diese
+Einstellungen verwendet: \type{\rm}, \type{\bf} und \type{\sl}.
+
+Kursive ({\em italic,} \type{\it}) Formeln f"uhren zu gr"o"seren Zeilenabst"anden.
+Innerhalb von \CONTEXT\ sind auch halbfettgeneigt ({\em bold||slanted,} \type{\bs})
+und halbfettkursiv ({\em bold||italic\,} \type{\bi}) standardgem"a"s verf"ugbar.
+Diese Befehle passen sich automatisch an den jeweiligen Stil an: 
+{\stelchemiein[letter=\ss\sl]\chemie{CH_4}},{\stelchemiein[letter=\rm\sl]\chemie{CH_4}},
+{\stelchemiein[letter=\tt\sl]\chemie{CH_4}} etc. (\type{\ss}, \type{\rm},
+\type{\tt}). 
+
+Nat"urlich k"onnen wir auch die Schriftart direkt einstellen, wie das
+folgende Beispiel zeigt:
+
+\startbuffer
+\startchemie[kader=aan]
+  \chemie[SIX,B,R,RZ][\tf a,\bf b,\it c,\sl d,\bi e,\bs f]
+\stopchemie
+\stopbuffer
+
+\startfiguurtekst
+  [links][]
+  {geen}
+  {\haalbuffer}
+\voorbeeld
+\starttypen
+\startchemie[rahmen=an]
+  \chemie[SIX,B,R,RZ][\tf a,\bf b,\it c,\sl d,\bi e,\bs f]
+\stopchemie
+\stoptypen
+\stopfiguurtekst
+
+Mit \type{status} kann die lange Rechenzeit -- auf Kosten der Qualit"at
+-- verk"urzt werden. Die Variablen \type{rahmen} und \type{achsen} 
+sind selbst erkl"arend. Mit der Option \type{test} kann ein Rahmen um 
+den Text der Formel gezeichnet werden.\voetnoot{Innerhalb von \CONTEXT\ wird
+dies zur Wiedergabe im visuellen Debugger verwendet. Dies zeigt die
+Grundlinie als punktierte Linie an. Das Modul \type{supp-vis} wird 
+"ubrigens auch in anderen Systemen verwendet.} Mit \type{alternative} 
+stellen wir die Liniendicke ein. Standardgem"a"s ben"utzt \PPCHTEX\ 
+einen 5~Punkte gro"sen Punkt. Wenn \type{alternative} 2 benutzt wird, wird
+ein kleinerer Punkt verwendet, d.\,h. es werden d"unnere Linien gezeichnet.
+
+\startbuffer
+\startchemie[kader=aan,optie=test,variant=2]
+  \chemie[SIX,B,R,RZ][R_1,R_2,R_3,R_4,R_5,R_6]
+\stopchemie
+\stopbuffer
+
+\startfiguurtekst
+  [links][]
+  {geen}
+  {\haalbuffer}
+\voorbeeld[vb:test]
+\starttypen
+\startchemie[rahmen=an,option=test,alternative=2]
+  \chemie[SIX,B,R,RZ][R_1,R_2,R_3,R_4,R_5,R_6]
+\stopchemie
+\stoptypen
+\stopfiguurtekst
+
+Das \type{offset} bezieht sich auf die Position von hoch|| und tiefgestelltem
+Text. Bei \type{HIGH} werden die Indizies (tiefgestellter Text) etwas 
+h"oher(\chemie{HIGH,H_2O}), bei \type{LOW} etwas tiefer platziert 
+(\chemie{LOW,H_2O}).
+
+Eine Struktur kann in verschieden Gr"o"sen gezeichnet werden. Die 
+Einstellung geschieht mit \type{groesse} und \type{format}.
+
+\startbuffer
+\startchemie[kader=aan,schaal=klein,formaat=klein]
+  \chemie[SIX,B,R,RZ][1,2,3,4,5,6]
+\stopchemie
+\stopbuffer
+
+\startfiguurtekst
+  [links][]
+  {geen}
+  {\haalbuffer}
+\voorbeeld
+\starttypen
+\startchemie[rahmen=an,format=klein,groesse=klein]
+  \chemie[SIX,B,R,RZ][1,2,3,4,5,6]
+\stopchemie
+\stoptypen
+\stopfiguurtekst
+
+\startbuffer
+\startchemie[kader=aan,schaal=middel,formaat=middel]
+  \chemie[SIX,B,R,RZ][1,2,3,4,5,6]
+\stopchemie
+\stopbuffer
+
+\startfiguurtekst
+  [links][]
+  {geen}
+  {\haalbuffer}
+\voorbeeld
+\starttypen
+\startchemie[rahmen=an,format=mittel,groesse=mittel]
+  \chemie[SIX,B,R,RZ][1,2,3,4,5,6]
+\stopchemie
+\stoptypen
+\stopfiguurtekst
+
+\startbuffer
+\startchemie[kader=aan,schaal=groot,formaat=groot]
+  \chemie[SIX,B,R,RZ][1,2,3,4,5,6]
+\stopchemie
+\stopbuffer
+
+\startfiguurtekst
+  [links][]
+  {geen}
+  {\haalbuffer}
+\voorbeeld
+\starttypen
+\startchemie[rahmen=an,format=gross,groesse=gross]
+  \chemie[SIX,B,R,RZ][1,2,3,4,5,6]
+\stopchemie
+\stoptypen
+\stopfiguurtekst
+
+Die \type{format} kann auch mit einer Zahl zwischen~1 und 1000 angegeben werden.
+Die Werte der Schl"usselw"orter \type{klein}, \type{mittel} und \type{gross}
+sind auf einander abgestimmt.
+
+\hoofdstuk{Symbole}
+
+F"ur das Setzen von Reaktionsgleichungen sind einige Symbole verf"ugbar.
+Im folgenden Beispiel wird eine Gleichung dargestellt, die wie folgt 
+definiert ist:
+
+\startbuffer
+\stelchemiein
+  [formaat=klein,
+   schaal=klein,
+   breedte=passend,
+   hoogte=5500,
+   onder=1500]
+
+\hbox
+  {\startchemie
+     \chemie[SIX,B,ER6,RZ6][O]
+   \stopchemie
+   \startchemie
+     \chemie[SPACE,PLUS,SPACE]
+   \stopchemie
+   \startchemie
+     \chemie[FIVE,ROT4,B125,+SB3,-SB4,Z4,SR4,RZ4][N,H]
+   \stopchemie
+   \startchemie
+     \chemie[SPACE,GIVES,SPACE][?]
+   \stopchemie
+   \startchemie
+     \chemie[SIX,B,EB6,R6,SUB4,FIVE,ROT4,B125,+SB3,-SB4,Z4][N]
+   \stopchemie
+   \startchemie
+     \chemie[SPACE,PLUS,SPACE,CHEM][H_2O]
+   \stopchemie}
+\stopbuffer
+
+\starttypen
+\stellechemieein
+  [groesse=klein,
+   format=klein,
+   breite=passend,
+   hoehe=5500,
+   unten=1500]
+
+\hbox
+  {\startchemie
+     \chemie[SIX,B,ER6,RZ6][O]
+   \stopchemie
+   \startchemie
+     \chemie[SPACE,PLUS,SPACE]
+   \stopchemie
+   \startchemie
+     \chemie[FIVE,ROT4,B125,+SB3,-SB4,Z4,SR4,RZ4][N,H]
+   \stopchemie
+   \startchemie
+     \chemie[SPACE,GIVES,SPACE][?]
+   \stopchemie
+   \startchemie
+     \chemie[SIX,B,EB6,R6,SUB4,FIVE,ROT4,B125,+SB3,-SB4,Z4][N]
+   \stopchemie
+   \startchemie
+     \chemie[SPACE,PLUS,SPACE,CHEM][H_2O]
+   \stopchemie}
+\stoptypen
+
+Man kann \type{CHEM} dazu benutzen, Text (chemische Formeln)
+zu setzen. Wenn man dagegen \type{TEXT} gebraucht, wird die
+aktuelle Schrift verwendet.
+
+Der Befehl \type{\hbox} ist n"otig, um die Struktur hintereinander zu setzen.
+Die Symbole \type{GIVES} und \type{PLUS} sind selbsterkl"arend. Mit 
+\type{SPACE} kann ein zus"atzlicher Zwischenraum eingef"uget werden.
+
+\plaatsfiguur
+  [hier]
+  [fig:reactie]
+  {geen}
+  {\haalbuffer}
+
+Ein Gleichgewicht kann mit \type{EQUILIBRIUM} wiedergegeben werden. "Uber
+\type{EQUILIBRIUM} und \type{GIVES} kann ein Text gesetzt werden. Im 
+Beispiel ist dies ein \citaat{?}.
+
+Neben \type{GIVES} und \type{EQUILIBRIUM} ist auch \type{MESOMERIC} m"oglich.
+Daneben k"onnen auch Komplexe mit Hilfe von 
+\type{OPENCOMPLEX} und \type{CLOSECOMPLEX} gesetzt werden.
+
+\hoofdstuk{Positionieren}
+
+Beim Kombinieren von Molek"ulen, zum Beispiel mit \type{SUB}, werden einige
+Gr"o"sen wie die Ausma"se, die Position, sowie der Mittelpunkt ver"andert.
+Deshalb ist es m"oglich jene Gr"o"sen mit \type{SAVE} zu speichern und 
+mit \type{RESTORE} wiederaufzurufen.
+
+\plaatstabel
+{Positionieren.}
+\starttabel[ | r T | l w(4cm) | p(7cm) | ]
+\HL
+\VL SAVE    \VL Save Status    \VL Speichern der Positionsvariablen \VL\FR
+\VL RESTORE \VL Restore Status \VL Wiederherstellen der Variablen   \VL\LR
+\HL
+\stoptabel
+
+Wir verwenden die Parameter \type{SAVE} und \type{RESTORE} vor allem bei
+Substituenten; bei Radikalen sollte man \type{PB} und \type{PE} benutzen,
+die einen genaueren Positionierungsmechanismus verwenden.
+
+\startbuffer
+\definieerchemie[molecuul]
+  {\chemie
+     [ONE,Z0,SB1357,
+      SAVE,SUB2,SIX,B,R6,C,RESTORE,
+      MOV1,Z0,SB137,
+      MOV1,Z0,SB37,
+      MOV1]
+     [C,C,C]}
+
+\startchemie[breedte=passend,hoogte=passend]
+  \chemie[molecuul,molecuul,molecuul]
+\stopchemie
+\stopbuffer
+
+\starttypen
+\definierechemie[molekuel]
+  {\chemie
+     [ONE,Z0,SB1357,
+      SAVE,SUB2,SIX,B,R6,C,RESTORE,
+      MOV1,Z0,SB137,
+      MOV1,Z0,SB37,
+      MOV1]
+     [C,C,C]}
+
+\startchemie[breite=passend,hoehe=passend]
+  \chemie[molekuel,molekuel,molekuel]
+\stopchemie
+\stoptypen
+
+Dieses Beispiel zeigt wie mehrere Molek"ule zu einem einzigen verbunden
+werden k"onnen.
+
+\plaatsfiguur
+  [hier]
+  [fig:save]
+  {geen}
+  {\haalbuffer}
+
+Das n"achste Beispiel ist etwas fortgeschrittener und zeigt eine 
+M"oglichkeit, Gleichungen zu setzten. Bei solchen Formeln mu"s man
+die H"ohe der Formeln selbst einstellen.
+
+\startbuffer
+\plaatsformule
+  \startformule
+    \stelchemiein
+      [breedte=passend,boven=2000,onder=2000,
+       schaal=klein,formaat=klein]
+    \startchemie
+      \chemie
+        [ONE,
+         SAVE,
+           Z0,SB7,SB3,SB1,MOV1,Z0,SB1,MOV1,Z0,DB8,CZ8,SB1,Z1,
+         RESTORE,
+         SAVE,
+           SUB4,ONE,Z0,SB3,SB1,MOV1,Z0,SB1,MOV1,Z0,DB8,CZ8,SB1,Z1,
+         RESTORE,
+         SUB2,ONE,Z0,SB7,SB1,MOV1,Z0,SB1,MOV1,Z0,DB8,CZ8,SB1,Z1]
+        [\SR{HC},O,C,O,C_{19}H_{39},
+         \SR{H_{2}C},O,C,O,C_{17}H_{29},
+         \SR{H_{2}C},O,C,O,C_{21}H_{41}]
+    \stopchemie
+    \startchemie
+      \chemie[SPACE,PLUS,SPACE]
+    \stopchemie
+    \startchemie[rechts=600]
+      \chemie[ONE,CZ0][3CH_{3}OH]
+    \stopchemie
+    \startchemie
+      \chemie[SPACE,GIVES,SPACE,SPACE][H^+/H_2O]
+    \stopchemie
+    \startchemie
+      \chemie
+        [ONE,
+         SAVE,
+           Z0,SB7,SB3,SB1,Z1,
+         RESTORE,
+         SAVE,
+           SUB4,ONE,Z0,SB3,SB1,Z1,
+         RESTORE,
+         SUB2,ONE,Z0,SB7,SB1,Z1]
+        [\SR{HC},OH,
+         \SR{H_{2}C},OH,
+         \SR{H_{2}C},OH]
+    \stopchemie
+    \startchemie
+      \chemie[SPACE,PLUS,SPACE]
+    \stopchemie
+    \startchemie
+      \chemie
+        [ONE,
+         SAVE,
+           Z0,DB8,CZ8,SB1,SB5,Z5,MOV1,Z0,SB1,Z1,
+         RESTORE,
+         SAVE,
+           SUB4,ONE,Z0,DB8,CZ8,SB1,SB5,Z5,MOV1,Z0,SB1,Z1,
+         RESTORE,
+         SUB2,ONE,Z0,DB8,CZ8,SB1,SB5,Z5,MOV1,Z0,SB1,Z1]
+        [C,O,C_{19}H_{39},O,CH_{3},
+         C,O,C_{17}H_{29},O,CH_{3},
+         C,O,C_{21}H_{41},O,CH_{3}]
+    \stopchemie
+  \stopformule
+\stopbuffer
+\starttypen
+$$
+    \stellechemieein
+      [breite=passend,oben=2000,unten=2000,
+       format=klein,groesse=klein]
+    \startchemie
+      \chemie
+        [ONE,
+         SAVE,
+           Z0,SB7,SB3,SB1,MOV1,Z0,SB1,MOV1,Z0,DB8,CZ8,SB1,Z1,
+         RESTORE,
+         SAVE,
+           SUB4,ONE,Z0,SB3,SB1,MOV1,Z0,SB1,MOV1,Z0,DB8,CZ8,SB1,Z1,
+         RESTORE,
+         SUB2,ONE,Z0,SB7,SB1,MOV1,Z0,SB1,MOV1,Z0,DB8,CZ8,SB1,Z1]
+        [\SR{HC},O,C,O,C_{19}H_{39},
+         \SR{H_{2}C},O,C,O,C_{17}H_{29},
+         \SR{H_{2}C},O,C,O,C_{21}H_{41}]
+    \stopchemie
+    \startchemie
+      \chemie[SPACE,PLUS,SPACE]
+    \stopchemie
+    \startchemie[rechts=600]
+      \chemie[ONE,CZ0][3CH_{3}OH]
+    \stopchemie
+    \startchemie
+      \chemie[SPACE,GIVES,SPACE,SPACE][H^+/H_2O]
+    \stopchemie
+    \startchemie
+      \chemie
+        [ONE,
+         SAVE,
+           Z0,SB7,SB3,SB1,Z1,
+         RESTORE,
+         SAVE,
+           SUB4,ONE,Z0,SB3,SB1,Z1,
+         RESTORE,
+         SUB2,ONE,Z0,SB7,SB1,Z1]
+        [\SR{HC},OH,
+         \SR{H_{2}C},OH,
+         \SR{H_{2}C},OH]
+    \stopchemie
+    \startchemie
+      \chemie[SPACE,PLUS,SPACE]
+    \stopchemie
+    \startchemie
+      \chemie
+        [ONE,
+         SAVE,
+           Z0,DB8,CZ8,SB1,SB5,Z5,MOV1,Z0,SB1,Z1,
+         RESTORE,
+         SAVE,
+           SUB4,ONE,Z0,DB8,CZ8,SB1,SB5,Z5,MOV1,Z0,SB1,Z1,
+         RESTORE,
+         SUB2,ONE,Z0,DB8,CZ8,SB1,SB5,Z5,MOV1,Z0,SB1,Z1]
+        [C,O,C_{19}H_{39},O,CH_{3},
+         C,O,C_{17}H_{29},O,CH_{3},
+         C,O,C_{21}H_{41},O,CH_{3}]
+    \stopchemie
+$$
+\stoptypen
+
+Diese Definition h"atte man auch, auf Kosten der Lesbarkeit, k"urzer 
+darstellen k"onnen (\type{SB731} statt \type{SB7,SB3,SB1}). Solche 
+umfangreiche Strukturen sollte man am Besten in einer separaten Datei 
+platzieren (eventuell in \PLAIN\ \TEX).
+
+\haalbuffer
+
+Nun geben wir noch zwei Beispiele bei denen ein Text unter der Struktur
+platziert wird.
+
+\startbuffer
+\plaatsformule
+  \startformule
+    \stelchemiein
+      [breedte=passend,boven=1500,onder=3500]
+    \startchemie
+      \chemie
+        [ONE,Z0,DB1,SB3,SB7,Z7,MOV1,Z0,SB3,SB7,Z3,Z7,
+         MOV0,SUB2,SIX,B,R6,C]
+        [C,H,C,H,H]
+      \ondertekst{Styreen}
+    \stopchemie
+    \quad\quad\quad
+    \startchemie
+      \chemie
+        [ONE,Z0,DB1,SB3,SB7,Z3,Z7,
+         MOV1,Z0,SB1,SB3,Z3,
+         MOV1,Z0,DB1,SB3,Z3,
+         MOV1,Z0,SB3,SB7,Z3,Z7]
+        [C,H,H,C,H,C,H,C,H,H]
+      \ondertekst{1,3-Butadieen}
+   \stopchemie
+  \stopformule
+\stopbuffer
+
+\starttypen
+$$
+    \stellechemieein
+      [breite=passend,oben=1500,unten=3500]
+    \startchemie
+      \chemie
+        [ONE,Z0,DB1,SB3,SB7,Z7,MOV1,Z0,SB3,SB7,Z3,Z7,
+         MOV0,SUB2,SIX,B,R6,C]
+        [C,H,C,H,H]
+      \textunter{Styreen}
+    \stopchemie
+    \quad\quad\quad
+    \startchemie
+      \chemie
+        [ONE,Z0,DB1,SB3,SB7,Z3,Z7,
+         MOV1,Z0,SB1,SB3,Z3,
+         MOV1,Z0,DB1,SB3,Z3,
+         MOV1,Z0,SB3,SB7,Z3,Z7]
+        [C,H,H,C,H,C,H,C,H,H]
+      \textunter{1,3-Butadieen}
+   \stopchemie
+$$
+\stoptypen
+
+\haalbuffer
+
+Der Gebrauch von \type{OFF} kommt etwas kurz. Die folgenden Beispiele lassen
+aber erkennen, da"s exakte Verschiebungen m"oglich sind.
+
+\startbuffer
+\startchemie[hoogte=passend,kader=aan]
+  \chemie[ONE,SB]
+\stopchemie
+\stopbuffer
+
+\startfiguurtekst
+  [links][]
+  {geen}
+  {\haalbuffer}
+\voorbeeld
+\starttypen
+\startchemie[hoehe=passend,rahmen=an]
+  \chemie[ONE,SB]
+\stopchemie
+\stoptypen
+\stopfiguurtekst
+
+\startbuffer
+\startchemie[hoogte=passend,kader=aan]
+  \chemie[ONE,3OFF1,SB]
+\stopchemie
+\stopbuffer
+
+\startfiguurtekst
+  [links][]
+  {geen}
+  {\haalbuffer}
+\voorbeeld
+\starttypen
+\startchemie[hoehe=passend,rahmen=an]
+  \chemie[ONE,3OFF1,SB]
+\stopchemie
+\stoptypen
+\stopfiguurtekst
+
+\startbuffer
+\startchemie[hoogte=passend,kader=aan]
+  \chemie[ONE,MOV1,SB]
+\stopchemie
+\stopbuffer
+
+\startfiguurtekst
+  [links][]
+  {geen}
+  {\haalbuffer}
+\voorbeeld
+\starttypen
+\startchemie[hoehe=passend,rahmen=an]
+  \chemie[ONE,MOV1,SB]
+\stopchemie
+\stoptypen
+\stopfiguurtekst
+
+\startbuffer
+\startchemie[hoogte=passend,kader=aan]
+  \chemie[ONE,3OFF1,MOV1,SB]
+\stopchemie
+\stopbuffer
+
+\startfiguurtekst
+  [links][]
+  {geen}
+  {\haalbuffer}
+\voorbeeld
+\starttypen
+\startchemie[hoehe=passend,rahmen=an]
+  \chemie[ONE,3OFF1,MOV1,SB]
+\stopchemie
+\stoptypen
+\stopfiguurtekst
+
+\startbuffer
+\startchemie[hoogte=passend,kader=aan]
+  \chemie[ONE,MOV1,3OFF1,SB]
+\stopchemie
+\stopbuffer
+
+\startfiguurtekst
+  [links][]
+  {geen}
+  {\haalbuffer}
+\voorbeeld
+\starttypen
+\startchemie[hoehe=passend,rahmen=an]
+  \chemie[ONE,MOV1,3OFF1,SB]
+\stopchemie
+\stoptypen
+\stopfiguurtekst
+
+\startbuffer
+\startchemie[hoogte=passend,kader=aan]
+  \chemie[ONE,MOV1,3OFF1,OFF0,SB]
+\stopchemie
+\stopbuffer
+
+\startfiguurtekst
+  [links][]
+  {geen}
+  {\haalbuffer}
+\voorbeeld
+\starttypen
+\startchemie[hoehe=passend,rahmen=an]
+  \chemie[ONE,MOV1,3OFF1,OFF0,SB]
+\stopchemie
+\stoptypen
+\stopfiguurtekst
+
+\startbuffer
+\startchemie[hoogte=passend,kader=aan]
+  \chemie[ONE,MOV1,3OFF1,MOV0,SB] 
+\stopchemie
+\stopbuffer
+
+\startfiguurtekst
+  [links][]
+  {geen}
+  {\haalbuffer}
+\voorbeeld
+\starttypen
+\startchemie[hoehe=passend,rahmen=an]
+  \chemie[ONE,MOV1,3OFF1,MOV0,SB] 
+\stopchemie
+\stoptypen
+\stopfiguurtekst
+
+\startbuffer
+\startchemie[hoogte=passend,kader=aan]
+  \chemie[ONE,MOV1,MOV0,SB]
+\stopchemie
+\stopbuffer
+
+\startfiguurtekst
+  [links][]
+  {geen}
+  {\haalbuffer}
+\voorbeeld
+\starttypen
+\startchemie[hoehe=passend,rahmen=an]
+  \chemie[ONE,MOV1,MOV0,SB]
+\stopchemie
+\stoptypen
+\stopfiguurtekst
+
+Das folgende Beispiel zeigt wie Komplexe dargestellt werden k"onnen.
+Auch demonstriert es den Gebrauch von \type{RBT}. Normalerweise ist
+der zus"atzliche Zwischenraum nicht n"otig, aber wir gebrauchen hier
+-- der Befehl ist nicht sichtbar -- eine noch kleinere Schrift, damit
+die Abbildung nicht zu breit wird.
+
+\startbuffer
+\startformule
+\stelchemiein[schaal=klein,breedte=passend]
+\startchemie
+  \chemie[OPENCOMPLEX,SPACE]
+\stopchemie
+\startchemie
+  \chemie[SIX,B,EB35,R6,-R1,+R1]
+  \chemie[SIX,PB:RZ6,ONE,OFF1,Z0,EP57,PE][\SL{OH}]
+  \chemie[SIX,-RZ1,+RZ1,RT2][H,Br,\oplus]
+\stopchemie
+\startchemie
+  \chemie[SPACE,MESOMERIC,SPACE]
+\stopchemie
+\startchemie
+  \chemie[SIX,B,EB25,R6,-R1,+R1]
+  \chemie[SIX,PB:RZ6,ONE,OFF1,Z0,EP57,PE][\SL{OH}]
+  \chemie[SIX,-RZ1,+RZ1,RT4][H,Br,\oplus]
+\stopchemie
+\startchemie
+  \chemie[SPACE,MESOMERIC,SPACE]
+\stopchemie
+\startchemie
+  \chemie[SIX,B,EB24,R6,-R1,+R1]
+  \chemie[SIX,PB:RZ6,ONE,OFF1,Z0,EP57,PE][\SL{OH}]
+  \chemie[SIX,-RZ1,+RZ1,RBT6][H,Br,\ \oplus] 
+\stopchemie
+\startchemie
+  \chemie[SPACE,MESOMERIC,SPACE]
+\stopchemie
+\startchemie
+  \chemie[SIX,B,EB24,ER6,-R1,+R1]
+  \chemie[SIX,PB:RZ6,ONE,OFF1,Z0,EP5,ZT7,PE][\SL{OH},\oplus]
+  \chemie[SIX,-RZ1,+RZ1][H,Br]
+\stopchemie
+\startchemie
+  \chemie[SPACE,CLOSECOMPLEX]
+\stopchemie
+\stopformule
+\stopbuffer
+
+\starttypen
+$$
+\stelchemiein[format=klein,breite=passend]
+\startchemie
+  \chemie[OPENCOMPLEX,SPACE]
+\stopchemie
+\startchemie
+  \chemie[SIX,B,EB35,R6,-R1,+R1]
+  \chemie[SIX,PB:RZ6,ONE,OFF1,Z0,EP57,PE][\SL{OH}]
+  \chemie[SIX,-RZ1,+RZ1,RT2][H,Br,\oplus]
+\stopchemie
+\startchemie
+  \chemie[SPACE,MESOMERIC,SPACE]
+\stopchemie
+\startchemie
+  \chemie[SIX,B,EB25,R6,-R1,+R1]
+  \chemie[SIX,PB:RZ6,ONE,OFF1,Z0,EP57,PE][\SL{OH}]
+  \chemie[SIX,-RZ1,+RZ1,RT4][H,Br,\oplus]
+\stopchemie
+\startchemie
+  \chemie[SPACE,MESOMERIC,SPACE]
+\stopchemie
+\startchemie
+  \chemie[SIX,B,EB24,R6,-R1,+R1]
+  \chemie[SIX,PB:RZ6,ONE,OFF1,Z0,EP57,PE][\SL{OH}]
+  \chemie[SIX,-RZ1,+RZ1,RBT6][H,Br,\ \oplus] 
+\stopchemie
+\startchemie
+  \chemie[SPACE,MESOMERIC,SPACE]
+\stopchemie
+\startchemie
+  \chemie[SIX,B,EB24,ER6,-R1,+R1]
+  \chemie[SIX,PB:RZ6,ONE,OFF1,Z0,EP5,ZT7,PE][\SL{OH},\oplus]
+  \chemie[SIX,-RZ1,+RZ1][H,Br]
+\stopchemie
+\startchemie
+  \chemie[SPACE,CLOSECOMPLEX]
+\stopchemie
+$$
+\stoptypen
+
+Ohne den Gebrauch von \type{SPACE} w"urden die verschieden Elemente der
+Abbildung zu dicht aneinander sein und sich ber"uhren. Das Optimieren 
+der Abbildungen und "ahnlicher Reaktionsgleichungen ist oft ein
+schrittweiser Proze"s.
+
+\start
+\switchnaarkorps[klein]
+\haalbuffer
+\stop
+
+\hoofdstuk{Textformeln}
+
+Neben dem Setzten von Strukturformeln wird auch das Setzen von 
+Reaktionsgleichungen unterst"utzt. Der bereits beschriebene Befehl
+\type{\chemie} hat noch drei weitere Varianten:
+
+\starttypen
+\chemie{Formel}
+\chemie{Formel}{Text unten}
+\chemie{Formel}{Text oben }{Text unten}
+\stoptypen
+
+Der Befehl pa"st sich an der Stelle im Dokument an; d.\,h. es 
+werden die folgenden Modi unterschiedlich behandelt:
+
+\startopsomming[opelkaar]
+\som Textmodus
+\som mathematischer Textmodus
+\som mathematischer Displaymodus
+\stopopsomming
+
+Wenn dieser Befehl im laufenden Text gegeben wird, wird automatisch
+\type{$ $} um den Befehl plaziert. So liefert \type{\chemie{NH_4^+}} die
+Formel \chemie{NH_4^+}.
+
+Das selbe Ergebnis erh"alt man, wenn man den Befehl zwischen \type{$ $}
+plaziert. In beiden F"allen wird das zweite und dritte Argument weggelassen.
+Wenn wir den Befehl zwischen \type{$$ $$} (oder in \CONTEXT\ \type{\startformel}
+und \type{\stopformel}) platzieren, dann sind die zus"atzlichen Argumente
+funktionsf"ahig.
+
+\startbuffer
+\plaatsformule
+  \startformule
+    \chemie{2H_2} \chemie{PLUS} \chemie{O_2}
+    \chemie{GIVES} \chemie{2H_2O}
+  \stopformule
+\stopbuffer
+
+\starttypen
+$$
+ \chemie{2H_2} \chemie{PLUS} \chemie{O_2}
+ \chemie{GIVES} \chemie{2H_2O}
+$$
+\stoptypen
+
+liefert:
+
+\haalbuffer
+
+Die Formel kann auch k"urzer definiert werden:
+
+\starttypen
+\chemie{2H_2,PLUS,O_2,GIVES,2H_2O}
+\stoptypen
+
+oder selbst:
+
+\starttypen
+\chemie{2H_2,+,O_2,->,2H_2O}
+\stoptypen
+
+Der erfahrene \TEX||Nutzer wird den erkennen, da"s sowohl das Pluszeichen als 
+auch der Reaktionspfeil sich auf der Grundlinie befinden. Vergleichen Sie $+$ 
+mit \chemie{+}. So wird daf"ur gesorgt, da"s unabh"angig von der Gr"o"se der
+Formel das \chemie{+} und der \chemie{->} auf gleicher H"ohe liegen.
+
+Neben \type{PLUS} und \type{GIVES} kann \type{EQUILIBRIUM} (\type{<->}) 
+abgegeben werden, was einen Doppelpfeil \chemie{EQUILIBRIUM} liefert. 
+Mit \type{MESOMERIC} oder \type{<>} bekommt man \chemie{MESOMERIC}.
+
+Diese Formeln k"onnen auch im laufenden Text gesetzt werden. In diesem Fall
+wird ein kleineres Layout ausgew"ahlt: \chemie{2H_2,+,O_2,->,2H_2O}. Es ist
+auch m"oglich Bindungen anzuzeigen. Zum Beispiel ergibt 
+\type{\chemie{H,SINGLE,CH,DOUBLE,HC,SINGLE,H}} die Formel
+\chemie{H,SINGLE,CH,DOUBLE,HC,SINGLE,H}. Es geht auch k"urzer:
+\type{\chemie{H,-,CH,--,HC,-,H}}. Eine Dreifachbindung erh"alt man mit
+\type{TRIPLE} oder \type{---}: \chemie{HC,TRIPLE,CH}. 
+
+Nun zur"uck zum Displaymodus. Das zweite Argument kann dazu verwendet werden,
+um die Stoffe zu bezeichnen:
+
+\startbuffer
+\plaatsformule
+  \startformule
+    \chemie{2H_2}{Wasserstoff} \chemie{PLUS} \chemie{O_2}{Sauerstoff}
+    \chemie{GIVES}{heftig} \chemie{2H_2O}{Wasser}
+   \stopformule
+\stopbuffer
+
+\starttypen
+$$
+ \chemie{2H_2}{Wasserstoff} \chemie{PLUS} \chemie{O_2}{Sauerstoff}
+ \chemie{GIVES}{heftig} \chemie{2H_2O}{Wasser}
+$$
+\stoptypen
+
+Wir k"onnen dies "uber (oder unter) den Symbolen platzieren.
+
+\haalbuffer
+
+Es sind maximal drei Argumente m"oglich, wobei das letzte Argument nach unten
+plaziert wird.
+
+\startbuffer
+\plaatsformule
+  \startformule
+    \chemie{H_2O}{liquid}{Wasser}
+    \hbox{oder}
+    \chemie{H_2O}{Wasser}
+  \stopformule
+\stopbuffer
+
+\haalbuffer
+
+Obrige Formel wurde so erstellt:
+
+\starttypen
+$$
+ \chemie{H_2O}{liquid}{Wasser}
+ \hbox{oder}
+ \chemie{H_2O}{Wasser}
+$$
+\stoptypen
+
+Die Gr"o"se der im Text gesetzten Formeln kann man mit dem Einstellungsbefehl
+ge"andert werden.
+
+\plaatstabel
+{Einstellungen bei Textformeln.}
+\starttabel[|lT|Tl|lT|]
+\HL
+\VL \bf Variable  \VL \bf Einstellungen  \VL \bf Vorgabe \VL\SR
+\HL
+\VL textgroesse   \VL klein mittel gross \VL gross       \VL\SR
+\HL
+\stoptabel
+
+Der Befehl \type{\chemie{H,SINGLE,CH,DOUBLE,HC,SINGLE,H}} liefert
+bei den Einstellungen \type{gross}, \type{mittel} und \type{klein} diese
+Formeln:
+
+\leavevmode\hbox
+  {\stelchemiein[tekstformaat=groot]\chemie{H,-,CH,--,HC,-,H}\hskip2em
+   \stelchemiein[tekstformaat=middel]\chemie{H,-,CH,--,HC,-,H}\hskip2em
+   \stelchemiein[tekstformaat=klein]\chemie{H,-,CH,--,HC,-,H}}
+
+\hoofdstuk{Indizies}
+
+Tief- und hochgestellter Text wird, anders als es in Knuths {\TeX}Book
+empfohlen ist, etwas tiefer gesetzt. So kann das auf Seite~179 des {\TeX}Books
+gegebene Beispiel, das chemisch gesehen etwas merkw"urdig ist, mit
+\type{\chemie{Fe_2^{+2}Cr_2O_4}} gesetzt werden. Der Befehl liefert 
+\chemie{Fe_2^{+2}Cr_2O_4}, ohne Korrektur erhielte man $\rm Fe_2^{+2}Cr_2O_4$.
+
+Der Platz der Indizies (tiefgestellter Text) wird per Standard der Variabel
+\type{offset} entnommen: \type{HIGH} oder \type{LOW}. Diese Einstellungen
+k"onnen mit den gleichnamigen Parametern "uberschrieben werden.
+
+\startbuffer
+\startchemie[kader=aan,optie=test,variant=2]
+  \chemie[SIX,B,R13,HIGH,RZ1,LOW,RZ3][NH_3,NH_3]
+\stopchemie
+\stopbuffer
+
+\startfiguurtekst
+  [links][]
+  {geen}
+  {\haalbuffer}
+\voorbeeld[vb:test]
+\starttypen
+\startchemie[rahmen=an,option=test,alternative=2]
+  \chemie[SIX,B,R13,HIGH,RZ1,LOW,RZ3][NH_3,NH_3]
+\stopchemie
+\stoptypen
+\stopfiguurtekst
+
+Obwohl der Platz der Indizies f"ur jeden Substituenten so eingestellt werden 
+kann, wird empfohlen, dies global mit \type{\stellechemieein} zu tun, damit 
+die Formeln konsistent gesetzt werden.
+
+Die Schl"usselw"orter \type{LOW} und \type{HIGH} k"onnen auch in 
+Textformeln verwendet werden, so ergibt \type{\chemie{HIGH,H_2O}} 
+\chemie{HIGH,H_2O} und \type{\chemie{LOW,H_2O}} \chemie{LOW,H_2O}.
+
+\vervolgblad
+  {Hintergrund}
+  [links=1500,breedte=4000]
+  [FIVE,ROT3,B125,+SB3,-SB4,ER35,SR4,CRZ35,Z4,RZ4,Z0]
+  [O,O,N,CH_3]
+
+\hoofdstuk{Installation}
+
+Das Paket \PPCHTEX\ ist in erster Linie f"ur den Gebrauch innerhalb von
+\CONTEXT\ entwickelt worden. Innerhalb dieses Makropakets kann \PPCHTEX\ mit
+so geladen werden:\voetnoot{Die eigentlichen Makros stehen in der Datei
+\type{ppchtex.tex}, die in \type{m-chemie.tex} (das~\type{m} steht hier f"ur
+Modul) geladen werden.} 
+
+\starttypen
+\verwendemodule[pictex,chemie]
+\stoptypen
+
+Der Befehl l"adt zuerst die \PICTEX||Makros, so da"s \PPCHTEX\ wei"s welche
+Ausgabe ge\-w"unscht ist. Die Chemiemakros sind somit nicht standardgem"a"s
+verf"ugbar. 
+
+Zudem kann das Paket auch in Kombination mit \PLAIN\ \TEX\ oder \LATEX\
+verwendet werden. In letzterem Fall wird die Datei \type{m-chemie.sty}
+verwendet; das Laden der \type{.sty}||Datei geschieht dann so: 
+
+\starttypen
+\documentstyle[m-pictex,m-chemie]{...}
+\stoptypen
+
+In \LATEX$2_{\textstyle\varepsilon}$ verwendet man:
+
+\starttypen
+\documentclass{...}
+\usepackage{m-pictex}
+\usepackage{m-chemie}
+\stoptypen
+
+Die Datei \type{m-pictex} sorgt daf"ur, da"s \PICTEX\ so effizient wie
+m"oglich geladen wird. Das ist n"otig, weil \LATEX\ und auch die 
+zus"atzlich geladenen Stildateien (\type{.sty}) ziemlich viele 
+\type{\dimen}s reservieren. "Ubrigens ist als Folge der 
+Benutzerfreundlichkeit auch eine gr"o"sere \TEX||Version n"otig.
+Meistens wird dies bevorzugt.
+
+\PPCHTEX\ ist in mehrern Sprachen verf"ugbar. Die verwendete Sprache h"angt
+davon ab, wie es geladen wird:
+
+\startregelcorrectie
+\starttabel[|l|l|]
+\NC niederl\"andisch \NC \type{m-che-nl} = \type{m-chemie.sty} \NC\FR
+\NC englisch         \NC \type{m-che-en} = \type{m-chemic.sty} \NC\MR
+\NC deutsch          \NC \type{m-che-de}                       \NC\LR
+\stoptabel
+\stopregelcorrectie
+
+In der Datei \type{ppchtex.noc} ist zu sehen, wie au"serhalb von \CONTEXT\ 
+die Kopplung mit dem Hauptmakropaket realisiert ist. Diese Datei l"adt zuerst 
+einige der Systemmodule von \CONTEXT\ und anschlie"send das, was in dem 
+jeweiligen Paket nicht verf"ugbar ist.
+
+Die Distribution besteht aus den Definitionsdateien 
+\type{ppchtex.tex} und \type{ppchtex.noc}, den Aufrufdateien 
+\type{m-che-nl.tex}, \type{m-che-en.tex} und \type{m-che-de.tex}, sowie
+die alternativen Aufrufdateien \type{m-chemie.tex} und \type{m-chemic.tex}.
+
+\hoofdstuk{Erweiterungen}
+
+Es ist den Benutzern von \PPCHTEX\ nat"urlich grunds"atzlich
+gestattet die Makros, auch auf andere Weise weiter zu verwenden.
+Einige Vorsicht ist dabei aber geboten, da die Makros noch weiter
+entwickelt, optimiert und robuster gemacht werden. Einige Makros
+scheinen zwar weitgehend fertig zu sein, aber der Anschein t"auscht.
+Beispielsweise unterst"utzt die Makrogruppe \type{stelle..ein} 
+Verschachtelung und verschiedene \ASCII||Layouts. Vergleichen
+Sie beispielsweise:
+
+\start
+\steltypenin[optie=kleur]
+\starttypen
+\stellechemieein[groesse=klein]
+\stoptypen
+\stop
+
+mit:
+
+\start
+\steltypenin[optie=kleur]
+\starttypen
+\stellechemieein
+  [groesse=klein,
+   format=500,
+   textgroesse=gross]
+\stoptypen
+\stop
+
+Die Einstellungen k"onnen in beliebiger Reihenfolge "ubergeben werden.
+Nach M"oglichkeit werden Leerzeichen und Zeilenumbr"uche unterdr"uckt und
+Fehlermeldungen angezeigt.
+
+Da \PPCHTEX\ in erster Linie als Modul von \CONTEXT\ gedacht (und entwickelt)
+worden ist, unterst"utzt das Paket mehrere Sprachen. Im Moment gibt es
+ein niederl"andisches, ein englischsprachiges und ein deutschsprachiges
+Interface.
+
+Ein Blick auf die Datei \type{ppchtex.tex} zeigt, da"s beim Interpretieren
+der Angaben zwischen den \type{[ ]} bei \type{\chemie} die \type{\processaction}||Makros
+benutzt werden. Diese Makros sind, weil hier sowohl Verschachtelung als
+auch ein "ubersichtliches Layout m"oglich ist, relativ langsam. Dem gegen"uber
+steht der Vorteil, das \PPCHTEX||Makros recht intuitiv sind. In der Zwischenzeit
+sind die Makros selbst und ihr Gebrauch weitgehend optimiert. Tests mit der
+Stopuhr haben gezeigt, da"s weitere Optimierungen kaum zu einem Zeitvorteil
+f"uhren, und es dabei dies zum Verlust von Flexibilit"at kommt.
+
+Bei der Entwicklung von \PPCHTEX wurde die Weise, in der die Befehle
+innerhalb der Produktionsumgebung \TEXEDIT\ wiedergegeben werden,
+ber"ucksichtigt. In diesem Programm werden \TEX||Befehle und ||symbole
+mit einer besonderen Funktion farbig dargestellt (wie hier"uber 
+beispielhaft dargestellt).
+
+\hoofdstuk{Schrift}
+
+Die Makros verwenden den mathematischen Modus und somit \type{\textfont},
+\type{\scriptfont} und \type{\scriptscriptfont}. Wenn es n"otig ist werden
+auch die \type{\fontdimen}s~14, 16 und~17 von \type{\font2} angepa"st.
+Dabei wird die aktuelle Flie"stextgr"o"se ber"ucksichtigt, die der $x$-H"ohe 
+(\type{\fontdimen5}) entnommen wird.
+
+"Anderungen in den \type{\fontdimen}s haben globalen Charakter, somit ist
+Gruppierung sinnlos. Aus diesem Grund werden die Dimensionen immer gesetzt
+und zur"uckgesetzt. Die derzeitige L"osung mag nicht die beste sein, aber
+andere f"uhren zu Problemen mit skalierten Schriften.
+
+Das Platzieren von Atomen und Molek"ulen (Text) kostet relativ viel
+Zeit bei der Berechnung. In \CONTEXT\ h"angt die Geschwindigkeit auch von
+der Komplexit"at des Makros \type{\rm} ab. Eine effizientere L"osung ist
+m"oglich.
+
+\hoofdstuk{Definitionen}
+
+\PPCHTEX\ greift f"ur die Interaktivit"at auf \CONTEXT\ zur"uck. Dies bedeutet,
+da"s das Interface mehrsprachig ist. Gegen"uber dem Vorteil, da"s jeder in
+seiner Muttersprache mit dem Makropaket kommunizieren kann, steht der Nachteil,
+da"s der gemeinschaftliche Gebrauch der Makros etwas umst"andlicher ist.
+
+Zur Zeit sind viele der zugrunde liegende Befehle von \CONTEXT\
+niederl"andisch. Das gleiche gilt f"ur die Parameter. Die zugrunde
+liegenden Befehle von \PPCHTEX\ sind inzwischen englisch. Um 
+beispielsweise Bibliotheken international gebrauchen zu k"onnen, m"ussen
+diese mit den englischsprachigen Befehlen definiert werden, zum Beispiel:
+
+\starttypen
+\startchemical
+  \chemical[SIX,B,C]
+\stopchemical
+\stoptypen
+
+Einstellungen sind ein wenig umst"andlicher. Wir benutzen daf"ur 
+Systemkonstanten und -variablen, die zur Zeit noch niederl"andisch sind.
+Demn"achst werden diese auch auf englisch sein.
+Gl"ucklicherweise sind die Konstanten und Variabeln gut zu erkennen,
+so da"s das Anpassen nicht schwierig ist.
+
+\starttypen
+\setupchemical[\c!breedte=10cm,\c!hoogte=\v!passend]
+\stoptypen
+
+
+Parameter werden mit einem vorangestelltem \type{\c!} und Einstellungen mit
+einem \type{\v!} angegeben. Dies funktioniert nur wenn \type{!} ein Zeichen 
+ist. Deshalb werden diese Einstellungen in ein \type{\unprotect}||\type{\protect}||Paar
+eingeschlossen. So zum Beispiel:
+
+\starttypen
+\unprotect
+
+\setupchemical[\c!breedte=10cm,\c!hoogte=\v!passend]
+
+\startchemical
+  \chemical[SIX,B,C]
+\stopchemical
+
+\protect
+\stoptypen
+
+Mehr Informationen "uber das Interface und die Arbeit an diesem ist der 
+Dokumentation zu den \CONTEXT||Modulen und den \type{mult}||Gruppen zu entnehmen.
+
+\hoofdstuk{Farbe}
+
+Innerhalb von \CONTEXT\ ist es m"oglich, Teile einer Struktur zu kolorieren.
+Im  \in{Beispiel}[vb:kleur] ist sowohl der Substituent als auch dessen 
+Bindung rot gef"arbt.
+
+\startbuffer
+\startchemie[assenstelsel=aan,kader=aan,breedte=5000]
+  \chemie[SIX,B]
+  \kleur[rood]{\chemie[SIX,R1,RZ1][COOH]}
+\stopchemie
+\stopbuffer
+
+\startfiguurtekst
+  [links][]
+  {geen}
+  {\haalbuffer}
+\voorbeeld[vb:kleur]
+\starttypen
+\startchemie[achsen=an,rahmen=an,breite=5000]
+  \chemie[SIX,B]
+  \farbe[rot]{\chemie[SIX,R1,RZ1][COOH]}
+\stopchemie
+\stoptypen
+\stopfiguurtekst
+
+Zuerst mu"s man jedoch mit dem \CONTEXT||Befehl \type{\stellefarbeein[status=start]} den
+ Farbmechanismus aktivieren.
+
+\hoofdstuk[txt:cooh]{Interaktivit"at}
+
+Wenn man \PPCHTEX\ zusammen mit \CONTEXT\ verwendet, wird das Erstellen 
+interaktiver Texte unterst"utzt. Unter einem interaktiven Text verstehen
+wir einen Text, in dem man nachschlagen kann, w"ahrend Teile des Textes
+aktiv sein k"onnen. Das hei"st, da"s ein Klick auf ein Wort zum
+Sprung zur einer Erkl"arung f"uhrt. So kann beispielsweise durch einen
+Klick im Text auf \naar{\chemie{COOH}}[sub:cooh] zu einem Sprung zu dem
+zugeh"origen Substituenten f"uhren. Umgekehrt k"onnte ein Klick auf den
+Substituenten zu einem Sprung zur Erkl"arung jenes f"uhren.
+
+\startbuffer
+\startchemie[assenstelsel=aan,kader=aan,breedte=5000]
+  \chemie[SIX,B]
+  \chemie[sub:cooh][SIX,R1,RZ1][COOH]
+\stopchemie
+\stopbuffer
+
+\startfiguurtekst
+  [links][]
+  {geen}
+  {\haalbuffer}
+\voorbeeld[vb:interactie]
+\starttypen
+\startchemie[achsen=an,rahmen=an,breite=5000]
+  \chemie[SIX,B]
+  \chemie[sub:cooh][SIX,R1,RZ1][COOH]
+\stopchemie
+\stoptypen
+\stopfiguurtekst
+
+Wie man sieht wird ein drittes Argument angegeben: der Verweis 
+\type{[sub:cooh]}. Das hei"st, man kann von dem Text auf den Substituent
+\naar{\chemie{COOH}}[sub:cooh] verweisen:
+
+\starttypen
+... text ... \zu{\chemie{COOH}}[sub:cooh] ... text ...
+\stoptypen
+
+\type{\zu} ist hierbei ein \CONTEXT||Befehl. Das Klicken auf einen so 
+markierten Text positioniert den Cursor "uber dem Substituenten der
+Graphik.
+
+Dies funktioniert auch umgekehrt. Wir k"onnen von einer Struktur auf einen
+Text verweisen. Der Verweis mu"s nat"urlich bestehen.
+
+Klicken auf \chemie{COOH} in der Figur bewirkt ein Springen zum zugeh"origen
+Text, der zum Beispiel so markiert ist:
+
+\starttypen
+\absatz[txt:cooh]{Substituenten}
+
+... text ... \chemie{COOH} ... text ... 
+\stoptypen 
+
+Eine Kombination ist auch m"oglich. In diesem Fall sollte man auf die erste 
+mit \type{\chemie} verweisen und auf die n"achste mit \type{\zurchemie}. 
+
+Die Verkn"upfung mit dem Interaktionsmechanismus geschieht mit diesen 
+Makros:
+
+\starttypen
+\localgotochemical   {verweis} {text}
+\localthisischemical {verweis}
+\stoptypen
+
+F"ur eine weitere Erl"auterung verweisen wir auf den Quelltext. Diese
+Kopplung kann auch f"ur andere Zwecke benutzt werden. Dann sollte man jedoch
+einige Erfahrung mit \TEX\ haben.
+
+\vervolgblad
+  {"Ubersicht}
+  [links=1250,breedte=4000,onder=1500,hoogte=4000]
+  [SIX,B,C,MOV1,B,ER6,CRZ6]
+  [O]
+
+\input man-comm.tex
+
+\stoptekst

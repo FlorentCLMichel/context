@@ -1,0 +1,163 @@
+% language=us
+
+\environment context-2023-style
+
+\startdocument
+  [title={challenge},
+   banner={a bit of fun},
+   location={context\enspace {\bf 2023}\enspace meeting}]
+
+% \setuphead
+%   [chapter]
+%   [after=\blank] % {\blank[line]}] fails with figure left
+
+\setupbackgrounds
+  [text]
+  [text]
+  [state=stop]
+
+\defineoverlay[whatever][\processMPbuffer]
+
+\starttitle[title=The Sundqvist Smiley]
+
+This is how teens use potrace:
+
+\startbuffer
+fill
+    lmt_potraced [ bytes =
+        "001111100
+         010000010
+         100000001
+         101101101
+         100000001
+         101000101
+         100111001
+         010000010
+         001111100",
+         polygon = false,
+         size = 1,
+    ] xysized (OverlayWidth-5mm,OverlayHeight-5mm)
+    withcolor "extracolor"
+    withtransparency (1,.3)
+    withpen pencircle scaled 0.1 ;
+\stopbuffer
+
+\typebuffer[style=\switchtobodyfont[9pt]\ttbf]
+
+\stoptitle
+
+\starttitle[title=An alternate view]
+
+And this is how we modulate on that:
+
+\startbuffer
+fill
+    lmt_potraced [ bytes =
+        "..11111..
+         .1.....1.
+         1.......1
+         1.11.11.1
+         1.......1
+         1.1...1.1
+         1..111..1
+         .1.....1.
+         ..11111..",
+         polygon = false,
+         size = 1,
+    ] xysized (OverlayWidth-5mm,OverlayHeight-5mm)
+    withcolor "extracolor"
+    withtransparency (1,.3)
+    withpen pencircle scaled 0.1 ;
+\stopbuffer
+
+\typebuffer[style=\switchtobodyfont[9pt]\ttbf]
+
+And we can go further, see next page.
+
+\stoptitle
+
+\starttitle[title=Some more detail]
+
+\startbuffer
+draw image (
+    lmt_startpotraced [ bytes =
+        "..11111..
+         .1.....1.
+         1.......1
+         1.22.22.1
+         1.......1
+         1.3...3.1
+         1..333..1
+         .1.....1.
+         ..11111.."
+    ] ;
+    fill lmt_potraced [ value = "1", size = 1 ]
+        withcolor "extracolor" withtransparency (1,.3)
+        withpen pencircle scaled 0.1 ;
+    fill lmt_potraced [ value = "3", size = 1 ]
+        withcolor "extracolor" withtransparency (1,.5)
+        withpen pencircle scaled 0.1 ;
+    fill lmt_potraced [ value = "2", size = 0 ]
+        withcolor "extracolor" withtransparency (1,.8)
+        withpen pencircle scaled 0.1 ;
+    lmt_stoppotraced ;
+) xysized (OverlayWidth-5mm,OverlayHeight-5mm) ;
+\stopbuffer
+
+\typebuffer[style=\switchtobodyfont[9pt]\ttbf]
+
+\stoptitle
+
+\starttitle[title=This year X-mas card (1)]
+
+Here is how we use it ourselves:\high{\copyright 2023}
+
+\startbuffer[1]
+\startluacode
+local sin, cos = math.sin, math.cos
+
+local N = 100
+
+local function f(x,y)
+    local z = sin(x*x) - cos(y*y)
+ -- local z = sin(x) - cos(y)
+    if z > 0 then
+        return '1'
+    else
+        return '0'
+    end
+end
+
+potrace.setbitmap("mybitmap", potrace.contourplot(N,N,f))
+\stopluacode
+\stopbuffer
+
+\startbuffer
+path p ; p := lmt_potraced [
+    stringname = "mybitmap",
+    value      = "1",
+    size       = 0,
+] ;
+draw image (
+    draw p withcolor "extracolor" withtransparency (1,.25) ;
+  % fill p withcolor "darkred"    withtransparency (1,.3) ;
+) xysized (OverlayWidth-5mm,OverlayHeight-5mm) ;
+\stopbuffer
+
+\getbuffer[1]
+
+\typebuffer[style=\switchtobodyfont[12pt]\ttbf]
+
+We also turned this into a game we played during the holidays and that later got
+properly materialized by Willy. We also made a service so that users could
+generate matching games in different complexity.
+
+\stoptitle
+
+\starttitle[title=This year X-mas card (2)]
+
+\typebuffer[1][style=\switchtobodyfont[12pt]\ttbf]
+
+\stoptitle
+
+\stopdocument

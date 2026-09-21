@@ -1,0 +1,48 @@
+\startenvironment ctx-presentations-2023
+
+\usemodule[present-boring,abbreviations-logos]
+
+\definecolor[maincolor] [h=0057b7]
+\definecolor[extracolor][h=ffd700]
+
+\setupbottom
+  [color=darkcolor]
+
+\setupbodyfont
+%   [iwona,14.4pt]
+  [dejavu,14.4pt]
+
+\definehighlight
+  [notabene]
+  [style=bold,
+   color=extracolor]
+
+\startuniqueMPgraphic{whatever}
+    fill
+        lmt_potraced [ bytes =
+            "001111100
+             010000010
+             100000001
+             101101101
+             100000001
+             101000101
+             100111001
+             010000010
+             001111100",
+             polygon = false,
+             size = 1,
+        ] xysized (OverlayWidth-5mm,OverlayHeight-5mm)
+        withcolor "extracolor"
+        withtransparency (1,.1)
+        withpen pencircle scaled 0.1 ;
+
+\stopuniqueMPgraphic
+
+\defineoverlay[whatever][\uniqueMPgraphic{whatever}]
+
+\setupbackgrounds
+  [text]
+%   [text]
+  [background={color,whatever}]
+
+\stopenvironment

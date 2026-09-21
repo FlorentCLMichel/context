@@ -1,0 +1,248 @@
+% language=us
+
+\environment context-2025-style
+
+
+\setuptyping
+  [style=\switchtobodyfont[7pt,tt]]
+
+\definelayer
+  [extratext]
+  [preset=rightbottom,
+   height=\textheight,
+   width=\textwidth]
+
+\setupbackgrounds
+  [text]
+  [background=extratext]
+
+% \definehighlight[notabene][style=bf]
+\definehighlight[notabene][style=\glyphweight100\underbar]
+
+\setuptyping
+  [align=hangright,
+   keeptogether=paragraph,
+   numbering=]
+
+\startdocument
+  [title={Signals},
+%    banner={keeping track},
+   banner={Willi, Mojca & Hans},
+   location={context\enspace{\bf 2025}\enspace meeting}]
+
+\starttitle[title=From beamer to lamps]
+
+\startitemize
+\startitem
+    We wanted Tove's Bacho\TEX\ \quote {flags} presentation to have some weird
+    properties.
+\stopitem
+\startitem
+    I was working on a large 65 inch screen on 3 meter distance due to an eye
+    issue.
+\stopitem
+\startitem
+    I had some hue color lamps laying around unused and the home|/|office lighting
+    is driven by a few hue hubs already.
+\stopitem
+\startitem
+    Control of lamps is actually done by a \LUA\ script (server) run by \LUATEX,
+    a way to overcome limitations (and performance issues).
+\stopitem
+\startitem
+    So, controlling lamps was relatively easy. Making them respond to a change in
+    \PDF\ page not that hard.
+\stopitem
+\startitem
+    That in return triggered using lamps to indicate a \CONTEXT\ run state and
+    result.
+\stopitem
+\stopitemize
+
+\stoptitle
+
+\starttitle[title=From lamps to leds]
+
+\startitemize
+\startitem
+    At Bacho\TEX\ we played a bit with a led strip (on a hue led controller)
+    that Mojca gave me.
+\stopitem
+\startitem
+    That demonstrated that instead of (large) lamps we could go smaller.
+\stopitem
+\startitem
+    We used 30 leds and therefore could play with configurations. Eventually
+    24 leds were the optimum (1 2 3 4 6 8 12).
+\stopitem
+\startitem
+    By putting them in a circle one gets a kind of clock (watch).
+\stopitem
+\startitem
+    We use colors: blue (busy), yellow (current), red (error), orange (problem),
+    green (okay).
+\stopitem
+\startitem
+    We can work on segments (24/8), quadrants (24/4), or squids (24/1). The first
+    two report per run (if more are needed), the later the current run with page
+    indicator.
+\stopitem
+\stopitemize
+
+\stoptitle
+
+\starttitle[title=From leds to gadget]
+
+\startitemize
+\startitem
+    Mojca suggested to make a dedicated device, and gave me a Raspberry Pico
+    to play with.
+\stopitem
+\startitem
+    The quadrant, segment, squid model was \quote {perfected} in an experimental
+    setup.
+\stopitem
+\startitem
+    We still support hue, we can also respond to http requests but the focus is
+    now on fast serial communication.
+\stopitem
+\startitem
+    Controlling the gadget (aka \CONTEXT\ watch, as it is round) happens from
+    the \type {context} script and in squid mode also from the shipout routine.
+\stopitem
+\startitem
+    Serial communication is built into \LUAMETATEX, and it works okay on
+    \WINDOWS, \LINUX\ and \OSX.
+\stopitem
+\stopitemize
+
+\stoptitle
+
+\starttitle[title=From gadget to tool]
+
+\startitemize
+\startitem
+    We can see progress and result state using quadrant, segment, or squid mode.
+    The documents top line indicates what has to be used.
+\stopitem
+\startitem
+    In squid mode we can also get feedback about e.g. overfull boxes, missing
+    characters, options that slow down a run, or potentially interfering
+    third party code.
+\stopitem
+\startitem
+    In segment mode we can show the state of 8 parallel jobs, this is used when
+    running the test suite.
+\stopitem
+\startitem
+    You can control the device by sending commands and thereby integrate it
+    in workflows. We use this when generating the distribution.
+\stopitem
+\startitem
+    Future versions can have a clock mode. We already can count (numbers) and do
+    some simple text.
+\stopitem
+\stopitemize
+
+\stoptitle
+
+\starttitle[title=How it fits in]
+
+\startitemize
+\startitem
+    It all fits in a feedback|/|runner model. When a run goes bad, one gets
+    an error document.
+\stopitem
+\startitem
+    But instead one can get a QR code as result, encoding the error (there
+    is a limited set so basically they are pictograms.
+\stopitem
+\startitem
+    Using leds (color and/or position) in practice is a faster feedback than
+    watching and reading a log file.
+\stopitem
+\startitem
+    It also marks the 20\high{th} anniversary of \LUATEX, we've come a long
+    way and still finds ways to extend it.
+\stopitem
+\startitem
+    The software is there but can be upgraded as we go. There's also a manual
+    and a helper script in the distribution.
+\stopitem
+\startitem
+    As the gadget can be controlled by a script you can also use it otherwise,
+    but as usual, we welcome ideas by users.
+\stopitem
+\stopitemize
+
+\stoptitle
+
+\starttitle[title=Dejavu]
+
+\startitemize
+\startitem
+I played a lot with a RCA 1802 dev kit when was a kid myself. It was one of nicer
+cpu designs, quit symmetrical with static memory and single step capabilities.
+Think of the kind of chips that currently travel the edges of our solar system.
+\stopitem
+\startitem
+Writing games and such in 512 bytes mem (or was it 256) is a challenge.
+\stopitem
+\startitem
+Inventing wheels is part of it. One learns a lot: interrupts, self adapting
+functions, figuring out how to save to and read from tape, dma and sensors.
+\stopitem
+\startitem
+When we started with \LUATEX, at some point Mojca send me a esp micro controller
+running \LUA. It brought back memories.
+\stopitem
+\startitem
+Years later Harald made a laser cut \CONTEXT\ logo controlled by a rpi and later
+Willi made an enclosure with a next generation embedded esp micro controller.
+\stopitem
+\startitem
+Today we show a gadget that has yet another generation of that esp (although we
+actually started with a rpi pico).
+\stopitem
+
+\blank[2*big]
+
+\startitem
+For a moment think back to when \TEX\ was written: this tiny chip has more cpu
+cycles, flash, plenty static and optionally extra memory and quite some IO
+features, it can run original \TEX\ faster than the machines on which
+he program was written.
+\stopitem
+\stopitemize
+
+\stoptitle
+
+\starttitle[title=The workshop]
+
+\startplacefigure[location={left,none}]
+\externalfigure[release-willi-watch.jpg][height=.7th]
+\stopplacefigure
+
+\startitemize
+\startitem
+    If there is interest we will make more boards that can be mounted in a clock
+    encasing with a 3D printed enclosure.
+\stopitem
+\startitem
+    But \unknown\ at this meeting you will get the collectors item: a high
+    quality wooden Willi designed stand with the first official hard- and
+    software release.
+\stopitem
+\startitem
+    But you need to work a bit on it, welcome to:
+
+    {\em The traditional \CONTEXT\ workshop event!}
+\stopitem
+\stopitemize
+
+\stoptitle
+
+\stopdocument
+
+
+% context/signal/testthem : configure hue 3 or 4

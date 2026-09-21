@@ -21,6 +21,8 @@
     <flag name="stripname"><short>take pathpart of given pattern</short></flag>
     <flag name="longname"><short>set name attributes to full path name</short></flag>
     <flag name="downcase"><short>lowercase names</short></flag>
+    <flag name="sparse"><short>omit attributes and time</short></flag>
+    <flag name="compact"><short>use less spacing</short></flag>
    </subcategory>
    <subcategory>
     <flag name="showstring"><short>show unicode characters in given string</short></flag>
@@ -31,6 +33,8 @@
     <flag name="recurse"><short>recurse into subdirecories</short></flag>
     <flag name="force"><short>downcase indeed</short></flag>
    </subcategory>
+   <subcategory>
+    <example><command>mtxrun --script tool mtxrun --script tools --dirtoxml --root=t:/texmf/doc/context --pattern=* --recurse --sparse --output=files.xml</flags></command></example>
+   </subcategory>
   </category>
- </flags>
 </application>

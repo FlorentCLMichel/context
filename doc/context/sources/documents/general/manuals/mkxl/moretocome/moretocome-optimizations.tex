@@ -1,0 +1,151 @@
+% language=us runpath=texruns:manuals/moretocome
+
+\startcomponent moretocome-optimizations
+
+\environment moretocome-style
+
+\startchapter[title=Optimizations]
+
+I've written about performance before, and occasionally I come back to it. We're
+now in 2025 and we can safely say that performance of the \LUAMETATEX\ plus
+\CONTEXT\ is quite okay. Users who also use other macro packages often express
+how much faster \CONTEXT\ is but I can't really check that: I don't have other
+macro packages installed, it would also depend on the installations and of course
+the kind of documents matter too. However, when it comes ot \LUATEX\ and
+\LUAMETATEX, I'm not that surprised if \CONTEXT\ is actually relatively fast;
+after all these engines originate in the \CONTEXT\ community.
+
+There are, to summarize several factors that influence performance. Start by
+asking yourself \quotation {What is left to \TEX\ and what is done in \LUA?} and
+\quotation {How good are the \TEX\ macros (and solutions) that I use and how
+efficient is the \LUA\ code, if used?}. These are subjective matters so best left
+aside. I just like to remark that when you read comments on the engines or
+\CONTEXT\ by those not too familiar with it, you should take them with a grain of
+salt: one can read plenty of non-sense.
+
+We can discuss where in the engine or \CONTEXT\ we try to make sure that
+performance is good, but we can also start from the other end. What are actually
+the potential bottlenecks. Some are just side effects of design decisions, the
+nature of the problem, or the way things are implemented, for instance expansion
+extensive macros solutions. There's also user interfacing to take into account:
+we don't want to compromise there. When we started with \TEX\ and reached a state
+where we could qualify \CONTEXT\ as a macro package, sometime mid 90's, for sure
+the user interface came with a performance penalty.
+
+When we moved on to \LUATEX\ in the first decade of this century, the low level
+implementation of the user interface was rewritten. On the one hand the memory
+footprint got smaller, inheritance more clever, but in theory at a larger
+expansion cost. However in practice performance got a bit better. Then, in the
+decade when we went for \LUAMETATEX\ extensions to the macro (preamble) parsing
+capabilities of the engine made for a better performance again. If you realize
+what goes on in the user interface one can actually be surprised that it is so
+fast at all but course computers also got faster.
+
+So why do I try (or even look at) potential optimizations every now and then? A
+valid reason is an observed slow-down, or a future slow-down due to evolving
+features. But \quotation {Wait!} you say, \quotation {Isn't \CONTEXT\ in general
+becoming faster over time?}. Indeed that is the case, but a side effect of adding
+more advanced feature is that the can actually add a little runtime. We're
+talking percentages but they can accumulate. So, when I am in for a little
+gaming, I look at solutions, at features that were added but never fully applied,
+and surprise: we sometimes can gain back a few percent. Of course there are
+exceptions, for instance when you enable tagging, which recently has become a bit
+more popular, runtime can increase (sometimes double) but those are functionality
+hound so there is little to gain: you're asking for something that cost time. But
+even there we might gain back a little over time.
+
+One problem with noticing a gain in performance is that a move to a different
+machine or upgrade of the operating system can obscure observations. Another
+interference comes from additional features and enabling them. So in practice
+differences in performance can only be noticed when a document is relatively
+stable (a few pages more hardly change runtime) and a similar version or style is
+used. It is also a bit feeling: did it get slower or faster, a perception.
+
+So, how important is going from 15.2 seconds down to 14.7 on the \LUAMETATEX\
+manual really, or 7.1 down to 6.9 in our math reference book. I have a laptop
+with a 2017 (Xeon) processor, and a 2025 with that years fastest AMD processor
+could more than half that time. So why not just buy a new laptop? Valid reasons
+are that \TEX\ doesn't pay the bills so there is no pay-back, why waste a
+properly working laptop and put a burden on the environment, and installing a new
+machine is no fun either. So why not just optimize a bit and stick to the machine
+as long as possible? A side effect of a little optimization here and there, based
+on observed usage patterns also has the side effect of (maybe) smoother runs on
+virtual machines that compete with each other.
+
+End 2025 I decided to look a bit at the potential bottlenecks of some documents
+again saw confirmed that attributes are part of the drag. Attributes are one of
+the first extensions to \LUATEX. When set, they travel with a node. For instance,
+when a character in the input becomes a glyph node, it gets a list of currently
+set attributes.
+
+\starttyping
+[glyph 'a'] <=> [glyph 'b'] <=> [glyph 'c']
+
+[attr 1]        [attr 1]        [attr 1]
+[attr 3]        [attr 3]        [attr 2]
+[attr 8]        [attr 8]        [attr 6]
+\stoptyping
+
+These attributes are kept in a list, like:
+
+\starttyping
+[attr 1] -> [attr 3] -> [attr 8]
+[attr 1] -> [attr 3] -> [attr 8]
+[attr 1] -> [attr 2] -> [attr 6]
+\stoptyping
+
+And because it is likely that lists the same for successive nodes, we actually
+have:
+
+\starttyping
+[attr list 1] -> [attr 1] -> [attr 3] -> [attr 8]
+[attr list 1] -> [attr 1] -> [attr 3] -> [attr 8]
+[attr list 2] -> [attr 1] -> [attr 2] -> [attr 6]
+\stoptyping
+
+where the first two are the same list. Every list has a reference counter so here
+we have two lists, one with a reference count of two, and one with a count of
+one. These attributes are small nodes themselves but in \CONTEXT\ on a page we
+have thousands of them, and in for instance balanced pages, as in column sets, we
+have tens of thousands. We need to allocate them and at some point they might get
+tested for every node in a list. In fact, if these attribute lists have 10
+elements, and we have 4000 nodes on page, checking for an attribute checking 4000
+attributes lists with in a worst case scenario the wanted attribute at the end.
+
+There are various optimizations. For instance we could avoid a check by checking
+if the attribute list itself changed (when we work on neighboring nodes). The
+lists are sorted so a lookup is optimized by quitting a lookup when we passed the
+asked attribute index. List construction is also optimized, which in itself is
+kind or tricky if you take grouping into account. here \ \LUAMETATEX\ is more
+advanced than \LUATEX, which could be one of the reasons that it is faster than
+\LUATEX.
+
+A recent (2025) optimization in lookups is that at the cost of extra
+housekeeping, we don't need to check if an attribute is not in a list. A
+mechanism that operates on a node list \ and checks for an attribute can of
+course be controlled by the macro package and some neat tricks in there, but just
+avoiding a treatment when there is no demand also makes sense. This particular
+optimization at first sight looks substantial but in the end only gives a few
+percent gain, depending on the usage pattern. We just have to remember that over
+the decades of \MKIV\ and \MKXL\ a lot already has been optimized.
+
+Often playing with this itself leads to extra features, like tracing, so that we
+get a bit more insight in what happens. In that case we accept the extra overhead
+and accept a little less gain. Talking of tracing: one reason for the 2025
+optimization was that the visualizer code has quite some impact on a run once
+enabled. So, again here doesn't really benefit users, more ourselves. It'a also a
+fact that there are many features that never kick in at the same time. If one
+uses 20 attribute driven features, there is more gain to expect than when a 2 are
+used. The reason is not so much in the tenfold usage but in the simple fact that
+of the 20 most are very limited in scope. You don't want a single character
+kerned word on the title page influence the whole document runtime. vertical
+spacing on the other hand is always used. Most if the special math features are
+seldom used so why check on them of no attribute is active? Those are the places
+where we can gain a little, and all small amounts then add up. But, this is very
+much a \CONTEXT\ thing.
+
+% test attr list instead .. tricky housekeeping
+
+\stopchapter
+
+\stopcomponent

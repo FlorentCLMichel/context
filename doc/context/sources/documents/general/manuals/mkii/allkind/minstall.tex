@@ -1,0 +1,658 @@
+% interface=en output=pdftex
+
+\environment mstyle
+
+\starttext
+
+\TitlePage{508}{0}{how to install\\\ConTeXt}{}{1}
+
+\subject {Introduction}
+
+Nowadays most \TEX\ users will use one of the many distributions that are
+available for free or commercially. This means that much of the hard work of
+installation is already taken care of. When installed properly, the user will
+quite certainly have the binaries, hyphenation patterns, fonts and some macro
+packages on the system.
+
+This manual is therefore not targeted at installing \TEX, but focusses on how
+to get \CONTEXT\ running within an existing distribution. When, after reading
+this text, you still cannot get \CONTEXT\ working properly, we advice you to
+contact the maintainer of your distribution, or to send your questions to the
+\CONTEXT\ mailing list.
+
+\subject{Unpacking the archives}
+
+The \CONTEXT\ distribution consists of several zipped archives. You need to
+unpack these to the appropriate directory of you file system. The archives
+are zipped using the free \type {zip} program, and can be unzipped using its
+counterpart. \footnote {Shareware programs like WinZip for MSWindows also
+work well.} Just type:
+
+\starttyping
+unzip -a <archive>.zip
+\stoptyping
+
+Everything you need to get started can be found in the main \CONTEXT\
+archive:
+
+\starttabulate[|Tl|l|]
+\NC cont-tmf.zip \NC the \CONTEXT\ sources and programs \NC \NR
+\stoptabulate
+
+There are some more archives you may want to install, like:
+
+\starttabulate[|Tl|l|]
+\NC cont-img.zip \NC a couple of extra resources              \NC \NR
+\NC cont-exa.zip \NC the \EXAMPLE\ framework tools and styles \NC \NR
+\stoptabulate
+
+There are two more somewhat redundant archives. These can be useful for users
+of packages other than \CONTEXT. If you are using the files from \type
+{cont-tmf.zip}, it is not necessary to include the files from these archives.
+
+\starttabulate[|Tl|l|]
+\NC cont-ppc.zip \NC the \PPCHTEX\ only files                 \NC \NR
+\NC cont-mpd.zip \NC the \METAPOST\ to \PDF\ conversion tools \NC \NR
+\stoptabulate
+
+To prevent duplication in files, we strongly advise to obey the path as coded
+in the archives. The files in these archives will be unpacked into the
+appropriate directories of the official \type {texmf} tree. Some files are
+stored in the directories for generic \TEX\ files or the \LATEX\ package,
+but those are not important for \CONTEXT\ users.
+
+\starttabulate[|Tl|l|]
+\NC texmf/tex/context/config  \NC some configuration files           \NC \NR
+\NC texmf/tex/context/base    \NC all \CONTEXT\ core files, modules  \NC \NR
+\NC texmf/tex/context/extra   \NC some goodies                       \NC \NR
+\NC texmf/tex/context/sample  \NC a couple of sample files           \NC \NR
+\NC texmf/tex/context/user    \NC user specific files                \NC \NR
+\NC texmf/tex/context/third   \NC third party contributions          \NC \NR
+\NC texmf/metapost/context    \NC the \METAPOST\ modules             \NC \NR
+\NC texmf/context/config      \NC some configuratiom files           \NC \NR
+\NC texmf/context/data        \NC data filed used by scripts         \NC \NR
+\NC texmf/scripts/context     \NC the \PERL\ and \RUBY\ scripts      \NC \NR
+\NC texmf/doc/context/base    \NC \CONTEXT\ documentation            \NC \NR
+\stoptabulate
+
+Users can best not put files in the \type {base}, \type {extra} and \type
+{sample} directories. That way they can conveniently be removed and
+reinstalled. The files in \type {third} are to be organized by author.
+\footnote {You need to create this (yet empty) directory yourself.}
+
+The way \PERL\ and \RUBY\ scripts are started differs per operating
+system. For instance, on \UNIX, the \PERL\ scripts should be
+installed without the \type {.pl} extension, because these scripts
+and possibly other programs rely on these names. They should be
+moved to the search path for binaries and scripts. On \MSWINDOWS\
+running scripts is not supported by the operating system, although
+in  \MSWINDOWS\ 2000 and later you can confortably associate
+extensions (suffixes) with programs.  Most script environment
+installers will set this association for you.  In the binary tree of
+the \TEX\ distributions you can find stubs like \type {irun},
+written by Fabrice Popineau. When copied to \type
+{<scriptname>.exe}, this program launches the script with the same
+name.
+
+The initialization files for \TEXEXEC\ go into \type {texmf/context}
+(\TETEX) or into the same directory as the binaries. When setting up
+\TETEX, make sure you enable generation of the format files, by
+uncommenting the lines that specify the \CONTEXT\ formats. You can
+edit the \TETEX\ (and \FPTEX) configuration file using:
+
+\starttyping
+fmtutil
+\stoptyping
+
+In \TETEX\ you should pass the switch \type {--edit}. When you pass \type
+{--all} you get all formats. When in need for patterns other than the default
+ones, \type {texconfig} can be used to enable more hyphenation patterns in
+the file \type {cont-usr.tex}. You can also edit this file directly.
+
+Another way to deal with scripts is to use \TEXMFSTART\
+
+\starttyping
+texmfstart --make --windows --indirect texexec.pl
+texmfstart --make --unix    --indirect texexec.pl
+\stoptyping
+
+The resulting files (\type {texexec} and/or \type {texexec.bat} can be moved
+to your binary path. The advantage of this approach is that it is less sensitive
+to changes in the formal directory structure, since it will be maintained in a
+downward compatible way. You need to do the same for other tools, like \TEXUTIL.
+
+\CONTEXT\ comes with a font that contains navigational symbols. These fonts
+go to the corresponding places in the fonts tree, in our case:
+
+\starttabulate[|Tl|l|]
+\NC texmf/fonts/tfm/hoekwater/context   \NC the files with suffix \type{tfm} \NC \NR
+\NC texmf/fonts/afm/hoekwater/context   \NC the files with suffix \type{afm} \NC \NR
+\NC texmf/fonts/type1/hoekwater/context \NC the files with suffix \type{pfb} \NC \NR
+\stoptabulate
+
+There are also \CONTEXT\ specific encoding|/|map files. These are stored
+in the following paths:
+
+\starttabulate[|Tl|l|]
+\NC texmf/fonts/map \NC \CONTEXT\ fontmap file \NC \NR
+\NC texmf/fonts/enc \NC \CONTEXT\ font encoding file \NC \NR
+\stoptabulate
+
+In older distributions those files had to go under \type {texmf/dvips/config}.
+Unfortunately \TEX\ distributions are not upward compatible in this respect.
+
+Don't forget to add a reference to this file \type {context.map} to the \type
+{pdftex.cfg} file that resides in the \PDFTEX\ configuration directory.
+
+\starttyping
+map +context.map
+\stoptyping
+
+Instead you can configure \type {cont-sys.tex} (being your personal copy of
+\type {cont-sys.rme}) to let \CONTEXT\ load map files on demand.
+
+\subject{Setting up \TEXEXEC}
+
+\TEXEXEC\ is the command line interface to \CONTEXT. There is nothing wrong
+with running \CONTEXT\ in the traditional way, like
+
+\starttyping
+pdfetex  &cont-en filename
+\stoptyping
+
+or for a \WEBC\ bases \TEX
+
+\starttyping
+pdfetex  &cont-en --progname=context filename
+\stoptyping
+
+but, and this will be more clear when we provide more options, the next call
+is more convenient:
+
+\starttyping
+texexec  filename
+\stoptyping
+
+This not only hides the implementation specific switches, but also removes
+the need for specifying the format.
+
+\TEXEXEC\ is written in \PERL, a scripting language that is available on most
+leading software platforms. In order to operate well, we need to set up
+\TEXEXEC. Of course you must have \PERL\ running on your system. On \UNIX\
+systems, this is always the case, but for \MSWINDOWS\ you have to install
+\PERL\ yourself. \footnote {A good choice is the Active State distribution
+that you can fetch from \type {www.activestate.com}}.
+
+First you have to move \TEXEXEC\ and its relative \TEXUTIL\ to a location in
+the binaries path. When issuing the command \type {texexec} you should get
+some response. Even better, when saying:
+
+\starttyping
+texexec  --verbose
+\stoptyping
+
+you should get some information on how \TEXEXEC\ is set up. When generating
+formats and processing files fail, you need to set up the initialization
+file \type {texexec.ini}. This file comes disguised as \type {texexec.rme},
+so when not present, you need to copy this file. The initialization file
+should be present in the \type {config} path, or in the same path as the
+script. Next you need to edit this file. The simplest way is to comment
+and uncomment one of the following lines:
+
+\starttyping
+set  TeXShell  to  tetex
+%set TeXShell  to  fptex
+%set TeXShell  to  miktex
+%set TeXShell  to  private
+\stoptyping
+
+When this is done, you should check to what extent the rest of the variables
+in this file match the local settings. We hope that the names of the
+variables used are clear.
+
+When it is not set up properly, \TEXEXEC\ tries very hard to locate the files
+it needs. Normally \TEXEXEC\ should start up rather quickly. When you are
+under the impression that you are waiting too long, there is probably an
+error in the setup.
+
+\subject{Using \TETEX}
+
+When you are using te\TEX\ or derived distributions, you can usually stick to
+the regular updates, unless you want to use the latest version of \CONTEXT.
+In any event, you should make sure that only one copy is present on your
+system, because otherwise files can get mixed, due to the often aggressive
+file searching algorithms. If you want to update anyway, you can unzip \type
+{cont-tmf.zip} from within the \type{texmf} directory and regenerate the
+format files.
+
+The \PPCHTEX\ only archive is for users who maintain their own files and only
+want to install this package. The \TEXUTIL\ archive is for those who want to
+use this script, but don't want to install \CONTEXT. Neither archive is
+needed when you install \CONTEXT\ from \type {cont-tmf.zip}.
+
+\subject{Using \FPTEX}
+
+The first step in installing \CONTEXT\ under \FPTEX, is to unzip the file
+\type {cont-tmf.zip} within the \type {texmf} directory. Afterwards the \type
+{texexec} binaries and \PERL\ script should be copied to the directories that
+contain the other \TEX\ binaries. The \TEX\ binaries path, that should also
+be part of your \type {PATH} variable, often looks like:
+
+\starttyping
+../tex/bin/win32
+\stoptyping
+
+When no file \type {texexec.exe} is found, you have to unzip \type
+{texexec.zip} and copy \type {runperl.exe} to \type {texexec.exe}. Don't
+forget to update the \type {ls-R} file database by running \type {mktexlsr}.
+
+Next you need to locate the file \type {texmf/web2c/fmtutil.cnf}. In this
+file, which contains documentation, you need to activate the \CONTEXT\
+formats. Now you can run:
+
+\starttyping
+texexec --make
+\stoptyping
+
+\subject{Using \MIKTEX}
+
+This section is provided by Grzegorz Sapijaszko and Ed L.~Cashin and concerns
+the installation of \CONTEXT\ under \MIKTEX. Installation in the \MIKTEX\
+environment isn't much different from the \TETEX\ installation. Nevertheless,
+you should take a few steps to achieve good results. The first one is copying
+a \type {texexec.rme} file to \type {texexec.ini} and uncommenting the lines
+for \MIKTEX\ as follows:
+
+\starttyping
+%set TeXShell  to  tetex
+%set TeXShell  to  fptex
+set TeXShell  to  miktex
+%set TeXShell  to  private
+\stoptyping
+
+In next step you should add a string \type {\context\perltk} to your
+environment variable \type {PATH} (in autoexec.bat under \WINNX, or in Control
+Panel in \WINNT), for example:
+
+\starttyping
+PATH=c:\miktex\context\perltk;
+\stoptyping
+
+If you are using languages other than Dutch, German or English, you should
+uncomment the lines in the \type {cont-usr.tex} file for the hyphenation
+patterns of the languages you need. After that you can refresh the filename
+databases, for example, by using \quotation {Refresh Filename Databases} from
+the \quotation{Start \vl\ Programs \vl\ MikTeX \vl\ Maintenance} menu or
+\quotation {\MIKTEX\ \vl\ Options} menu, depending on the version you run.
+You should also generate a format file. This is described in the next
+section. Notice that you should have \PERL\ installed on your system.
+
+After generating the formats you should copy the format file \type
+{cont-xx.fmt} from \type {\context\perltk} to the directory where \MIKTEX\
+is storing formats (usually \type {\localtexmf\miktex\fmt}). Another way is
+to add a \type {\context\perltk} directory to \type {miktex.ini} file:
+
+\starttyping
+[MiKTeX]
+...
+...
+;; Where MiKTeX searches for .fmt files.
+FMTPath=.;%R\miktex\fmt;C:\localtexmf\context\perltk//
+\stoptyping
+
+As a convenience, you can copy the \type {runperl.exe} file from the \type
+{cont-wrk.zip} archive to \type {texexec.exe}. You should make sure sure that
+those binaries are in the same directory as the \PERL\ scripts.
+
+\subject{Generating formats}
+
+From its name you can deduce that \CONTEXT\ is written in the typographic
+language \TEX. \CONTEXT\ is parameter driven, which means that users change
+its behaviour by setting variables and changing keys. \CONTEXT\ comes with a
+multi||lingual interface. Currently there are three such interfaces: Dutch,
+English and German.
+
+Users who want complete control can edit the file \type {cont-usr.tex} and
+generate a format using the main file \type {context.tex}. Users who want an
+Dutch, English or German format, can stick to the files named \type
+{cont-nl}, \type {cont-en}, and \type {cont-de}. Again, by editing the file
+\type {cont-usr.tex}, you can influence the outcome.
+
+In the early years of \TEX, generating a format was common practice and users
+were pretty well aware of format files, hyphenation patterns and fonts.
+Nowadays, disributions take care of the more complicated issues, so users can
+comfortably skip many nasty installation steps. To make life even more
+comfortable, \CONTEXT\ comes with \TEXEXEC, a command line interface to
+\TEX. When properly set up, this \PERL\ script can save you much time.
+
+For instance, generating the three formats mentioned is accomplished by:
+
+\starttyping
+texexec  --make  en de nl
+\stoptyping
+
+When \TEXEXEC\ is set up properly, this command should work. Before you read
+on, you should try to generate at least the English and Dutch format. The
+Dutch format is needed by some of the postprocessing features built into
+\TEXEXEC.
+
+\starttyping
+texexec  --make  en nl
+\stoptyping
+
+Additionally, you need to make the \METAFUN\ format. This is an extension to
+the standard \METAPOST\ format which offers not only more features, but also
+interfaces quite well to \CONTEXT.
+
+\starttyping
+texexec  --make metafun
+\stoptyping
+
+The formats associated with the interfaces default to the language of the
+interface. This is all right for Dutch, English or German users, but Polish
+and Czech users are worse off. For them a format file that defaults to their
+own language makes more sense. Poles will like to say:
+
+\starttyping
+texexec  --make  --language=pl  --bodyfont=plr  en
+\stoptyping
+
+while Czech people will go for:
+
+\starttyping
+texexec  --make  --language=cz  --bodyfont=csr  en
+\stoptyping
+
+Both produce a format called \type {cont-en} with an English interface, but
+the first one defaults to Polish hyphenation patterns and fonts, and the
+second one to Czech ones. If wanted, you may pass a comma separated list of
+languages.
+
+\starttyping
+texexec  --make  --language=pl,it,uk  --bodyfont=plr  en
+\stoptyping
+
+or, to generate a english interface format with Czech and Slovak patterns and
+Czech||Slovak Computer Modern Roman fonts:
+
+\starttyping
+texexec  --make  --language=cz,sk,en  --bodyfont=csr  en
+\stoptyping
+
+At \PRAGMA\ we simply load all the languages:
+
+\starttyping
+texexec --alone --make --all
+\stoptyping
+
+Unfortunately, the hyphenation patterns are of hard coded in a format file
+and cannot be loaded at run time. When patterns are needed other than the
+ones loaded by default, you can consider adapting the file \type
+{cont-usr.tex}. This file is loaded at format generation time. When for
+instance Italian patterns are to be used, given that these are available
+either in the file \type {lang-it.pat}, or in a file onto which this filename
+is mapped, you should uncomment the line:
+
+\starttyping
+\installlanguage [\s!it] [\c!state=\v!start] % italian
+\stoptyping
+
+The strange looking \type{\s!} and \type{\c!} things are needed in order to
+support multiple interfaces. Don't touch these!
+
+When using \WEBC, in \type {texmf.cnf} some \CONTEXT\ specific memory
+settings take place. When directly generating a format |<|i.e.\ when you're
+not using the \TETEX\ initialization script or \TEXEXEC|>| you should supply
+the program name: \type {-progname=context}
+
+Make sure you read the manual to \TEXEXEC. Apart from the normal processing
+of files, there are quite a few useful options: mode dependant processing,
+output selection, generating booklets, typesetting contact sheets of figures,
+manipulating \PDF\ files, and more.
+
+\subject{Changing defaults}
+
+The somewhat more run||time specific settings, like certain special drivers,
+can be added to \type {cont-sys.tex}. This file is loaded at run time. For
+instance, this file can can contain the line:
+
+\starttyping
+\setupoutput[pdftex]
+\stoptyping
+
+This commands tells \CONTEXT\ to produce \PDF\ output by default. For Y\&Y
+and Acrobat support, you just say:
+
+\starttyping
+\setupoutput[dviwindo,acrobat]
+\stoptyping
+
+Of course you can also load location specific layout settings in this file.
+The next few lines tell \CONTEXT\ to default to the \CONTEXT\ navigational
+symbols, instead of the ones composed from other glyphs.
+
+\starttyping
+\usesymbols [nav]
+\setupsymbolset [navigation 1]
+\stoptyping
+
+At \PRAGMA\ we want to process \METAPOST\ files at run||time, so there we
+also have entries like:
+
+\starttyping
+\runMPgraphicstrue
+\runMPTEXgraphicstrue
+\useMETAFUNformattrue
+\stoptyping
+
+The first setting leads to less intermediate files. The next two settings let
+\CONTEXT\ process the graphics real||time. For that you need to enable \type
+{write18} in the \TEX\ configuration file (for \WEBC\ this is \type
+{texmf.cnf}). The last setting only makes sense if you have also generated a
+\METAFUN\ format. If you want to know more about \METAFUN, take a look at its
+manual.
+
+The verbatim environments provide pretty printing. When you want even more
+fancy verbatim, for instance with in||between switching of a language
+interpreter, you should enable this feature. If you get no idea what we're
+talking about here, leave this variable untouched since tricky code is
+involved.
+
+\starttyping
+\newprettytrue
+\stoptyping
+
+When \CONTEXT\ cannot determine the dimensions of an external figure, and no
+\type {texutil.tuf} file is present, you can let \CONTEXT\ call \TEXUTIL\
+directly. If you use \PDFTEX, you can leave this switch off.
+
+\starttyping
+\runutilityfiletrue
+\stoptyping
+
+More than one instance of \TEX\ a single path, can lead to clashes in
+temporary files. The next switch enables a filename security feature:
+
+\starttyping
+\protectbufferstrue
+\stoptyping
+
+For the moment, we use these low level boolean switches instead of more
+readable commands.
+
+An important section in this file are the font defaults. You can set a
+default font encoding as well as enable map file loading for \PDFTEX. Some of
+these features are still experimental.
+
+\subject{The \WEBC\ configuration}
+
+Although not stricktly needed, \CONTEXT\ will operate more smoothly when
+these features are set in the file {texmf.cnf}.
+
+\starttyping
+openout_any = a
+shell_escape = t
+allow_multiple_suffixes = f
+\stoptyping
+
+The first line permits \CONTEXT\ to open parent paths that can hold common
+styles. The second line enables enables users to embed \METAPOST\ code in
+their document. As a result, \METAPOST\ is called automatically. \footnote
+{You can disable this feature by running \TEXEXEC\ with the switch \type
+{--automp}.} The last line makes sure that when opening files like \type
+{somefile.tuo}, \TEX\ will not try to open \type {somefile.tuo.tex} first.
+
+When you embed \TEX\ code in a \METAPOST\ definition, using \typ {btex ...
+etex}, the next line will use \TEXEXEC\ to process that fragment in the case
+of using \METAPOST\ directly.
+
+\starttyping
+MPXCOMMAND=texexec --mptex
+\stoptyping
+
+However, the latest distribitions don't need that kind of tweaking any more
+since \TEXEXEC\ sort things out itself.
+
+\subject{Processing files}
+
+You can test you installation with the following file.
+
+\starttyping
+\starttext
+  \framed {Let's see if it works.}
+\stoptext
+\stoptyping
+
+If \CONTEXT\ is set up properly, then the command
+
+\starttyping
+texexec  filename
+\stoptyping
+
+will produce a file \type {filename.dvi}. Unless a file was already processed
+before, you will notice that \TEXEXEC\ processes the file at least two times.
+During a \TEX\ run, \CONTEXT\ saves information in the files \type
+{filename.tui}: cross references, entries to the table of contents, data
+needed for optimization, etc. If the run is succesful, this file is
+converted to a file called \type {filename.tuo} and used in the next run.
+\TEXEXEC\ will reprocess the file until the \type {tuo} file is unchanged.
+
+We {\em strongly recommend} to use \PDFETEX: Peter Breitenlohners \ETEX\
+permits \CONTEXT\ to run more efficient, while \THANH's \PDFTEX\ provides
+\PDF\ output and \PDFETEX\ combined both in one program. For those unfamiliar
+with \ETEX: this is an extension of \TEX\ that is not only more efficient and
+in some aspects faster, but that also offers a few features that come in
+handy when writing complicated code. For the moment, \CONTEXT\ adapts its
+behaviour to the kind of \TEX\ that is used, but future versions may rely on
+\ETEX\ or other descendants completely.
+
+By default, \CONTEXT\ generates \DVI\ output for \DVIPS, unless the output is
+specified otherwise. We already mentioned the \type {\setupoutput} command. A
+second way of achieving this is:
+
+\starttyping
+texexec  --pdf  filename
+\stoptyping
+
+And yet another way is adding a comment line in the document source, like:
+
+\starttyping
+% interface=en  output=pdftex  translate=cp1250pl
+\stoptyping
+
+or
+
+\starttyping
+% interface=en  output=pdftex  translate=cp1250cz
+\stoptyping
+
+Now we can omit the \type {--pdf} switch when we launch \TEXEXEC. Normally
+\TEXEXEC\ is able to sort out the interface itself, but in case of troubles,
+you can set some defaults in the file \type {texexec.ini}. The \type
+{translate} key is only needed when you use the reencoding||on||the||fly
+feature of \WEBC.
+
+The distributions has a few demo files. You may try:
+
+\starttyping
+texexec --pdf demo-tex.tex
+texexec --pdf demo-mps.tex
+texexec --pdf demo-xml.tex
+\stoptyping
+
+% todo: xetex
+
+\subject{Minimal \CONTEXT\ trees}
+
+From the \PRAGMA\ website you can download a minimal \CONTEXT\
+distribution. This is just a subset of \TEXLIVE. On \MSWINDOWS, this
+works as follows:
+
+\starttyping
+mkdir c:\context
+cd /d c:\context
+unzip mswintex.zip
+setuptex
+texexec --make --alone --all
+\stoptyping
+
+You can now (whenever needed) initialize the tree with:
+
+\starttyping
+c:\context\setuptex.bat c:\context
+\stoptyping
+
+Normally you will do this when a shell (cmd) is opened. There is no
+need to do additional configurations.
+
+On \UNIX\ you can do something:
+
+\starttyping
+mkdir /home/myself/context
+cd /home/myself/context
+unzip mslinux.zip
+. setuptex
+texexec --make --alone --all
+\stoptyping
+
+Here you can initialize the tree with:
+
+\starttyping
+. /home/myself/context/setuptex /home/myself/context
+\stoptyping
+
+When you don't provide a path, this script will try to figure out things
+itself. Since the tree is completely isolated from other installations,
+you can comfortably use multiple trees alongside.
+
+\subject{Subscribing to the list}
+
+There are two dedicated mailing lists hosted by the \NTG:
+
+\starttabulate[|l|l|]
+\NC the \CONTEXT\ mailing list \NC \goto{\url[context]}[URL(context)] \NC \NR
+\NC the \PPCHTEX\ mailing list \NC \goto{\url[ppchtex]}[URL(ppchtex)] \NC \NR
+\stoptabulate
+
+These lists are so called {\em mailman} lists. You can subscribe yourself to a
+list using the web interface:
+
+\starttyping
+http://www.ntg.nl/mailman/listinfo/ntg-context
+\stoptyping
+
+More information can be found at:
+
+\starttyping
+http://www.pragma-ade.com
+\stoptyping
+
+Another source, rapidly growing in size and resources, is:
+
+\starttyping
+http://contextgarden.net
+\stoptyping
+
+\ColofonPage
+
+\stoptext

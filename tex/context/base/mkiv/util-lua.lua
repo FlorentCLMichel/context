@@ -159,46 +159,6 @@ function luautilities.loadstripped(...)
     end
 end
 
--- local getmetatable, type = getmetatable, type
---
--- local types = { }
---
--- function luautilities.registerdatatype(d,name)
---     types[getmetatable(d)] = name
--- end
---
--- function luautilities.datatype(d)
---     local t = type(d)
---     if t == "userdata" then
---         local m = getmetatable(d)
---         return m and types[m] or "userdata"
---     else
---         return t
---     end
--- end
---
--- luautilities.registerdatatype(lpeg.P("!"),"lpeg")
---
--- print(luautilities.datatype(lpeg.P("oeps")))
-
--- These finalizers will only be invoked when we have a proper lua_close
--- call (which is not happening in luatex tex node yes) or finish with an
--- os.exit(n,true).
-
-local finalizers = { }
-
-setmetatable(finalizers, {
-    __gc = function(t)
-        for i=1,#t do
-            pcall(t[i]) -- let's not crash
-        end
-    end
-} )
-
-function luautilities.registerfinalizer(f)
-    finalizers[#finalizers+1] = f
-end
-
 function luautilities.checkmemory(previous,threshold,trace) -- threshold in MB
     local current = collectgarbage("count")
     if previous then

@@ -1,0 +1,588 @@
+% output=pdftex
+
+\usemodule[res-05]
+
+% medicijnen anchor ipv meer layers figbase : grid 
+
+% drawgrid (boundingbox currentpicture, 10pt, 10pt, ticks) ...
+% grid als overlay 
+% grid=ja/nee,optie=test
+
+\startMPinclusions 
+  def drawgrid   expr e = do_drawgrid (e,false) enddef; 
+  def drawulgrid expr e = do_drawgrid (e,true ) enddef; 
+  def drawllgrid expr e = do_drawgrid (e,false) enddef; 
+  def do_drawgrid (expr e, b) text t =
+    begingroup ; save dx, dy, cp ;
+    path cp ; cp := boundingbox currentpicture ;
+    (dx,dy) = paired (e) ; 
+    draw image (do_do_drawgrid(dx, dy, cp, b) t) ; 
+    endgroup ; 
+  enddef ;    
+  def do_do_drawgrid (expr dx, dy, cp, b) text t = 
+    if dy>0 : 
+      def shft (expr i) = shifted (0,if b : bbheight(cp) - fi i) enddef ;
+      for i := 0 step dy until bbheight(cp) : 
+        draw (llcorner cp--lrcorner cp) shft(i) t ; 
+      endfor ; 
+      for i := 0 step 5dy until bbheight(cp) : 
+        draw (llcorner cp shifted (-.50dy,0) -- 
+              llcorner cp shifted (-.25dy,0)) shft(i) t ; 
+        draw (lrcorner cp shifted ( .50dy,0) -- 
+              lrcorner cp shifted ( .25dy,0)) shft(i) t ; 
+      endfor ; 
+    fi ; 
+    if dx>0 : 
+      def shft (expr i) = shifted (i,0) enddef ;
+      for i := 0 step dx until bbwidth(cp) : 
+        draw (llcorner cp--ulcorner cp) shft(i) t ; 
+      endfor ; 
+      for i := 0 step 5dx until bbheight(cp) : 
+        draw (llcorner cp shifted (0,-.50dx) -- 
+              llcorner cp shifted (0,-.25dx)) shft(i) t ; 
+        draw (ulcorner cp shifted (0, .50dx) -- 
+              ulcorner cp shifted (0, .25dx)) shft(i) t ; 
+      endfor ; 
+    fi ;  
+    draw cp t ;
+    setbounds currentpicture to cp ; 
+  enddef ; 
+\stopMPinclusions 
+
+% \startuseMPgraphic{titlepage}
+%   StartPage ;
+%     path p, q, r ; pair a ;
+%     fill Page withcolor .3green ; 
+%     set_grid (PaperWidth, PaperHeight,50pt,50pt) ;
+%     forever :
+%       a := center Page randomized 2center Page ; 
+%       if new_on_grid(xpart a,ypart a) :
+%         a := (dx,dy) ; 
+%         p := ((-1,-1) -- ( 1,1)) scaled 50pt shifted a ;
+%         q := (( 1,-1) -- (-1,1)) scaled 50pt shifted a ;
+%         r := origin shifted a ; 
+%         pickup pencircle scaled 75pt ; 
+%         draw r withcolor .3red ; 
+%         pickup pencircle scaled 25pt ; 
+%         draw p withcolor .3green ;
+%         draw q withcolor .3green ;
+%         pickup pencircle scaled 12.5pt ; 
+%         draw p withcolor .4white ;
+%         draw q withcolor .4white ;
+%       fi ;
+%       exitif grid_full ;
+%     endfor ; 
+%   StopPage ; 
+% \stopuseMPgraphic
+
+\startuseMPgraphic{titlepage}
+  def SomeLabel (expr u) =
+    path p ; 
+    p := unitsquare xyscaled (10u,5u) smoothed (.5u) ;
+    fill p withcolor c ; 
+    draw p withcolor .5c withpen pencircle scaled .5u ; 
+    drawoptions(withcolor .5c withpen pencircle scaled .25u) ; 
+    for i=u step u until 3u : draw (2u,i)--(9u,i) ; endfor ;  
+    p := fullcircle scaled u shifted (u,4u) ;
+    drawoptions() ; 
+    fill p withcolor .75c ;  
+    draw p withpen pencircle scaled .25u withcolor .5c ;  
+  enddef ; 
+  StartPage ;
+    picture pic ; pair loc ; color c ; c := (.8,.8,.45) ; 
+    fill Page withcolor c ; 
+    set_grid (PaperWidth, PaperHeight,4cm,4cm) ;
+    forever :
+      loc := center Page randomized 2center Page ; 
+      if new_on_grid(xpart loc,ypart loc) :
+        pic := image(SomeLabel(1cm)) ; 
+        draw pic rotatedaround(center pic, -30+uniformdeviate 60)   
+          shifted (dx,dy) shifted - center pic 
+      fi ;
+      exitif grid_full ;
+    endfor ; 
+  StopPage ; 
+\stopuseMPgraphic
+
+% @@figgd
+
+\environment mstyle 
+
+\starttext
+
+\TitlePage{0}{0}{Adding Text\\to Graphics}{}{1}
+
+\subject[introduction]{Introduction}
+
+This is short manual about adding text to graphics made by
+other applications than \TEX. Early versions of \CONTEXT\
+already had provisions for adding information to graphics.
+The \type {\start...\stopfigure} environment provides a way
+to add text and hyperlinks to graphics based on a grid. We
+used this feature to create interactive maps, navigate
+using diagrams and alike. The corresponding definitions are
+stored per graphic, and can be managed independently from
+the main text. 
+
+The method described in this document reimplements this
+feature in a more flexible way using a couple of features
+not present at that time. Also, the new method is more
+suited to handle information stored in database like the
+figure and resource databases supported by \CONTEXT. In due
+time the old mechanism will be replaced by (i.e.\ redefined
+in) the new one. 
+
+The reason for extending the figure database concept with
+this kind of information is that the people responsible for
+the content (text) are not always the same as those making
+the graphics. In some of our projects, authors are supposed
+to add text (here called labels) to graphics. The same
+graphic can be used in more than one context, with
+different labels. Think for instance of a graphic that is
+used in a question without labels, but in an answer with
+labels. Or consider the same graphic being used in a Dutch
+and English document. 
+
+One handicap in separating graphic design and writing text
+is that both the graphic designer and the author must make
+sure that they know where the information ends up. Graphic
+designers use professional drawing packages that authors
+don't have access to, or demand in||depth knowlegde of the
+application. Authors on the other hand know how to use
+\TEX\ to typeset math, and drawing applications seldom
+provide proper support for math. Separating drawing the
+graphic and defining the labels also has the advantage that
+the labels can be typeset in a way that suits the document
+style (and specifically the fonts that are used). 
+
+Although maintaining label specific data, like for instance
+the locations where labels have to end up, is possible as
+an independent activity, it may give the artist an uneasy
+feeling, especially because he is used to click and point
+tools. Therefore we will also discuss how to interface to 
+Adobe Illustrator, a popular drawing application.  
+
+\subject{Grids} 
+
+Imagine that we have the following graphic defined in a 
+drawing program. 
+
+\startlinecorrection[blank]
+\startMPcode
+  loadfigure "labels-1.mp" number 1 ; 
+\stopMPcode
+\stoplinecorrection
+
+If you want to add some texts to this graphic, you need to 
+know where these should be anchored. One way to achieve this
+is to put an imaginary grid on top of the graphic and anchor
+labels at fixed positions. Because graphics can be included 
+at different sizes, such a grid may change accordingly. 
+Imagine that you would have to define labels using the grids
+of the following graphics.
+
+\startlinecorrection[blank]
+\startcombination[3*1]
+  {\startMPcode
+     loadfigure "labels-1.mp" number 1 ; 
+     drawgrid 10bp withpen pencircle scaled .5pt ;
+   \stopMPcode}
+  {natural size}
+  {\startMPcode
+     loadfigure "labels-1.mp" number 1 scaled .75 ; 
+     drawgrid 10bp withpen pencircle scaled .5pt ;
+   \stopMPcode}
+  {scaled 75\%}
+  {\startMPcode
+     loadfigure "labels-1.mp" number 1 scaled 1.30 ; 
+     drawgrid 10bp withpen pencircle scaled .5pt ;
+   \stopMPcode}
+  {scaled 130\%}
+\stopcombination
+\stoplinecorrection
+
+In practice you will define points on a fixed grid layed 
+over the graphic scaled at 100\%. In that case the grid will
+scale with the graphic. 
+
+\startlinecorrection[blank]
+\startcombination[3*1]
+  {\startMPcode
+     loadfigure "labels-1.mp" number 1 ; 
+     drawgrid 10bp withpen pencircle scaled .5pt ;
+   \stopMPcode}
+  {natural size}
+  {\startMPcode
+     loadfigure "labels-1.mp" number 1 ; 
+     drawgrid 10bp withpen pencircle scaled (.5pt/.75) ;
+     currentpicture := currentpicture scaled .75 ; 
+   \stopMPcode}
+  {scaled 75\%}
+  {\startMPcode
+     loadfigure "labels-1.mp" number 1 ; 
+     drawgrid 10bp withpen pencircle scaled (.5pt/1.30) ;
+     currentpicture := currentpicture scaled 1.30 ; 
+   \stopMPcode}
+  {scaled 130\%}
+\stopcombination
+\stoplinecorrection
+
+Most drawing programs put their reference points in the
+lower left corner. This makes sense since that suits
+traditional coordinate systems. However, in a text flow it
+makes more sense to think top||down. 
+
+\startlinecorrection[blank]
+\startcombination[2*1]
+  {\startMPcode
+     loadfigure "labels-1.mp" number 1 ; 
+     drawulgrid 10bp withpen pencircle scaled .5pt ;
+   \stopMPcode}
+  {top anchored}
+  {\startMPcode
+     loadfigure "labels-1.mp" number 1 ; 
+     drawllgrid 10bp withpen pencircle scaled .5pt ;
+   \stopMPcode}
+  {bottom anchored}
+\stopcombination
+\stoplinecorrection
+
+The labeling mechanism described here works bottom up,
+which is opposite to the default top||down placement in
+\CONTEXT\ text layers. 
+
+\subject{Adding text labels}
+
+\resetfigurelabels[labels-1]
+\resetfigurelabels[labels-2]
+
+{\em This is a preliminary description. Multiple language
+and label sets will be discussed as soon as we consider the
+interface stable. We will also support other interfaces and 
+ways of positioning.} 
+
+If you have to figure out the positions on your own, the 
+following method can be used to add labels to a graphic. 
+
+\startbuffer[lab]
+\startfigurelabels[labels-1]
+  \definefigurelabel[x=25bp,y=45bp]{\bfd\white A}
+  \definefigurelabel[x=70bp,y=30bp]{\bfd\white B}
+  \definefigurelabel[x=60bp,y=75bp]{\bfd\white C}
+\stopfigurelabels
+\stopbuffer
+
+\typebuffer[lab] 
+
+The graphic itself is placed in the usual way: 
+
+\startbuffer[fig]
+\startlinecorrection[blank]
+\externalfigure[labels-1.mps][option=label]
+\stoplinecorrection
+\stopbuffer
+
+\typebuffer[fig] \getbuffer[lab] \getbuffer[fig]
+
+or:  
+
+\startbuffer[flt]
+\placefigure
+  {A floating figure}
+  {\externalfigure[labels-1.mps][option=label,width=3cm]}
+\stopbuffer
+
+\typebuffer[flt] \getbuffer[lab] \getbuffer[flt] 
+
+Although we limit ourselves here to simple labels, you can 
+in principle put anything reasonable in a label. 
+
+\subject{Using symbolic positions}
+
+\resetfigurelabels[labels-1]
+\resetfigurelabels[labels-2]
+
+Especially when a graphic is used more than once with
+different labels, or when the task of defining the anchors
+can be delegated to the graphic designer, the separation
+between defining anchors and texts comes into view. 
+
+Each anchor gets a label (in its simplest form a number) and 
+the positions are stored in a database. A record (which 
+itself can be part of a figure (resource) library). 
+
+[testen: pos in fig database] 
+
+\startbuffer[fig]
+\startlinecorrection[blank]
+\externalfigure[labels-2.mps][option=label]
+\stoplinecorrection
+\stopbuffer
+
+\typefile{labels-2.xml}
+
+Here we have defined 4 positions that belong to figure \type
+{labels-2}. 
+
+\typebuffer[fig]  
+
+\usefigurelabelbase[reset] \usefigurelabelbase[labels-2] 
+
+{\showfigurelabelstrue\getbuffer[fig]}
+
+It is possible to combine external and internal
+definitions, so you can use an external \XML\ position database
+and define the label texts in the document itself. The
+label text definitions can be given in a \TEX\ syntax or in
+\XML. 
+
+The database can also contain the text labels themselves, 
+like: 
+
+\startbuffer
+<rl:textlabels label="labels-2">
+  <rl:textlabel label="1">A</rl:textlabel>
+  <rl:textlabel label="2">B</rl:textlabel>
+  <rl:textlabel label="3">C</rl:textlabel>
+  <rl:textlabel label="4">D</rl:textlabel>
+</rl:textlabels>
+\stopbuffer
+
+\typebuffer \processXMLbuffer {\getbuffer[fig]}
+
+\resetfigurelabels[labels-2]
+
+If the source document is a normal \TEX\ document, you can 
+include the definitions in your file. 
+
+\startbuffer
+\startfigurelabels[labels-2]
+  \definefigurelabel[1]{\bfd\white A}
+  \definefigurelabel[2]{\bfd\white B}
+  \definefigurelabel[3]{\bfd\white C}
+  \definefigurelabel[4]{\bfd\white D}
+\stopfigurelabels
+\stopbuffer
+
+\typebuffer \getbuffer {\getbuffer[fig]}
+
+You can add additional labels. If needed you can provide 
+your own co\"ordinates. 
+
+\startbuffer
+\startfigurelabels[labels-2]
+  \definefigurelabel[x=50bp,y=50bp]{\bfd\white E}
+  \definefigurelabel[1]{\bfd\red\symbol[star]}
+\stopfigurelabels
+\stopbuffer
+
+\typebuffer \getbuffer {\getbuffer[fig]}
+
+If you want a fresh start, you should explicitly reset the 
+data with the reset command. We use this options to show you
+the alternative alignment locations (these are the same as 
+in the \CONTEXT\ layer mechanism). 
+
+\startbuffer
+\resetfigurelabels[labels-2]
+\startfigurelabels[labels-2]
+  \definefigurelabel[1][location=l]{l}
+  \definefigurelabel[2][location=r]{r}
+  \definefigurelabel[3][location=t]{t}
+  \definefigurelabel[4][location=b]{b}
+\stopfigurelabels
+\stopbuffer
+
+\typebuffer \getbuffer {\traceboxplacementtrue \getbuffer[fig]}
+
+\startbuffer
+\resetfigurelabels[labels-2]
+\startfigurelabels[labels-2]
+  \definefigurelabel[1][location=lt]{lt}
+  \definefigurelabel[2][location=lb]{lb}
+  \definefigurelabel[3][location=rt]{rt}
+  \definefigurelabel[4][location=rb]{rb}
+\stopfigurelabels
+\stopbuffer
+
+\typebuffer \getbuffer {\traceboxplacementtrue \getbuffer[fig]}
+
+\subject{Adobe Illustrator files}
+
+\resetfigurelabels[labels-1]
+\resetfigurelabels[labels-2]
+
+The WARM plugin of Adobe Illustrator gives you the means to
+tag positions in a graphic. This plug||in is an initiative 
+by Ross Moore and Wendy Mackay. The WARM plug||in writes
+special comment||only \POSTSCRIPT\ files. This means that
+we don't have to ask graphic artists to use text base tools
+for providing the positional information. 
+
+The positions are normally numbered, but you can give them
+meaningful names. These positions are saved in files with
+the suffix \type {bb}. In Illustrator, these positions are
+named marked points. The data segment of such a file looks
+as follows: 
+
+\typefile{labels-1.bb}
+
+For our purpose, Only the coordinate (first entry) and
+label (third entry) make sense. There can best be some
+logic in placing the points, especially since we have to
+align the labels manually. When applied to our graphic,
+the previous definitions result in the following label 
+anchors. 
+
+\startbuffer[pair]
+\startcombination[3*1]
+  {\externalfigure[labels-1.mps][option=label]}            {natural size}
+  {\externalfigure[labels-1.mps][option=label,scale=750]}  {scaled 75\%}
+  {\externalfigure[labels-1.mps][option=label,scale=1250]} {scaled 125\%}
+\stopcombination
+\stopbuffer
+
+\startbaselinecorrection
+  \showfigurelabelstrue \getbuffer[pair]
+\stopbaselinecorrection
+
+As you can see, the positions are scaled with the graphic, 
+but the same \type {bb} is used for each of them. 
+
+\startbaselinecorrection
+  \showfigurelabelstrue \tracefigurelabelstrue \getbuffer[pair]
+\stopbaselinecorrection
+
+We define some labels:
+
+\startbuffer
+\startfigurelabels[labels-1]
+  \definefigurelabel[1][location=r]{kwik}
+  \definefigurelabel[2][location=r]{kwek}
+  \definefigurelabel[3][location=l]{kwak}
+\stopfigurelabels
+\stopbuffer
+
+\typebuffer \getbuffer 
+
+These show up as follows. Watch how we aligned them left and
+right of the anchor point. 
+
+\startbaselinecorrection
+  \getbuffer[pair]
+\stopbaselinecorrection
+
+Internally, \TEX\ works with real points, like \type {12pt},
+but if needed you can define positions in \POSTSCRIPT\ points, like 
+\type {12bp}. Watch out: these are not the same, although 
+for applications like these the difference does not show of 
+that fast. 
+
+\startbaselinecorrection
+  \centerline
+    {\tracefigurelabelstrue
+     \externalfigure[labels-1.mps][option=label]}      
+\stopbaselinecorrection
+
+It is quite possible that the author wants to put a couple
+of extra labels in a graphic. 
+
+\startbuffer
+\startfigurelabels[labels-1]
+  \definefigurelabel[x=50bp,y=50bp]{kwok}
+\stopfigurelabels
+\stopbuffer
+
+\typebuffer \getbuffer
+
+The entries are added to the already defined ones; if you 
+want to start fresh, you should explicitly reset the label 
+texts with: 
+
+\starttyping
+\resetfigurelabels[labels-1]
+\stoptyping
+
+\startbaselinecorrection
+  \getbuffer[pair]
+\stopbaselinecorrection
+
+The WARM method is hooked into the external figure mechanism
+as (optional) second step in resolving layers. This means 
+that an existing \XML\ definition (file) takes precedence. 
+In any case, the way to invoke this feature is the same: 
+
+\starttyping 
+\externalfigure[name][option=label]
+\stoptyping 
+
+In combination with previously defined labels this will give
+you labeled figures, given that a \type {bb} file is 
+present. You can convert such files to an \XML\ file using the 
+\type {bbtoxml} \PERL\ script. The generated base can be 
+registered by saying: 
+
+\starttyping 
+\usefigurelabelbase[reset] \usefigurelabelbase[bbtoxml]
+\stoptyping 
+
+\ColofonPage
+
+\stoptext 
+
+% labels-1.mp 
+
+input mp-tool ; 
+
+beginfig (1) ; 
+  path p, q[] ; color gray ; 
+  red   := 1.4(.6,.4,.5) ; 
+  green := 1.4(.4,.6,.5) ; 
+  blue  := 1.4(.4,.5,.6) ; 
+  gray  := 1.4(.5,.5,.5) ; 
+  pickup pencircle scaled 5pt ; 
+  p := fullcircle scaled 100pt ; 
+  q[1] := center p -- point 0 of p --
+          (p cutbefore point 0 of p) cutafter point 3 of p --
+          point 3 of p -- cycle ; 
+  q[2] := center p -- point 3 of p --
+          (p cutbefore point 3 of p) cutafter point 6 of p --
+          point 6 of p -- cycle ; 
+  q[3] := center p -- point 6 of p --
+          (p cutbefore point 6 of p) cutafter point length(p) of p -- 
+          point length(p) of p -- cycle ; 
+  fill q[1] withcolor red ; draw q[1] withcolor gray ;
+  fill q[2] withcolor green ; draw q[2] withcolor gray ;
+  fill q[3] withcolor blue ; draw q[3] withcolor gray ;
+endfig ; 
+
+end .
+
+% labels-2.mp
+
+input mp-tool ; 
+
+beginfig (1) ; 
+  path p, q[] ; color gray ; 
+  red   := 1.4(.6,.4,.5) ; 
+  green := 1.4(.4,.6,.5) ; 
+  blue  := 1.4(.4,.5,.6) ; 
+  gray  := 1.4(.5,.5,.5) ; 
+  pickup pencircle scaled 5pt ; 
+  p := fullcircle scaled 100pt ; 
+  q[1] := center p -- point 0 of p --
+          (p cutbefore point 0 of p) cutafter point 3 of p --
+          point 3 of p -- cycle ; 
+  q[2] := center p -- point 3 of p --
+          (p cutbefore point 3 of p) cutafter point 6 of p --
+          point 6 of p -- cycle ; 
+  q[3] := center p -- point 6 of p --
+          (p cutbefore point 6 of p) cutafter point length(p) of p -- 
+          point length(p) of p -- cycle ; 
+  fill q[1] withcolor red ; draw q[1] withcolor gray ;
+  fill q[2] withcolor green ; draw q[2] withcolor gray ;
+  fill q[3] withcolor blue ; draw q[3] withcolor gray ;
+  label ("x", origin) ; 
+endfig ; 
+
+end .

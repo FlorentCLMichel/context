@@ -9,7 +9,7 @@ if not modules then modules = { } end modules ['l-table'] = {
 local type, next, tostring, tonumber, select, rawget = type, next, tostring, tonumber, select, rawget
 local table, string = table, string
 local concat, sort = table.concat, table.sort
-local format, lower, dump, find = string.format, string.lower, string.dump, string.find
+local format, lower, find = string.format, string.lower, string.find
 local getmetatable, setmetatable = getmetatable, setmetatable
 local lpegmatch, patterns = lpeg.match, lpeg.patterns
 local floor = math.floor
@@ -586,7 +586,7 @@ function table.fromhash(t)
     return hsh
 end
 
-local noquotes, hexify, handle, compact, inline, functions, metacheck, accurate
+local noquotes, hexify, handle, compact, inline, metacheck, accurate
 
 local reserved = table.tohash { -- intercept a language inconvenience: no reserved words as key
     'and', 'break', 'do', 'else', 'elseif', 'end', 'false', 'for', 'function', 'if',
@@ -757,11 +757,7 @@ local function do_serialize(root,name,depth,level,indexed)
                 elseif tv == "boolean" then
                     handle(format("%s %s,",depth,v and "true" or "false"))
                 elseif tv == "function" then
-                    if functions then
-                        handle(format('%s load(%q),',depth,dump(v))) -- maybe strip
-                    else
-                        handle(format('%s "function",',depth))
-                    end
+                    -- removed, see l-attic.lua : 2
                 else
                     handle(format("%s %q,",depth,tostring(v)))
                 end
@@ -905,48 +901,23 @@ local function do_serialize(root,name,depth,level,indexed)
                     handle(format("%s [%q]=%s,",depth,k,v and "true" or "false"))
                 end
             elseif tv == "function" then
-                if functions then
-                    local getinfo = debug and debug.getinfo
-                    if getinfo then
-                        local f = getinfo(v).what == "C" and dump(dummy) or dump(v) -- maybe strip
-                     -- local f = getinfo(v).what == "C" and dump(function(...) return v(...) end) or dump(v) -- maybe strip
-                        if tk == "number" then
-                            if hexify then
-                                handle(format("%s [0x%X]=load(%q),",depth,k,f))
-                            elseif accurate then
-                                handle(format("%s [%q]=load(%q),",depth,k,f))
-                            else
-                                handle(format("%s [%s]=load(%q),",depth,k,f))
-                            end
-                        elseif tk == "boolean" then
-                            handle(format("%s [%s]=load(%q),",depth,k and "true" or "false",f))
-                        elseif tk ~= "string" then
-                            -- ignore
-                        elseif noquotes and not reserved[k] and lpegmatch(propername,k) then
-                            handle(format("%s %s=load(%q),",depth,k,f))
-                        else
-                            handle(format("%s [%q]=load(%q),",depth,k,f))
-                        end
-                    end
-                end
-            else
-                if tk == "number" then
-                    if hexify then
-                        handle(format("%s [0x%X]=%q,",depth,k,tostring(v)))
-                    elseif accurate then
-                        handle(format("%s [%q]=%q,",depth,k,tostring(v)))
-                    else
-                        handle(format("%s [%s]=%q,",depth,k,tostring(v)))
-                    end
-                elseif tk == "boolean" then
-                    handle(format("%s [%s]=%q,",depth,k and "true" or "false",tostring(v)))
-                elseif tk ~= "string" then
-                    -- ignore
-                elseif noquotes and not reserved[k] and lpegmatch(propername,k) then
-                    handle(format("%s %s=%q,",depth,k,tostring(v)))
-                else
+                -- removed, see l-attic.lua : 1
+            elseif tk == "number" then
+                if hexify then
+                    handle(format("%s [0x%X]=%q,",depth,k,tostring(v)))
+                elseif accurate then
                     handle(format("%s [%q]=%q,",depth,k,tostring(v)))
+                else
+                    handle(format("%s [%s]=%q,",depth,k,tostring(v)))
                 end
+            elseif tk == "boolean" then
+                handle(format("%s [%s]=%q,",depth,k and "true" or "false",tostring(v)))
+            elseif tk ~= "string" then
+                -- ignore
+            elseif noquotes and not reserved[k] and lpegmatch(propername,k) then
+                handle(format("%s %s=%q,",depth,k,tostring(v)))
+            else
+                handle(format("%s [%q]=%q,",depth,k,tostring(v)))
             end
         end
     end
@@ -965,13 +936,9 @@ local function serialize(_handle,root,name,specification) -- handle wins
         hexify    = specification.hexify
         accurate  = specification.accurate
         handle    = _handle or specification.handle or print
-        functions = specification.functions
         compact   = specification.compact
         inline    = specification.inline and compact
         metacheck = specification.metacheck
-        if functions == nil then
-            functions = true
-        end
         if compact == nil then
             compact = true
         end
@@ -987,7 +954,6 @@ local function serialize(_handle,root,name,specification) -- handle wins
         handle    = _handle or print
         compact   = true
         inline    = true
-        functions = true
         metacheck = true
     end
     if tname == "string" then
@@ -1228,7 +1194,7 @@ function table.swapped(t,s) -- hash, we need to make sure we don't mess up next
     return n
 end
 
-function table.hashed(t) -- list, add hash to index (save because we are not yet mixed
+function table.hashed(t) -- list, add hash to index (safe because we are not yet mixed)
     for i=1,#t do
         t[t[i]] = i
     end

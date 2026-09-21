@@ -397,7 +397,7 @@ local function getaxisscale(segments,minimum,default,maximum,user)
     if user < default then
         default = - (default - user) / (default - minimum)
     elseif user > default then
-        default = (user - default) / (maximum - default)
+        default =   (user - default) / (maximum - default)
     else
         default = 0
     end
@@ -2031,12 +2031,79 @@ do
         end
     end
 
+    local function ssxx(f,fontdata,tableoffset,feature)
+        local offset = tableoffset + feature.offset + feature.parameters
+        setposition(f,offset)
+        local version = readushort(f)
+        if version == 0 then
+            -- stylistic set
+            local name = fontdata.extras[readushort(f)]
+            if name then
+                local tag = feature.tag
+                local stylistics = fontdata.stylistics or { }
+                fontdata.stylistics = stylistics
+                stylistics[tag] = name
+            end
+     -- elseif version == 1 then
+     --     -- character variants
+     -- elseif version == 2 then
+     --     -- optical size rules
+     -- elseif version == 3 then
+     --     -- optical size rules
+        end
+    end
+
+    for i=1,20 do
+        plugins[formatters["ss%02i"](i)] = ssxx
+    end
+
  -- function plugins.rvrn(f,fontdata,tableoffset,feature)
- --     -- todo, at least a message
+ --     report("ignoring rvrn feature")
  -- end
 
     -- feature order needs checking ... as we loop over a hash ... however, in the file
     -- they are sorted so order is not that relevant
+
+    local function checkvariations(fontdata,specification)
+        local variabledata = fontdata.variabledata
+        if variabledata then
+            local features = variabledata.features
+            if features then
+                local factors = specification.factors
+                if factors then
+                    local axis = variabledata.axis
+                    for fi=1,#features do
+                        local feature = features[fi]
+                        if feature.matchtype == "condition" then
+                            local conditions = feature.conditions
+                            if conditions then
+                                local ok = true
+                                for ci=1,#conditions do
+                                    local c   = conditions[ci]
+                                    local a   = c.axis
+        + 1 -- move this
+                                    local f   = factors[a]
+                                    if f then
+                                        local min = c.minvalue
+                                        local max = c.maxvalue
+                                        if f >= min and f <= max then
+                                            -- we're still ok
+                                        else
+                                            ok = false
+                                            break
+                                        end
+                                    end
+                                end
+                                if ok then
+                                    return feature.substitutions
+                                end
+                            end
+                        end
+                    end
+                end
+            end
+        end
+    end
 
     local function reorderfeatures(fontdata,scripts,features)
         local scriptlangs  = { }
@@ -2150,8 +2217,8 @@ do
                 local featureindices        = { }
                 usedfeatures.featureindices = featureindices
                 usedfeatures.lookuporder    = readushort(f) -- reserved, not used (yet)
-                local requiredindex          = readushort(f) -- relates to required (can be 0xFFFF)
-                usedfeatures.requiredindex   = requiredindex ~= 0xFFFF and requiredindex + 1 or requiredindex
+                local requiredindex         = readushort(f) -- relates to required (can be 0xFFFF)
+                usedfeatures.requiredindex  = requiredindex ~= 0xFFFF and requiredindex + 1 or requiredindex
                 local noffeatures           = readushort(f)
                 for i=1,noffeatures do
                     featureindices[i] = readushort(f) + 1
@@ -2180,11 +2247,6 @@ do
             local parameters = readushort(f) -- feature.parameters
             local noflookups = readushort(f)
             if noflookups > 0 then
---                 local lookups   = { }
---                 feature.lookups = lookups
---                 for j=1,noflookups do
---                     lookups[j] = readushort(f) + 1
---                 end
                 local lookups   = readcardinaltable(f,noflookups,ushort)
                 feature.lookups = lookups
                 for j=1,noflookups do
@@ -2193,10 +2255,10 @@ do
             end
             if parameters > 0 then
                 feature.parameters = parameters
-                local plugin = plugins[feature.tag]
-                if plugin then
-                    plugin(f,fontdata,featureoffset,feature)
-                end
+            end
+            local plugin = plugins[feature.tag]
+            if plugin then
+                plugin(f,fontdata,featureoffset,feature)
             end
         end
         return features
@@ -2243,7 +2305,7 @@ do
 
     local f_lookupname = formatters["%s_%s_%s"]
 
-    local function resolvelookups(f,lookupoffset,fontdata,lookups,lookuptypes,lookuphandlers,what,tableoffset)
+    local function resolvelookups(f,lookupoffset,fontdata,lookups,lookuptypes,lookuphandlers,what,tableoffset,substitutions)
 
         local sequences      = fontdata.sequences  or { }
         local sublookuplist  = fontdata.sublookups or { }
@@ -2264,7 +2326,7 @@ do
         local usedlookups    = false -- setmetatableindex("number")
         --
         local allsteps = { } -- new per 2022-09-25
-
+        --
         for lookupid=1,noflookups do
             local lookup     = lookups[lookupid]
             local lookuptype = lookup.type
@@ -2272,6 +2334,9 @@ do
             local features   = lookup.features
             local handler    = lookuphandlers[lookuptype]
             if handler then
+
+local overload = substitutions and substitutions[lookupid]
+
                 local nofsubtables = #subtables
                 local order        = lookup.order
                 local flags        = lookup.flags
@@ -2343,6 +2408,10 @@ do
                                             after[i] = tohash(after[i])
                                         end
                                     end
+if overload then
+    -- just a guess .. only for rvrn so do we need to enable something
+--     rule.lookups = { overload }
+end
                                     if usedlookups then
                                         local lookups = rule.lookups
                                         if lookups then
@@ -2667,7 +2736,8 @@ do
             local lookups        = readlookups(f,lookupoffset,lookuptypes,featurehash,featureorder,nofmarkclasses)
             --
             if lookups then
-                resolvelookups(f,lookupoffset,fontdata,lookups,lookuptypes,lookuphandlers,what,tableoffset)
+local substitutions = checkvariations(fontdata,specification)
+                resolvelookups(f,lookupoffset,fontdata,lookups,lookuptypes,lookuphandlers,what,tableoffset,substitutions)
             end
             --
         end

@@ -832,11 +832,16 @@ local numchar   = P("\\")/"" * (R("09")^3/function(s) return char(octtointeger(s
 local key       = P("/") * C((1 - lpegpatterns.whitespace - S("<>/[]()"))^1)
 
 local number    = Ct(Cc("number") * (lpegpatterns.number/dectointeger))
+local boolean   = Ct(Cc("boolean") * (
+                    P("true")  * Cc(true)  +
+                    P("false") * Cc(false) +
+                    P("null")  * Cc(nil)
+                  ))
 local keyword   = Ct(Cc("name") * key)
-local operator  = C((R("AZ","az")+P("*")+P("'")+P('"'))^1)
+local operator  = C((R("AZ","az") + P("*") + P("'") + P('"'))^1)
 
 local grammar = P { "start",
-    start      = (keyword + number + V("dictionary") + V("array") + V("hexstring") + V("decstring") + spaces)^1,
+    start      = (keyword + number + boolean + V("dictionary") + V("array") + V("hexstring") + V("decstring") + spaces)^1,
     keyvalue   = optspaces * keyword * optspaces * V("start"),
     dictionary = Ct(Cc("dict")  * P("<<") *  Ct(V("keyvalue") ^0) * P(">>")),
  -- dictionary = Ct(Cc("dict")  * P("<<") * (Ct(V("keyvalue"))^0) * P(">>")),
@@ -851,7 +856,7 @@ local parser    = Ct((mpsgroup + operation + P(1))^1)
 local number = C(lpegpatterns.number)
 
 local fastgrammar = P { "start",
-    start      = (keyword + number + V("dictionary") + V("array") + V("hexstring") + V("decstring") + spaces)^1,
+    start      = (keyword + number + boolean + V("dictionary") + V("array") + V("hexstring") + V("decstring") + spaces)^1,
     keyvalue   = optspaces * keyword * optspaces * V("start"),
     dictionary = Ct(Cc("dict")  * P("<<") *  Ct(V("keyvalue") ^0) * P(">>")),
  -- dictionary = Ct(Cc("dict")  * P("<<") * (Ct(V("keyvalue"))^0) * P(">>")),
@@ -864,7 +869,11 @@ local fastoperation = Ct(fastgrammar^1 * operator + operator)
 local fastparser    = Ct((mpsgroup + fastoperation + P(1))^1)
 
 function lpdf_epdf.parsecontent(str,fast)
-    return lpegmatch(fast and fastparser or parser,str)
+    local content = lpegmatch(fast and fastparser or parser,str)
+--     if content then
+--         print(content)
+--     end
+    return content
 end
 
 -- lpdf.parsers = { normal = parser, fast = fastparser }
@@ -1165,6 +1174,8 @@ function lpdf_epdf.contenttostring(contents)
                     r = r + 1 ; result[r] = lpdf.toeight(t2)
                 elseif type(t2) == "number" then
                     r = r + 1 ; result[r] = t2 -- todo formatter %N
+                elseif type(t2) == "boolean" then
+                    r = r + 1 ; result[r] = (t2 == true and "true") or (t2 == false and "false") or "null"
                 elseif t1 == "verbose" then
                     r = r + 1 ; result[r] = t2
                 else -- name
