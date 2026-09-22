@@ -897,13 +897,14 @@ do
         --
         if minindex > 0 then
             local blob = blobs[0]
+            -- An empty .notdef still needs a loca entry and a metric.
+            locations[0] = lastoffset
+            h = h + 1 ; horizontals [h] = zero4
+            if vertical then
+                v = v + 1 ; verticals[v] = zero4
+            end
             if blob and #blob > 0 then
-                locations[0] = lastoffset
                 g = g + 1 ; glyphstreams[g] = blob
-                h = h + 1 ; horizontals [h] = zero4
-                if vertical then
-                    v = v + 1 ; verticals[v] = zero4
-                end
                 streamoffset = streamoffset + #blob
                 lastoffset = tocardinal4(streamoffset)
             else

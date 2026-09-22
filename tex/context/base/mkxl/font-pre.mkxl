@@ -75,7 +75,8 @@
 \definefontfeature
   [default]
   [always]
-  [itlc=yes, % new per 10-2023
+  [rvrn=yes, % variable font axis related substututions
+   itlc=yes, % new per 10-2023
    liga=yes]
 
 % ccmp=yes, % maybe too

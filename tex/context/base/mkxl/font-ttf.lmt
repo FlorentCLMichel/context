@@ -872,14 +872,13 @@ local function repackpoints(glyphs,shapes)
             local glyph       = glyphs[index]
             local contours    = shape.contours
             local nofcontours = contours and #contours or 0
-if nofcontours > 0 then
-            local boundingbox = glyph.boundingbox or noboundingbox
-            r = r + 1 result[r] = toshort(nofcontours)
-            r = r + 1 result[r] = toshort(boundingbox[1]) -- xmin
-            r = r + 1 result[r] = toshort(boundingbox[2]) -- ymin
-            r = r + 1 result[r] = toshort(boundingbox[3]) -- xmax
-            r = r + 1 result[r] = toshort(boundingbox[4]) -- ymax
---             if nofcontours > 0 then
+            if nofcontours > 0 and index > 0 then
+                local boundingbox = glyph.boundingbox or noboundingbox
+                r = r + 1 result[r] = toshort(nofcontours)
+                r = r + 1 result[r] = toshort(boundingbox[1]) -- xmin
+                r = r + 1 result[r] = toshort(boundingbox[2]) -- ymin
+                r = r + 1 result[r] = toshort(boundingbox[3]) -- xmax
+                r = r + 1 result[r] = toshort(boundingbox[4]) -- ymax
                 for i=1,nofcontours do
                     r = r + 1 result[r] = toshort(contours[i]-1)
                 end
@@ -887,8 +886,6 @@ if nofcontours > 0 then
                 local points   = shape.points
                 local currentx = 0
                 local currenty = 0
-             -- local xpoints  = { }
-             -- local ypoints  = { }
                 local x        = 0
                 local y        = 0
                 local lastflag = nil
@@ -973,30 +970,27 @@ if nofcontours > 0 then
                     lastflag = lastflag + 0x08
                     r = r + 1 result[r] = char(lastflag,nofflags-1)
                 end
-             -- r = r + 1 result[r] = concat(xpoints)
-             -- r = r + 1 result[r] = concat(ypoints)
                 r = r + 1 result[r] = concat(xpoints,"",1,x)
                 r = r + 1 result[r] = concat(ypoints,"",1,y)
---             end
-            -- can be helper or delegated to user
-            local stream  = concat(result,"",1,r)
-            local length  = #stream
-            local padding = ((length+3) // 4) * 4 - length
-            if padding > 0 then
-             -- stream = stream .. rep("\0",padding) -- can be a repeater
-                if padding == 1 then
-                    padding = "\0"
-                elseif padding == 2 then
-                    padding = "\0\0"
-                else
-                    padding = "\0\0\0"
+                -- can be helper or delegated to user
+                local stream  = concat(result,"",1,r)
+                local length  = #stream
+                local padding = ((length+3) // 4) * 4 - length
+                if padding > 0 then
+                 -- stream = stream .. rep("\0",padding) -- can be a repeater
+                    if padding == 1 then
+                        padding = "\0"
+                    elseif padding == 2 then
+                        padding = "\0\0"
+                    else
+                        padding = "\0\0\0"
+                    end
+                    stream = stream .. padding
                 end
-                stream = stream .. padding
+                glyph.stream = stream
+            else
+                glyph.stream = ""
             end
-            glyph.stream = stream
-else
-            glyph.stream = ""
-end
         end
     end
 end
