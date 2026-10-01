@@ -32,7 +32,7 @@
 \setupalign
   [flushleft,nothyphenated]
 
-\definemeasure[layoutunit][\dimexpr\paperheight/25]
+\definemeasure[layoutunit][\the\dimexpr\paperheight/25\relax]
 
 \setuplayout
   [backspace=\measured{layoutunit},
@@ -80,11 +80,11 @@
 ]
 
 \definemeasure [topiclistfont]  [\measured{topiclistfontsize}]
-\definemeasure [topictitlefont] [1.2\measured{layoutunit}]
-\definemeasure [titlepagefont]  [2\measured{layoutunit}]
+\definemeasure [topictitlefont] [\dimexpr1.2\measured{layoutunit}\relax]
+\definemeasure [titlepagefont]  [\dimexpr2.0\measured{layoutunit}\relax]
 
-\predefinefont[MyTopicTitleFont][SerifBold*default at \measure{topictitlefont}]
-\predefinefont[MyTopicListFont] [SerifBold*default at \measure{topiclistfont}]
+\predefinefont[MyTopicTitleFont][SerifBold*default at \the\measured{topictitlefont}]
+\predefinefont[MyTopicListFont] [SerifBold*default at \the\measured{topiclistfont}]
 
 \defineframed
   [topiclistentry]
@@ -169,8 +169,8 @@
 
 \defineframed
   [bb]
-  [width=\dimexpr\overlaywidth/10,
-   height=\dimexpr\overlayheight/10,
+  [width=\the\dimexpr\overlaywidth/10\relax,
+   height=\the\dimexpr\overlayheight/10\relax,
    background=color,
    foregroundstyle=\bfa,
    frame=off]
@@ -202,8 +202,8 @@
 
 \definelayer
   [buttons]
-  [width=\dimexpr\textwidth+\measured{layoutunit}\relax,
-   height=\dimexpr\textheight+\measured{layoutunit}\relax] % a setups
+  [width=\the\dimexpr\textwidth+\measured{layoutunit}\relax,
+   height=\the\dimexpr\textheight+\measured{layoutunit}\relax] % a setups
 
 \startsetups [document:buttons]
 
@@ -244,8 +244,8 @@
 
 \startsetups [document:titlepage]
 
-    \definebodyfontenvironment
-      [\measure{titlepagefont}]
+%     \definebodyfontenvironment
+%       [\measured{titlepagefont}]
 
     \setupbackgrounds
       [page]
@@ -259,7 +259,7 @@
 
     \starttopicmakeup[reference=homepage]
 
-        \switchtobodyfont[\measure{titlepagefont}]
+        \switchtobodyfont[\the\measured{titlepagefont}]
 
         \enforced\let\\\crlf
 
@@ -317,6 +317,8 @@
 \stopmodule
 
 \continueifinputfile{s-present-tiles.mkiv}
+
+\enablemode[print]
 
 \usemodule[present-common]
 

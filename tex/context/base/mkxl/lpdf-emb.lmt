@@ -225,15 +225,16 @@ end
 
     end
 
-    widtharray = function(details,indices,maxindex,units,correction)
+    widtharray = function(details,indices,maxindex,units,correction,notdef)
         local widths = pdfarray()
-        if maxindex > 0 then
+        local firstindex = notdef and 0 or 1
+        if maxindex >= firstindex then
             local length    = 0
             local factor    = 10000 / (units * (correction or 1))
             local lastindex = -1
             local sublist   = nil
-            for index=1,maxindex do
-                local data = indices[index]
+            for index=firstindex,maxindex do
+                local data = index == 0 and notdef or indices[index]
                 if data then
                     local width = data.width -- hm, is inaccurate for cff, so take from elsewhere
                     if width then
@@ -244,7 +245,7 @@ end
                     else
                         width = 0
                     end
-                    if index == lastindex + 1 then
+                    if sublist and index == lastindex + 1 then
                         sublist[#sublist+1] = width
                     else
                         if sublist then
@@ -865,6 +866,7 @@ do
         local basefontname     = details.basefontname
         local streams          = details.streams
         local blobs            = streams.streams
+        local notdef           = streams.notdef or { }
         local fontheader       = streams.fontheader
         local horizontalheader = streams.horizontalheader
         local verticalheader   = streams.verticalheader
@@ -888,20 +890,25 @@ do
         --
         local horizontal       = horizontalheader.nofmetrics > 0
         local vertical         = verticalheader.nofmetrics > 0
+        local notdefbbox       = notdef.boundingbox or { 0, 0, 0, 0 }
+        local notdefmetric     = tocardinal2(round(notdef.width or 0))
+                              .. tocardinal2(round(notdefbbox[1] or 0))
+        local notdefvertical   = tocardinal2(round(notdef.vheight or 0))
+                              .. tocardinal2(round(notdef.tsb or 0))
         --
         local streamoffset     = 0
         local lastoffset       = zero4
         local g, h, v          = 0, 0, 0
         --
-        -- todo: locate notdef
+        -- glyph zero is .notdef
         --
         if minindex > 0 then
             local blob = blobs[0]
-            -- An empty .notdef still needs a loca entry and a metric.
+            -- The .notdef glyph needs a loca entry and a metric.
             locations[0] = lastoffset
-            h = h + 1 ; horizontals [h] = zero4
+            h = h + 1 ; horizontals [h] = notdefmetric
             if vertical then
-                v = v + 1 ; verticals[v] = zero4
+                v = v + 1 ; verticals[v] = notdefvertical
             end
             if blob and #blob > 0 then
                 g = g + 1 ; glyphstreams[g] = blob
@@ -984,7 +991,7 @@ do
         --
         local units       = metadata.units
         local basefont    = pdfconstant(basefontname)
-        local widths      = widtharray(details,indices,maxindex,units,1)
+        local widths      = widtharray(details,indices,maxindex,units,1,notdef)
         local object      = details.objectnumber
         local tounicode   = tounicodedictionary(details,indices,maxindex,basefontname,true)
         local tocidset    = tocidsetdictionary(indices,minindex,maxindex)
@@ -1579,6 +1586,7 @@ do
         local basefontname   = details.basefontname
         local streams        = details.streams
         local blobs          = streams.streams
+        local notdef         = streams.notdef or { }
         local fontheader     = streams.fontheader
         local maximumprofile = streams.maximumprofile
         local names          = streams.names -- not used
@@ -1666,7 +1674,7 @@ do
         local zero2          = tocardinal2(0)
         local zero4          = tocardinal4(0)
         --
-        -- we need to locate notdef (or store its unicode someplace)
+        -- glyph zero is .notdef
         --
         local blob              = blobs[0] or "\14"
         local sparsemax         = 1
@@ -1714,7 +1722,7 @@ do
         end
         --
         local basefont    = pdfconstant(basefontname)
-        local widths      = widtharray(details,indices,maxindex,units,correction)
+        local widths      = widtharray(details,indices,maxindex,units,correction,notdef)
         local object      = details.objectnumber
         local tounicode   = tounicodedictionary(details,indices,maxindex,basefontname,true)
         local tocidset    = tocidsetdictionary(indices,minindex,maxindex)

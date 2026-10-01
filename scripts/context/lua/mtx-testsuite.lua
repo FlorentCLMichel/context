@@ -166,7 +166,7 @@ local function preparerun(capped)
             os.sleep(2)
             squid.signal("busy")
         end
-        os.execute("mtxrun  --script font  --reload --force")
+        os.execute("mtxrun --script font  --reload --force")
         if squid then
             squid.signal("finished")
             os.sleep(2)
@@ -438,7 +438,7 @@ else
                         local handle = active[index]
                         local pi     = lookup[handle]
                         if pi then
-                            -- we dont handle output
+                            -- we don't handle output
                             local state = read(handle)
                             if state == true then
                                 local exit = close(handle)

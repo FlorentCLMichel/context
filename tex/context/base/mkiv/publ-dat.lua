@@ -426,7 +426,7 @@ publications.getindex = getindex
 
 do
 
-    -- we apply some normalization
+    -- we apply some normalization .. csletter is probably now ok
 
     local space     = S(" \t\n\r\f") -- / " "
     local collapsed = space^1/" "

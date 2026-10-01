@@ -52,7 +52,7 @@ if not modules then modules = { } end modules ['font-dsp'] = {
 -- All this packing in the otf format is somewhat obsessive as nowadays 4K resolution
 -- multi-gig videos pass through our networks and storage and memory is abundant.
 
--- Although we use a few table readers there i sno real gain in there (apart from having
+-- Although we use a few table readers there is no real gain in there (apart from having
 -- less code. After all there are often not that many demanding features.
 
 local next, type, tonumber = next, type, tonumber

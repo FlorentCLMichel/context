@@ -1,3 +1,7 @@
+% engine=luatex
+
+\enablemode[paper]
+
 \usemodule[present-slanted]
 
 \usemodule[abr-01]
@@ -23,6 +27,7 @@
 \def\TFM      {\dontleavehmode{\morecolor tfm}}
 \def\TEX      {\dontleavehmode{\morecolor tex}}
 \def\MKIV     {\dontleavehmode{\morecolor mkiv}}
+\def\CONTEXT  {\dontleavehmode{\morecolor context}}
 
 \def|#1|{-}
 
@@ -96,6 +101,8 @@
 
 \StopSteps
 
+\StopTopic
+
 \page \start
 
 \definefontfeature[zapfino-a][mode=node,script=latn,language=dflt,liga=no]
@@ -110,7 +117,7 @@
 \font\testd=ZapfinoExtraLTPro*zapfino-d at 24pt
 \font\teste=ZapfinoExtraLTPro*zapfino-e at 24pt
 
-\unexpanded\def\ShowSample #1 #2 %
+\unexpanded\def\ShowSample#1#2%
   {\StartTopic{examples : #2}
    \start
    \noligs1\nokerns1\language0
@@ -122,11 +129,11 @@
    \stop
    \StopTopic}
 
-\ShowSample a nothing
-\ShowSample b ligatures
-\ShowSample c {cont ligs}
-\ShowSample d {cont alts}
-\ShowSample e all of these
+\ShowSample {a} {nothing}
+\ShowSample {b} {ligatures}
+\ShowSample {c} {cont ligs}
+\ShowSample {d} {cont alts}
+\ShowSample {e} {all of these}
 
 \page \stop
 
@@ -141,7 +148,9 @@
 
 \StopSteps
 
-\page
+\StopTopic
+
+% \page
 
 \definefontfeature
   [arab-none]
@@ -233,8 +242,8 @@
 \StopItem
 
 \StartItem
-    when this document is generated with a post-beta version of \LUATEX\ and \CONTEXT\ the results
-    can be different
+    when this document is generated with a post-beta version of \LUATEX\ and
+    \CONTEXT\ the results can be different
 \StopItem
 
 \StopTopic

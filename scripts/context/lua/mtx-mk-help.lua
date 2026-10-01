@@ -58,28 +58,24 @@ mtxrun --script mk-help imgtopdf   --exporthelp=all %targetpath%\mkii\imgtopdf.t
 
 ]]--
 
-local helpinfo = os.resultof("mtxrun --exporthelp") or ""
-local helpinfo = string.match(helpinfo,[[^.-(<application>.-</application>)]]) or [[<application></application>]]
+-- local helpinfo = os.resultof("mtxrun --exporthelp") or ""
+-- local helpinfo = string.match(helpinfo,[[^.-(<application>.-</application>)]]) or [[<application></application>]]
 
-local texmfstart = logs.application {
-    name     = "texmfstart",
-    banner   = "texmfstart 7.0.0",
-    helpinfo = [[<?xml version="1.0"?>]] .. helpinfo,
-}
+-- local texmfstart = logs.application {
+--     name     = "texmfstart",
+--     banner   = "texmfstart 7.0.0",
+--     helpinfo = [[<?xml version="1.0"?>]] .. helpinfo,
+-- }
 
--- let's also put luatools here:
+-- local helpinfo = os.resultof("luatools --exporthelp") or ""
+-- local helpinfo = string.match(helpinfo,[[^.-(<application>.-</application>)]]) or [[<application></application>]]
+-- local helpinfo = string.gsub(helpinfo,"mtx%-base","luatools")
 
-local helpinfo = os.resultof("luatools --exporthelp") or ""
-local helpinfo = string.match(helpinfo,[[^.-(<application>.-</application>)]]) or [[<application></application>]]
-local helpinfo = string.gsub(helpinfo,"mtx%-base","luatools")
-
-local luatools = logs.application {
-    name     = "luatools",
-    banner   = "luatools 1.35",
-    helpinfo = [[<?xml version="1.0"?>]] .. helpinfo,
-}
-
---
+-- local luatools = logs.application {
+--     name     = "luatools",
+--     banner   = "luatools 1.35",
+--     helpinfo = [[<?xml version="1.0"?>]] .. helpinfo,
+-- }
 
 local helpinfo = [[
 <?xml version="1.0"?>

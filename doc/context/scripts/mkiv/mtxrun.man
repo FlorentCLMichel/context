@@ -47,24 +47,6 @@ only execute when given file has changed (md checksum)
 .B --iftouched=old,new
 only execute when given file has changed (time stamp)
 .TP
-.B --makestubs
-create stubs for (context related) scripts
-.TP
-.B --removestubs
-remove stubs (context related) scripts
-.TP
-.B --stubpath=binpath
-paths where stubs wil be written
-.TP
-.B --windows
-create windows (mswin) stubs
-.TP
-.B --unix
-create unix (linux) stubs
-.TP
-.B --addbinarypath
-prepend the (found) binarypath to runners
-.TP
 .B --verbose
 give a bit more info
 .TP
@@ -94,12 +76,6 @@ run a script and time its run
 .TP
 .B --autogenerate
 regenerate databases if needed (handy when used to run context in an editor)
-.TP
-.B --usekpse
-use kpse as fallback (when no mkiv and cache installed, often slower)
-.TP
-.B --forcekpse
-force using kpse (handy when no mkiv and cache installed but less functionality)
 .TP
 .B --prefixes
 show supported prefixes

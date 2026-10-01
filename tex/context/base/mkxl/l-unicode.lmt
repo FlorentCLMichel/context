@@ -745,6 +745,10 @@ do
 
     local range = p_utf8byte * p_utf8byte + Cc(false) -- utf8byte is already a capture
 
+    -- we also have lpeg.utfR now
+
+    local utfR = lpeg.utfR
+
     function lpeg.UR(str,more)
         local first, last
         if type(str) == "number" then
@@ -762,19 +766,20 @@ do
         if not utfchar then
             utfchar = utf.char -- maybe delayed
         end
-        if utfchar and (last - first < 8) then -- a somewhat arbitrary criterium
-            local p = P(false)
-            for i=first,last do
-                p = p + P(utfchar(i))
-            end
-            return p -- nil when invalid range
-        else
-            local f = function(b)
-                return b >= first and b <= last
-            end
-            -- tricky, these nested captures
-            return p_utf8byte / f -- nil when invalid range
-        end
+        return utfR(first,last)
+     -- if utfchar and (last - first < 8) then -- a somewhat arbitrary criterium
+     --     local p = P(false)
+     --     for i=first,last do
+     --         p = p + P(utfchar(i))
+     --     end
+     --     return p -- nil when invalid range
+     -- else
+     --     local f = function(b)
+     --         return b >= first and b <= last
+     --     end
+     --     -- tricky, these nested captures
+     --     return p_utf8byte / f -- nil when invalid range
+     -- end
     end
 
     -- print(lpeg.match(lpeg.Cs((C(lpeg.UR("αω"))/{ ["χ"] = "OEPS" })^0),"αωχαω"))

@@ -39,7 +39,7 @@ wipe the cache
 create list of files (be in tex root)
 .TP
 .B --secure
-use curl for https
+use https
 .SH AUTHOR
 More information about ConTeXt and the tools that come with it can be found at:
 

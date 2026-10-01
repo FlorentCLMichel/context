@@ -17,7 +17,7 @@ local pfb          = fonts.handlers.pfb
 local hashes       = fonts.hashes
 local identifiers  = hashes.identifiers
 
-local version      = otf.version or 0.033
+local version      = otf.version or 3.156
 local shapescache  = containers.define("fonts", "shapes",  version, true)
 local streamscache = containers.define("fonts", "streams", version, true)
 
@@ -245,7 +245,7 @@ local function loadstreams(cache,filename,sub,instance,extrahash)
     if size > 0 and (kind == "otf" or kind == "ttf" or kind == "ttc") then
         local hash = makehash(filename,sub,instance,extrahash)
         data = containers.read(cache,hash)
-        if not data or data.time ~= time or data.size  ~= size then
+        if not data or data.time ~= time or data.size ~= size then
             data = otf.readers.loadshapes(filename,sub,instance,true) -- how about extrahash
             if data then
                 local glyphs  = data.glyphs

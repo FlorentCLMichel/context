@@ -28,7 +28,7 @@ local helpinfo = [[
     <flag name="update"><short>update context</short></flag>
     <flag name="erase"><short>wipe the cache</short></flag>
     <flag name="identify"><short>create list of files (be in tex root)</short></flag>
-    <flag name="secure"><short>use curl for https</short></flag>
+    <flag name="secure"><short>use https</short></flag>
    </subcategory>
   </category>
  </flags>
@@ -45,43 +45,62 @@ local mkdirs, globdir = dir.mkdirs, dir.glob
 local osremove, osexecute, ostype, resultof = os.remove, os.execute, os.type, os.resultof
 local savedata, loaddata = io.savedata, io.loaddata
 local formatters = string.formatters
-local httprequest = socket.http.request
 
-local usecurl  = false
 local protocol = "http"
+local fetch    = false
+local https    = false
+local request  = false
 
-local function checkcurl()
-    local s = resultof("curl --version")
-    return type(s) == "string" and find(s,"libcurl") and find(s,"rotocols")
-end
+-- check for 200
 
-local function fetch(url)
-    local data   = nil
-    local detail = nil
-    if usecurl and find(url,"^https") then
-        data = resultof("curl " .. url)
-    else
-        data, detail = httprequest(url)
-    end
-    if type(data) ~= "string" then
-        data   = false
-        detail = "download failed"
-    elseif #data == 0 then
-        data   = false
-        detail = "download failed, zero length"
-    elseif #data < 2048 then
-        local n, t = find(data,"<head>%s*<title>%s*(%d+)%s(.-)</title>")
-        if tonumber(n) then
-            data   = false
-            detail = n .. " " .. t
+if client and client.supported and client.supported() then
+
+    request = client.httprequest
+    https   = true
+    fetch   = function(url)
+        local detail, data = request(
+            url
+        -- ,nil,  -- method                   (default: "GET")
+        -- ,nil,  -- headers
+        -- ,nil,  -- body
+        -- ,nil,  -- timeout in seconds       (default: 0 == unset)
+        -- ,nil,  -- maxsize in bytes         (default: 512*1024*1024)
+        -- ,true  -- tolerant wrt certificate (default: false)
+        )
+        if tonumber(detail) == 200 then
+            return data, detail
+        else
+            return false, "download failed"
         end
     end
-    return data, detail
+
+else
+
+    request = socket.http.request
+    https   = false
+    fetch   = function(url)
+        local data, detail = request(url)
+        if type(data) ~= "string" then
+            data   = false
+            detail = "download failed"
+        elseif #data == 0 then
+            data   = false
+            detail = "download failed, zero length"
+        elseif #data < 2048 then
+            local n, t = find(data,"<head>%s*<title>%s*(%d+)%s(.-)</title>")
+            if tonumber(n) then
+                data   = false
+                detail = n .. " " .. t
+            end
+        end
+        return data, detail
+    end
+
 end
 
 local application = logs.application {
     name     = "mtx-install",
-    banner   = "ConTeXt Installer 2.01",
+    banner   = "ConTeXt Installer 2.02",
     helpinfo = helpinfo,
 }
 
@@ -228,15 +247,18 @@ function install.identify()
 end
 
 local function disclaimer()
-    report("ConTeXt LMTX with LuaMetaTeX is still experimental and when you get a crash this")
-    report("can be due to a mismatch between Lua bytecode and the engine. In that case you can")
-    report("try the following:")
+    report("ConTeXt LMTX relies on LuaMetaTeX and mixed TeX, Lua and Metapost. When you get a")
+    report("at startup this can be due to a mismatch between Lua bytecode and the engine. In");
+    report("that case you can try the following:")
     report("")
     report("  - wipe the texmf-cache directory")
-    report("  - run: mtxrun --generate")
-    report("  - run: context --make")
     report("")
-    report("When that doesn't solve the problem, ask on the mailing list (ntg-context@ntg.nl).")
+    report("  - run: mtxrun  --generate")
+    report("  - run: context --make")
+    report("  - run: context --script font --reload")
+    report("")
+    report("When that doesn't solve the problem, ask on the mailing list (ntg-context@ntg.nl)")
+    report("or install from scratch.")
 end
 
 function install.update()
@@ -501,8 +523,8 @@ function install.update()
 
     for i=1,#list do
         local host = list[i]
-        local data, status, detail = fetch(protocol .. "://" .. host .. "/" .. instance .. "/tex/status.tma")
-        if status == 200 and type(data) == "string" then
+        local data, status = fetch(protocol .. "://" .. host .. "/" .. instance .. "/tex/status.tma")
+        if tonumber(status) == 200 and type(data) == "string" then
             local t = loadstring(data)
             if type(t) == "function" then
                 t = t()
@@ -666,11 +688,10 @@ function install.goodies()
 end
 
 if environment.argument("secure") then
-    usecurl = checkcurl()
-    if usecurl then
+    if https() then
         protocol = "https"
     else
-        report("no curl installed, quitting")
+        report("https is not supported, quitting")
         os.exit()
     end
 end
@@ -696,4 +717,3 @@ else
     report("")
     disclaimer()
 end
-

@@ -45,52 +45,6 @@ local application = logs.application {
     helpinfo = "mtx-context.xml",
 }
 
--- local luatexflags = {
---     ["8bit"]                        = true,  -- ignored, input is assumed to be in UTF-8 encoding
---     ["default-translate-file"]      = true,  -- ignored, input is assumed to be in UTF-8 encoding
---     ["translate-file"]              = true,  -- ignored, input is assumed to be in UTF-8 encoding
---     ["etex"]                        = true,  -- ignored, the etex extensions are always active
---     ["parse-first-line"]            = true,  -- ignored, enable parsing of the first line of the input file
---     ["no-parse-first-line"]         = true,  -- ignored, disable parsing of the first line of the input file
---
---     ["credits"]                     = true,  -- display credits and exit
---     ["debug-format"]                = true,  -- enable format debugging
---     ["disable-write18"]             = true,  -- disable \write18{SHELL COMMAND}
---     ["draftmode"]                   = true,  -- switch on draft mode (generates no output PDF)
---     ["enable-write18"]              = true,  -- enable \write18{SHELL COMMAND}
---     ["file-line-error"]             = true,  -- enable file:line:error style messages
---     ["file-line-error-style"]       = true,  -- aliases of --file-line-error
---     ["no-file-line-error"]          = true,  -- disable file:line:error style messages
---     ["no-file-line-error-style"]    = true,  -- aliases of --no-file-line-error
---     ["fmt"]                         = true,  -- load the format file FORMAT
---     ["halt-on-error"]               = true,  -- stop processing at the first error
---     ["help"]                        = true,  -- display help and exit
---     ["ini"]                         = true,  -- be iniluatex, for dumping formats
---     ["interaction"]                 = true,  -- set interaction mode (STRING=batchmode/nonstopmode/scrollmode/errorstopmode)
---     ["jobname"]                     = true,  -- set the job name to STRING
---     ["kpathsea-debug"]              = true,  -- set path searching debugging flags according to the bits of NUMBER
---     ["lua"]                         = true,  -- load and execute a lua initialization script
---     ["mktex"]                       = true,  -- enable mktexFMT generation (FMT=tex/tfm)
---     ["no-mktex"]                    = true,  -- disable mktexFMT generation (FMT=tex/tfm)
---     ["nosocket"]                    = true,  -- disable the lua socket library
---     ["output-comment"]              = true,  -- use STRING for DVI file comment instead of date (no effect for PDF)
---     ["output-directory"]            = true,  -- use existing DIR as the directory to write files in
---     ["output-format"]               = true,  -- use FORMAT for job output; FORMAT is 'dvi' or 'pdf'
---     ["progname"]                    = true,  -- set the program name to STRING
---     ["recorder"]                    = true,  -- enable filename recorder
---     ["safer"]                       = true,  -- disable easily exploitable lua commands
---     ["shell-escape"]                = true,  -- enable \write18{SHELL COMMAND}
---     ["no-shell-escape"]             = true,  -- disable \write18{SHELL COMMAND}
---     ["shell-restricted"]            = true,  -- restrict \write18 to a list of commands given in texmf.cnf
---     ["nodates"]                     = true,  -- no production dates in pdf file
---     ["trailerid"]                   = true,  -- alternative trailer id
---     ["synctex"]                     = true,  -- enable synctex
---     ["version"]                     = true,  -- display version and exit
---     ["luaonly"]                     = true,  -- run a lua file, then exit
---     ["luaconly"]                    = true,  -- byte-compile a lua file, then exit
---     ["jiton"]                       = false, -- not supported (makes no sense, slower)
--- }
-
 local report = application.report
 
 scripts         = scripts         or { }

@@ -860,6 +860,53 @@ local chars = setmetatableindex(function(t,k)
     for i=0,255 do local v = char(i) t[i] = v end return t[k]
 end)
 
+local function checknotdef(glyphs,shapes,units)
+    local shape    = shapes[0]
+    local contours = shape and shape.contours
+    if contours and #contours > 0 then
+        return false
+    end
+    local glyph = glyphs[0]
+    if not glyph then
+        glyph     = { }
+        glyphs[0] = glyph
+    end
+    -- similar to cff
+    if not units or units <= 0 then
+        units = 1000
+    end
+    local width = glyph.width
+    if not width or width <= 0 then
+        width = glyph.width
+    end
+    if not width or width <= 0 then
+        width = units
+    end
+    local llx = max(1,round(width/25))
+    local lly = 0
+    local urx = width - llx
+    local ury = round(3*units/4)
+    if urx <= llx then
+        llx = 0
+        urx = width
+    end
+    local boundingbox = {
+        llx, lly, urx, ury
+    }
+    glyph.width       = width
+    glyph.boundingbox = boundingbox
+    shapes[0] = {
+        contours = { 4 },
+        points = {
+            { llx, lly, true },
+            { urx, lly, true },
+            { urx, ury, true },
+            { llx, ury, true },
+        },
+    }
+    return true
+end
+
 local function repackpoints(glyphs,shapes)
     local noboundingbox = { 0, 0, 0, 0 }
     local result        = { } -- reused
@@ -872,7 +919,7 @@ local function repackpoints(glyphs,shapes)
             local glyph       = glyphs[index]
             local contours    = shape.contours
             local nofcontours = contours and #contours or 0
-            if nofcontours > 0 and index > 0 then
+            if nofcontours > 0 then
                 local boundingbox = glyph.boundingbox or noboundingbox
                 r = r + 1 result[r] = toshort(nofcontours)
                 r = r + 1 result[r] = toshort(boundingbox[1]) -- xmin
@@ -1327,6 +1374,9 @@ function readers.glyf(f,fontdata,specification) -- part goes to cff module
                     readers.gvar(f,fontdata,specification,glyphs,shapes)
                 end
                 mergecomposites(glyphs,shapes)
+                if checknotdef(glyphs,shapes,fontdata.fontheader and fontdata.fontheader.units) then
+                    report("missing .notdef, using a rectangle instead")
+                end
                 if specification.instance then
                     if specification.streams then
                         repackpoints(glyphs,shapes)

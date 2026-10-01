@@ -17,7 +17,7 @@ Leonardo Godinho, Thomas Harning Jr., and Gary NG. The originals are part of and
 copyrighted by the Kepler project.
 
 Here we reload a slightly reworked version of these .lua files. We keep the same
-(documented) interface but streamlined some fo the code. No more modules, no more
+(documented) interface but streamlined some of the code. No more modules, no more
 pre 5.2 Lua, etc. Also, as it loads into the ConTeXt ecosystem, we plug in some
 logging. (and maybe tracing in the future). As we don't support serial ports in
 LuaTeX, related code has been dropped.

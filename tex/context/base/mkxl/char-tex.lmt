@@ -696,13 +696,11 @@ if not csletters then
             if is_character[category] then
                 if chr.unicodeslot < 128 then
                     if isletter then
-                        local c = utfchar(u)
-                        csletters[c] = u
+                        csletters[utfchar(u)] = u
                     end
                 else
-                    local c = utfchar(u)
                     if isletter and u >= 32 and u <= 65536 then
-                        csletters[c] = u
+                        csletters[utfchar(u)] = u
                     end
                 end
                 if isletter then
@@ -860,6 +858,9 @@ else
 
     local pattern = P("greek") + P("arabic") + P("hebrew") + P("cyrillic") + P("roman")
 
+    -- At some point we will drop these names because by then users should have moved
+    -- on to utf and/or upgraded their sources to it.
+
     function characters.addcharacternames() -- we could be granular e.g. 'greek'
         for u, chr in next, data do -- will move up
             local contextname = chr.contextname
@@ -875,7 +876,7 @@ else
 
 end
 
-lpegpatterns.csletter = utfchartabletopattern(csletters)
+lpegpatterns.csletter = utfchartabletopattern(csletters) -- used in publ-dat.lua
 
 -- The engine presets the letters to 11 (always).
 

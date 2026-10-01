@@ -12,16 +12,16 @@
 -- luametatex.exe -> tex/texmf-win64/bin/luatex.exe
 -- luametatex.exe -> tex/texmf-win64/bin/mtxrun.exe
 -- luametatex.exe -> tex/texmf-win64/bin/context.exe
--- mtxrun.lua     -> tex/texmf-win64/bin/mtxrun.lua
--- context.lua    -> tex/texmf-win64/bin/context.lua
+-- mtxrun.lmt     -> tex/texmf-win64/bin/mtxrun.lmt
+-- context.lmt    -> tex/texmf-win64/bin/context.lmt
 --
 -- and this on Unix:
 --
 -- luametatex     -> tex/texmf-linux-64/bin/luatex
 -- luametatex     -> tex/texmf-linux-64/bin/mtxrun
 -- luametatex     -> tex/texmf-linux-64/bin/context
--- mtxrun.lua     -> tex/texmf-linux-64/bin/mtxrun.lua
--- context.lua    -> tex/texmf-linux-64/bin/context.lua
+-- mtxrun.lmt     -> tex/texmf-linux-64/bin/mtxrun.lmt
+-- context.lmt    -> tex/texmf-linux-64/bin/context.lmt
 
 local selfpath = os.selfpath
 
@@ -35,4 +35,4 @@ arg[0] = "mtxrun"
 table.insert(arg,1,"mtx-context")
 table.insert(arg,1,"--script")
 
-dofile(selfpath .. "/" .. "mtxrun.lua")
+dofile(selfpath .. "/" .. "mtxrun.lmt")

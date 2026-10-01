@@ -24,14 +24,6 @@
     <flag name="iftouched" value="old,new"><short>only execute when given file has changed (time stamp)</short></flag>
    </subcategory>
    <subcategory>
-    <flag name="makestubs"><short>create stubs for (context related) scripts</short></flag>
-    <flag name="removestubs"><short>remove stubs (context related) scripts</short></flag>
-    <flag name="stubpath" value="binpath"><short>paths where stubs wil be written</short></flag>
-    <flag name="windows"><short>create windows (mswin) stubs</short></flag>
-    <flag name="unix"><short>create unix (linux) stubs</short></flag>
-    <flag name="addbinarypath"><short>prepend the (found) binarypath to runners</short></flag>
-   </subcategory>
-   <subcategory>
     <flag name="verbose"><short>give a bit more info</short></flag>
     <flag name="trackers" value="list"><short>enable given trackers</short></flag>
     <flag name="progname" value="str"><short>format or backend</short></flag>
@@ -46,10 +38,6 @@
    <subcategory>
     <flag name="timedrun"><short>run a script and time its run</short></flag>
     <flag name="autogenerate"><short>regenerate databases if needed (handy when used to run context in an editor)</short></flag>
-   </subcategory>
-   <subcategory>
-    <flag name="usekpse"><short>use kpse as fallback (when no mkiv and cache installed, often slower)</short></flag>
-    <flag name="forcekpse"><short>force using kpse (handy when no mkiv and cache installed but less functionality)</short></flag>
    </subcategory>
    <subcategory>
     <flag name="prefixes"><short>show supported prefixes</short></flag>

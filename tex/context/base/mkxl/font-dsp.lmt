@@ -397,7 +397,7 @@ local function getaxisscale(segments,minimum,default,maximum,user)
     if user < default then
         default = - (default - user) / (default - minimum)
     elseif user > default then
-        default =   (user - default) / (maximum - default)
+        default = (user - default) / (maximum - default)
     else
         default = 0
     end
@@ -960,8 +960,8 @@ local function readposition(f,format,mainoffset,getdelta,getdevice)
                 v = v + readdevicevalue(f,mainoffset+V,getdelta,getdevice)
             end
         end
-        return { x, y, h, v }
-    elseif x == 0 and y == 0 and h == 0 and v == 0 then
+    end
+    if x == 0 and y == 0 and h == 0 and v == 0 then
         return true -- all zero
     else
         return { x, y, h, v }
@@ -1584,7 +1584,8 @@ local function readpairsets(f,tableoffset,sets,format1,format2,mainoffset,getdel
     for i=1,#sets do
         local offset = sets[i]
         local reused = done[offset]
-        if not reused then
+        if reused then
+        else
             offset = tableoffset + offset
             setposition(f,offset)
             local n = readushort(f)
@@ -1595,6 +1596,9 @@ local function readpairsets(f,tableoffset,sets,format1,format2,mainoffset,getdel
                     readposition(f,format1,offset,getdelta,getdevice),
                     readposition(f,format2,offset,getdelta,getdevice),
                 }
+             -- if reused[i][2] == true and reused[i][3] == true then
+             --     print("potential optimization possible, case 1")
+             -- end
             end
             done[offset] = reused
         end
@@ -1612,7 +1616,12 @@ local function readpairclasssets(f,nofclasses1,nofclasses2,format1,format2,maino
             local one = readposition(f,format1,mainoffset,getdelta,getdevice)
             local two = readposition(f,format2,mainoffset,getdelta,getdevice)
             if one or two then
-                classlist2[j] = { one, two }
+             -- if one == true and two == true then
+             --     print("potential optimization possible, case 2")
+             --     classlist2[j] = false
+             -- else
+                    classlist2[j] = { one, two }
+             -- end
             else
                 classlist2[j] = false
             end
@@ -2056,10 +2065,6 @@ do
     for i=1,20 do
         plugins[formatters["ss%02i"](i)] = ssxx
     end
-
- -- function plugins.rvrn(f,fontdata,tableoffset,feature)
- --     report("ignoring rvrn feature")
- -- end
 
     local function reorderfeatures(fontdata,scripts,features)
         local scriptlangs  = { }
@@ -2574,14 +2579,20 @@ do
                 end
             end
             if nofrvrn > 0 then
-                -- Required variation alternates run before ordinary GSUB
-                -- features. Shared lookups stay in their original position.
+                -- the required variation alternates come before the other gsub
+                -- features, so we move them to the front. We integrate them so
+                -- that we can trace if needed:
                 for i=1,nofrvrn do
                     sequences[i] = rvrn[i]
                 end
                 for i=1,nofother do
                     sequences[nofrvrn+i] = other[i]
                 end
+                --
+                -- alternatively we can decide to keep them split:
+                --
+             -- fontdata.rvnrnlist = rvrn
+             -- fontdata.sequences = other
             end
         end
     end

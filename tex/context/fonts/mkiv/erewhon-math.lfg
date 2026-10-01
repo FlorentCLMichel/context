@@ -35,6 +35,17 @@ return {
                     abort    = true,
                 },
                 {
+                    tweak   = "replacealphabets",
+                    comment = "for functions with accented characters",
+                    list    = {
+                        {
+                            source   = "latinsupplement",
+                            target   = "latinsupplement",
+                            filename = "Erewhon-Regular.otf",
+                        },
+                    },
+                },
+                {
                     tweak  = "fixprimes",
                     factor = 0.94  ,
                     fake   = 0.85, -- replace multiples with this width proportion

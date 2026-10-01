@@ -34,7 +34,8 @@
     <flag name="force"><short>downcase indeed</short></flag>
    </subcategory>
    <subcategory>
-    <example><command>mtxrun --script tool mtxrun --script tools --dirtoxml --root=t:/texmf/doc/context --pattern=* --recurse --sparse --output=files.xml</flags></command></example>
+    <example><command>mtxrun --script tool mtxrun --script tools --dirtoxml --root=t:/texmf/doc/context --pattern=* --recurse --sparse --output=files.xml</command></example>
    </subcategory>
   </category>
+ </flags>
 </application>

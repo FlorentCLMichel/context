@@ -1014,6 +1014,63 @@ do
 
     end
 
+    -- A bit overkill but viewers are kind of picky wrt .notdef so:
+
+    local visuals = {
+        [ 5] = true, [ 6] = true, [ 7] = true, ["l"] = true, -- line
+        [ 8] = true, [30] = true, [31] = true, ["c"] = true, -- curve
+        [24] = true, [25] = true,                            -- curve + line
+        [26] = true, [27] = true,                            -- curve
+        [34] = true, [35] = true, [36] = true, [37] = true,  -- cff2 flex
+    }
+
+    local function hasoutline(data)
+        for i=1,#data do
+            local item = data[i]
+            if type(item) == "table" then
+                if visuals[item[#item]] then
+                    return true
+                end
+            elseif visuals[byte(item)] then
+                return true
+            end
+        end
+        return false
+    end
+
+    local function makenotdef(glyph,width,units)
+        if not units or units <= 0 then
+            units = 1000
+        end
+        if not width or width <= 0 then
+            width = glyph.width
+        end
+        if not width or width <= 0 then
+            width = units
+        end
+        -- we catch 1 unit
+        local llx = max(1,round(width/25))
+        local lly = 0
+        local urx = width - llx
+        local ury = round(3*units/4)
+        if urx <= llx then
+            llx = 0
+            urx = width
+        end
+        local boundingbox = {
+            llx, lly, urx, ury
+        }
+        local segments = {
+            { llx, lly, "m" },
+            { urx, lly, "l" },
+            { urx, ury, "l" },
+            { llx, ury, "l" },
+        }
+        glyph.width       = width
+        glyph.boundingbox = boundingbox
+        return width, boundingbox, segments
+    end
+
     -- Maybe have several action tables:
     --
     -- keep curve / checked
@@ -2737,17 +2794,20 @@ do
 
     directives.register("fonts.cff.flatten", function(v) force_flatten = v end )
 
-    local function processshape(glyphs,tab,index,hack)
+    local function processshape(glyphs,tab,index,hack,units)
 
         local glyphname = charset and charset[index] or nil
 
         if not tab then
-            glyphs[index] = {
-                boundingbox = { 0, 0, 0, 0 },
-                width       = 0,
-                name        = glyphname,
-            }
-            return
+            if index ~= 0 or hack then
+                glyphs[index] = {
+                    boundingbox = { 0, 0, 0, 0 },
+                    width       = 0,
+                    name        = glyphname,
+                }
+                return
+            end
+            tab = ""
         end
 
         tab     = bytetable(tab)
@@ -2810,6 +2870,18 @@ do
         end
 
         local glyph = glyphs[index] -- can be autodefined in otr
+
+        if index == 0 then
+            if not glyph then
+                glyph = { }
+                glyphs[index] = glyph
+            end
+            if not hasoutline(result) then
+                width, boundingbox, result = makenotdef(glyph,width,units)
+                justpass = false
+                report("missing .notdef, using a rectangle instead")
+            end
+        end
 
         if jp then
             local stream
@@ -2932,6 +3004,7 @@ do
         vsindex   = getdictionaryvsindex(dictionary)
 
         local glyphs = glphs or { }
+        local units  = fontdata and fontdata.fontheader and fontdata.fontheader.units or 1000
 
         if nobias then
             globalbias = 0
@@ -2946,7 +3019,7 @@ do
         if charstrings then
             startparsing(fontdata,data,streams)
             for index=1,#charstrings do
-                processshape(glyphs,charstrings[index],index-1)
+                processshape(glyphs,charstrings[index],index-1,false,units)
             end
             if justpass and next(seacs) then
                 -- old type 1 stuff ... seacs
@@ -2962,7 +3035,7 @@ do
                             -- this is a real ugly hack but we seldom enter this branch (e.g. old lbr)
                             local jp = justpass
                             justpass = false
-                            local x, y = processshape(glyphs,charstrings[bindex+1],bindex,true)
+                            local x, y = processshape(glyphs,charstrings[bindex+1],bindex,true,units)
                             justpass = jp
                             --
                             local base   = bglyph.stream
@@ -2995,6 +3068,7 @@ do
         charset   = false
         vsindex   = getdictionaryvsindex(dictionary)
 
+        local units  = fontdata.fontheader and fontdata.fontheader.units or 1000
         local glyphs = glphs or { }
 
         justpass = streams == true
@@ -3010,7 +3084,7 @@ do
 
         nominalwidth, defaultwidth = setwidths(dictionary.private)
 
-        processshape(glyphs,tab,index-1)
+        processshape(glyphs,tab,index-1,false,units)
 
         return glyphs[index]
     end
@@ -3154,8 +3228,13 @@ do
                 -- could be a metatable .. delayed loading
                 local charstrings = readlengths(f,version=="cff2")
                 local nofglyphs   = #charstrings
-                for i=1,nofglyphs do
-                    charstrings[i] = readstring(f,charstrings[i])
+                if nofglyphs == 0 and (version == "cff" or version == "cff2") then
+                    charstrings[1] = "\14"
+                    nofglyphs       = 1
+                else
+                    for i=1,nofglyphs do
+                        charstrings[i] = readstring(f,charstrings[i])
+                    end
                 end
                 data.nofglyphs          = nofglyphs
                 dictionary.charstrings = charstrings

@@ -47,9 +47,10 @@ local helpinfo = [[
     <flag name="force"><short>downcase indeed</short></flag>
    </subcategory>
    <subcategory>
-    <example><command>mtxrun --script tool mtxrun --script tools --dirtoxml --root=t:/texmf/doc/context --pattern=* --recurse --sparse --output=files.xml</flags></command></example>
+    <example><command>mtxrun --script tool mtxrun --script tools --dirtoxml --root=t:/texmf/doc/context --pattern=* --recurse --sparse --output=files.xml</command></example>
    </subcategory>
   </category>
+ </flags>
 </application>
 ]]
 
@@ -197,15 +198,17 @@ function scripts.tools.dirtoxml()
 
     local luapattern = string.topattern(pattern,true)
 
-    lfs.chdir(root)
+    dir.push(root)
 
     local list = dir.collectpattern(root,luapattern,recurse) --or just glob
+
+    dir.pop()
 
     if list[outputfile] then
         list[outputfile] = nil
     end
 
-    local result = { "<?xml version='1.0'?>" }
+    local result = { '<?xml version="1.0" standalone="yes"?>' }
     result[#result+1] = format("<files url=%q root=%q pattern=%q luapattern=%q xmlns='%s' timestamp='%s' sparse=%q compact=%q>",
         url,root,pattern,luapattern,
         xmlns,
@@ -218,9 +221,11 @@ function scripts.tools.dirtoxml()
 
     result = table.concat(result,"\n")
 
+
     if not outputfile or outputfile == "" then
         writeln(result)
     else
+        report("xml tree saved in %a",outputfile)
         io.savedata(outputfile,result)
     end
 
