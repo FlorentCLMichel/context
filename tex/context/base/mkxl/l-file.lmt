@@ -207,7 +207,7 @@ function file.addsuffix(filename,suffix,criterium)
     elseif not criterium then
         local n, s = lpegmatch(pattern,filename)
         if not s or s == "" then
-            return filename .. "." .. suffix
+            return filename .. "." .. tostring(suffix)
         else
             return filename
         end

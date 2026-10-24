@@ -29,7 +29,7 @@ local searchers = package.searchers or package.loaders
 
 local filejoin       = file and file.join       or function(path,name)   return path .. "/" .. name end
 local fileisreadable = file and file.isreadable or lfs.isrreadablefile
-local addsuffix      = file and file.addsuffix  or function(name,suffix) return name .. "." .. suffix end
+local addsuffix      = file and file.addsuffix  or function(name,suffix) return name .. "." .. tostring(suffix) end
 
 -- local separator, concatinator, placeholder, pathofexecutable, ignorebefore = string.match(package.config,"(.-)\n(.-)\n(.-)\n(.-)\n(.-)\n")
 --

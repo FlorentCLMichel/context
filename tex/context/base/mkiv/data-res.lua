@@ -1213,7 +1213,7 @@ local function find_analyze(filename,askedformat,allresults)
                 local format_suffixes = suffixes[askedformat]
                 if format_suffixes then
                     for i=1,#format_suffixes do
-                        wantedfiles[#wantedfiles+1] = filename .. "." .. format_suffixes[i]
+                        wantedfiles[#wantedfiles+1] = filename .. "." .. tostring(format_suffixes[i])
                     end
                 end
             end
