@@ -514,6 +514,7 @@ endif()
 include(cmake/utilities.cmake)
 include(cmake/tex.cmake)
 include(cmake/lua.cmake)
+include(cmake/lua_fpic.cmake)
 include(cmake/mp.cmake)
 
 include(cmake/luarest.cmake)

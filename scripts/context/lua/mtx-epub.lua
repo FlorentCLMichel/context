@@ -906,6 +906,7 @@ do
             "%fullname%"
             "--exportimages"
             "--result=%nameonly%-images"
+            "--mode=%mode%"
         ]],
     }
 
@@ -920,7 +921,7 @@ do
         ]],
     }
 
-    function scripts.epub.images()
+    function scripts.epub.images(mode)
         local files = environment.globfiles()
         if files then
 
@@ -978,6 +979,7 @@ do
                 runimages {
                     fullname = job.fullname,
                     nameonly = job.nameonly,
+                    mode = mode,
                 }
 
                 -- convert
@@ -1032,6 +1034,7 @@ end
 
 local a_exporthelp = environment.argument("exporthelp")
 local a_make       = environment.argument("make")
+local a_mode       = environment.argument("mode")
 local a_all        = environment.argument("all")
 local a_purge      = a_all or environment.argument("purge")
 local a_rename     = a_all or environment.argument("rename")
@@ -1045,7 +1048,7 @@ if a_make and a_svgmath then
 end
 
 if a_images then
-    scripts.epub.images()
+    scripts.epub.images(a_mode)
 elseif a_make then
     scripts.epub.make(a_purge,a_rename,a_svgmath,a_svgstyle)
 elseif a_exporthelp then
