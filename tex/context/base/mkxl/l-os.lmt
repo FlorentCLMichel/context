@@ -80,11 +80,11 @@ if os.name == "windows" then
 elseif os.name == "macosx" then
     os.libsuffix   = "dylib"
     os.binsuffix   = ""
-    os.binsuffix   = { "" }
+    os.binsuffixes = { "" }
 else
     os.libsuffix   = "so"
     os.binsuffix   = ""
-    os.binsuffix   = { "" }
+    os.binsuffixes = { "" }
 end
 
 do
